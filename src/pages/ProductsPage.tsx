@@ -16,8 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ZxingScanner } from '@/components/ZxingScanner';
 import { fetchProductByBarcode, isLiquidProduct } from '@/lib/openFoodFacts';
 import { toast } from 'sonner';
-import { ProductConsumptionDialog } from '@/components/ProductConsumptionDialog';
-import { NATURAL_PRODUCTS, NATURAL_PRODUCT_CATEGORIES, naturalToCustomProduct, getCategoryInfo, NaturalProduct } from '@/data/naturalProducts';
+import { NATURAL_PRODUCTS, NATURAL_PRODUCT_CATEGORIES, getCategoryInfo, NaturalProduct } from '@/data/naturalProducts';
 
 type FilterType = 'all' | 'solid' | 'liquid';
 type ActiveTab = 'custom' | 'natural';
@@ -38,7 +37,7 @@ export function ProductsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('custom');
   const [selectedNaturalCategory, setSelectedNaturalCategory] = useState<string | null>(null);
-  const [consumingProduct, setConsumingProduct] = useState<CustomProduct | null>(null);
+  
   const [showAddNaturalDialog, setShowAddNaturalDialog] = useState(false);
   const [formNaturalCategory, setFormNaturalCategory] = useState('frutas');
   
@@ -130,18 +129,6 @@ export function ProductsPage() {
     return grouped;
   }, [filteredNaturalProducts]);
 
-  const handleConsumeNatural = (natural: NaturalProduct & { is_user_created?: boolean }) => {
-    if (natural.is_user_created) {
-      // Find the original product from user products
-      const userProduct = userNaturalProducts.find(p => p.id === natural.id);
-      if (userProduct) {
-        setConsumingProduct(userProduct);
-        return;
-      }
-    }
-    const converted = naturalToCustomProduct(natural);
-    setConsumingProduct(converted);
-  };
 
   const handleOpenAddNatural = () => {
     resetForm();
@@ -480,14 +467,6 @@ export function ProductsPage() {
           </div>
         </div>
         <div className="flex gap-1 flex-shrink-0">
-          <Button
-            size="sm"
-            variant="default"
-            className="h-8 w-8 p-0"
-            onClick={() => setConsumingProduct(product)}
-          >
-            <UtensilsCrossed className="h-4 w-4" />
-          </Button>
           <Button
             size="sm"
             variant="ghost"
@@ -955,26 +934,16 @@ export function ProductsPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-1">
+                      {isUserCreated && (
                         <Button
                           size="sm"
-                          variant="default"
-                          className="h-8 w-8 p-0"
-                          onClick={() => handleConsumeNatural(natural)}
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteNatural(natural.id)}
                         >
-                          <UtensilsCrossed className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                        {isUserCreated && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                            onClick={() => handleDeleteNatural(natural.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+                      )}
                     </div>
                   );
                 })}
@@ -1019,26 +988,16 @@ export function ProductsPage() {
                                   </span>
                                 </div>
                               </div>
-                              <div className="flex gap-1">
+                              {isUserCreated && (
                                 <Button
                                   size="sm"
-                                  variant="default"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => handleConsumeNatural(natural)}
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteNatural(natural.id)}
                                 >
-                                  <UtensilsCrossed className="h-4 w-4" />
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
-                                {isUserCreated && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                    onClick={() => handleDeleteNatural(natural.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
-                              </div>
+                              )}
                             </div>
                           );
                         })}
@@ -1200,12 +1159,6 @@ export function ProductsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Consumption Dialog */}
-      <ProductConsumptionDialog
-        product={consumingProduct}
-        open={!!consumingProduct}
-        onOpenChange={(open) => !open && setConsumingProduct(null)}
-      />
 
       <BottomNav />
     </div>
