@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X, Camera, Loader2, Package, ScanLine, Keyboard, ImagePlus } from 'lucide-react';
-import { BarcodeProduct, NutritionData } from '@/types/nutrition';
+import { BarcodeProduct } from '@/types/nutrition';
 import { fetchProductByBarcode, isLiquidProduct, getLiquidVolumeMl } from '@/lib/openFoodFacts';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
@@ -24,9 +24,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
   // Scanner mode
   const [scanMode, setScanMode] = useState<'camera' | 'photo' | 'manual'>('camera');
   const [scanError, setScanError] = useState<string | null>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const scannerContainerId = 'barcode-scanner-container';
   const inputRef = useRef<HTMLInputElement>(null);
   
   // Flow states
@@ -48,94 +46,6 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     transFat?: number;
     isLiquid?: boolean;
   } | null>(null);
-
-  // Stop camera scanner
-  const stopScanner = async () => {
-    if (scannerRef.current) {
-      try {
-        const state = scannerRef.current.getState();
-        if (state === 2) {
-          await scannerRef.current.stop();
-        }
-        scannerRef.current = null;
-      } catch (err) {
-        console.error('Error stopping scanner:', err);
-      }
-    }
-  };
-
-  // Start camera scanner
-  const startScanner = async () => {
-    setScanError(null);
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    const container = document.getElementById(scannerContainerId);
-    if (!container) {
-      setScanError('Erro ao inicializar o scanner.');
-      return;
-    }
-    
-    container.innerHTML = '';
-    
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setScanError('Câmera não suportada neste navegador.');
-        return;
-      }
-      
-      const videoConstraints = {
-        facingMode: { ideal: 'environment' },
-        width: { ideal: 1920, min: 1280 },
-        height: { ideal: 1080, min: 720 },
-      } as MediaTrackConstraints;
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
-      stream.getTracks().forEach(track => track.stop());
-
-      const html5QrCode = new Html5Qrcode(scannerContainerId, {
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-        ],
-        verbose: false,
-      });
-      
-      scannerRef.current = html5QrCode;
-      
-      const containerWidth = container.offsetWidth || 300;
-      const qrboxWidth = Math.min(containerWidth - 40, 280);
-      const qrboxHeight = Math.round(qrboxWidth * 0.35);
-      
-      await html5QrCode.start(
-        { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: qrboxWidth, height: qrboxHeight },
-        },
-        (decodedText) => {
-          setBarcode(decodedText);
-          stopScanner();
-          handleSearchWithBarcode(decodedText);
-        },
-        () => {}
-      );
-    } catch (err: any) {
-      console.error('Error starting scanner:', err);
-      let errorMessage = 'Não foi possível acessar a câmera.';
-      
-      if (err.name === 'NotAllowedError') {
-        errorMessage = 'Permissão de câmera negada.';
-      } else if (err.name === 'NotFoundError') {
-        errorMessage = 'Nenhuma câmera encontrada.';
-      }
-      
-      setScanError(errorMessage);
-    }
-  };
 
   // Handle photo file scan
   const handlePhotoScan = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,33 +79,15 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     }
   };
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-        scannerRef.current = null;
-      }
-    };
-  }, []);
-
-  // Start scanner when in camera mode
-  useEffect(() => {
-    if (scanMode === 'camera' && !showProductForm && !showConsumptionDialog && !isLoading) {
-      const timer = setTimeout(() => startScanner(), 300);
-      return () => {
-        clearTimeout(timer);
-        stopScanner();
-      };
-    } else {
-      stopScanner();
-    }
-  }, [scanMode, showProductForm, showConsumptionDialog, isLoading]);
-
   useEffect(() => {
     if (scanMode === 'manual') {
       inputRef.current?.focus();
     }
+  }, [scanMode]);
+
+  // Reset error when changing mode
+  useEffect(() => {
+    setScanError(null);
   }, [scanMode]);
 
   const handleSearchWithBarcode = async (barcodeValue: string) => {
