@@ -141,11 +141,11 @@ export function Dashboard() {
           />
         </div>
 
-        {/* Grid 2x2 - Ações Rápidas */}
-        <div className="grid grid-cols-2 gap-3">
-          <ExerciseTracker />
-          <LiquidTracker />
-        </div>
+        {/* Exercícios */}
+        <ExerciseTracker />
+
+        {/* Água */}
+        <LiquidTracker />
 
         {/* Peso */}
         <WeightTracker />
