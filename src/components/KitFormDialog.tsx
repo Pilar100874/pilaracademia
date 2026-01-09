@@ -3,10 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Package, Plus, Trash2, Search, Loader2 } from 'lucide-react';
+import { Package, Plus, Trash2, Search, Loader2, Edit2 } from 'lucide-react';
 import { useFoodKits, FoodKit, FoodKitItem } from '@/hooks/useFoodKits';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { DefaultProductImage } from '@/components/DefaultProductImage';
+import { KitItemQuantityDialog } from '@/components/KitItemQuantityDialog';
 import { toast } from 'sonner';
 
 interface KitFormDialogProps {
@@ -34,6 +35,7 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
   const [showProductSearch, setShowProductSearch] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingKit, setIsLoadingKit] = useState(false);
+  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
 
   // Load existing kit data
   useEffect(() => {
@@ -98,10 +100,22 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
     setItems(items.filter((_, i) => i !== index));
   };
 
-  const handleUpdateQuantity = (index: number, quantity: number) => {
+  const handleUpdateQuantity = (index: number, quantity: number, unit: string) => {
     const newItems = [...items];
     newItems[index].quantity = quantity;
+    newItems[index].unit = unit;
     setItems(newItems);
+  };
+
+  const handleEditItemQuantity = (index: number) => {
+    setEditingItemIndex(index);
+  };
+
+  const handleQuantityConfirm = (quantity: number, unit: string) => {
+    if (editingItemIndex !== null) {
+      handleUpdateQuantity(editingItemIndex, quantity, unit);
+      setEditingItemIndex(null);
+    }
   };
 
   const handleSave = async () => {
@@ -197,6 +211,7 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
   }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -313,16 +328,16 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
                           {Math.round(item.product.calories * (item.quantity / (item.product.reference_quantity || 100)))} kcal
                         </p>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => handleUpdateQuantity(index, Number(e.target.value))}
-                          className="w-16 h-8 text-sm text-center"
-                          min={1}
-                        />
-                        <span className="text-xs text-muted-foreground">{item.unit}</span>
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2 gap-1"
+                        onClick={() => handleEditItemQuantity(index)}
+                      >
+                        <span className="font-medium">{item.quantity}</span>
+                        <span className="text-muted-foreground">{item.unit}</span>
+                        <Edit2 className="h-3 w-3 ml-1" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -385,5 +400,17 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
         )}
       </DialogContent>
     </Dialog>
+
+    {/* Quantity edit dialog */}
+    {editingItemIndex !== null && items[editingItemIndex] && (
+      <KitItemQuantityDialog
+        product={items[editingItemIndex].product}
+        currentQuantity={items[editingItemIndex].quantity}
+        open={editingItemIndex !== null}
+        onOpenChange={(open) => !open && setEditingItemIndex(null)}
+        onConfirm={handleQuantityConfirm}
+      />
+    )}
+  </>
   );
 }
