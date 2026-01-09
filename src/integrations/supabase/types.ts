@@ -138,6 +138,7 @@ export type Database = {
           is_liquid: boolean | null
           liquid_ml: number | null
           name: string
+          product_id: string | null
           protein: number
           quantity: number
           saturated_fat: number | null
@@ -160,6 +161,7 @@ export type Database = {
           is_liquid?: boolean | null
           liquid_ml?: number | null
           name: string
+          product_id?: string | null
           protein?: number
           quantity?: number
           saturated_fat?: number | null
@@ -182,6 +184,7 @@ export type Database = {
           is_liquid?: boolean | null
           liquid_ml?: number | null
           name?: string
+          product_id?: string | null
           protein?: number
           quantity?: number
           saturated_fat?: number | null
@@ -192,7 +195,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "food_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "custom_products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       food_kit_items: {
         Row: {
