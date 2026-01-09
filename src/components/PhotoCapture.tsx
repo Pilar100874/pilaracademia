@@ -1,10 +1,13 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Camera, Upload, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { X, Camera, Upload, Loader2, Sparkles, AlertCircle, Package } from 'lucide-react';
 import { NutritionData } from '@/types/nutrition';
 import { NutritionDisplay } from '@/components/NutritionDisplay';
 import { LiquidConsumptionDialog } from '@/components/LiquidConsumptionDialog';
+import { ProductFormDialog } from '@/components/ProductFormDialog';
+import { ProductConsumptionDialog } from '@/components/ProductConsumptionDialog';
+import { CustomProduct } from '@/hooks/useCustomProducts';
 
 import { analyzeFood, fileToBase64, FoodAnalysisResult } from '@/lib/analyzeFood';
 
@@ -20,6 +23,9 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
   const [editedName, setEditedName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showLiquidDialog, setShowLiquidDialog] = useState(false);
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [showConsumptionDialog, setShowConsumptionDialog] = useState(false);
+  const [savedProduct, setSavedProduct] = useState<CustomProduct | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,8 +42,12 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
       setAnalysisResult(result);
       setEditedName(result.name);
       
-      // Se for líquido, mostrar diálogo de consumo
-      if (result.isLiquid) {
+      // Se for produto industrializado, mostrar formulário de cadastro completo
+      if (result.isIndustrialized) {
+        setShowProductForm(true);
+      }
+      // Se for líquido (mas não industrializado), mostrar diálogo de consumo
+      else if (result.isLiquid) {
         setShowLiquidDialog(true);
       }
     } catch (err) {
@@ -64,6 +74,21 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
     setEditedName('');
     setError(null);
     setShowLiquidDialog(false);
+    setShowProductForm(false);
+    setShowConsumptionDialog(false);
+    setSavedProduct(null);
+  };
+
+  const handleProductSaved = (product: CustomProduct) => {
+    setSavedProduct(product);
+    setShowProductForm(false);
+    setShowConsumptionDialog(true);
+  };
+
+  const handleConsumptionSuccess = () => {
+    setShowConsumptionDialog(false);
+    setSavedProduct(null);
+    onClose();
   };
 
   const confidenceColors = {
@@ -156,8 +181,70 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
               />
             )}
 
-            {analysisResult && !isAnalyzing && !showLiquidDialog && (
+            {/* Product Form Dialog for industrialized products */}
+            {analysisResult && !isAnalyzing && showProductForm && (
+              <ProductFormDialog
+                open={showProductForm}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setShowProductForm(false);
+                  }
+                }}
+                initialBarcode={`PHOTO_${Date.now()}`}
+                initialData={{
+                  name: editedName || analysisResult.name,
+                  brand: analysisResult.brand,
+                  imageUrl: imageUrl || undefined,
+                  calories: analysisResult.nutrition.calories,
+                  protein: analysisResult.nutrition.protein,
+                  carbs: analysisResult.nutrition.carbs,
+                  fat: analysisResult.nutrition.fat,
+                  fiber: analysisResult.nutrition.fiber,
+                  sodium: analysisResult.nutrition.sodium,
+                  saturatedFat: analysisResult.nutrition.saturatedFat,
+                  transFat: analysisResult.nutrition.transFat,
+                  isLiquid: analysisResult.isLiquid,
+                  packageWeight: analysisResult.packageWeight,
+                  referenceQuantity: analysisResult.referenceQuantity,
+                }}
+                onProductSaved={handleProductSaved}
+                title="Cadastrar Produto Industrializado"
+              />
+            )}
+
+            {/* Product Consumption Dialog */}
+            {showConsumptionDialog && savedProduct && (
+              <ProductConsumptionDialog
+                product={savedProduct}
+                open={showConsumptionDialog}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setShowConsumptionDialog(false);
+                    setSavedProduct(null);
+                  }
+                }}
+                onSuccess={handleConsumptionSuccess}
+                onBack={() => {
+                  setShowConsumptionDialog(false);
+                  setSavedProduct(null);
+                  setShowProductForm(true);
+                }}
+              />
+            )}
+
+            {analysisResult && !isAnalyzing && !showLiquidDialog && !showProductForm && !showConsumptionDialog && (
               <>
+                {/* Industrialized product indicator */}
+                {analysisResult.isIndustrialized && (
+                  <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 flex items-start gap-2">
+                    <Package className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-600">Produto industrializado detectado</p>
+                      <p className="text-xs text-muted-foreground">Cadastre as informações da embalagem para cálculos precisos</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <span className={`inline-flex items-center rounded-lg px-3 py-1 text-xs font-medium ${confidenceColors[analysisResult.confidence]}`}>
                     Confiança: {analysisResult.confidence}
@@ -176,7 +263,18 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
 
                 <NutritionDisplay nutrition={analysisResult.nutrition} showAll />
 
-                {analysisResult.isLiquid && (
+                {analysisResult.isIndustrialized && (
+                  <Button
+                    variant="default"
+                    className="w-full"
+                    onClick={() => setShowProductForm(true)}
+                  >
+                    <Package className="mr-2 h-4 w-4" />
+                    Cadastrar com dados da embalagem
+                  </Button>
+                )}
+
+                {analysisResult.isLiquid && !analysisResult.isIndustrialized && (
                   <Button
                     variant="outline"
                     className="w-full"
@@ -194,9 +292,11 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
                   <Button variant="outline" className="flex-1" onClick={resetCapture}>
                     Nova Foto
                   </Button>
-                  <Button variant="gradient" className="flex-1" onClick={handleConfirm}>
-                    Confirmar
-                  </Button>
+                  {!analysisResult.isIndustrialized && (
+                    <Button variant="gradient" className="flex-1" onClick={handleConfirm}>
+                      Confirmar
+                    </Button>
+                  )}
                 </div>
               </>
             )}

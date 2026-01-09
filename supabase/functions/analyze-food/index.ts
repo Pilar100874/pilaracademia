@@ -58,7 +58,11 @@ IMPORTANTE: Responda APENAS com um JSON válido no seguinte formato, sem texto a
   "confidence": "alta" | "média" | "baixa",
   "items": ["lista", "de", "ingredientes", "identificados"],
   "isLiquid": true/false se for uma bebida (suco, refrigerante, água, café, chá, leite, vitamina, shake, etc),
-  "volumeMl": volume estimado em ml se for líquido (copo padrão = 250ml, lata = 350ml, garrafa pequena = 500ml)
+  "volumeMl": volume estimado em ml se for líquido (copo padrão = 250ml, lata = 350ml, garrafa pequena = 500ml),
+  "isIndustrialized": true/false se for um produto industrializado (embalado, com código de barras, fabricado em indústria - não comida caseira),
+  "brand": "marca do produto se identificável (ex: Nestlé, Bauducco, etc)",
+  "packageWeight": peso da embalagem em gramas se visível (ex: 100g),
+  "referenceQuantity": quantidade de referência nutricional se visível (geralmente por 100g ou 100ml)
 }
 
 Diretrizes para estimativa:
