@@ -185,10 +185,21 @@ export function Dashboard() {
               <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs opacity-90">
                 <span>🍽️ {Math.round(consumed.calories)}</span>
                 {caloriesBurned > 0 && <span>🏃 -{caloriesBurned}</span>}
-                <span className={`font-semibold flex items-center gap-0.5 ${isDeficit ? 'text-emerald-200' : 'text-amber-200'}`}>
+              </div>
+
+              {/* Projeção de peso */}
+              <div className={`mt-2 p-2 rounded-lg ${isDeficit ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}>
+                <p className="text-xs font-medium flex items-center gap-1">
                   {isDeficit ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
-                  {dailyWeightChange.toFixed(0)}g
-                </span>
+                  {isDeficit ? 'Perda estimada hoje:' : 'Ganho estimado hoje:'}
+                  <span className="font-bold">{Math.abs(dailyWeightChange).toFixed(0)}g</span>
+                </p>
+                <p className="text-[10px] opacity-80 mt-0.5">
+                  {isDeficit 
+                    ? `Déficit de ${Math.abs(Math.round(netCalories - goals.calories))} kcal`
+                    : `Excesso de ${Math.round(netCalories - goals.calories)} kcal`
+                  }
+                </p>
               </div>
 
               <p className="mt-2 text-sm font-semibold">
