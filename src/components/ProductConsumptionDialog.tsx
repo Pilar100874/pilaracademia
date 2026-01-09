@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Droplets, Apple, Calculator, Package, UtensilsCrossed, Check, GlassWater } from 'lucide-react';
+import { Droplets, Apple, Calculator, Package, UtensilsCrossed, Check, GlassWater, ArrowLeft } from 'lucide-react';
 import { CustomProduct } from '@/hooks/useCustomProducts';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ interface ProductConsumptionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  onBack?: () => void;
 }
 
 // Glass size in ml (standard glass)
@@ -37,7 +38,8 @@ export function ProductConsumptionDialog({
   product, 
   open, 
   onOpenChange,
-  onSuccess 
+  onSuccess,
+  onBack
 }: ProductConsumptionDialogProps) {
   const { addEntry } = useFoodEntries();
   const [selectedMl, setSelectedMl] = useState<number | null>(null);
@@ -76,6 +78,9 @@ export function ProductConsumptionDialog({
     
     const weightPerUnit = totalWeight && totalUnits ? totalWeight / totalUnits : null;
     
+    // Base weight for fractions: use total weight if available, otherwise use reference quantity
+    const baseWeight = totalWeight || refQty;
+    
     return {
       isLiquid,
       totalVolume,
@@ -84,6 +89,7 @@ export function ProductConsumptionDialog({
       weightPerUnit,
       refQty,
       refUnit,
+      baseWeight, // This is what fractions should be based on
       hasPackageInfo: isLiquid ? !!totalVolume : (!!totalWeight || !!totalUnits),
     };
   }, [product]);
@@ -119,12 +125,13 @@ export function ProductConsumptionDialog({
       const units = selectedUnitPreset !== null ? selectedUnitPreset : (parseFloat(solidValue) || 0);
       
       if (packageInfo.weightPerUnit) {
+        // If we have weight per unit, calculate based on that
         const grams = units * packageInfo.weightPerUnit;
         const unitLabel = units === 1 ? 'un.' : 'un.';
         return { grams, display: `${units} ${unitLabel} = ${grams.toFixed(0)}g` };
       } else {
-        // No weight per unit, use reference quantity as base
-        const grams = units * packageInfo.refQty;
+        // Use base weight (total weight or reference quantity) for fractions
+        const grams = units * packageInfo.baseWeight;
         const unitLabel = units === 1 ? 'porção' : 'porções';
         return { grams, display: `${units} ${unitLabel} = ${grams.toFixed(0)}g` };
       }
@@ -365,7 +372,7 @@ export function ProductConsumptionDialog({
                     <span className="block text-xs text-muted-foreground">
                       {packageInfo.weightPerUnit 
                         ? `${(preset.value * packageInfo.weightPerUnit).toFixed(0)}g`
-                        : `${(preset.value * packageInfo.refQty).toFixed(0)}g`
+                        : `${(preset.value * packageInfo.baseWeight).toFixed(0)}g`
                       }
                     </span>
                   </button>
@@ -482,15 +489,27 @@ export function ProductConsumptionDialog({
             </div>
           )}
 
-          {/* Submit button */}
-          <Button 
-            className="w-full" 
-            onClick={handleSubmit}
-            disabled={isSubmitting || !canSubmit}
-          >
-            <Check className="h-4 w-4 mr-2" />
-            {isSubmitting ? 'Registrando...' : 'Confirmar Consumo'}
-          </Button>
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            {onBack && (
+              <Button 
+                variant="outline"
+                onClick={onBack}
+                disabled={isSubmitting}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar
+              </Button>
+            )}
+            <Button 
+              className="flex-1" 
+              onClick={handleSubmit}
+              disabled={isSubmitting || !canSubmit}
+            >
+              <Check className="h-4 w-4 mr-2" />
+              {isSubmitting ? 'Registrando...' : 'Confirmar Consumo'}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
