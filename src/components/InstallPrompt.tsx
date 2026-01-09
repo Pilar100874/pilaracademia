@@ -7,8 +7,7 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-const INSTALL_PROMPT_KEY = 'pwa_install_prompt_dismissed';
-const INSTALL_PROMPT_DELAY = 3000; // 3 seconds
+const INSTALL_PROMPT_DELAY = 2000; // 2 seconds
 
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -26,9 +25,8 @@ export function InstallPrompt() {
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(iOS);
 
-    // Check if user already dismissed prompt
-    const dismissed = localStorage.getItem(INSTALL_PROMPT_KEY);
-    if (dismissed || standalone) return;
+    // If already installed, don't show prompt
+    if (standalone) return;
 
     // Listen for beforeinstallprompt event (Android/Chrome)
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -68,7 +66,7 @@ export function InstallPrompt() {
   };
 
   const handleDismiss = () => {
-    localStorage.setItem(INSTALL_PROMPT_KEY, 'true');
+    // Don't persist dismissal - always show on next visit
     setShowPrompt(false);
   };
 
