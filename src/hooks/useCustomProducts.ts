@@ -20,6 +20,7 @@ export interface CustomProduct {
   reference_quantity: number;
   reference_unit: string;
   is_liquid: boolean;
+  is_natural: boolean;
   package_total_weight: number | null;
   package_total_units: number | null;
   package_volume_ml: number | null;
@@ -95,6 +96,7 @@ export function useCustomProducts() {
         reference_quantity: product.reference_quantity,
         reference_unit: product.reference_unit,
         is_liquid: product.is_liquid || false,
+        is_natural: product.is_natural || false,
         package_total_weight: product.package_total_weight,
         package_total_units: product.package_total_units,
         package_volume_ml: product.package_volume_ml,

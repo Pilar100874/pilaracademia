@@ -39,6 +39,8 @@ export function ProductsPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('custom');
   const [selectedNaturalCategory, setSelectedNaturalCategory] = useState<string | null>(null);
   const [consumingProduct, setConsumingProduct] = useState<CustomProduct | null>(null);
+  const [showAddNaturalDialog, setShowAddNaturalDialog] = useState(false);
+  const [formNaturalCategory, setFormNaturalCategory] = useState('frutas');
   
   // Form state (shared for add/edit)
   const [formName, setFormName] = useState('');
@@ -61,8 +63,12 @@ export function ProductsPage() {
   const [formPackageUnits, setFormPackageUnits] = useState('');
   const [formPackageVolume, setFormPackageVolume] = useState('');
 
-  // Filter products by search and type
-  const filteredProducts = products.filter((p) => {
+  // Separate custom products and user-created natural products
+  const customProducts = products.filter(p => !p.is_natural);
+  const userNaturalProducts = products.filter(p => p.is_natural);
+
+  // Filter custom products by search and type
+  const filteredProducts = customProducts.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.barcode.includes(searchTerm) ||
       (p.brand && p.brand.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -77,9 +83,29 @@ export function ProductsPage() {
   const solidProducts = filteredProducts.filter(p => !p.is_liquid);
   const liquidProducts = filteredProducts.filter(p => p.is_liquid);
 
-  // Filter natural products
+  // Filter natural products (static + user-created)
   const filteredNaturalProducts = useMemo(() => {
-    let filtered = NATURAL_PRODUCTS;
+    // Convert user natural products to NaturalProduct format
+    const userNaturals: NaturalProduct[] = userNaturalProducts.map(p => ({
+      id: p.id,
+      name: p.name,
+      category: p.brand || 'outros', // Using brand field for category
+      calories: p.calories,
+      protein: p.protein,
+      carbs: p.carbs,
+      fat: p.fat,
+      fiber: p.fiber || 0,
+      sodium: p.sodium || 0,
+      saturated_fat: p.saturated_fat || 0,
+      trans_fat: p.trans_fat || 0,
+      reference_quantity: p.reference_quantity,
+      reference_unit: p.reference_unit,
+      is_liquid: p.is_liquid,
+      is_natural: true as const,
+      is_user_created: true,
+    }));
+
+    let filtered = [...NATURAL_PRODUCTS, ...userNaturals];
     
     if (selectedNaturalCategory) {
       filtered = filtered.filter(p => p.category === selectedNaturalCategory);
@@ -92,11 +118,11 @@ export function ProductsPage() {
     }
     
     return filtered;
-  }, [searchTerm, selectedNaturalCategory]);
+  }, [searchTerm, selectedNaturalCategory, userNaturalProducts]);
 
   // Group natural products by category
   const naturalProductsByCategory = useMemo(() => {
-    const grouped: Record<string, NaturalProduct[]> = {};
+    const grouped: Record<string, (NaturalProduct & { is_user_created?: boolean })[]> = {};
     filteredNaturalProducts.forEach(p => {
       if (!grouped[p.category]) grouped[p.category] = [];
       grouped[p.category].push(p);
@@ -104,9 +130,67 @@ export function ProductsPage() {
     return grouped;
   }, [filteredNaturalProducts]);
 
-  const handleConsumeNatural = (natural: NaturalProduct) => {
+  const handleConsumeNatural = (natural: NaturalProduct & { is_user_created?: boolean }) => {
+    if (natural.is_user_created) {
+      // Find the original product from user products
+      const userProduct = userNaturalProducts.find(p => p.id === natural.id);
+      if (userProduct) {
+        setConsumingProduct(userProduct);
+        return;
+      }
+    }
     const converted = naturalToCustomProduct(natural);
     setConsumingProduct(converted);
+  };
+
+  const handleOpenAddNatural = () => {
+    resetForm();
+    setFormNaturalCategory('frutas');
+    setShowAddNaturalDialog(true);
+  };
+
+  const handleSaveAddNatural = async () => {
+    if (!formName.trim()) return;
+    
+    const barcode = `NATURAL_${Date.now()}`;
+    
+    try {
+      await saveProduct({
+        barcode,
+        name: formName.trim(),
+        brand: formNaturalCategory, // Store category in brand field
+        image_url: null,
+        calories: Number(formCalories) || 0,
+        protein: Number(formProtein) || 0,
+        carbs: Number(formCarbs) || 0,
+        fat: Number(formFat) || 0,
+        fiber: Number(formFiber) || 0,
+        sodium: Number(formSodium) || 0,
+        saturated_fat: Number(formSaturatedFat) || 0,
+        trans_fat: Number(formTransFat) || 0,
+        reference_quantity: 100,
+        reference_unit: formIsLiquid ? 'ml' : 'g',
+        is_liquid: formIsLiquid,
+        is_natural: true,
+        package_total_weight: null,
+        package_total_units: null,
+        package_volume_ml: null,
+      });
+      setShowAddNaturalDialog(false);
+      resetForm();
+      toast.success('Alimento natural criado!');
+    } catch {
+      toast.error('Erro ao salvar alimento');
+    }
+  };
+
+  const handleDeleteNatural = async (id: string) => {
+    try {
+      await deleteProduct(id);
+      toast.success('Alimento removido');
+    } catch {
+      toast.error('Erro ao remover alimento');
+    }
   };
 
   const resetForm = () => {
@@ -272,6 +356,7 @@ export function ProductsPage() {
         reference_quantity: Number(formRefQuantity) || 100,
         reference_unit: formIsLiquid ? 'ml' : formRefUnit,
         is_liquid: formIsLiquid,
+        is_natural: false,
         package_total_weight: formPackageWeight ? Number(formPackageWeight) : null,
         package_total_units: formPackageUnits ? Number(formPackageUnits) : null,
         package_volume_ml: formPackageVolume ? Number(formPackageVolume) : null,
@@ -679,6 +764,12 @@ export function ProductsPage() {
               Novo
             </Button>
           )}
+          {activeTab === 'natural' && (
+            <Button size="sm" onClick={handleOpenAddNatural}>
+              <Plus className="h-4 w-4 mr-1" />
+              Novo
+            </Button>
+          )}
         </div>
       </header>
 
@@ -835,16 +926,22 @@ export function ProductsPage() {
               <div className="space-y-2">
                 {filteredNaturalProducts.map((natural) => {
                   const categoryInfo = getCategoryInfo(natural.category);
+                  const isUserCreated = 'is_user_created' in natural && natural.is_user_created;
                   return (
                     <div
                       key={natural.id}
                       className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card"
                     >
-                      <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-2xl flex-shrink-0">
+                      <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 ${isUserCreated ? 'bg-amber-500/10' : 'bg-emerald-500/10'}`}>
                         {categoryInfo?.emoji || '🍽️'}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{natural.name}</p>
+                        <div className="flex items-center gap-1">
+                          <p className="font-medium text-sm truncate">{natural.name}</p>
+                          {isUserCreated && (
+                            <span className="text-xs px-1 py-0.5 rounded bg-amber-500/20 text-amber-600">Meu</span>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground truncate">{categoryInfo?.name}</p>
                         <div className="flex flex-wrap gap-1 mt-1">
                           <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600">
@@ -858,14 +955,26 @@ export function ProductsPage() {
                           </span>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="default"
-                        className="h-8 w-8 p-0"
-                        onClick={() => handleConsumeNatural(natural)}
-                      >
-                        <UtensilsCrossed className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleConsumeNatural(natural)}
+                        >
+                          <UtensilsCrossed className="h-4 w-4" />
+                        </Button>
+                        {isUserCreated && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteNatural(natural.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -878,41 +987,61 @@ export function ProductsPage() {
                     <div key={categoryId}>
                       <h2 className="text-sm font-semibold mb-2 flex items-center gap-2">
                         <span>{categoryInfo?.emoji}</span>
-                        {categoryInfo?.name} ({naturals.length})
+                        {categoryInfo?.name || categoryId} ({naturals.length})
                       </h2>
                       <div className="space-y-2">
-                        {naturals.map((natural) => (
-                          <div
-                            key={natural.id}
-                            className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card"
-                          >
-                            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-2xl flex-shrink-0">
-                              {categoryInfo?.emoji || '🍽️'}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{natural.name}</p>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600">
-                                  {natural.calories} kcal
-                                </span>
-                                <span className="text-xs px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
-                                  /100{natural.is_liquid ? 'ml' : 'g'}
-                                </span>
-                                <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600">
-                                  P:{natural.protein}g
-                                </span>
+                        {naturals.map((natural) => {
+                          const isUserCreated = 'is_user_created' in natural && natural.is_user_created;
+                          return (
+                            <div
+                              key={natural.id}
+                              className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card"
+                            >
+                              <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 ${isUserCreated ? 'bg-amber-500/10' : 'bg-emerald-500/10'}`}>
+                                {categoryInfo?.emoji || '🍽️'}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1">
+                                  <p className="font-medium text-sm truncate">{natural.name}</p>
+                                  {isUserCreated && (
+                                    <span className="text-xs px-1 py-0.5 rounded bg-amber-500/20 text-amber-600">Meu</span>
+                                  )}
+                                </div>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600">
+                                    {natural.calories} kcal
+                                  </span>
+                                  <span className="text-xs px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+                                    /100{natural.is_liquid ? 'ml' : 'g'}
+                                  </span>
+                                  <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600">
+                                    P:{natural.protein}g
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => handleConsumeNatural(natural)}
+                                >
+                                  <UtensilsCrossed className="h-4 w-4" />
+                                </Button>
+                                {isUserCreated && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                    onClick={() => handleDeleteNatural(natural.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </div>
                             </div>
-                            <Button
-                              size="sm"
-                              variant="default"
-                              className="h-8 w-8 p-0"
-                              onClick={() => handleConsumeNatural(natural)}
-                            >
-                              <UtensilsCrossed className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -974,6 +1103,99 @@ export function ProductsPage() {
             >
               Cancelar
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para adicionar alimento natural */}
+      <Dialog open={showAddNaturalDialog} onOpenChange={setShowAddNaturalDialog}>
+        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Leaf className="h-5 w-5 text-emerald-500" />
+              Novo Alimento Natural
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Nome *</label>
+              <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Nome do alimento" />
+            </div>
+
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Categoria</label>
+              <div className="flex flex-wrap gap-1.5">
+                {NATURAL_PRODUCT_CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setFormNaturalCategory(cat.id)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                      formNaturalCategory === cat.id 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-secondary hover:bg-secondary/80'
+                    }`}
+                  >
+                    {cat.emoji} {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-sky-500/10">
+              <div className="flex items-center gap-2">
+                <Droplets className="h-4 w-4 text-sky-500" />
+                <Label htmlFor="is-liquid-natural" className="text-sm">Alimento líquido</Label>
+              </div>
+              <Switch 
+                id="is-liquid-natural" 
+                checked={formIsLiquid} 
+                onCheckedChange={setFormIsLiquid} 
+              />
+            </div>
+
+            <div className="border-t pt-4">
+              <p className="text-sm font-medium mb-1">Informações Nutricionais por 100{formIsLiquid ? 'ml' : 'g'}</p>
+              
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Calorias *</label>
+                  <Input type="number" value={formCalories} onChange={(e) => setFormCalories(e.target.value)} placeholder="0" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Proteína (g)</label>
+                  <Input type="number" value={formProtein} onChange={(e) => setFormProtein(e.target.value)} placeholder="0" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Carboidratos (g)</label>
+                  <Input type="number" value={formCarbs} onChange={(e) => setFormCarbs(e.target.value)} placeholder="0" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Gorduras (g)</label>
+                  <Input type="number" value={formFat} onChange={(e) => setFormFat(e.target.value)} placeholder="0" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Fibras (g)</label>
+                  <Input type="number" value={formFiber} onChange={(e) => setFormFiber(e.target.value)} placeholder="0" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Sódio (mg)</label>
+                  <Input type="number" value={formSodium} onChange={(e) => setFormSodium(e.target.value)} placeholder="0" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => {
+                setShowAddNaturalDialog(false);
+                resetForm();
+              }}>
+                Cancelar
+              </Button>
+              <Button className="flex-1" onClick={handleSaveAddNatural}>
+                Criar
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

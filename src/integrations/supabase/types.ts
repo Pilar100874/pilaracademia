@@ -26,6 +26,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_liquid: boolean
+          is_natural: boolean
           name: string
           package_total_units: number | null
           package_total_weight: number | null
@@ -50,6 +51,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_liquid?: boolean
+          is_natural?: boolean
           name: string
           package_total_units?: number | null
           package_total_weight?: number | null
@@ -74,6 +76,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_liquid?: boolean
+          is_natural?: boolean
           name?: string
           package_total_units?: number | null
           package_total_weight?: number | null
