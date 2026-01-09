@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Apple, Loader2, TrendingDown, TrendingUp, Droplets, ArrowDownUp, Clock, Layers, Trash2, Pencil } from 'lucide-react';
+import { Flame, Apple, Loader2, TrendingDown, TrendingUp, Droplets, ArrowDownUp, Clock, Layers, Trash2, Pencil, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProgressRing } from '@/components/ProgressRing';
 import { FoodEntryItemDB } from '@/components/FoodEntryItemDB';
@@ -22,6 +22,10 @@ import { useExerciseEntries } from '@/hooks/useExerciseEntries';
 import { useProfile } from '@/hooks/useProfile';
 import { BarcodeProduct, NutritionData } from '@/types/nutrition';
 import { FoodEntryDB } from '@/types/profile';
+import { format, addDays, subDays, isToday, isSameDay, startOfDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -37,10 +41,15 @@ interface LiquidEntryData {
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { entries, isLoading, addEntry, updateEntry, deleteEntry, getTodaySummary, refetch: refetchFood } = useFoodEntries();
-  const { entries: liquidEntriesData, addLiquidEntry, updateLiquidEntry, deleteLiquidEntry, getTodayTotal, refetch: refetchLiquids, liquidTypes } = useLiquidEntries();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  
+  const isViewingToday = isToday(selectedDate);
+  
+  const { entries, isLoading, addEntry, updateEntry, deleteEntry, getTodaySummary, refetch: refetchFood } = useFoodEntries(selectedDate);
+  const { entries: liquidEntriesData, addLiquidEntry, updateLiquidEntry, deleteLiquidEntry, getTodayTotal, refetch: refetchLiquids, liquidTypes } = useLiquidEntries(selectedDate);
   const { profile, getGoals, isProfileComplete } = useProfile();
-  const { getTodayTotalBurned } = useExerciseEntries();
+  const { getTodayTotalBurned } = useExerciseEntries(selectedDate);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [sortType, setSortType] = useState<SortType>('type');
   const [editingLiquid, setEditingLiquid] = useState<LiquidEntryData | null>(null);
@@ -63,7 +72,17 @@ export function Dashboard() {
   const dailyWeightChange = ((netCalories - goals.calories) / 7700 * 1000);
   const isDeficit = dailyWeightChange < 0;
 
-  const today = new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
+  const formattedDate = format(selectedDate, "EEEE, d 'de' MMM", { locale: ptBR });
+  
+  const goToPreviousDay = () => setSelectedDate(prev => subDays(prev, 1));
+  const goToNextDay = () => {
+    const nextDay = addDays(selectedDate, 1);
+    // Don't allow going to future
+    if (!isToday(selectedDate)) {
+      setSelectedDate(nextDay);
+    }
+  };
+  const goToToday = () => setSelectedDate(new Date());
 
   const handlePhotoAnalyzed = async (name: string, nutrition: NutritionData, imageUrl: string, isLiquid?: boolean, liquidMl?: number) => {
     try {
@@ -150,22 +169,94 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen gradient-hero pb-28">
-      {/* Header compacto */}
+      {/* Header com navegação de data */}
       <header className="sticky top-0 z-30 glass border-b border-border/50 px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold">Olá, {profile?.name?.split(' ')[0] || 'Usuário'} 👋</h1>
-            <p className="text-xs text-muted-foreground capitalize">{today}</p>
           </div>
         </div>
+        
+        {/* Date navigation */}
+        <div className="flex items-center justify-between mt-2">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousDay}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" className="text-sm font-medium capitalize gap-1.5 h-8 px-2">
+                <Calendar className="h-3.5 w-3.5" />
+                {isViewingToday ? 'Hoje' : formattedDate}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  if (date) {
+                    setSelectedDate(date);
+                    setCalendarOpen(false);
+                  }
+                }}
+                disabled={(date) => date > new Date()}
+                initialFocus
+              />
+              {!isViewingToday && (
+                <div className="p-2 border-t">
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => { goToToday(); setCalendarOpen(false); }}>
+                    Voltar para hoje
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8" 
+            onClick={goToNextDay}
+            disabled={isViewingToday}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        {!isViewingToday && (
+          <div className="mt-2 flex items-center justify-center">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs h-7 gap-1"
+              onClick={goToToday}
+            >
+              <Calendar className="h-3 w-3" />
+              Voltar para hoje
+            </Button>
+          </div>
+        )}
       </header>
 
       <div className="px-4 space-y-3 pt-4">
         {/* Alerta perfil incompleto */}
-        {!isProfileComplete() && (
+        {!isProfileComplete() && isViewingToday && (
           <button onClick={() => navigate('/profile')} className="w-full rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-left animate-fade-in">
             <p className="text-sm font-medium text-amber-600">⚠️ Complete seu perfil</p>
           </button>
+        )}
+        
+        {/* Aviso de data passada */}
+        {!isViewingToday && (
+          <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-center">
+            <p className="text-sm font-medium text-amber-600">
+              📅 Visualizando {format(selectedDate, "d 'de' MMMM", { locale: ptBR })}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Você pode adicionar ou editar entradas para este dia
+            </p>
+          </div>
         )}
 
         {/* Card Principal - Calorias */}
@@ -174,7 +265,9 @@ export function Dashboard() {
             <div className="flex-1">
               <div className="flex items-center gap-1.5 opacity-90">
                 <Flame className="h-4 w-4" />
-                <span className="text-xs font-medium">Balanço do dia</span>
+                <span className="text-xs font-medium">
+                  Balanço {isViewingToday ? 'do dia' : 'deste dia'}
+                </span>
               </div>
               <div className="mt-1 flex items-baseline gap-1">
                 <span className="text-3xl num-display">{Math.round(netCalories)}</span>
@@ -270,7 +363,7 @@ export function Dashboard() {
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-semibold flex items-center gap-2">
             <Apple className="h-4 w-4 text-primary" />
-            Consumo do dia
+            {isViewingToday ? 'Consumo do dia' : 'Consumo deste dia'}
           </h2>
           <Button
             variant="ghost"
@@ -294,7 +387,9 @@ export function Dashboard() {
 
         {entries.length === 0 ? (
           <div className="card-compact text-center py-6">
-            <p className="text-sm text-muted-foreground">Nenhum registro hoje</p>
+            <p className="text-sm text-muted-foreground">
+              {isViewingToday ? 'Nenhum registro hoje' : 'Nenhum registro neste dia'}
+            </p>
           </div>
         ) : sortType === 'type' ? (
           <div className="space-y-4">
