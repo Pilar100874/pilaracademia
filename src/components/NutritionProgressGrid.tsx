@@ -27,8 +27,9 @@ function NutrientBar({ label, value, goal, unit, color, isLimit }: NutrientBarPr
       <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
         <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${Math.min(pct, 100)}%` }} />
       </div>
-      <div className={`w-14 text-right text-xs num-display ${isLimit && isOver ? 'text-rose-500' : ''}`}>
-        {Math.round(value)}{unit}
+      <div className={`w-20 text-right text-xs num-display ${isLimit && isOver ? 'text-rose-500' : ''}`}>
+        <span>{Math.round(value)}</span>
+        <span className="text-muted-foreground">/{goal}{unit}</span>
       </div>
     </div>
   );
