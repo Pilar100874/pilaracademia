@@ -52,6 +52,9 @@ export function useProfile() {
       const dailyCalories = calculateDailyCalories(tdee, goal);
       const nutrients = calculateAllNutrients(dailyCalories, goal);
 
+      // Cálculo de líquidos: 35ml por kg de peso corporal (regra padrão)
+      const dailyLiquidMl = Math.round(weightKg * 35);
+
       nutritionUpdates = {
         daily_calories: dailyCalories,
         daily_protein: nutrients.protein,
@@ -61,6 +64,7 @@ export function useProfile() {
         daily_trans_fat: nutrients.transFat,
         daily_fiber: nutrients.fiber,
         daily_sodium: nutrients.sodium,
+        daily_liquid_ml: dailyLiquidMl,
       };
     }
 
