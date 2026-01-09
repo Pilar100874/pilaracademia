@@ -292,25 +292,36 @@ export function Dashboard() {
                 <div className="space-y-2">
                   {/* Liquid entries from liquid_entries table */}
                   {liquidEntriesData.slice(0, 5).map((entry) => (
-                    <div key={`liquid-${entry.id}`} className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10">
-                        <Droplets className="h-5 w-5 text-sky-500" />
+                    <div key={`liquid-${entry.id}`} className="group flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card transition-all duration-200 hover:shadow-soft animate-scale-in overflow-hidden">
+                      <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-sky-500/10">
+                        <Droplets className="h-6 w-6 text-sky-500" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">{liquidTypes[entry.type as keyof typeof liquidTypes] || entry.type}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(entry.consumed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        <h4 className="font-medium truncate text-sm">{liquidTypes[entry.type as keyof typeof liquidTypes] || entry.type}</h4>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(entry.consumed_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às {new Date(entry.consumed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </p>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          <span className="inline-flex items-center rounded-md bg-sky-500/10 px-1.5 py-0.5 text-xs font-medium text-sky-600">
+                            <Droplets className="h-3 w-3 mr-0.5" />
+                            {entry.amount_ml}ml
+                          </span>
+                          <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
+                            0 kcal
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-sky-500">{entry.amount_ml}ml</p>
+                      <div className="flex flex-col gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          onClick={() => deleteLiquidEntry(entry.id).then(() => refetchLiquids())}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
-                      <button 
-                        onClick={() => deleteLiquidEntry(entry.id).then(() => refetchLiquids())}
-                        className="p-1 text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
                     </div>
                   ))}
                   
