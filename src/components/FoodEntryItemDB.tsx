@@ -3,7 +3,7 @@ import { FoodEntryDB } from '@/types/profile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Camera, Barcode, Edit3, Trash2, Pencil, Check, Clock, Minus, Plus, Droplets, Apple, GlassWater, Calculator } from 'lucide-react';
+import { Camera, Barcode, Edit3, Trash2, Pencil, Check, Clock, Minus, Plus, Droplets, Apple, GlassWater, Calculator, UtensilsCrossed } from 'lucide-react';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { WATER_IMAGE_URL } from '@/components/DefaultLiquidImage';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
@@ -50,11 +50,9 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
   const [customValue, setCustomValue] = useState('');
   const [unitsCount, setUnitsCount] = useState(1);
   
-  // Get image URL for entry
+  // Get image URL for entry (returns null if no image, let UI show icon)
   const getEntryImageUrl = () => {
-    if (entry.image_url) return entry.image_url;
-    if (entry.is_liquid) return WATER_IMAGE_URL;
-    return null;
+    return entry.image_url || null;
   };
   
   // Determine if entry is liquid
@@ -288,8 +286,10 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
               alt={entry.name}
               className="h-full w-full object-cover"
             />
+          ) : isLiquid ? (
+            <Droplets className="h-5 w-5 text-sky-500" />
           ) : (
-            <Icon className="h-5 w-5 text-muted-foreground" />
+            <UtensilsCrossed className="h-5 w-5 text-primary" />
           )}
         </button>
 
@@ -377,7 +377,7 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
                   {isLiquid ? (
                     <Droplets className="h-7 w-7 text-sky-500" />
                   ) : (
-                    <Apple className="h-7 w-7 text-muted-foreground" />
+                    <UtensilsCrossed className="h-7 w-7 text-primary" />
                   )}
                 </div>
               )}

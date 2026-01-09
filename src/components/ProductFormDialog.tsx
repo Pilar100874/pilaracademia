@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Package, Droplets, Image, Upload, Loader2, ScanLine, Check } from 'lucide-react';
+import { Package, Droplets, Image, Upload, Loader2, ScanLine, Check, UtensilsCrossed } from 'lucide-react';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -253,7 +253,7 @@ export function ProductFormDialog({
     }
   };
 
-  const displayImageUrl = imagePreview || formImageUrl || (formIsLiquid ? WATER_IMAGE_URL : null);
+  const displayImageUrl = imagePreview || formImageUrl;
 
   if (showBarcodeScanner) {
     return (
@@ -298,8 +298,10 @@ export function ProductFormDialog({
                 <Loader2 className="h-6 w-6 text-primary animate-spin" />
               ) : displayImageUrl ? (
                 <img src={displayImageUrl} alt="Preview" className="h-full w-full object-cover" />
+              ) : formIsLiquid ? (
+                <Droplets className="h-6 w-6 text-sky-500" />
               ) : (
-                <Image className="h-6 w-6 text-muted-foreground" />
+                <UtensilsCrossed className="h-6 w-6 text-primary" />
               )}
             </button>
             <div className="flex-1">
