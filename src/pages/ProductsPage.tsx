@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BottomNav } from '@/components/BottomNav';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
-import { toast } from 'sonner';
+
 import { useNavigate } from 'react-router-dom';
 
 export function ProductsPage() {
@@ -61,19 +61,17 @@ export function ProductsPage() {
         saturated_fat: Number(editSaturatedFat) || 0,
         trans_fat: Number(editTransFat) || 0,
       });
-      toast.success('Produto atualizado');
       setEditingProduct(null);
     } catch {
-      toast.error('Erro ao atualizar');
+      // silently fail
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteProduct(id);
-      toast.success('Produto removido');
     } catch {
-      toast.error('Erro ao remover');
+      // silently fail
     }
   };
 

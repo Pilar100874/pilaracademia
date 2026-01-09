@@ -5,7 +5,7 @@ import { X, Camera, Upload, Loader2, Sparkles, AlertCircle } from 'lucide-react'
 import { NutritionData } from '@/types/nutrition';
 import { NutritionDisplay } from '@/components/NutritionDisplay';
 import { LiquidConsumptionDialog } from '@/components/LiquidConsumptionDialog';
-import { toast } from 'sonner';
+
 import { analyzeFood, fileToBase64, FoodAnalysisResult } from '@/lib/analyzeFood';
 
 interface PhotoCaptureProps {
@@ -40,12 +40,9 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
       if (result.isLiquid) {
         setShowLiquidDialog(true);
       }
-      
-      toast.success('Análise concluída!');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao analisar imagem';
       setError(message);
-      toast.error(message);
     } finally {
       setIsAnalyzing(false);
     }

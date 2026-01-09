@@ -7,7 +7,7 @@ import { NutritionDisplay } from '@/components/NutritionDisplay';
 import { LiquidConsumptionDialog } from '@/components/LiquidConsumptionDialog';
 import { fetchProductByBarcode, calculateNutritionForPortion, isLiquidProduct, getLiquidVolumeMl } from '@/lib/openFoodFacts';
 import { useCustomProducts } from '@/hooks/useCustomProducts';
-import { toast } from 'sonner';
+
 
 interface BarcodeScannerProps {
   onProductFound: (product: BarcodeProduct, portionGrams: number, isLiquid?: boolean, liquidMl?: number) => void;
@@ -117,7 +117,6 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
         setIsCustomProduct(true);
         setPackageWeight(customProduct.reference_quantity.toString());
         setShowPackageInfo(true);
-        toast.success('Produto encontrado (salvo)!', { icon: '⭐' });
       } else {
         const result = await fetchProductByBarcode(barcode.trim());
         if (result) {
@@ -139,14 +138,10 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
             setLiquidVolumeMl(volumeMl);
             setShowLiquidDialog(true);
           }
-          
-          toast.success('Produto encontrado!');
-        } else {
-          toast.error('Produto não encontrado');
         }
       }
     } catch {
-      toast.error('Erro ao buscar produto');
+      // silently fail
     } finally {
       setIsLoading(false);
     }
@@ -156,14 +151,8 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     if (!product || !calculatedNutrition) return;
     
     // Validate package info
-    if (!packageWeight || Number(packageWeight) <= 0) {
-      toast.error('Informe o peso da embalagem');
-      return;
-    }
-    if (!itemsInPackage || Number(itemsInPackage) <= 0) {
-      toast.error('Informe a quantidade de itens');
-      return;
-    }
+    if (!packageWeight || Number(packageWeight) <= 0) return;
+    if (!itemsInPackage || Number(itemsInPackage) <= 0) return;
     
     if (saveForFuture && !isCustomProduct) {
       try {
@@ -183,10 +172,8 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           reference_quantity: Number(packageWeight),
           reference_unit: 'g',
         });
-        toast.success('Produto salvo para próximas vezes!', { icon: '⭐' });
       } catch (err) {
         console.error('Erro ao salvar produto:', err);
-        toast.error('Erro ao salvar produto');
       }
     }
     
@@ -221,7 +208,6 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           reference_quantity: 100,
           reference_unit: 'ml',
         });
-        toast.success('Produto salvo!', { icon: '⭐' });
       } catch (err) {
         console.error('Erro ao salvar produto:', err);
       }

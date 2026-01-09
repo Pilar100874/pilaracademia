@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Search, Package, Plus, Minus } from 'lucide-react';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
-import { toast } from 'sonner';
+
 
 interface ProductSearchProps {
   isOpen: boolean;
@@ -60,11 +60,9 @@ export function ProductSearch({ isOpen, onClose }: ProductSearchProps) {
         imageUrl: selectedProduct.image_url || undefined,
       });
 
-      toast.success(`${selectedProduct.name} adicionado!`);
       onClose();
     } catch (error) {
       console.error('Erro ao adicionar:', error);
-      toast.error('Erro ao adicionar alimento');
     }
   };
 

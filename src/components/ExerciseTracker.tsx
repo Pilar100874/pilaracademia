@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Flame, Plus, Dumbbell, Trash2, ChevronDown, Pencil, Check, Clock } from 'lucide-react';
 import { useExerciseEntries, EXERCISE_TYPES, calculateCaloriesBurned, ExerciseEntry } from '@/hooks/useExerciseEntries';
 import { useProfile } from '@/hooks/useProfile';
-import { toast } from 'sonner';
+
 import { format } from 'date-fns';
 
 export function ExerciseTracker() {
@@ -31,25 +31,23 @@ export function ExerciseTracker() {
   const handleSubmit = async () => {
     if (mode === 'manual') {
       const cal = parseInt(manualCalories) || 0;
-      if (cal <= 0) { toast.error('Informe as calorias'); return; }
+      if (cal <= 0) return;
       try {
         await addExerciseEntry({ name: 'Exercício', duration_minutes: 0, calories_burned: cal, exercise_type: 'other' });
-        toast.success(`🔥 -${cal} kcal`);
         setShowForm(false);
         setManualCalories('');
-      } catch { toast.error('Erro'); }
+      } catch { /* silently fail */ }
       return;
     }
 
     const dur = parseInt(duration) || 0;
-    if (dur <= 0) { toast.error('Informe a duração'); return; }
+    if (dur <= 0) return;
     try {
       const exercise = EXERCISE_TYPES[exerciseType];
       await addExerciseEntry({ name: exercise.name, duration_minutes: dur, calories_burned: calculatedCalories, exercise_type: exerciseType });
-      toast.success(`${exercise.icon} -${calculatedCalories} kcal`);
       setShowForm(false);
       setDuration('30');
-    } catch { toast.error('Erro'); }
+    } catch { /* silently fail */ }
   };
 
   const handleEdit = (entry: ExerciseEntry) => {
@@ -61,22 +59,20 @@ export function ExerciseTracker() {
   const handleSaveEdit = async () => {
     if (!editingEntry) return;
     const calories = parseInt(editCalories);
-    if (calories <= 0) { toast.error('Valor inválido'); return; }
+    if (calories <= 0) return;
     try {
       await updateExerciseEntry(editingEntry.id, { 
         calories_burned: calories,
         name: editName || editingEntry.name
       });
-      toast.success('Atualizado');
       setEditingEntry(null);
-    } catch { toast.error('Erro ao atualizar'); }
+    } catch { /* silently fail */ }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteExerciseEntry(id);
-      toast.success('Removido');
-    } catch { toast.error('Erro ao remover'); }
+    } catch { /* silently fail */ }
   };
 
   return (
