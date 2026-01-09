@@ -37,10 +37,10 @@ export function AuthPage() {
         <div className="text-center mb-8 animate-slide-up">
           <img 
             src="/pwa-512x512.png" 
-            alt="Pilar Logo" 
-            className="h-20 w-20 mx-auto mb-4"
+            alt="Pilar Calorias Logo" 
+            className="h-24 w-24 mx-auto mb-4 rounded-2xl"
           />
-          <h1 className="text-3xl font-bold">Pilar</h1>
+          <h1 className="text-3xl font-bold">Pilar Calorias</h1>
           <p className="text-muted-foreground mt-2">
             Controle Calórico Inteligente
           </p>
