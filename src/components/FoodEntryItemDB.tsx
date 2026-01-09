@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { FoodEntryDB } from '@/types/profile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Camera, Barcode, Edit3, Trash2, Pencil, X, Check, Clock } from 'lucide-react';
+import { Camera, Barcode, Edit3, Trash2, Pencil, X, Check, Clock, Minus, Plus } from 'lucide-react';
 
 interface FoodEntryItemDBProps {
   entry: FoodEntryDB;
@@ -17,20 +17,53 @@ const sourceIcons = {
   manual: Edit3,
 };
 
+// Porções predefinidas
+const PORTION_OPTIONS = [
+  { label: '1/4', value: 0.25 },
+  { label: '1/3', value: 0.33 },
+  { label: '1/2', value: 0.5 },
+  { label: '2/3', value: 0.67 },
+  { label: '3/4', value: 0.75 },
+  { label: '1', value: 1 },
+  { label: '1.5', value: 1.5 },
+  { label: '2', value: 2 },
+];
+
 export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(entry.name);
-  const [editCalories, setEditCalories] = useState(entry.calories.toString());
-  const [editProtein, setEditProtein] = useState(entry.protein.toString());
-  const [editCarbs, setEditCarbs] = useState(entry.carbs.toString());
-  const [editFat, setEditFat] = useState(entry.fat.toString());
-  const [editFiber, setEditFiber] = useState((entry.fiber || 0).toString());
-  const [editSodium, setEditSodium] = useState((entry.sodium || 0).toString());
-  const [editSaturatedFat, setEditSaturatedFat] = useState((entry.saturated_fat || 0).toString());
-  const [editTransFat, setEditTransFat] = useState((entry.trans_fat || 0).toString());
   const [editTime, setEditTime] = useState(
     new Date(entry.consumed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', ':')
   );
+  
+  // Porção como multiplicador (1 = quantidade original)
+  const [portionMultiplier, setPortionMultiplier] = useState(1);
+  
+  // Valores originais (base para cálculos)
+  const originalValues = useMemo(() => ({
+    calories: entry.calories,
+    protein: entry.protein,
+    carbs: entry.carbs,
+    fat: entry.fat,
+    fiber: entry.fiber || 0,
+    sodium: entry.sodium || 0,
+    saturated_fat: entry.saturated_fat || 0,
+    trans_fat: entry.trans_fat || 0,
+    quantity: entry.quantity,
+  }), [entry]);
+
+  // Valores calculados baseados na porção
+  const calculatedValues = useMemo(() => ({
+    calories: Math.round(originalValues.calories * portionMultiplier),
+    protein: Number((originalValues.protein * portionMultiplier).toFixed(1)),
+    carbs: Number((originalValues.carbs * portionMultiplier).toFixed(1)),
+    fat: Number((originalValues.fat * portionMultiplier).toFixed(1)),
+    fiber: Number((originalValues.fiber * portionMultiplier).toFixed(1)),
+    sodium: Math.round(originalValues.sodium * portionMultiplier),
+    saturated_fat: Number((originalValues.saturated_fat * portionMultiplier).toFixed(1)),
+    trans_fat: Number((originalValues.trans_fat * portionMultiplier).toFixed(1)),
+    quantity: Number((originalValues.quantity * portionMultiplier).toFixed(1)),
+  }), [originalValues, portionMultiplier]);
 
   const Icon = sourceIcons[entry.source];
   const consumedDate = new Date(entry.consumed_at);
@@ -52,14 +85,15 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
       
       onUpdate(entry.id, {
         name: editName,
-        calories: Number(editCalories),
-        protein: Number(editProtein),
-        carbs: Number(editCarbs),
-        fat: Number(editFat),
-        fiber: Number(editFiber),
-        sodium: Number(editSodium),
-        saturated_fat: Number(editSaturatedFat),
-        trans_fat: Number(editTransFat),
+        calories: calculatedValues.calories,
+        protein: calculatedValues.protein,
+        carbs: calculatedValues.carbs,
+        fat: calculatedValues.fat,
+        fiber: calculatedValues.fiber,
+        sodium: calculatedValues.sodium,
+        saturated_fat: calculatedValues.saturated_fat,
+        trans_fat: calculatedValues.trans_fat,
+        quantity: calculatedValues.quantity,
         consumed_at: originalDate.toISOString(),
       });
     }
@@ -68,16 +102,19 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
 
   const handleCancel = () => {
     setEditName(entry.name);
-    setEditCalories(entry.calories.toString());
-    setEditProtein(entry.protein.toString());
-    setEditCarbs(entry.carbs.toString());
-    setEditFat(entry.fat.toString());
-    setEditFiber((entry.fiber || 0).toString());
-    setEditSodium((entry.sodium || 0).toString());
-    setEditSaturatedFat((entry.saturated_fat || 0).toString());
-    setEditTransFat((entry.trans_fat || 0).toString());
     setEditTime(new Date(entry.consumed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+    setPortionMultiplier(1);
     setIsEditing(false);
+  };
+
+  const handleOpenEdit = () => {
+    setPortionMultiplier(1);
+    setIsEditing(true);
+  };
+
+  const getPortionLabel = () => {
+    const option = PORTION_OPTIONS.find(o => Math.abs(o.value - portionMultiplier) < 0.01);
+    return option ? option.label : portionMultiplier.toFixed(2);
   };
 
   return (
@@ -128,7 +165,7 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-muted-foreground hover:text-primary"
-              onClick={() => setIsEditing(true)}
+              onClick={handleOpenEdit}
             >
               <Pencil className="h-3.5 w-3.5" />
             </Button>
@@ -182,86 +219,104 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
               </div>
             </div>
 
+            {/* Seletor de porção */}
+            <div className="border-t pt-4">
+              <label className="text-sm font-medium mb-2 block">Quanto foi consumido?</label>
+              
+              {/* Porção atual e quantidade */}
+              <div className="flex items-center justify-between mb-3 p-3 rounded-lg bg-accent/30">
+                <div>
+                  <span className="text-2xl font-bold">{getPortionLabel()}</span>
+                  <span className="text-sm text-muted-foreground ml-2">porção</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-semibold">{calculatedValues.quantity}</span>
+                  <span className="text-sm text-muted-foreground ml-1">{entry.unit}</span>
+                </div>
+              </div>
+
+              {/* Botões de porção rápida */}
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {PORTION_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setPortionMultiplier(option.value)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      Math.abs(portionMultiplier - option.value) < 0.01
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary hover:bg-secondary/80'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Ajuste fino */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setPortionMultiplier(Math.max(0.1, portionMultiplier - 0.1))}
+                  disabled={portionMultiplier <= 0.1}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <div className="flex-1">
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0.1"
+                    value={portionMultiplier}
+                    onChange={(e) => setPortionMultiplier(Math.max(0.1, Number(e.target.value)))}
+                    className="text-center"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setPortionMultiplier(portionMultiplier + 0.1)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Valores nutricionais calculados */}
             <div className="border-t pt-4">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium">Informações Nutricionais</p>
-                <span className="text-xs px-2 py-1 rounded-full bg-secondary text-muted-foreground">
-                  {entry.quantity} {entry.unit}
-                </span>
+                <p className="text-sm font-medium">Valores Nutricionais</p>
+                {portionMultiplier !== 1 && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                    Recalculado
+                  </span>
+                )}
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Calorias (kcal)</label>
-                  <Input
-                    type="number"
-                    value={editCalories}
-                    onChange={(e) => setEditCalories(e.target.value)}
-                    placeholder="kcal"
-                  />
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="flex justify-between p-2 rounded-lg bg-muted/50">
+                  <span className="text-muted-foreground">Calorias</span>
+                  <span className="font-medium">{calculatedValues.calories} kcal</span>
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Proteína (g)</label>
-                  <Input
-                    type="number"
-                    value={editProtein}
-                    onChange={(e) => setEditProtein(e.target.value)}
-                    placeholder="g"
-                  />
+                <div className="flex justify-between p-2 rounded-lg bg-muted/50">
+                  <span className="text-muted-foreground">Proteína</span>
+                  <span className="font-medium">{calculatedValues.protein}g</span>
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Carboidratos (g)</label>
-                  <Input
-                    type="number"
-                    value={editCarbs}
-                    onChange={(e) => setEditCarbs(e.target.value)}
-                    placeholder="g"
-                  />
+                <div className="flex justify-between p-2 rounded-lg bg-muted/50">
+                  <span className="text-muted-foreground">Carboidratos</span>
+                  <span className="font-medium">{calculatedValues.carbs}g</span>
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Gorduras (g)</label>
-                  <Input
-                    type="number"
-                    value={editFat}
-                    onChange={(e) => setEditFat(e.target.value)}
-                    placeholder="g"
-                  />
+                <div className="flex justify-between p-2 rounded-lg bg-muted/50">
+                  <span className="text-muted-foreground">Gorduras</span>
+                  <span className="font-medium">{calculatedValues.fat}g</span>
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Fibras (g)</label>
-                  <Input
-                    type="number"
-                    value={editFiber}
-                    onChange={(e) => setEditFiber(e.target.value)}
-                    placeholder="g"
-                  />
+                <div className="flex justify-between p-2 rounded-lg bg-muted/50">
+                  <span className="text-muted-foreground">Fibras</span>
+                  <span className="font-medium">{calculatedValues.fiber}g</span>
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Sódio (mg)</label>
-                  <Input
-                    type="number"
-                    value={editSodium}
-                    onChange={(e) => setEditSodium(e.target.value)}
-                    placeholder="mg"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">G. Saturada (g)</label>
-                  <Input
-                    type="number"
-                    value={editSaturatedFat}
-                    onChange={(e) => setEditSaturatedFat(e.target.value)}
-                    placeholder="g"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">G. Trans (g)</label>
-                  <Input
-                    type="number"
-                    value={editTransFat}
-                    onChange={(e) => setEditTransFat(e.target.value)}
-                    placeholder="g"
-                  />
+                <div className="flex justify-between p-2 rounded-lg bg-muted/50">
+                  <span className="text-muted-foreground">Sódio</span>
+                  <span className="font-medium">{calculatedValues.sodium}mg</span>
                 </div>
               </div>
             </div>
