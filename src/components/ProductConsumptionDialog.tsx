@@ -26,14 +26,11 @@ const LIQUID_PORTIONS = [
   { label: '2 copos', value: GLASS_SIZE * 2, icon: '🥛' },
 ];
 
-// Solid portion presets (fractions and multiples)
+// Solid portion presets (fractions only)
 const SOLID_UNIT_PRESETS = [
-  { label: '¼', value: 0.25, icon: '🍕' },
-  { label: '½', value: 0.5, icon: '🍕' },
-  { label: '1', value: 1, icon: '🍽️' },
-  { label: '2', value: 2, icon: '🍽️' },
-  { label: '3', value: 3, icon: '🍽️' },
-  { label: '4', value: 4, icon: '🍽️' },
+  { label: '1/4', value: 0.25 },
+  { label: '1/3', value: 0.33 },
+  { label: '1/2', value: 0.5 },
 ];
 
 export function ProductConsumptionDialog({ 
@@ -348,7 +345,7 @@ export function ProductConsumptionDialog({
             <div className="space-y-3">
               <Label className="text-sm font-medium">Quanto você consumiu?</Label>
               
-              {/* Unit presets grid */}
+              {/* Fraction presets */}
               <div className="grid grid-cols-3 gap-2">
                 {SOLID_UNIT_PRESETS.map((preset) => (
                   <button
@@ -358,14 +355,13 @@ export function ProductConsumptionDialog({
                       setSelectedUnitPreset(preset.value);
                       setSolidValue('');
                     }}
-                    className={`p-3 rounded-lg text-sm font-medium transition-all border-2 ${
+                    className={`p-3 rounded-lg text-center font-medium transition-all border-2 ${
                       solidMode === 'units' && selectedUnitPreset === preset.value
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-muted bg-secondary/50 hover:border-primary/50'
                     }`}
                   >
-                    <span className="text-lg mr-1">{preset.icon}</span>
-                    {preset.label}
+                    <span className="text-lg">{preset.label}</span>
                     <span className="block text-xs text-muted-foreground">
                       {packageInfo.weightPerUnit 
                         ? `${(preset.value * packageInfo.weightPerUnit).toFixed(0)}g`
@@ -379,27 +375,26 @@ export function ProductConsumptionDialog({
               {/* Additional options */}
               <div className="space-y-2">
                 {/* All option */}
-                {packageInfo.hasPackageInfo && packageInfo.totalWeight && (
-                  <button
-                    onClick={() => {
-                      setSolidMode('all');
-                      setSolidValue('');
-                      setSelectedUnitPreset(null);
-                    }}
-                    className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
-                      solidMode === 'all'
-                        ? 'border-primary bg-primary/10'
-                        : 'border-muted bg-secondary/50 hover:border-primary/50'
-                    }`}
-                  >
-                    <span className="text-lg mr-2">📦</span>
-                    <span className="text-sm font-medium">Tudo</span>
-                    <p className="text-xs text-muted-foreground ml-7">
-                      {packageInfo.totalWeight}g
-                      {packageInfo.totalUnits && ` (${packageInfo.totalUnits} unidades)`}
-                    </p>
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    setSolidMode('all');
+                    setSolidValue('');
+                    setSelectedUnitPreset(null);
+                  }}
+                  className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
+                    solidMode === 'all'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-muted bg-secondary/50 hover:border-primary/50'
+                  }`}
+                >
+                  <span className="text-sm font-medium">Tudo</span>
+                  <p className="text-xs text-muted-foreground">
+                    {packageInfo.totalWeight 
+                      ? `${packageInfo.totalWeight}g${packageInfo.totalUnits ? ` (${packageInfo.totalUnits} unidades)` : ''}`
+                      : `${packageInfo.refQty}${packageInfo.refUnit}`
+                    }
+                  </p>
+                </button>
                 
                 {/* Custom units option */}
                 <button
@@ -414,9 +409,8 @@ export function ProductConsumptionDialog({
                       : 'border-muted bg-secondary/50 hover:border-primary/50'
                   }`}
                 >
-                  <span className="text-lg mr-2">✏️</span>
                   <span className="text-sm font-medium">Outra quantidade</span>
-                  <p className="text-xs text-muted-foreground ml-7">Digitar unidades</p>
+                  <p className="text-xs text-muted-foreground">Digitar unidades</p>
                 </button>
                 
                 {/* Weight option */}
@@ -432,9 +426,8 @@ export function ProductConsumptionDialog({
                       : 'border-muted bg-secondary/50 hover:border-primary/50'
                   }`}
                 >
-                  <span className="text-lg mr-2">⚖️</span>
                   <span className="text-sm font-medium">Por gramas</span>
-                  <p className="text-xs text-muted-foreground ml-7">Informar peso consumido</p>
+                  <p className="text-xs text-muted-foreground">Informar peso consumido</p>
                 </button>
               </div>
               
