@@ -8,10 +8,12 @@ import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { ManualEntryForm } from '@/components/ManualEntryForm';
 import { LiquidTracker } from '@/components/LiquidTracker';
 import { WeightTracker } from '@/components/WeightTracker';
+import { ExerciseTracker } from '@/components/ExerciseTracker';
 import { NutritionProgressGrid } from '@/components/NutritionProgressGrid';
 import { WeightReminderPopup } from '@/components/WeightReminderPopup';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
+import { useExerciseEntries } from '@/hooks/useExerciseEntries';
 import { useProfile } from '@/hooks/useProfile';
 import { BarcodeProduct, NutritionData } from '@/types/nutrition';
 import { FoodEntryDB } from '@/types/profile';
@@ -25,13 +27,18 @@ export function Dashboard() {
   const navigate = useNavigate();
   const { entries, isLoading, addEntry, updateEntry, deleteEntry, getTodaySummary } = useFoodEntries();
   const { addLiquidEntry } = useLiquidEntries();
+  const { getTodayTotalBurned } = useExerciseEntries();
   const { profile, getGoals, isProfileComplete } = useProfile();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
 
   const goals = getGoals();
   const { consumed } = getTodaySummary();
-  const calorieProgress = (consumed.calories / goals.calories) * 100;
-  const remainingCalories = Math.max(0, goals.calories - consumed.calories);
+  const caloriesBurned = getTodayTotalBurned();
+  
+  // Calorias líquidas = consumidas - queimadas com exercício
+  const netCalories = consumed.calories - caloriesBurned;
+  const calorieProgress = (netCalories / goals.calories) * 100;
+  const remainingCalories = Math.max(0, goals.calories - netCalories);
 
   const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
 
@@ -123,9 +130,18 @@ export function Dashboard() {
         <div className="rounded-3xl gradient-card p-6 shadow-card">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <div className="flex items-center gap-2 text-muted-foreground"><Flame className="h-4 w-4" /><span className="text-sm font-medium">Calorias de hoje</span></div>
-              <div className="mt-2"><span className="text-4xl font-bold">{Math.round(consumed.calories)}</span><span className="text-lg text-muted-foreground"> / {goals.calories}</span></div>
-              <p className="mt-1 text-sm text-muted-foreground">{remainingCalories > 0 ? `Restam ${Math.round(remainingCalories)} kcal` : 'Meta atingida! 🎉'}</p>
+              <div className="flex items-center gap-2 text-muted-foreground"><Flame className="h-4 w-4" /><span className="text-sm font-medium">Balanço Calórico</span></div>
+              <div className="mt-2">
+                <span className="text-4xl font-bold">{Math.round(netCalories)}</span>
+                <span className="text-lg text-muted-foreground"> / {goals.calories}</span>
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
+                <p>🍽️ Consumido: {Math.round(consumed.calories)} kcal</p>
+                {caloriesBurned > 0 && <p>🏃 Exercícios: -{caloriesBurned} kcal</p>}
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground font-medium">
+                {remainingCalories > 0 ? `Restam ${Math.round(remainingCalories)} kcal` : 'Meta atingida! 🎉'}
+              </p>
             </div>
             <ProgressRing progress={calorieProgress} size={100} strokeWidth={8} color={calorieProgress > 100 ? 'destructive' : 'primary'}>
               <span className="text-xl font-bold">{Math.round(calorieProgress)}%</span>
@@ -137,6 +153,11 @@ export function Dashboard() {
       {/* Todos os Nutrientes com Percentual */}
       <section className="px-5 py-2">
         <NutritionProgressGrid consumed={consumed} goals={goals} />
+      </section>
+
+      {/* Exercícios */}
+      <section className="px-5 py-2">
+        <ExerciseTracker />
       </section>
 
       {/* Peso e Hidratação lado a lado */}
