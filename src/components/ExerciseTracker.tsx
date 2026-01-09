@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Flame, Plus, Dumbbell, Trash2, ChevronDown } from 'lucide-react';
 import { useExerciseEntries, EXERCISE_TYPES, calculateCaloriesBurned } from '@/hooks/useExerciseEntries';
 import { useProfile } from '@/hooks/useProfile';
@@ -54,98 +55,143 @@ export function ExerciseTracker() {
   };
 
   return (
-    <div className="card-compact">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-exercise">
-            <Dumbbell className="h-4 w-4 text-white" />
+    <>
+      <div className="card-compact">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-exercise">
+              <Dumbbell className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Exercício</p>
+              <p className="text-lg num-display text-rose-500">-{totalBurned}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Exercício</p>
-            <p className="text-lg num-display text-rose-500">-{totalBurned}</p>
-          </div>
+          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setShowForm(true)}>
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
-        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setShowForm(!showForm)}>
-          <Plus className={`h-4 w-4 transition-transform ${showForm ? 'rotate-45' : ''}`} />
-        </Button>
+
+        {entries.length > 0 && (
+          <button 
+            onClick={() => setShowEntries(!showEntries)} 
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+          >
+            {entries.length} exercício(s)
+            <ChevronDown className={`h-3 w-3 transition-transform ${showEntries ? 'rotate-180' : ''}`} />
+          </button>
+        )}
+
+        {showEntries && entries.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-border/50 space-y-1 animate-fade-in max-h-40 overflow-y-auto">
+            {entries.map((entry) => {
+              const exerciseInfo = EXERCISE_TYPES[entry.exercise_type as keyof typeof EXERCISE_TYPES];
+              return (
+                <div key={entry.id} className="flex items-center justify-between py-1 px-2 rounded-md bg-secondary/50 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span>{exerciseInfo?.icon || '🏋️'}</span>
+                    <div>
+                      <span className="font-medium">{entry.name}</span>
+                      <span className="text-rose-500 ml-2">-{entry.calories_burned} kcal</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(entry.performed_at), 'HH:mm')}
+                    </span>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => handleDelete(entry.id)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {showForm && (
-        <div className="space-y-2 pt-2 border-t border-border/50 animate-fade-in">
-          <div className="flex gap-1">
-            <button className={`quick-btn flex-1 ${mode === 'manual' ? 'bg-primary text-white' : 'bg-secondary'}`} onClick={() => setMode('manual')}>
-              Equipamento
-            </button>
-            <button className={`quick-btn flex-1 ${mode === 'auto' ? 'bg-primary text-white' : 'bg-secondary'}`} onClick={() => setMode('auto')}>
-              Calcular
-            </button>
-          </div>
-
-          {mode === 'manual' ? (
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Dumbbell className="h-5 w-5 text-rose-500" />
+              Adicionar Exercício
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 pt-2">
             <div className="flex gap-2">
-              <Input type="number" value={manualCalories} onChange={(e) => setManualCalories(e.target.value)} placeholder="kcal queimadas" className="flex-1 h-10" />
-              <Button size="sm" className="h-10" onClick={handleSubmit}>OK</Button>
+              <button 
+                className={`quick-btn flex-1 py-3 ${mode === 'manual' ? 'bg-primary text-white' : 'bg-secondary'}`} 
+                onClick={() => setMode('manual')}
+              >
+                🏋️ Equipamento
+              </button>
+              <button 
+                className={`quick-btn flex-1 py-3 ${mode === 'auto' ? 'bg-primary text-white' : 'bg-secondary'}`} 
+                onClick={() => setMode('auto')}
+              >
+                🧮 Calcular
+              </button>
             </div>
-          ) : (
-            <div className="space-y-2">
-              <Select value={exerciseType} onValueChange={(v) => setExerciseType(v as keyof typeof EXERCISE_TYPES)}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(EXERCISE_TYPES).map(([key, ex]) => (
-                    <SelectItem key={key} value={key}>{ex.icon} {ex.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex gap-2">
-                <Input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="min" className="flex-1 h-10" />
-                <Button size="sm" className="h-10 min-w-[70px]" onClick={handleSubmit}>
-                  <Flame className="h-3 w-3 mr-1" />{calculatedCalories}
+
+            {mode === 'manual' ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">Informe as calorias mostradas no equipamento:</p>
+                <Input 
+                  type="number" 
+                  value={manualCalories} 
+                  onChange={(e) => setManualCalories(e.target.value)} 
+                  placeholder="Calorias queimadas" 
+                  className="h-12 text-lg"
+                  autoFocus
+                />
+                <Button className="w-full h-12" onClick={handleSubmit}>
+                  <Flame className="h-4 w-4 mr-2" />
+                  Adicionar
                 </Button>
               </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {!showForm && entries.length > 0 && (
-        <button 
-          onClick={() => setShowEntries(!showEntries)} 
-          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-        >
-          {entries.length} exercício(s)
-          <ChevronDown className={`h-3 w-3 transition-transform ${showEntries ? 'rotate-180' : ''}`} />
-        </button>
-      )}
-
-      {showEntries && entries.length > 0 && (
-        <div className="mt-2 pt-2 border-t border-border/50 space-y-1 animate-fade-in max-h-40 overflow-y-auto">
-          {entries.map((entry) => {
-            const exerciseInfo = EXERCISE_TYPES[entry.exercise_type as keyof typeof EXERCISE_TYPES];
-            return (
-              <div key={entry.id} className="flex items-center justify-between py-1 px-2 rounded-md bg-secondary/50 text-sm">
-                <div className="flex items-center gap-2">
-                  <span>{exerciseInfo?.icon || '🏋️'}</span>
-                  <div>
-                    <span className="font-medium">{entry.name}</span>
-                    <span className="text-rose-500 ml-2">-{entry.calories_burned} kcal</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(entry.performed_at), 'HH:mm')}
-                  </span>
+            ) : (
+              <div className="space-y-3">
+                <Select value={exerciseType} onValueChange={(v) => setExerciseType(v as keyof typeof EXERCISE_TYPES)}>
+                  <SelectTrigger className="h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(EXERCISE_TYPES).map(([key, ex]) => (
+                      <SelectItem key={key} value={key}>{ex.icon} {ex.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1 block">Duração (minutos)</label>
+                  <Input 
+                    type="number" 
+                    value={duration} 
+                    onChange={(e) => setDuration(e.target.value)} 
+                    placeholder="30" 
+                    className="h-12 text-lg"
+                  />
                 </div>
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => handleDelete(entry.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
+
+                <div className="p-3 rounded-lg bg-rose-500/10 text-center">
+                  <p className="text-sm text-muted-foreground">Calorias estimadas</p>
+                  <p className="text-2xl font-bold text-rose-500">-{calculatedCalories} kcal</p>
+                </div>
+
+                <Button className="w-full h-12" onClick={handleSubmit}>
+                  <Flame className="h-4 w-4 mr-2" />
+                  Adicionar Exercício
                 </Button>
               </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
