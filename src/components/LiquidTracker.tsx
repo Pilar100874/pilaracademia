@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Droplets, Plus } from 'lucide-react';
+import { Droplets, Plus, Trash2, ChevronDown } from 'lucide-react';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 const QUICK_OPTIONS = [
   { label: '🥛', ml: 250, title: '1 copo' },
@@ -12,9 +13,10 @@ const QUICK_OPTIONS = [
 ];
 
 export function LiquidTracker() {
-  const { entries, addLiquidEntry, getTodayTotal } = useLiquidEntries();
+  const { entries, addLiquidEntry, deleteLiquidEntry, getTodayTotal } = useLiquidEntries();
   const { profile } = useProfile();
   const [showButtons, setShowButtons] = useState(false);
+  const [showEntries, setShowEntries] = useState(false);
 
   const dailyGoal = profile?.daily_liquid_ml || 2000;
   const todayTotal = getTodayTotal();
@@ -26,6 +28,13 @@ export function LiquidTracker() {
       await addLiquidEntry(ml, 'water');
       toast.success(`💧 +${ml}ml`);
     } catch { toast.error('Erro'); }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteLiquidEntry(id);
+      toast.success('Removido');
+    } catch { toast.error('Erro ao remover'); }
   };
 
   return (
@@ -49,7 +58,19 @@ export function LiquidTracker() {
       <div className="h-1.5 rounded-full bg-secondary overflow-hidden mb-1">
         <div className="h-full rounded-full bg-sky-500 transition-all duration-500" style={{ width: `${progress}%` }} />
       </div>
-      <p className="text-xs text-muted-foreground">{remaining > 0 ? `Faltam ${Math.ceil(remaining / 250)} copos` : '✅ Meta!'}</p>
+      
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">{remaining > 0 ? `Faltam ${Math.ceil(remaining / 250)} copos` : '✅ Meta!'}</p>
+        {entries.length > 0 && (
+          <button 
+            onClick={() => setShowEntries(!showEntries)} 
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+          >
+            {entries.length} registro(s)
+            <ChevronDown className={`h-3 w-3 transition-transform ${showEntries ? 'rotate-180' : ''}`} />
+          </button>
+        )}
+      </div>
 
       {showButtons && (
         <div className="flex gap-1 pt-2 border-t border-border/50 mt-2 animate-fade-in">
@@ -62,6 +83,30 @@ export function LiquidTracker() {
             >
               {opt.label}
             </button>
+          ))}
+        </div>
+      )}
+
+      {showEntries && entries.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-border/50 space-y-1 animate-fade-in max-h-40 overflow-y-auto">
+          {entries.map((entry) => (
+            <div key={entry.id} className="flex items-center justify-between py-1 px-2 rounded-md bg-secondary/50 text-sm">
+              <div className="flex items-center gap-2">
+                <span>💧</span>
+                <span className="font-medium">{entry.amount_ml}ml</span>
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(entry.consumed_at), 'HH:mm')}
+                </span>
+              </div>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => handleDelete(entry.id)}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
           ))}
         </div>
       )}

@@ -2,15 +2,17 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Flame, Plus, Dumbbell } from 'lucide-react';
+import { Flame, Plus, Dumbbell, Trash2, ChevronDown } from 'lucide-react';
 import { useExerciseEntries, EXERCISE_TYPES, calculateCaloriesBurned } from '@/hooks/useExerciseEntries';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 export function ExerciseTracker() {
-  const { entries, addExerciseEntry, getTodayTotalBurned } = useExerciseEntries();
+  const { entries, addExerciseEntry, deleteExerciseEntry, getTodayTotalBurned } = useExerciseEntries();
   const { profile } = useProfile();
   const [showForm, setShowForm] = useState(false);
+  const [showEntries, setShowEntries] = useState(false);
   const [mode, setMode] = useState<'auto' | 'manual'>('manual');
   const [exerciseType, setExerciseType] = useState<keyof typeof EXERCISE_TYPES>('walking_fast');
   const [duration, setDuration] = useState('30');
@@ -42,6 +44,13 @@ export function ExerciseTracker() {
       setShowForm(false);
       setDuration('30');
     } catch { toast.error('Erro'); }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteExerciseEntry(id);
+      toast.success('Removido');
+    } catch { toast.error('Erro ao remover'); }
   };
 
   return (
@@ -99,7 +108,43 @@ export function ExerciseTracker() {
       )}
 
       {!showForm && entries.length > 0 && (
-        <p className="text-xs text-muted-foreground">{entries.length} exercício(s)</p>
+        <button 
+          onClick={() => setShowEntries(!showEntries)} 
+          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+        >
+          {entries.length} exercício(s)
+          <ChevronDown className={`h-3 w-3 transition-transform ${showEntries ? 'rotate-180' : ''}`} />
+        </button>
+      )}
+
+      {showEntries && entries.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-border/50 space-y-1 animate-fade-in max-h-40 overflow-y-auto">
+          {entries.map((entry) => {
+            const exerciseInfo = EXERCISE_TYPES[entry.exercise_type as keyof typeof EXERCISE_TYPES];
+            return (
+              <div key={entry.id} className="flex items-center justify-between py-1 px-2 rounded-md bg-secondary/50 text-sm">
+                <div className="flex items-center gap-2">
+                  <span>{exerciseInfo?.icon || '🏋️'}</span>
+                  <div>
+                    <span className="font-medium">{entry.name}</span>
+                    <span className="text-rose-500 ml-2">-{entry.calories_burned} kcal</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {format(new Date(entry.performed_at), 'HH:mm')}
+                  </span>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => handleDelete(entry.id)}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
