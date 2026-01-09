@@ -19,6 +19,7 @@ export interface CustomProduct {
   sodium: number | null;
   reference_quantity: number;
   reference_unit: string;
+  is_liquid: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -90,6 +91,7 @@ export function useCustomProducts() {
         sodium: product.sodium,
         reference_quantity: product.reference_quantity,
         reference_unit: product.reference_unit,
+        is_liquid: product.is_liquid || false,
       }, {
         onConflict: 'user_id,barcode'
       })

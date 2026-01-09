@@ -25,6 +25,7 @@ export type Database = {
           fiber: number | null
           id: string
           image_url: string | null
+          is_liquid: boolean
           name: string
           protein: number
           reference_quantity: number
@@ -45,6 +46,7 @@ export type Database = {
           fiber?: number | null
           id?: string
           image_url?: string | null
+          is_liquid?: boolean
           name: string
           protein?: number
           reference_quantity?: number
@@ -65,6 +67,7 @@ export type Database = {
           fiber?: number | null
           id?: string
           image_url?: string | null
+          is_liquid?: boolean
           name?: string
           protein?: number
           reference_quantity?: number
