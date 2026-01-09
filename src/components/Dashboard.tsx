@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Apple, Loader2, TrendingDown, TrendingUp } from 'lucide-react';
+import { Flame, Apple, Loader2, TrendingDown, TrendingUp, Droplets } from 'lucide-react';
 import { ProgressRing } from '@/components/ProgressRing';
 import { FoodEntryItemDB } from '@/components/FoodEntryItemDB';
 import { AddFoodMenu } from '@/components/AddFoodMenu';
@@ -7,7 +7,7 @@ import { PhotoCapture } from '@/components/PhotoCapture';
 import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { ManualEntryForm } from '@/components/ManualEntryForm';
 import { ProductSearch } from '@/components/ProductSearch';
-import { LiquidTracker } from '@/components/LiquidTracker';
+import { AddLiquidDialog } from '@/components/AddLiquidDialog';
 import { WeightTracker } from '@/components/WeightTracker';
 import { ExerciseTracker } from '@/components/ExerciseTracker';
 import { NutritionProgressGrid } from '@/components/NutritionProgressGrid';
@@ -23,19 +23,21 @@ import { FoodEntryDB } from '@/types/profile';
 
 import { useNavigate } from 'react-router-dom';
 
-type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | null;
+type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | 'liquid' | null;
 
 export function Dashboard() {
   const navigate = useNavigate();
   const { entries, isLoading, addEntry, updateEntry, deleteEntry, getTodaySummary } = useFoodEntries();
-  const { addLiquidEntry, deleteLiquidEntryByFoodId, refetch: refetchLiquids } = useLiquidEntries();
-  const { getTodayTotalBurned } = useExerciseEntries();
+  const { addLiquidEntry, getTodayTotal, refetch: refetchLiquids } = useLiquidEntries();
   const { profile, getGoals, isProfileComplete } = useProfile();
+  const { getTodayTotalBurned } = useExerciseEntries();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
 
   const goals = getGoals();
   const { consumed } = getTodaySummary();
   const caloriesBurned = getTodayTotalBurned();
+  const todayLiquid = getTodayTotal();
+  const dailyLiquidGoal = profile?.daily_liquid_ml || 2000;
   const netCalories = consumed.calories - caloriesBurned;
   const calorieProgress = (netCalories / goals.calories) * 100;
   const remainingCalories = Math.max(0, goals.calories - netCalories);
@@ -48,7 +50,7 @@ export function Dashboard() {
     try {
       const entry = await addEntry({ name, nutrition, imageUrl, quantity: liquidMl || 1, unit: isLiquid ? 'ml' : 'porção', source: 'photo', isLiquid: isLiquid || false, liquidMl: liquidMl || 0 });
       if (isLiquid && liquidMl && liquidMl > 0 && entry) {
-        await addLiquidEntry(liquidMl, 'other', entry.id);
+        await addLiquidEntry(liquidMl, 'other');
         refetchLiquids();
       }
     } catch { /* silently fail */ }
@@ -59,7 +61,7 @@ export function Dashboard() {
     try {
       const entry = await addEntry({ name: product.name, nutrition: product.nutrition, imageUrl: product.imageUrl, quantity: portionGrams, unit: isLiquid ? 'ml' : 'g', source: 'barcode', isLiquid: isLiquid || false, liquidMl: liquidMl || 0 });
       if (isLiquid && liquidMl && liquidMl > 0 && entry) {
-        await addLiquidEntry(liquidMl, 'other', entry.id);
+        await addLiquidEntry(liquidMl, 'other');
         refetchLiquids();
       }
     } catch { /* silently fail */ }
@@ -75,44 +77,26 @@ export function Dashboard() {
 
   const handleUpdateEntry = async (id: string, updates: Partial<FoodEntryDB>) => {
     try { 
-      // Se está mudando de não-líquido para líquido, adicionar liquid_entry
-      const existingEntry = entries.find(e => e.id === id);
-      if (existingEntry) {
-        const wasLiquid = existingEntry.is_liquid;
-        const willBeLiquid = updates.is_liquid;
-        const newLiquidMl = updates.liquid_ml || 0;
-        
-        if (!wasLiquid && willBeLiquid && newLiquidMl > 0) {
-          // Adicionar novo liquid_entry
-          await addLiquidEntry(newLiquidMl, 'other', id);
-        } else if (wasLiquid && !willBeLiquid) {
-          // Remover liquid_entry existente
-          await deleteLiquidEntryByFoodId(id);
-        } else if (wasLiquid && willBeLiquid) {
-          // Atualizar quantidade - remover e adicionar novamente
-          await deleteLiquidEntryByFoodId(id);
-          if (newLiquidMl > 0) {
-            await addLiquidEntry(newLiquidMl, 'other', id);
-          }
-        }
-        refetchLiquids();
-      }
-      
       await updateEntry(id, updates); 
     } catch { /* silently fail */ }
   };
 
   const handleDeleteEntry = async (id: string) => {
     try { 
-      // Se era líquido, remover também do liquid_entries
-      const entry = entries.find(e => e.id === id);
-      if (entry?.is_liquid) {
-        await deleteLiquidEntryByFoodId(id);
-        refetchLiquids();
-      }
       await deleteEntry(id); 
     } catch { /* silently fail */ }
   };
+
+  const handleAddLiquid = async (ml: number, type: string) => {
+    try {
+      await addLiquidEntry(ml, type);
+      refetchLiquids();
+    } catch { /* silently fail */ }
+  };
+
+  // Separar entries em refeições e líquidos
+  const mealEntries = entries.filter(e => !e.is_liquid);
+  const liquidEntries = entries.filter(e => e.is_liquid);
 
   if (isLoading) {
     return <div className="min-h-screen gradient-hero flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -181,8 +165,24 @@ export function Dashboard() {
         {/* Exercícios */}
         <ExerciseTracker />
 
-        {/* Água */}
-        <LiquidTracker />
+        {/* Info Líquidos no Balanço */}
+        <div className="card-compact flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-water">
+              <Droplets className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">Líquidos</p>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold num-display text-sky-500">{(todayLiquid / 1000).toFixed(1)}L</span>
+                <span className="text-xs text-muted-foreground">/ {(dailyLiquidGoal / 1000).toFixed(1)}L</span>
+              </div>
+            </div>
+          </div>
+          <div className="w-16 h-2 rounded-full bg-secondary overflow-hidden">
+            <div className="h-full rounded-full bg-sky-500 transition-all" style={{ width: `${Math.min((todayLiquid / dailyLiquidGoal) * 100, 100)}%` }} />
+          </div>
+        </div>
 
         {/* Peso */}
         <WeightTracker />
@@ -196,28 +196,57 @@ export function Dashboard() {
             <Apple className="h-4 w-4 text-primary" />
             Refeições
           </h2>
-          {entries.length === 0 ? (
+          {mealEntries.length === 0 ? (
             <div className="card-compact text-center py-6">
               <p className="text-sm text-muted-foreground">Nenhuma refeição</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {entries.slice(0, 5).map((entry) => (
+              {mealEntries.slice(0, 5).map((entry) => (
                 <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
               ))}
-              {entries.length > 5 && (
-                <p className="text-xs text-center text-muted-foreground">+{entries.length - 5} mais</p>
+              {mealEntries.length > 5 && (
+                <p className="text-xs text-center text-muted-foreground">+{mealEntries.length - 5} mais</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Líquidos (produtos) */}
+        <div>
+          <h2 className="text-sm font-semibold mb-2 flex items-center gap-2">
+            <Droplets className="h-4 w-4 text-sky-500" />
+            Bebidas
+          </h2>
+          {liquidEntries.length === 0 ? (
+            <div className="card-compact text-center py-6">
+              <p className="text-sm text-muted-foreground">Nenhuma bebida registrada</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {liquidEntries.slice(0, 5).map((entry) => (
+                <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
+              ))}
+              {liquidEntries.length > 5 && (
+                <p className="text-xs text-center text-muted-foreground">+{liquidEntries.length - 5} mais</p>
               )}
             </div>
           )}
         </div>
       </div>
 
-      <AddFoodMenu onOpenPhoto={() => setActiveModal('photo')} onOpenBarcode={() => setActiveModal('barcode')} onOpenManual={() => setActiveModal('manual')} onOpenSearch={() => setActiveModal('search')} />
+      <AddFoodMenu 
+        onOpenPhoto={() => setActiveModal('photo')} 
+        onOpenBarcode={() => setActiveModal('barcode')} 
+        onOpenManual={() => setActiveModal('manual')} 
+        onOpenSearch={() => setActiveModal('search')} 
+        onOpenLiquid={() => setActiveModal('liquid')}
+      />
       {activeModal === 'photo' && <PhotoCapture onFoodAnalyzed={handlePhotoAnalyzed} onClose={() => setActiveModal(null)} />}
       {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => setActiveModal(null)} />}
       {activeModal === 'manual' && <ManualEntryForm onSubmit={handleManualEntry} onClose={() => setActiveModal(null)} />}
       <ProductSearch isOpen={activeModal === 'search'} onClose={() => setActiveModal(null)} />
+      <AddLiquidDialog open={activeModal === 'liquid'} onOpenChange={(open) => !open && setActiveModal(null)} onAddLiquid={handleAddLiquid} />
       <WeightReminderPopup />
       <BottomNav />
     </div>
