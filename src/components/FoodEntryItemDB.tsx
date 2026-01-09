@@ -3,9 +3,10 @@ import { FoodEntryDB } from '@/types/profile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Camera, Barcode, Edit3, Trash2, Pencil, Check, Clock, Minus, Plus, Droplets, Apple, GlassWater, Calculator, Package } from 'lucide-react';
+import { Camera, Barcode, Edit3, Trash2, Pencil, Check, Clock, Minus, Plus, Droplets, Apple, GlassWater, Calculator } from 'lucide-react';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { WATER_IMAGE_URL } from '@/components/DefaultLiquidImage';
+import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 
 interface FoodEntryItemDBProps {
   entry: FoodEntryDB;
@@ -35,6 +36,7 @@ const QUICK_ML_OPTIONS = [
 ];
 
 export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBProps) {
+  const { products } = useCustomProducts();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(entry.name);
   const [editTime, setEditTime] = useState(
@@ -57,21 +59,60 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
   
   // Determine if entry is liquid
   const isLiquid = entry.is_liquid || false;
+
+  // Try to find the original product to get base values
+  const originalProduct = useMemo(() => {
+    if (!products || products.length === 0) return null;
+    
+    // Try to match by image_url first (most reliable)
+    if (entry.image_url) {
+      const byImage = products.find(p => p.image_url === entry.image_url);
+      if (byImage) return byImage;
+    }
+    
+    // Try to match by name
+    const byName = products.find(p => p.name.toLowerCase() === entry.name.toLowerCase());
+    if (byName) return byName;
+    
+    return null;
+  }, [products, entry.image_url, entry.name]);
   
-  // Original values (base for calculations)
-  const originalValues = useMemo(() => ({
-    calories: entry.calories,
-    protein: entry.protein,
-    carbs: entry.carbs,
-    fat: entry.fat,
-    fiber: entry.fiber || 0,
-    sodium: entry.sodium || 0,
-    saturated_fat: entry.saturated_fat || 0,
-    trans_fat: entry.trans_fat || 0,
-    quantity: entry.quantity,
-    liquid_ml: entry.liquid_ml || 0,
-    unit: entry.unit,
-  }), [entry]);
+  // Original values from product (or fallback to entry values)
+  const originalValues = useMemo(() => {
+    if (originalProduct) {
+      // Use original product values as base (per reference_quantity)
+      return {
+        calories: originalProduct.calories,
+        protein: originalProduct.protein,
+        carbs: originalProduct.carbs,
+        fat: originalProduct.fat,
+        fiber: originalProduct.fiber || 0,
+        sodium: originalProduct.sodium || 0,
+        saturated_fat: originalProduct.saturated_fat || 0,
+        trans_fat: originalProduct.trans_fat || 0,
+        quantity: originalProduct.reference_quantity,
+        liquid_ml: originalProduct.package_volume_ml || originalProduct.reference_quantity,
+        unit: originalProduct.reference_unit,
+        hasProduct: true,
+      };
+    }
+    
+    // Fallback to entry values (for manual entries or when product not found)
+    return {
+      calories: entry.calories,
+      protein: entry.protein,
+      carbs: entry.carbs,
+      fat: entry.fat,
+      fiber: entry.fiber || 0,
+      sodium: entry.sodium || 0,
+      saturated_fat: entry.saturated_fat || 0,
+      trans_fat: entry.trans_fat || 0,
+      quantity: entry.quantity,
+      liquid_ml: entry.liquid_ml || 0,
+      unit: entry.unit,
+      hasProduct: false,
+    };
+  }, [entry, originalProduct]);
 
   // Calculate portion multiplier based on mode
   const portionMultiplier = useMemo(() => {
@@ -315,7 +356,11 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
                   placeholder="Nome do alimento"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Registro: <strong>{originalValues.quantity}{originalValues.unit}</strong>
+                  {originalValues.hasProduct ? (
+                    <>Produto: <strong>{originalValues.quantity}{originalValues.unit}</strong> = {originalValues.calories} kcal</>
+                  ) : (
+                    <>Consumido: <strong>{entry.quantity}{entry.unit}</strong></>
+                  )}
                   {isLiquid && originalValues.liquid_ml > 0 && (
                     <span className="ml-1">({originalValues.liquid_ml}ml)</span>
                   )}
