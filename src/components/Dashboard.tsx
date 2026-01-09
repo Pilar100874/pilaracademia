@@ -92,22 +92,9 @@ export function Dashboard() {
 
   const handleAddLiquid = async (ml: number, type: string) => {
     try {
-      // Add to liquid_entries for daily tracking
+      // Add only to liquid_entries for daily tracking (single source of truth)
       await addLiquidEntry(ml, type);
       refetchLiquids();
-      
-      // Also add to food_entries so it appears in Bebidas list
-      const liquidName = type === 'water' ? 'Água' : type === 'juice' ? 'Suco' : type === 'coffee' ? 'Café' : type === 'tea' ? 'Chá' : type === 'soda' ? 'Refrigerante' : type === 'milk' ? 'Leite' : 'Líquido';
-      const result = await addEntry({
-        name: `${liquidName} (${ml}ml)`,
-        nutrition: { calories: 0, protein: 0, carbs: 0, fat: 0 },
-        quantity: ml,
-        unit: 'ml',
-        source: 'manual',
-        isLiquid: true,
-        liquidMl: ml,
-      });
-      console.log('Liquid entry added:', result);
     } catch (err) { 
       console.error('Error adding liquid:', err);
     }
