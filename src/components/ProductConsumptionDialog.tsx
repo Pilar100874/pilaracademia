@@ -26,6 +26,16 @@ const LIQUID_PORTIONS = [
   { label: '2 copos', value: GLASS_SIZE * 2, icon: '🥛' },
 ];
 
+// Solid portion presets (fractions and multiples)
+const SOLID_UNIT_PRESETS = [
+  { label: '¼', value: 0.25, icon: '🍕' },
+  { label: '½', value: 0.5, icon: '🍕' },
+  { label: '1', value: 1, icon: '🍽️' },
+  { label: '2', value: 2, icon: '🍽️' },
+  { label: '3', value: 3, icon: '🍽️' },
+  { label: '4', value: 4, icon: '🍽️' },
+];
+
 export function ProductConsumptionDialog({ 
   product, 
   open, 
@@ -39,8 +49,9 @@ export function ProductConsumptionDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // For solids
-  const [solidMode, setSolidMode] = useState<'all' | 'units' | 'weight'>('all');
+  const [solidMode, setSolidMode] = useState<'all' | 'units' | 'weight'>('units');
   const [solidValue, setSolidValue] = useState('');
+  const [selectedUnitPreset, setSelectedUnitPreset] = useState<number | null>(1);
 
   // Reset state when dialog closes
   const handleOpenChange = (newOpen: boolean) => {
@@ -48,8 +59,9 @@ export function ProductConsumptionDialog({
       setSelectedMl(null);
       setCustomMl('');
       setIsCustom(false);
-      setSolidMode('all');
+      setSolidMode('units');
       setSolidValue('');
+      setSelectedUnitPreset(1);
     }
     onOpenChange(newOpen);
   };
@@ -105,14 +117,24 @@ export function ProductConsumptionDialog({
       return { grams, display: `${grams}g` };
     }
     
-    if (solidMode === 'units' && packageInfo.weightPerUnit) {
-      const units = parseFloat(solidValue) || 0;
-      const grams = units * packageInfo.weightPerUnit;
-      return { grams, display: `${units} un. = ${grams.toFixed(0)}g` };
+    if (solidMode === 'units') {
+      // Use preset or custom value
+      const units = selectedUnitPreset !== null ? selectedUnitPreset : (parseFloat(solidValue) || 0);
+      
+      if (packageInfo.weightPerUnit) {
+        const grams = units * packageInfo.weightPerUnit;
+        const unitLabel = units === 1 ? 'un.' : 'un.';
+        return { grams, display: `${units} ${unitLabel} = ${grams.toFixed(0)}g` };
+      } else {
+        // No weight per unit, use reference quantity as base
+        const grams = units * packageInfo.refQty;
+        const unitLabel = units === 1 ? 'porção' : 'porções';
+        return { grams, display: `${units} ${unitLabel} = ${grams.toFixed(0)}g` };
+      }
     }
     
     return { grams: 0, display: '' };
-  }, [solidMode, solidValue, packageInfo]);
+  }, [solidMode, solidValue, selectedUnitPreset, packageInfo]);
 
   // Calculate nutrition based on consumed quantity
   const calculatedNutrition = useMemo(() => {
@@ -175,7 +197,9 @@ export function ProductConsumptionDialog({
 
   const canSubmit = packageInfo.isLiquid 
     ? consumedMl > 0 
-    : (solidMode === 'all' || (solidValue && parseFloat(solidValue) > 0));
+    : (solidMode === 'all' || 
+       (solidMode === 'units' && selectedUnitPreset !== null) || 
+       (solidValue && parseFloat(solidValue) > 0));
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -324,13 +348,43 @@ export function ProductConsumptionDialog({
             <div className="space-y-3">
               <Label className="text-sm font-medium">Quanto você consumiu?</Label>
               
+              {/* Unit presets grid */}
+              <div className="grid grid-cols-3 gap-2">
+                {SOLID_UNIT_PRESETS.map((preset) => (
+                  <button
+                    key={preset.value}
+                    onClick={() => {
+                      setSolidMode('units');
+                      setSelectedUnitPreset(preset.value);
+                      setSolidValue('');
+                    }}
+                    className={`p-3 rounded-lg text-sm font-medium transition-all border-2 ${
+                      solidMode === 'units' && selectedUnitPreset === preset.value
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-muted bg-secondary/50 hover:border-primary/50'
+                    }`}
+                  >
+                    <span className="text-lg mr-1">{preset.icon}</span>
+                    {preset.label}
+                    <span className="block text-xs text-muted-foreground">
+                      {packageInfo.weightPerUnit 
+                        ? `${(preset.value * packageInfo.weightPerUnit).toFixed(0)}g`
+                        : `${(preset.value * packageInfo.refQty).toFixed(0)}g`
+                      }
+                    </span>
+                  </button>
+                ))}
+              </div>
+              
+              {/* Additional options */}
               <div className="space-y-2">
                 {/* All option */}
-                {packageInfo.hasPackageInfo && (
+                {packageInfo.hasPackageInfo && packageInfo.totalWeight && (
                   <button
                     onClick={() => {
                       setSolidMode('all');
                       setSolidValue('');
+                      setSelectedUnitPreset(null);
                     }}
                     className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
                       solidMode === 'all'
@@ -338,55 +392,62 @@ export function ProductConsumptionDialog({
                         : 'border-muted bg-secondary/50 hover:border-primary/50'
                     }`}
                   >
+                    <span className="text-lg mr-2">📦</span>
                     <span className="text-sm font-medium">Tudo</span>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground ml-7">
                       {packageInfo.totalWeight}g
                       {packageInfo.totalUnits && ` (${packageInfo.totalUnits} unidades)`}
                     </p>
                   </button>
                 )}
                 
-                {/* Units option */}
-                {packageInfo.totalUnits && packageInfo.weightPerUnit && (
-                  <button
-                    onClick={() => setSolidMode('units')}
-                    className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
-                      solidMode === 'units'
-                        ? 'border-primary bg-primary/10'
-                        : 'border-muted bg-secondary/50 hover:border-primary/50'
-                    }`}
-                  >
-                    <span className="text-sm font-medium">Por unidades</span>
-                    <p className="text-xs text-muted-foreground">
-                      Cada unidade = {packageInfo.weightPerUnit.toFixed(0)}g
-                    </p>
-                  </button>
-                )}
+                {/* Custom units option */}
+                <button
+                  onClick={() => {
+                    setSolidMode('units');
+                    setSelectedUnitPreset(null);
+                    setSolidValue('');
+                  }}
+                  className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
+                    solidMode === 'units' && selectedUnitPreset === null
+                      ? 'border-primary bg-primary/10'
+                      : 'border-muted bg-secondary/50 hover:border-primary/50'
+                  }`}
+                >
+                  <span className="text-lg mr-2">✏️</span>
+                  <span className="text-sm font-medium">Outra quantidade</span>
+                  <p className="text-xs text-muted-foreground ml-7">Digitar unidades</p>
+                </button>
                 
                 {/* Weight option */}
                 <button
-                  onClick={() => setSolidMode('weight')}
+                  onClick={() => {
+                    setSolidMode('weight');
+                    setSelectedUnitPreset(null);
+                    setSolidValue('');
+                  }}
                   className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
                     solidMode === 'weight'
                       ? 'border-primary bg-primary/10'
                       : 'border-muted bg-secondary/50 hover:border-primary/50'
                   }`}
                 >
+                  <span className="text-lg mr-2">⚖️</span>
                   <span className="text-sm font-medium">Por gramas</span>
-                  <p className="text-xs text-muted-foreground">Informar peso consumido</p>
+                  <p className="text-xs text-muted-foreground ml-7">Informar peso consumido</p>
                 </button>
               </div>
               
-              {/* Input for units or weight */}
-              {solidMode !== 'all' && (
+              {/* Input for custom units or weight */}
+              {(solidMode === 'weight' || (solidMode === 'units' && selectedUnitPreset === null)) && (
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
                     value={solidValue}
                     onChange={(e) => setSolidValue(e.target.value)}
-                    placeholder={solidMode === 'units' ? 'Ex: 2' : 'Ex: 100'}
+                    placeholder={solidMode === 'units' ? 'Ex: 2.5' : 'Ex: 100'}
                     min="0"
-                    step={solidMode === 'units' ? '1' : 'any'}
+                    step="any"
                     className="flex-1"
                   />
                   <span className="text-sm text-muted-foreground">
