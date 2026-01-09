@@ -183,7 +183,12 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
             </div>
 
             <div className="border-t pt-4">
-              <p className="text-sm font-medium mb-3">Informações Nutricionais</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium">Informações Nutricionais</p>
+                <span className="text-xs px-2 py-1 rounded-full bg-secondary text-muted-foreground">
+                  {entry.quantity} {entry.unit}
+                </span>
+              </div>
               
               <div className="grid grid-cols-2 gap-3">
                 <div>
