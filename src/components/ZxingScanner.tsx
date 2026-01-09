@@ -1,5 +1,5 @@
 import { useZxing } from 'react-zxing';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface ZxingScannerProps {
   onResult: (barcode: string) => void;
@@ -8,43 +8,72 @@ interface ZxingScannerProps {
 
 export function ZxingScanner({ onResult, onError }: ZxingScannerProps) {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [isReady, setIsReady] = useState(false);
+
+  const handleDecodeResult = useCallback((result: any) => {
+    const text = result.getText();
+    console.log('Barcode detected:', text);
+    if (text && text.length > 0) {
+      onResult(text);
+    }
+  }, [onResult]);
 
   const { ref } = useZxing({
-    onDecodeResult(result) {
-      console.log('Barcode detected:', result.getText());
-      onResult(result.getText());
-    },
+    onDecodeResult: handleDecodeResult,
     onError(error) {
       // Only log actual errors, not "no barcode found" messages
       const errorMsg = error instanceof Error ? error.message : String(error);
-      if (!errorMsg.includes('No MultiFormat Readers')) {
-        console.error('Scanner error:', error);
+      if (!errorMsg.includes('No MultiFormat Readers') && !errorMsg.includes('NotFoundException')) {
+        console.error('Scanner error:', errorMsg);
       }
     },
     constraints: {
       video: {
-        facingMode: 'environment',
-        width: { ideal: 1920, min: 1280 },
-        height: { ideal: 1080, min: 720 },
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1920, min: 640 },
+        height: { ideal: 1080, min: 480 },
       },
     },
-    timeBetweenDecodingAttempts: 200,
+    timeBetweenDecodingAttempts: 150,
   });
 
   useEffect(() => {
+    let mounted = true;
+    
     // Check camera permission
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-      .then(() => setHasPermission(true))
+    navigator.mediaDevices.getUserMedia({ 
+      video: { 
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      } 
+    })
+      .then((stream) => {
+        // Stop the stream immediately, we just needed permission
+        stream.getTracks().forEach(track => track.stop());
+        if (mounted) {
+          setHasPermission(true);
+          // Small delay to ensure video element is mounted
+          setTimeout(() => setIsReady(true), 100);
+        }
+      })
       .catch((err) => {
+        if (!mounted) return;
         setHasPermission(false);
         if (err.name === 'NotAllowedError') {
           onError?.('Permissão de câmera negada. Toque em "Permitir" quando solicitado.');
         } else if (err.name === 'NotFoundError') {
           onError?.('Nenhuma câmera encontrada.');
+        } else if (err.name === 'NotReadableError') {
+          onError?.('Câmera em uso por outro aplicativo.');
         } else {
           onError?.('Não foi possível acessar a câmera.');
         }
       });
+      
+    return () => {
+      mounted = false;
+    };
   }, [onError]);
 
   if (hasPermission === false) {
