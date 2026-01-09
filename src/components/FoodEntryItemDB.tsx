@@ -28,8 +28,8 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
   const [editSodium, setEditSodium] = useState((entry.sodium || 0).toString());
   const [editSaturatedFat, setEditSaturatedFat] = useState((entry.saturated_fat || 0).toString());
   const [editTransFat, setEditTransFat] = useState((entry.trans_fat || 0).toString());
-  const [editConsumedAt, setEditConsumedAt] = useState(
-    new Date(entry.consumed_at).toISOString().slice(0, 16)
+  const [editTime, setEditTime] = useState(
+    new Date(entry.consumed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', ':')
   );
 
   const Icon = sourceIcons[entry.source];
@@ -45,6 +45,11 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
 
   const handleSave = () => {
     if (onUpdate) {
+      // Manter a data original, só atualizar a hora
+      const originalDate = new Date(entry.consumed_at);
+      const [hours, minutes] = editTime.split(':').map(Number);
+      originalDate.setHours(hours, minutes, 0, 0);
+      
       onUpdate(entry.id, {
         name: editName,
         calories: Number(editCalories),
@@ -55,7 +60,7 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
         sodium: Number(editSodium),
         saturated_fat: Number(editSaturatedFat),
         trans_fat: Number(editTransFat),
-        consumed_at: new Date(editConsumedAt).toISOString(),
+        consumed_at: originalDate.toISOString(),
       });
     }
     setIsEditing(false);
@@ -71,7 +76,7 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
     setEditSodium((entry.sodium || 0).toString());
     setEditSaturatedFat((entry.saturated_fat || 0).toString());
     setEditTransFat((entry.trans_fat || 0).toString());
-    setEditConsumedAt(new Date(entry.consumed_at).toISOString().slice(0, 16));
+    setEditTime(new Date(entry.consumed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
     setIsEditing(false);
   };
 
@@ -164,13 +169,17 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
             <div>
               <label className="text-sm text-muted-foreground mb-1 block flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                Data e hora
+                Horário do consumo
               </label>
-              <Input
-                type="datetime-local"
-                value={editConsumedAt}
-                onChange={(e) => setEditConsumedAt(e.target.value)}
-              />
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">{date}</span>
+                <Input
+                  type="time"
+                  value={editTime}
+                  onChange={(e) => setEditTime(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
             </div>
 
             <div className="border-t pt-4">

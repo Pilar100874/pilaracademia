@@ -8,6 +8,7 @@ import { AuthPage } from "@/pages/AuthPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { ProjectionsPage } from "@/pages/ProjectionsPage";
+import { ProductsPage } from "@/pages/ProductsPage";
 import { Dashboard } from "@/components/Dashboard";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
@@ -74,6 +75,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProjectionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/products"
+        element={
+          <ProtectedRoute>
+            <ProductsPage />
           </ProtectedRoute>
         }
       />

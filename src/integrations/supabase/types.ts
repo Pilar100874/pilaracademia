@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      custom_products: {
+        Row: {
+          barcode: string
+          brand: string | null
+          calories: number
+          carbs: number
+          created_at: string
+          fat: number
+          fiber: number | null
+          id: string
+          image_url: string | null
+          name: string
+          protein: number
+          reference_quantity: number
+          reference_unit: string
+          saturated_fat: number | null
+          sodium: number | null
+          trans_fat: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          barcode: string
+          brand?: string | null
+          calories?: number
+          carbs?: number
+          created_at?: string
+          fat?: number
+          fiber?: number | null
+          id?: string
+          image_url?: string | null
+          name: string
+          protein?: number
+          reference_quantity?: number
+          reference_unit?: string
+          saturated_fat?: number | null
+          sodium?: number | null
+          trans_fat?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          barcode?: string
+          brand?: string | null
+          calories?: number
+          carbs?: number
+          created_at?: string
+          fat?: number
+          fiber?: number | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          protein?: number
+          reference_quantity?: number
+          reference_unit?: string
+          saturated_fat?: number | null
+          sodium?: number | null
+          trans_fat?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercise_entries: {
         Row: {
           calories_burned: number
