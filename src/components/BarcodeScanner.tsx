@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Camera, Loader2, Check, Star, Minus, Plus, Package } from 'lucide-react';
+import { X, Camera, Loader2, Check, Star, Minus, Plus, Package, ScanLine, Keyboard } from 'lucide-react';
 import { BarcodeProduct, NutritionData } from '@/types/nutrition';
 import { NutritionDisplay } from '@/components/NutritionDisplay';
 import { LiquidConsumptionDialog } from '@/components/LiquidConsumptionDialog';
 import { fetchProductByBarcode, calculateNutritionForPortion, isLiquidProduct, getLiquidVolumeMl } from '@/lib/openFoodFacts';
 import { useCustomProducts } from '@/hooks/useCustomProducts';
-
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 
 interface BarcodeScannerProps {
   onProductFound: (product: BarcodeProduct, portionGrams: number, isLiquid?: boolean, liquidMl?: number) => void;
@@ -33,6 +33,13 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
   const [product, setProduct] = useState<BarcodeProduct | null>(null);
   const [isCustomProduct, setIsCustomProduct] = useState(false);
   
+  // Scanner mode
+  const [scanMode, setScanMode] = useState<'camera' | 'manual'>('camera');
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerContainerId = 'barcode-scanner-container';
+  
   // Package info
   const [showPackageInfo, setShowPackageInfo] = useState(false);
   const [packageWeight, setPackageWeight] = useState('');
@@ -51,9 +58,89 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
   const [saveForFuture, setSaveForFuture] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Start camera scanner
+  const startScanner = async () => {
+    setScanError(null);
+    
+    try {
+      const html5QrCode = new Html5Qrcode(scannerContainerId, {
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+        ],
+        verbose: false,
+      });
+      
+      scannerRef.current = html5QrCode;
+      
+      await html5QrCode.start(
+        { facingMode: 'environment' },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 150 },
+          aspectRatio: 1.5,
+        },
+        (decodedText) => {
+          // On successful scan
+          setBarcode(decodedText);
+          stopScanner();
+          handleSearchWithBarcode(decodedText);
+        },
+        () => {
+          // QR code scanning in progress - ignore errors
+        }
+      );
+      
+      setIsScanning(true);
+    } catch (err) {
+      console.error('Error starting scanner:', err);
+      setScanError('Não foi possível acessar a câmera. Verifique as permissões ou use o modo manual.');
+      setScanMode('manual');
+    }
+  };
+
+  // Stop camera scanner
+  const stopScanner = async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current = null;
+      } catch (err) {
+        console.error('Error stopping scanner:', err);
+      }
+    }
+    setIsScanning(false);
+  };
+
+  // Cleanup on unmount or mode change
   useEffect(() => {
-    inputRef.current?.focus();
+    return () => {
+      stopScanner();
+    };
   }, []);
+
+  // Start scanner when in camera mode and no product
+  useEffect(() => {
+    if (scanMode === 'camera' && !product && !isLoading) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        startScanner();
+      }, 100);
+      return () => clearTimeout(timer);
+    } else {
+      stopScanner();
+    }
+  }, [scanMode, product, isLoading]);
+
+  useEffect(() => {
+    if (scanMode === 'manual') {
+      inputRef.current?.focus();
+    }
+  }, [scanMode]);
 
   // Peso por item
   const weightPerItem = useMemo(() => {
@@ -87,12 +174,12 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     }
   }, [product, effectiveGrams]);
 
-  const handleSearch = async () => {
-    if (!barcode.trim()) return;
+  const handleSearchWithBarcode = async (barcodeValue: string) => {
+    if (!barcodeValue.trim()) return;
 
     setIsLoading(true);
     try {
-      const customProduct = await getProductByBarcode(barcode.trim());
+      const customProduct = await getProductByBarcode(barcodeValue.trim());
       
       if (customProduct) {
         const nutrition: NutritionData = {
@@ -145,6 +232,10 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSearch = () => {
+    handleSearchWithBarcode(barcode);
   };
 
   const handleAddProduct = async () => {
@@ -231,28 +322,96 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
 
         {!product ? (
           <div className="space-y-4">
+            {/* Mode toggle */}
             <div className="flex gap-2">
-              <Input
-                ref={inputRef}
-                type="text"
-                inputMode="numeric"
-                placeholder="Digite o código de barras"
-                value={barcode}
-                onChange={(e) => setBarcode(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              <Button
+                variant={scanMode === 'camera' ? 'default' : 'outline'}
+                size="sm"
                 className="flex-1"
-              />
-              <Button onClick={handleSearch} disabled={isLoading || !barcode.trim()}>
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Buscar'}
+                onClick={() => setScanMode('camera')}
+              >
+                <ScanLine className="h-4 w-4 mr-2" />
+                Câmera
+              </Button>
+              <Button
+                variant={scanMode === 'manual' ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1"
+                onClick={() => setScanMode('manual')}
+              >
+                <Keyboard className="h-4 w-4 mr-2" />
+                Manual
               </Button>
             </div>
 
-            <div className="rounded-2xl border-2 border-dashed border-muted p-8 text-center">
-              <Camera className="mx-auto h-12 w-12 text-muted-foreground" />
-              <p className="mt-4 text-sm text-muted-foreground">
-                Digite o código de barras para buscar informações nutricionais
-              </p>
-            </div>
+            {scanMode === 'camera' ? (
+              <div className="space-y-3">
+                {scanError ? (
+                  <div className="rounded-xl bg-destructive/10 p-4 text-center">
+                    <p className="text-sm text-destructive">{scanError}</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2"
+                      onClick={() => setScanMode('manual')}
+                    >
+                      Usar modo manual
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div 
+                      id={scannerContainerId}
+                      className="rounded-xl overflow-hidden bg-black aspect-[4/3]"
+                    />
+                    <div className="text-center">
+                      {isScanning ? (
+                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Aponte a câmera para o código de barras
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Iniciando câmera...
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    ref={inputRef}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Digite o código de barras"
+                    value={barcode}
+                    onChange={(e) => setBarcode(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleSearch} disabled={isLoading || !barcode.trim()}>
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Buscar'}
+                  </Button>
+                </div>
+
+                <div className="rounded-2xl border-2 border-dashed border-muted p-6 text-center">
+                  <Keyboard className="mx-auto h-10 w-10 text-muted-foreground" />
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Digite o código de barras do produto
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {isLoading && (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <span className="ml-2 text-sm">Buscando produto...</span>
+              </div>
+            )}
           </div>
         ) : showLiquidDialog ? (
           <LiquidConsumptionDialog
