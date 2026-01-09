@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react';
-import { Package, Search, Pencil, Trash2, ChevronLeft, Barcode, Plus, Droplets, Apple, Image, Filter, Upload, Loader2, ScanLine, UtensilsCrossed } from 'lucide-react';
+import { useState, useRef, useMemo } from 'react';
+import { Package, Search, Pencil, Trash2, ChevronLeft, Barcode, Plus, Droplets, Apple, Image, Filter, Upload, Loader2, ScanLine, UtensilsCrossed, Leaf } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BottomNav } from '@/components/BottomNav';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { useNavigate } from 'react-router-dom';
@@ -16,8 +17,10 @@ import { ZxingScanner } from '@/components/ZxingScanner';
 import { fetchProductByBarcode, isLiquidProduct } from '@/lib/openFoodFacts';
 import { toast } from 'sonner';
 import { ProductConsumptionDialog } from '@/components/ProductConsumptionDialog';
+import { NATURAL_PRODUCTS, NATURAL_PRODUCT_CATEGORIES, naturalToCustomProduct, getCategoryInfo, NaturalProduct } from '@/data/naturalProducts';
 
 type FilterType = 'all' | 'solid' | 'liquid';
+type ActiveTab = 'custom' | 'natural';
 
 export function ProductsPage() {
   const navigate = useNavigate();
@@ -33,6 +36,8 @@ export function ProductsPage() {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [isSearchingBarcode, setIsSearchingBarcode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('custom');
+  const [selectedNaturalCategory, setSelectedNaturalCategory] = useState<string | null>(null);
   const [consumingProduct, setConsumingProduct] = useState<CustomProduct | null>(null);
   
   // Form state (shared for add/edit)
@@ -71,6 +76,38 @@ export function ProductsPage() {
   // Group products by type (only when filter is 'all')
   const solidProducts = filteredProducts.filter(p => !p.is_liquid);
   const liquidProducts = filteredProducts.filter(p => p.is_liquid);
+
+  // Filter natural products
+  const filteredNaturalProducts = useMemo(() => {
+    let filtered = NATURAL_PRODUCTS;
+    
+    if (selectedNaturalCategory) {
+      filtered = filtered.filter(p => p.category === selectedNaturalCategory);
+    }
+    
+    if (searchTerm) {
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [searchTerm, selectedNaturalCategory]);
+
+  // Group natural products by category
+  const naturalProductsByCategory = useMemo(() => {
+    const grouped: Record<string, NaturalProduct[]> = {};
+    filteredNaturalProducts.forEach(p => {
+      if (!grouped[p.category]) grouped[p.category] = [];
+      grouped[p.category].push(p);
+    });
+    return grouped;
+  }, [filteredNaturalProducts]);
+
+  const handleConsumeNatural = (natural: NaturalProduct) => {
+    const converted = naturalToCustomProduct(natural);
+    setConsumingProduct(converted);
+  };
 
   const resetForm = () => {
     setFormName('');
@@ -629,115 +666,261 @@ export function ProductsPage() {
             <div>
               <h1 className="text-lg font-bold flex items-center gap-2">
                 <Package className="h-5 w-5 text-primary" />
-                Meus Produtos
+                Produtos
               </h1>
-              <p className="text-xs text-muted-foreground">{products.length} produto(s) salvos</p>
+              <p className="text-xs text-muted-foreground">
+                {activeTab === 'custom' ? `${products.length} produto(s) salvos` : `${NATURAL_PRODUCTS.length} alimentos naturais`}
+              </p>
             </div>
           </div>
-          <Button size="sm" onClick={handleOpenAdd}>
-            <Plus className="h-4 w-4 mr-1" />
-            Novo
-          </Button>
+          {activeTab === 'custom' && (
+            <Button size="sm" onClick={handleOpenAdd}>
+              <Plus className="h-4 w-4 mr-1" />
+              Novo
+            </Button>
+          )}
         </div>
       </header>
 
       <div className="px-4 py-4 space-y-4">
-        {/* Busca */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por nome, marca ou código..."
-            className="pl-10"
-          />
-        </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ActiveTab)}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="custom" className="flex items-center gap-1.5">
+              <Package className="h-4 w-4" />
+              Meus Produtos
+            </TabsTrigger>
+            <TabsTrigger value="natural" className="flex items-center gap-1.5">
+              <Leaf className="h-4 w-4" />
+              Naturais
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Filtros */}
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant={filterType === 'all' ? 'default' : 'outline'}
-            onClick={() => setFilterType('all')}
-            className="flex-1"
-          >
-            <Filter className="h-3 w-3 mr-1" />
-            Todos
-          </Button>
-          <Button
-            size="sm"
-            variant={filterType === 'solid' ? 'default' : 'outline'}
-            onClick={() => setFilterType('solid')}
-            className="flex-1"
-          >
-            <Apple className="h-3 w-3 mr-1" />
-            Alimentos
-          </Button>
-          <Button
-            size="sm"
-            variant={filterType === 'liquid' ? 'default' : 'outline'}
-            onClick={() => setFilterType('liquid')}
-            className="flex-1"
-          >
-            <Droplets className="h-3 w-3 mr-1" />
-            Bebidas
-          </Button>
-        </div>
+          {/* Busca */}
+          <div className="relative mt-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={activeTab === 'custom' ? "Buscar por nome, marca ou código..." : "Buscar alimento natural..."}
+              className="pl-10"
+            />
+          </div>
 
-        {/* Lista de produtos */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-12">
-            <Barcode className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">
-              {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto salvo ainda'}
-            </p>
-            <p className="text-xs text-muted-foreground mt-2">
-              Clique em "Novo" para cadastrar um produto
-            </p>
-          </div>
-        ) : filterType === 'all' ? (
-          <div className="space-y-6">
-            {/* Alimentos */}
-            {solidProducts.length > 0 && (
-              <div>
-                <h2 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Apple className="h-4 w-4 text-primary" />
-                  Alimentos ({solidProducts.length})
-                </h2>
-                <div className="space-y-2">
-                  {solidProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
+          {/* CUSTOM PRODUCTS TAB */}
+          <TabsContent value="custom" className="mt-4 space-y-4">
+            {/* Filtros */}
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant={filterType === 'all' ? 'default' : 'outline'}
+                onClick={() => setFilterType('all')}
+                className="flex-1"
+              >
+                <Filter className="h-3 w-3 mr-1" />
+                Todos
+              </Button>
+              <Button
+                size="sm"
+                variant={filterType === 'solid' ? 'default' : 'outline'}
+                onClick={() => setFilterType('solid')}
+                className="flex-1"
+              >
+                <Apple className="h-3 w-3 mr-1" />
+                Alimentos
+              </Button>
+              <Button
+                size="sm"
+                variant={filterType === 'liquid' ? 'default' : 'outline'}
+                onClick={() => setFilterType('liquid')}
+                className="flex-1"
+              >
+                <Droplets className="h-3 w-3 mr-1" />
+                Bebidas
+              </Button>
+            </div>
+
+            {/* Lista de produtos */}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="text-center py-12">
+                <Barcode className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto salvo ainda'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Clique em "Novo" para cadastrar um produto
+                </p>
+              </div>
+            ) : filterType === 'all' ? (
+              <div className="space-y-6">
+                {/* Alimentos */}
+                {solidProducts.length > 0 && (
+                  <div>
+                    <h2 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <Apple className="h-4 w-4 text-primary" />
+                      Alimentos ({solidProducts.length})
+                    </h2>
+                    <div className="space-y-2">
+                      {solidProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Líquidos */}
+                {liquidProducts.length > 0 && (
+                  <div>
+                    <h2 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <Droplets className="h-4 w-4 text-sky-500" />
+                      Bebidas ({liquidProducts.length})
+                    </h2>
+                    <div className="space-y-2">
+                      {liquidProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
               </div>
             )}
+          </TabsContent>
 
-            {/* Líquidos */}
-            {liquidProducts.length > 0 && (
-              <div>
-                <h2 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Droplets className="h-4 w-4 text-sky-500" />
-                  Bebidas ({liquidProducts.length})
-                </h2>
-                <div className="space-y-2">
-                  {liquidProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
+          {/* NATURAL PRODUCTS TAB */}
+          <TabsContent value="natural" className="mt-4 space-y-4">
+            {/* Category filter */}
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setSelectedNaturalCategory(null)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                  selectedNaturalCategory === null 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-secondary hover:bg-secondary/80'
+                }`}
+              >
+                Todos
+              </button>
+              {NATURAL_PRODUCT_CATEGORIES.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedNaturalCategory(cat.id)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                    selectedNaturalCategory === cat.id 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-secondary hover:bg-secondary/80'
+                  }`}
+                >
+                  {cat.emoji} {cat.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Natural products list */}
+            {filteredNaturalProducts.length === 0 ? (
+              <div className="text-center py-12">
+                <Leaf className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Nenhum alimento encontrado</p>
+              </div>
+            ) : selectedNaturalCategory ? (
+              <div className="space-y-2">
+                {filteredNaturalProducts.map((natural) => {
+                  const categoryInfo = getCategoryInfo(natural.category);
+                  return (
+                    <div
+                      key={natural.id}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card"
+                    >
+                      <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-2xl flex-shrink-0">
+                        {categoryInfo?.emoji || '🍽️'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{natural.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{categoryInfo?.name}</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600">
+                            {natural.calories} kcal
+                          </span>
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+                            /100{natural.is_liquid ? 'ml' : 'g'}
+                          </span>
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600">
+                            P:{natural.protein}g
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleConsumeNatural(natural)}
+                      >
+                        <UtensilsCrossed className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {Object.entries(naturalProductsByCategory).map(([categoryId, naturals]) => {
+                  const categoryInfo = getCategoryInfo(categoryId);
+                  return (
+                    <div key={categoryId}>
+                      <h2 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                        <span>{categoryInfo?.emoji}</span>
+                        {categoryInfo?.name} ({naturals.length})
+                      </h2>
+                      <div className="space-y-2">
+                        {naturals.map((natural) => (
+                          <div
+                            key={natural.id}
+                            className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card"
+                          >
+                            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-2xl flex-shrink-0">
+                              {categoryInfo?.emoji || '🍽️'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{natural.name}</p>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600">
+                                  {natural.calories} kcal
+                                </span>
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+                                  /100{natural.is_liquid ? 'ml' : 'g'}
+                                </span>
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600">
+                                  P:{natural.protein}g
+                                </span>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleConsumeNatural(natural)}
+                            >
+                              <UtensilsCrossed className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Dialog para adicionar */}

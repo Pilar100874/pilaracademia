@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Package, Plus, Trash2, Search, Loader2, Edit2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Package, Plus, Trash2, Search, Loader2, Edit2, Leaf } from 'lucide-react';
 import { useFoodKits, FoodKit, FoodKitItem } from '@/hooks/useFoodKits';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { DefaultProductImage } from '@/components/DefaultProductImage';
 import { KitItemQuantityDialog } from '@/components/KitItemQuantityDialog';
+import { NATURAL_PRODUCTS, naturalToCustomProduct, getCategoryInfo, NATURAL_PRODUCT_CATEGORIES } from '@/data/naturalProducts';
 import { toast } from 'sonner';
 
 interface KitFormDialogProps {
@@ -33,6 +35,8 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
   const [items, setItems] = useState<KitItemDraft[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showProductSearch, setShowProductSearch] = useState(false);
+  const [productSearchTab, setProductSearchTab] = useState<'custom' | 'natural'>('custom');
+  const [selectedNaturalCategory, setSelectedNaturalCategory] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingKit, setIsLoadingKit] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
@@ -71,6 +75,41 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.brand?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const filteredNaturalProducts = useMemo(() => {
+    let filtered = NATURAL_PRODUCTS;
+    
+    if (selectedNaturalCategory) {
+      filtered = filtered.filter(p => p.category === selectedNaturalCategory);
+    }
+    
+    if (searchQuery) {
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [searchQuery, selectedNaturalCategory]);
+
+  const handleAddNaturalProduct = (naturalProduct: typeof NATURAL_PRODUCTS[0]) => {
+    const converted = naturalToCustomProduct(naturalProduct);
+    
+    // Check if already in kit
+    const existing = items.find(item => item.product.id === converted.id);
+    if (existing) {
+      toast.info('Alimento já está no kit');
+      return;
+    }
+
+    setItems([...items, {
+      product: converted,
+      quantity: 100,
+      unit: converted.is_liquid ? 'ml' : 'g',
+    }]);
+    setShowProductSearch(false);
+    setSearchQuery('');
+  };
 
   const handleAddProduct = (product: CustomProduct) => {
     const existing = items.find(item => item.product.id === product.id);
@@ -261,45 +300,117 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
 
               {showProductSearch && (
                 <div className="mb-4 p-3 bg-secondary/50 rounded-lg space-y-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Buscar produto..."
-                      className="pl-9"
-                    />
-                  </div>
+                  <Tabs value={productSearchTab} onValueChange={(v) => setProductSearchTab(v as 'custom' | 'natural')}>
+                    <TabsList className="grid w-full grid-cols-2 h-8">
+                      <TabsTrigger value="custom" className="text-xs gap-1">
+                        <Package className="h-3 w-3" />
+                        Produtos
+                      </TabsTrigger>
+                      <TabsTrigger value="natural" className="text-xs gap-1">
+                        <Leaf className="h-3 w-3" />
+                        Naturais
+                      </TabsTrigger>
+                    </TabsList>
 
-                  <div className="max-h-40 overflow-y-auto space-y-1">
-                    {filteredProducts.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-2">
-                        {products.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum produto encontrado'}
-                      </p>
-                    ) : (
-                      filteredProducts.slice(0, 10).map(product => (
+                    <div className="relative mt-2">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder={productSearchTab === 'custom' ? "Buscar produto..." : "Buscar alimento natural..."}
+                        className="pl-9 h-9"
+                      />
+                    </div>
+
+                    <TabsContent value="custom" className="mt-2">
+                      <div className="max-h-40 overflow-y-auto space-y-1">
+                        {filteredProducts.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-2">
+                            {products.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum produto encontrado'}
+                          </p>
+                        ) : (
+                          filteredProducts.slice(0, 10).map(product => (
+                            <button
+                              key={product.id}
+                              onClick={() => handleAddProduct(product)}
+                              className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-background transition-colors text-left"
+                            >
+                              <div className="h-8 w-8 rounded-lg overflow-hidden flex-shrink-0 bg-secondary">
+                                {product.image_url ? (
+                                  <img src={product.image_url} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                  <DefaultProductImage isLiquid={product.is_liquid} className="h-8 w-8" iconClassName="h-4 w-4" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{product.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {product.calories} kcal / {product.reference_quantity}{product.is_liquid ? 'ml' : 'g'}
+                                </p>
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="natural" className="mt-2">
+                      {/* Category filter */}
+                      <div className="flex flex-wrap gap-1 mb-2">
                         <button
-                          key={product.id}
-                          onClick={() => handleAddProduct(product)}
-                          className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-background transition-colors text-left"
+                          onClick={() => setSelectedNaturalCategory(null)}
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                            selectedNaturalCategory === null 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-background hover:bg-background/80'
+                          }`}
                         >
-                          <div className="h-8 w-8 rounded-lg overflow-hidden flex-shrink-0 bg-secondary">
-                            {product.image_url ? (
-                              <img src={product.image_url} alt="" className="h-full w-full object-cover" />
-                            ) : (
-                              <DefaultProductImage isLiquid={product.is_liquid} className="h-8 w-8" iconClassName="h-4 w-4" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{product.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {product.calories} kcal / {product.reference_quantity}{product.is_liquid ? 'ml' : 'g'}
-                            </p>
-                          </div>
+                          Todos
                         </button>
-                      ))
-                    )}
-                  </div>
+                        {NATURAL_PRODUCT_CATEGORIES.slice(0, 5).map(cat => (
+                          <button
+                            key={cat.id}
+                            onClick={() => setSelectedNaturalCategory(cat.id)}
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                              selectedNaturalCategory === cat.id 
+                                ? 'bg-primary text-primary-foreground' 
+                                : 'bg-background hover:bg-background/80'
+                            }`}
+                          >
+                            {cat.emoji}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="max-h-40 overflow-y-auto space-y-1">
+                        {filteredNaturalProducts.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-2">
+                            Nenhum alimento encontrado
+                          </p>
+                        ) : (
+                          filteredNaturalProducts.slice(0, 10).map(natural => {
+                            const categoryInfo = getCategoryInfo(natural.category);
+                            return (
+                              <button
+                                key={natural.id}
+                                onClick={() => handleAddNaturalProduct(natural)}
+                                className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-background transition-colors text-left"
+                              >
+                                <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-lg flex-shrink-0">
+                                  {categoryInfo?.emoji || '🍽️'}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{natural.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {natural.calories} kcal / 100{natural.is_liquid ? 'ml' : 'g'}
+                                  </p>
+                                </div>
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </div>
               )}
 
