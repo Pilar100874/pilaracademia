@@ -17,69 +17,51 @@ export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenManual }: AddFoo
     action();
   };
 
+  const actions = [
+    { icon: Camera, label: 'Foto', color: 'bg-emerald-500', action: onOpenPhoto },
+    { icon: Barcode, label: 'Código', color: 'bg-amber-500', action: onOpenBarcode },
+    { icon: Edit3, label: 'Manual', color: 'bg-sky-500', action: onOpenManual },
+  ];
+
   return (
-    <div className="fixed bottom-6 right-6 z-40">
-      {/* Menu Items */}
-      <div
-        className={cn(
-          "absolute bottom-16 right-0 flex flex-col gap-3 transition-all duration-300",
-          isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
-        )}
-      >
-        <button
-          onClick={() => handleAction(onOpenPhoto)}
-          className="flex items-center gap-3 rounded-2xl bg-card px-4 py-3 shadow-elevated transition-all hover:scale-105 animate-scale-in"
-          style={{ animationDelay: '0ms' }}
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-            <Camera className="h-5 w-5 text-primary" />
-          </div>
-          <span className="font-medium whitespace-nowrap">Tirar Foto</span>
-        </button>
+    <>
+      {/* Backdrop */}
+      {isOpen && <div className="fixed inset-0 bg-black/30 z-40 animate-fade-in" onClick={() => setIsOpen(false)} />}
 
-        <button
-          onClick={() => handleAction(onOpenBarcode)}
-          className="flex items-center gap-3 rounded-2xl bg-card px-4 py-3 shadow-elevated transition-all hover:scale-105 animate-scale-in"
-          style={{ animationDelay: '50ms' }}
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
-            <Barcode className="h-5 w-5 text-accent" />
-          </div>
-          <span className="font-medium whitespace-nowrap">Código de Barras</span>
-        </button>
-
-        <button
-          onClick={() => handleAction(onOpenManual)}
-          className="flex items-center gap-3 rounded-2xl bg-card px-4 py-3 shadow-elevated transition-all hover:scale-105 animate-scale-in"
-          style={{ animationDelay: '100ms' }}
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
-            <Edit3 className="h-5 w-5 text-secondary-foreground" />
-          </div>
-          <span className="font-medium whitespace-nowrap">Manual</span>
-        </button>
+      {/* Menu horizontal na parte inferior */}
+      <div className={cn(
+        "fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex gap-2 transition-all duration-300",
+        isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+      )}>
+        {actions.map((item, i) => (
+          <button
+            key={item.label}
+            onClick={() => handleAction(item.action)}
+            className={cn(
+              "flex flex-col items-center gap-1 rounded-2xl px-5 py-3 shadow-floating bg-card transition-all active:scale-95 animate-scale-in",
+            )}
+            style={{ animationDelay: `${i * 50}ms` }}
+          >
+            <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", item.color)}>
+              <item.icon className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-xs font-medium">{item.label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* FAB Button */}
-      <Button
-        variant="fab"
-        size="fab"
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "transition-transform duration-300",
-          isOpen && "rotate-45"
-        )}
-      >
-        {isOpen ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
-      </Button>
-
-      {/* Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 -z-10"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-    </div>
+      {/* FAB */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={cn(
+            "flex h-14 w-14 items-center justify-center rounded-full shadow-floating transition-all duration-300 active:scale-95",
+            isOpen ? "bg-card rotate-45" : "gradient-primary"
+          )}
+        >
+          {isOpen ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6 text-white" />}
+        </button>
+      </div>
+    </>
   );
 }
