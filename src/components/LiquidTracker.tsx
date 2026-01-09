@@ -77,7 +77,7 @@ export function LiquidTracker() {
               <Droplets className="h-5 w-5 text-white" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-medium">Água</p>
+              <p className="text-sm font-medium">Líquidos</p>
               <div className="flex items-center gap-2">
                 <span className="text-lg font-bold num-display text-sky-500">{(todayTotal / 1000).toFixed(1)}L</span>
                 <span className="text-xs text-muted-foreground">/ {(dailyGoal / 1000).toFixed(1)}L</span>
@@ -151,11 +151,14 @@ export function LiquidTracker() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Droplets className="h-5 w-5 text-sky-500" />
-              Adicionar Água
+              Adicionar Líquido
             </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 pt-2">
+            <p className="text-sm text-muted-foreground">
+              💡 Água pura e outras bebidas contabilizam no consumo diário
+            </p>
             <div className="grid grid-cols-2 gap-2">
               {QUICK_OPTIONS.map((opt) => (
                 <button

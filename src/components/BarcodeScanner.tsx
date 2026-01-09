@@ -390,7 +390,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
         setPackageWeight(customProduct.reference_quantity.toString());
         setShowPackageInfo(true);
       } else {
-        const result = await fetchProductByBarcode(barcode.trim());
+        const result = await fetchProductByBarcode(barcodeValue.trim());
         if (result) {
           setProduct(result);
           setIsCustomProduct(false);
@@ -402,13 +402,13 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
             setPackageWeight(match[1].replace(',', '.'));
           }
           
+          // Auto-detect if liquid
           const liquid = isLiquidProduct(result);
           setIsLiquid(liquid);
           
           if (liquid) {
             const volumeMl = getLiquidVolumeMl(result);
             setLiquidVolumeMl(volumeMl);
-            setShowLiquidDialog(true);
           }
         }
       }
@@ -690,7 +690,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
         ) : showLiquidDialog ? (
           <LiquidConsumptionDialog
             productName={product.name}
-            defaultMl={liquidVolumeMl}
+            defaultMl={liquidVolumeMl || 250}
             onConfirm={handleLiquidConfirm}
             onCancel={() => setShowLiquidDialog(false)}
           />
@@ -712,17 +712,45 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
               </div>
             </div>
 
-            {isLiquid && (
+            {/* Opção de líquido - sempre visível */}
+            <div 
+              className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                isLiquid 
+                  ? 'border-sky-500 bg-sky-500/10' 
+                  : 'border-muted hover:border-sky-500/50'
+              }`}
+              onClick={() => {
+                setIsLiquid(!isLiquid);
+                if (!isLiquid && !liquidVolumeMl) {
+                  const volumeMl = getLiquidVolumeMl(product);
+                  setLiquidVolumeMl(volumeMl || 250);
+                }
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  isLiquid ? 'border-sky-500 bg-sky-500' : 'border-muted-foreground'
+                }`}>
+                  {isLiquid && <Check className="h-3 w-3 text-white" />}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">🥤 Este produto é líquido</p>
+                  <p className="text-xs text-muted-foreground">
+                    Será contabilizado no consumo diário de líquidos
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {isLiquid ? (
               <Button
-                variant="outline"
+                variant="gradient"
                 className="w-full"
                 onClick={() => setShowLiquidDialog(true)}
               >
-                🥤 É uma bebida - Informar quantidade consumida
+                🥤 Informar quantidade consumida
               </Button>
-            )}
-
-            {!isLiquid && (
+            ) : (
               <>
                 {/* Informações da embalagem - obrigatório */}
                 <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
