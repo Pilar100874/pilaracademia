@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Info } from 'lucide-react';
+import { X, Info, Package, Minus, Plus } from 'lucide-react';
 import { NutritionData } from '@/types/nutrition';
 
 interface ManualEntryFormProps {
@@ -27,10 +27,16 @@ export function ManualEntryForm({ onSubmit, onClose }: ManualEntryFormProps) {
   const [transFat, setTransFat] = useState('');
   const [fiber, setFiber] = useState('');
   const [sodium, setSodium] = useState('');
-  const [quantity, setQuantity] = useState('100');
-  const [unit, setUnit] = useState('g');
   const [referenceQuantity, setReferenceQuantity] = useState('100');
   const [customReference, setCustomReference] = useState('');
+  
+  // Novos campos para embalagem e itens
+  const [packageWeight, setPackageWeight] = useState('');
+  const [itemsInPackage, setItemsInPackage] = useState('');
+  const [consumptionMode, setConsumptionMode] = useState<'weight' | 'items'>('weight');
+  const [consumedWeight, setConsumedWeight] = useState('100');
+  const [consumedItems, setConsumedItems] = useState(1);
+  const [unit, setUnit] = useState('g');
 
   const getReferenceValue = () => {
     if (referenceQuantity === 'custom') {
@@ -39,16 +45,44 @@ export function ManualEntryForm({ onSubmit, onClose }: ManualEntryFormProps) {
     return Number(referenceQuantity) || 100;
   };
 
+  // Calcular peso por item
+  const weightPerItem = useMemo(() => {
+    const pkgWeight = Number(packageWeight);
+    const items = Number(itemsInPackage);
+    if (pkgWeight > 0 && items > 0) {
+      return pkgWeight / items;
+    }
+    return null;
+  }, [packageWeight, itemsInPackage]);
+
+  // Calcular peso efetivo consumido
+  const effectiveConsumedWeight = useMemo(() => {
+    if (consumptionMode === 'items' && weightPerItem) {
+      return Math.round(weightPerItem * consumedItems * 10) / 10;
+    }
+    return Number(consumedWeight) || getReferenceValue();
+  }, [consumptionMode, weightPerItem, consumedItems, consumedWeight, referenceQuantity, customReference]);
+
+  // Calcular nutrição final
+  const calculatedNutrition = useMemo(() => {
+    const reference = getReferenceValue();
+    const multiplier = effectiveConsumedWeight / reference;
+    
+    return {
+      calories: Math.round((Number(calories) || 0) * multiplier),
+      protein: Math.round(((Number(protein) || 0) * multiplier) * 10) / 10,
+      carbs: Math.round(((Number(carbs) || 0) * multiplier) * 10) / 10,
+      fat: Math.round(((Number(fat) || 0) * multiplier) * 10) / 10,
+    };
+  }, [calories, protein, carbs, fat, effectiveConsumedWeight, referenceQuantity, customReference]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim() || !calories) return;
 
     const reference = getReferenceValue();
-    const consumedQty = Number(quantity) || reference;
-    
-    // Calcular valores proporcionais baseados na quantidade consumida vs referência
-    const multiplier = consumedQty / reference;
+    const multiplier = effectiveConsumedWeight / reference;
 
     const nutrition: NutritionData = {
       calories: Math.round((Number(calories) || 0) * multiplier),
@@ -61,7 +95,10 @@ export function ManualEntryForm({ onSubmit, onClose }: ManualEntryFormProps) {
       sodium: Math.round((Number(sodium) || 0) * multiplier),
     };
 
-    onSubmit(name.trim(), nutrition, consumedQty, unit);
+    const finalUnit = consumptionMode === 'items' ? 'unidade' : unit;
+    const finalQuantity = consumptionMode === 'items' ? consumedItems : effectiveConsumedWeight;
+
+    onSubmit(name.trim(), nutrition, finalQuantity, finalUnit);
   };
 
   return (
@@ -77,7 +114,47 @@ export function ManualEntryForm({ onSubmit, onClose }: ManualEntryFormProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Nome do alimento *</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Arroz integral" required />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Bolacha recheada" required />
+          </div>
+
+          {/* Informações da embalagem */}
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+            <div className="flex items-center gap-2 mb-2">
+              <Package className="h-4 w-4 text-amber-600" />
+              <span className="text-sm font-medium">Informações da Embalagem *</span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              Informe o peso total e quantidade de itens (ex: pacote de bolachas)
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Peso total (g)</label>
+                <Input
+                  type="number"
+                  value={packageWeight}
+                  onChange={(e) => setPackageWeight(e.target.value)}
+                  placeholder="Ex: 200"
+                  min="1"
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Qtd de itens</label>
+                <Input
+                  type="number"
+                  value={itemsInPackage}
+                  onChange={(e) => setItemsInPackage(e.target.value)}
+                  placeholder="Ex: 20"
+                  min="1"
+                  required
+                />
+              </div>
+            </div>
+            {weightPerItem && (
+              <p className="mt-2 text-xs text-center text-amber-600 font-medium">
+                ≈ {weightPerItem.toFixed(1)}g por unidade
+              </p>
+            )}
           </div>
 
           {/* Referência das informações nutricionais */}
@@ -159,42 +236,127 @@ export function ManualEntryForm({ onSubmit, onClose }: ManualEntryFormProps) {
           {/* Quantidade consumida */}
           <div className="border-t pt-4">
             <p className="text-sm font-medium mb-3">Quanto você consumiu?</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">Quantidade</label>
-                <Input 
-                  type="number" 
-                  value={quantity} 
-                  onChange={(e) => setQuantity(e.target.value)} 
-                  min="1" 
-                  step="1"
-                  placeholder={getReferenceValue().toString()}
-                />
+            
+            {/* Toggle modo de consumo */}
+            {weightPerItem && (
+              <div className="flex gap-2 mb-3">
+                <Button
+                  type="button"
+                  variant={consumptionMode === 'items' ? 'default' : 'outline'}
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setConsumptionMode('items')}
+                >
+                  Por unidades
+                </Button>
+                <Button
+                  type="button"
+                  variant={consumptionMode === 'weight' ? 'default' : 'outline'}
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setConsumptionMode('weight')}
+                >
+                  Em gramas
+                </Button>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">Unidade</label>
-                <Select value={unit} onValueChange={setUnit}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="g">gramas (g)</SelectItem>
-                    <SelectItem value="ml">mililitros (ml)</SelectItem>
-                    <SelectItem value="porção">porção</SelectItem>
-                    <SelectItem value="unidade">unidade</SelectItem>
-                  </SelectContent>
-                </Select>
+            )}
+
+            {consumptionMode === 'items' && weightPerItem ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-accent/30">
+                  <div>
+                    <span className="text-2xl font-bold">{consumedItems}</span>
+                    <span className="text-sm text-muted-foreground ml-2">
+                      {consumedItems === 1 ? 'unidade' : 'unidades'}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-lg font-semibold">{effectiveConsumedWeight}</span>
+                    <span className="text-sm text-muted-foreground ml-1">g</span>
+                  </div>
+                </div>
+
+                {/* Seletor de quantidade */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setConsumedItems(Math.max(1, consumedItems - 1))}
+                    disabled={consumedItems <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <div className="flex-1">
+                    <Input
+                      type="number"
+                      min="1"
+                      value={consumedItems}
+                      onChange={(e) => setConsumedItems(Math.max(1, Number(e.target.value)))}
+                      className="text-center"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setConsumedItems(consumedItems + 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">Quantidade</label>
+                  <Input 
+                    type="number" 
+                    value={consumedWeight} 
+                    onChange={(e) => setConsumedWeight(e.target.value)} 
+                    min="1" 
+                    step="1"
+                    placeholder={getReferenceValue().toString()}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">Unidade</label>
+                  <Select value={unit} onValueChange={setUnit}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="g">gramas (g)</SelectItem>
+                      <SelectItem value="ml">mililitros (ml)</SelectItem>
+                      <SelectItem value="porção">porção</SelectItem>
+                      <SelectItem value="unidade">unidade</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
             
             {/* Preview do cálculo */}
-            {calories && Number(quantity) !== getReferenceValue() && (
-              <div className="mt-3 p-2 rounded-lg bg-secondary/50 text-center">
-                <p className="text-xs text-muted-foreground">
-                  {quantity}{unit} = <span className="font-semibold text-primary">
-                    {Math.round((Number(calories) || 0) * (Number(quantity) / getReferenceValue()))} kcal
-                  </span>
-                </p>
+            {calories && (
+              <div className="mt-3 p-3 rounded-lg bg-secondary/50">
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  <div>
+                    <p className="text-lg font-bold text-primary">{calculatedNutrition.calories}</p>
+                    <p className="text-xs text-muted-foreground">kcal</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">{calculatedNutrition.protein}</p>
+                    <p className="text-xs text-muted-foreground">prot</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">{calculatedNutrition.carbs}</p>
+                    <p className="text-xs text-muted-foreground">carb</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">{calculatedNutrition.fat}</p>
+                    <p className="text-xs text-muted-foreground">gord</p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
