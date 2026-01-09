@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Apple, Loader2, TrendingDown, TrendingUp, Droplets, ArrowDownUp, Clock, Layers } from 'lucide-react';
+import { Flame, Apple, Loader2, TrendingDown, TrendingUp, Droplets, ArrowDownUp, Clock, Layers, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProgressRing } from '@/components/ProgressRing';
 import { FoodEntryItemDB } from '@/components/FoodEntryItemDB';
@@ -30,7 +30,7 @@ type SortType = 'time' | 'type';
 export function Dashboard() {
   const navigate = useNavigate();
   const { entries, isLoading, addEntry, updateEntry, deleteEntry, getTodaySummary } = useFoodEntries();
-  const { addLiquidEntry, getTodayTotal, refetch: refetchLiquids } = useLiquidEntries();
+  const { entries: liquidEntriesData, addLiquidEntry, updateLiquidEntry, deleteLiquidEntry, getTodayTotal, refetch: refetchLiquids, liquidTypes } = useLiquidEntries();
   const { profile, getGoals, isProfileComplete } = useProfile();
   const { getTodayTotalBurned } = useExerciseEntries();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
@@ -100,11 +100,10 @@ export function Dashboard() {
     }
   };
 
-  // Separar entries em refeições e líquidos
+  // Separar entries em refeições (food_entries não são líquidos)
   const mealEntries = entries.filter(e => e.is_liquid !== true);
-  const liquidEntries = entries.filter(e => e.is_liquid === true);
   
-  // All entries sorted by time (for 'time' sort mode)
+  // All entries sorted by time (for 'time' sort mode) - combining food and liquid entries
   const allEntriesByTime = [...entries].sort((a, b) => 
     new Date(b.consumed_at).getTime() - new Date(a.consumed_at).getTime()
   );
@@ -262,19 +261,38 @@ export function Dashboard() {
               </div>
             )}
 
-            {/* Bebidas */}
-            {liquidEntries.length > 0 && (
+            {/* Bebidas - from liquid_entries */}
+            {liquidEntriesData.length > 0 && (
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
                   <Droplets className="h-3 w-3 text-sky-500" />
-                  Bebidas ({liquidEntries.length})
+                  Bebidas ({liquidEntriesData.length})
                 </p>
                 <div className="space-y-2">
-                  {liquidEntries.slice(0, 5).map((entry) => (
-                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
+                  {liquidEntriesData.slice(0, 5).map((entry) => (
+                    <div key={entry.id} className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10">
+                        <Droplets className="h-5 w-5 text-sky-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{liquidTypes[entry.type as keyof typeof liquidTypes] || entry.type}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(entry.consumed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-sky-500">{entry.amount_ml}ml</p>
+                      </div>
+                      <button 
+                        onClick={() => deleteLiquidEntry(entry.id).then(() => refetchLiquids())}
+                        className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   ))}
-                  {liquidEntries.length > 5 && (
-                    <p className="text-xs text-center text-muted-foreground">+{liquidEntries.length - 5} mais</p>
+                  {liquidEntriesData.length > 5 && (
+                    <p className="text-xs text-center text-muted-foreground">+{liquidEntriesData.length - 5} mais</p>
                   )}
                 </div>
               </div>
