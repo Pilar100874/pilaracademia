@@ -43,7 +43,7 @@ export function calculateCaloriesBurned(
   return Math.round(met * weightKg * hours);
 }
 
-export function useExerciseEntries() {
+export function useExerciseEntries(selectedDate?: Date) {
   const { user } = useAuth();
   const [entries, setEntries] = useState<ExerciseEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,21 +55,21 @@ export function useExerciseEntries() {
       return;
     }
 
-    const today = new Date();
+    const targetDate = selectedDate || new Date();
 
     const { data, error } = await supabase
       .from('exercise_entries')
       .select('*')
       .eq('user_id', user.id)
-      .gte('performed_at', startOfDay(today).toISOString())
-      .lte('performed_at', endOfDay(today).toISOString())
+      .gte('performed_at', startOfDay(targetDate).toISOString())
+      .lte('performed_at', endOfDay(targetDate).toISOString())
       .order('performed_at', { ascending: false });
 
     if (!error && data) {
       setEntries(data as ExerciseEntry[]);
     }
     setIsLoading(false);
-  }, [user]);
+  }, [user, selectedDate]);
 
   useEffect(() => {
     fetchEntries();
@@ -83,6 +83,8 @@ export function useExerciseEntries() {
   }) => {
     if (!user) throw new Error('Usuário não autenticado');
 
+    const performedDate = selectedDate || new Date();
+
     const { data, error } = await supabase
       .from('exercise_entries')
       .insert({
@@ -91,7 +93,7 @@ export function useExerciseEntries() {
         duration_minutes: entry.duration_minutes,
         calories_burned: entry.calories_burned,
         exercise_type: entry.exercise_type,
-        performed_at: new Date().toISOString(),
+        performed_at: performedDate.toISOString(),
       })
       .select()
       .single();

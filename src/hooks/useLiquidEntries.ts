@@ -22,7 +22,7 @@ const LIQUID_TYPES = {
   other: 'Outro',
 };
 
-export function useLiquidEntries() {
+export function useLiquidEntries(selectedDate?: Date) {
   const { user } = useAuth();
   const [entries, setEntries] = useState<LiquidEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,14 +31,14 @@ export function useLiquidEntries() {
     if (!user) return;
     
     setIsLoading(true);
-    const today = new Date();
+    const targetDate = selectedDate || new Date();
     
     const { data, error } = await supabase
       .from('liquid_entries')
       .select('*')
       .eq('user_id', user.id)
-      .gte('consumed_at', startOfDay(today).toISOString())
-      .lte('consumed_at', endOfDay(today).toISOString())
+      .gte('consumed_at', startOfDay(targetDate).toISOString())
+      .lte('consumed_at', endOfDay(targetDate).toISOString())
       .order('consumed_at', { ascending: false });
 
     if (!error && data) {
@@ -49,10 +49,13 @@ export function useLiquidEntries() {
 
   useEffect(() => {
     fetchEntries();
-  }, [user]);
+  }, [user, selectedDate]);
 
   const addLiquidEntry = async (amountMl: number, type: string = 'water') => {
     if (!user) throw new Error('Usuário não autenticado');
+
+    // Use selected date for consumed_at, or now
+    const consumedDate = selectedDate || new Date();
 
     const { data, error } = await supabase
       .from('liquid_entries')
@@ -60,7 +63,7 @@ export function useLiquidEntries() {
         user_id: user.id,
         amount_ml: amountMl,
         type,
-        consumed_at: new Date().toISOString(),
+        consumed_at: consumedDate.toISOString(),
       })
       .select()
       .single();

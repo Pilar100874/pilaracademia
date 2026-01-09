@@ -4,29 +4,29 @@ import { FoodEntryDB } from '@/types/profile';
 import { NutritionData } from '@/types/nutrition';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from 'react';
+import { startOfDay, endOfDay } from 'date-fns';
 
-export function useFoodEntries() {
+export function useFoodEntries(selectedDate?: Date) {
   const { user } = useAuth();
   const [entries, setEntries] = useState<FoodEntryDB[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchTodayEntries = useCallback(async () => {
+  const fetchEntries = useCallback(async () => {
     if (!user) {
       setEntries([]);
       setIsLoading(false);
       return;
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const targetDate = selectedDate || new Date();
+    const dayStart = startOfDay(targetDate);
+    const dayEnd = endOfDay(targetDate);
 
     const { data, error } = await supabase
       .from('food_entries')
       .select('*')
-      .gte('consumed_at', today.toISOString())
-      .lt('consumed_at', tomorrow.toISOString())
+      .gte('consumed_at', dayStart.toISOString())
+      .lte('consumed_at', dayEnd.toISOString())
       .order('consumed_at', { ascending: false });
 
     if (error) {
@@ -35,11 +35,11 @@ export function useFoodEntries() {
       setEntries(data as FoodEntryDB[] || []);
     }
     setIsLoading(false);
-  }, [user]);
+  }, [user, selectedDate]);
 
   useEffect(() => {
-    fetchTodayEntries();
-  }, [fetchTodayEntries]);
+    fetchEntries();
+  }, [fetchEntries]);
 
   const addEntry = useCallback(async (entry: {
     name: string;
@@ -53,6 +53,9 @@ export function useFoodEntries() {
     liquidMl?: number;
   }) => {
     if (!user) return null;
+
+    // Use the selected date for the consumed_at timestamp, or provided date, or now
+    const consumedDate = entry.consumedAt || selectedDate || new Date();
 
     const { data, error } = await supabase
       .from('food_entries')
@@ -71,7 +74,7 @@ export function useFoodEntries() {
         quantity: entry.quantity,
         unit: entry.unit,
         source: entry.source,
-        consumed_at: (entry.consumedAt || new Date()).toISOString(),
+        consumed_at: consumedDate.toISOString(),
         is_liquid: entry.isLiquid || false,
         liquid_ml: entry.liquidMl || 0,
       })
@@ -85,7 +88,7 @@ export function useFoodEntries() {
 
     setEntries(prev => [data as FoodEntryDB, ...prev]);
     return data as FoodEntryDB;
-  }, [user]);
+  }, [user, selectedDate]);
 
   const updateEntry = useCallback(async (id: string, updates: Partial<FoodEntryDB>) => {
     if (!user) return null;
@@ -124,7 +127,7 @@ export function useFoodEntries() {
     setEntries(prev => prev.filter(e => e.id !== id));
   }, [user]);
 
-  const getTodaySummary = useCallback(() => {
+  const getSummary = useCallback(() => {
     const consumed = entries.reduce(
       (acc, entry) => ({
         calories: acc.calories + (entry.calories || 0),
@@ -148,7 +151,8 @@ export function useFoodEntries() {
     addEntry,
     updateEntry,
     deleteEntry,
-    getTodaySummary,
-    refetch: fetchTodayEntries,
+    getSummary,
+    getTodaySummary: getSummary, // Alias for backward compatibility
+    refetch: fetchEntries,
   };
 }
