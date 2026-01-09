@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Apple, Loader2, TrendingDown, TrendingUp, Droplets, ArrowDownUp, Clock, Layers, Trash2 } from 'lucide-react';
+import { Flame, Apple, Loader2, TrendingDown, TrendingUp, Droplets, ArrowDownUp, Clock, Layers, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProgressRing } from '@/components/ProgressRing';
 import { FoodEntryItemDB } from '@/components/FoodEntryItemDB';
@@ -9,6 +9,7 @@ import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { ManualEntryForm } from '@/components/ManualEntryForm';
 import { ProductSearch } from '@/components/ProductSearch';
 import { AddLiquidDialog } from '@/components/AddLiquidDialog';
+import { EditLiquidDialog } from '@/components/EditLiquidDialog';
 import { WeightTracker } from '@/components/WeightTracker';
 import { ExerciseTracker } from '@/components/ExerciseTracker';
 import { NutritionProgressGrid } from '@/components/NutritionProgressGrid';
@@ -27,6 +28,13 @@ import { useNavigate } from 'react-router-dom';
 type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | 'liquid' | null;
 type SortType = 'time' | 'type';
 
+interface LiquidEntryData {
+  id: string;
+  amount_ml: number;
+  type: string;
+  consumed_at: string;
+}
+
 export function Dashboard() {
   const navigate = useNavigate();
   const { entries, isLoading, addEntry, updateEntry, deleteEntry, getTodaySummary } = useFoodEntries();
@@ -35,6 +43,7 @@ export function Dashboard() {
   const { getTodayTotalBurned } = useExerciseEntries();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [sortType, setSortType] = useState<SortType>('type');
+  const [editingLiquid, setEditingLiquid] = useState<LiquidEntryData | null>(null);
 
   const goals = getGoals();
   const { consumed } = getTodaySummary();
@@ -316,6 +325,14 @@ export function Dashboard() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          onClick={() => setEditingLiquid(entry)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="h-7 w-7 text-muted-foreground hover:text-destructive"
                           onClick={() => deleteLiquidEntry(entry.id).then(() => refetchLiquids())}
                         >
@@ -361,6 +378,16 @@ export function Dashboard() {
       {activeModal === 'manual' && <ManualEntryForm onSubmit={handleManualEntry} onClose={() => setActiveModal(null)} />}
       <ProductSearch isOpen={activeModal === 'search'} onClose={() => setActiveModal(null)} />
       <AddLiquidDialog open={activeModal === 'liquid'} onOpenChange={(open) => !open && setActiveModal(null)} onAddLiquid={handleAddLiquid} />
+      <EditLiquidDialog 
+        entry={editingLiquid}
+        liquidTypes={liquidTypes}
+        open={!!editingLiquid}
+        onOpenChange={(open) => !open && setEditingLiquid(null)}
+        onSave={async (id, amountMl) => {
+          await updateLiquidEntry(id, amountMl);
+          refetchLiquids();
+        }}
+      />
       <WeightReminderPopup />
       <BottomNav />
     </div>
