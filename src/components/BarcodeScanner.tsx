@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Camera, Loader2, Check, Star, Minus, Plus } from 'lucide-react';
+import { X, Camera, Loader2, Check, Star, Minus, Plus, Package } from 'lucide-react';
 import { BarcodeProduct, NutritionData } from '@/types/nutrition';
 import { NutritionDisplay } from '@/components/NutritionDisplay';
 import { LiquidConsumptionDialog } from '@/components/LiquidConsumptionDialog';
@@ -32,10 +32,18 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
   const [isLoading, setIsLoading] = useState(false);
   const [product, setProduct] = useState<BarcodeProduct | null>(null);
   const [isCustomProduct, setIsCustomProduct] = useState(false);
-  const [totalProductWeight, setTotalProductWeight] = useState<number | null>(null);
-  const [inputMode, setInputMode] = useState<'grams' | 'proportion'>('grams');
+  
+  // Package info
+  const [showPackageInfo, setShowPackageInfo] = useState(false);
+  const [packageWeight, setPackageWeight] = useState('');
+  const [itemsInPackage, setItemsInPackage] = useState('');
+  
+  // Consumption mode
+  const [consumptionMode, setConsumptionMode] = useState<'grams' | 'proportion' | 'items'>('grams');
   const [portionGrams, setPortionGrams] = useState(100);
   const [portionMultiplier, setPortionMultiplier] = useState(1);
+  const [consumedItems, setConsumedItems] = useState(1);
+  
   const [calculatedNutrition, setCalculatedNutrition] = useState<NutritionData | null>(null);
   const [isLiquid, setIsLiquid] = useState(false);
   const [liquidVolumeMl, setLiquidVolumeMl] = useState(0);
@@ -47,13 +55,31 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     inputRef.current?.focus();
   }, []);
 
+  // Peso por item
+  const weightPerItem = useMemo(() => {
+    const pkgWeight = Number(packageWeight);
+    const items = Number(itemsInPackage);
+    if (pkgWeight > 0 && items > 0) {
+      return pkgWeight / items;
+    }
+    return null;
+  }, [packageWeight, itemsInPackage]);
+
+  // Total product weight
+  const totalProductWeight = useMemo(() => {
+    return Number(packageWeight) || null;
+  }, [packageWeight]);
+
   // Calcular gramas efetivas baseado no modo
   const effectiveGrams = useMemo(() => {
-    if (inputMode === 'proportion' && totalProductWeight) {
+    if (consumptionMode === 'items' && weightPerItem) {
+      return Math.round(weightPerItem * consumedItems);
+    }
+    if (consumptionMode === 'proportion' && totalProductWeight) {
       return Math.round(totalProductWeight * portionMultiplier);
     }
     return portionGrams;
-  }, [inputMode, totalProductWeight, portionMultiplier, portionGrams]);
+  }, [consumptionMode, weightPerItem, consumedItems, totalProductWeight, portionMultiplier, portionGrams]);
 
   useEffect(() => {
     if (product) {
@@ -61,26 +87,14 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     }
   }, [product, effectiveGrams]);
 
-  // Extrair peso do produto do servingSize
-  const extractWeightFromServing = (servingSize?: string): number | null => {
-    if (!servingSize) return null;
-    const match = servingSize.match(/(\d+(?:[.,]\d+)?)\s*(g|ml)/i);
-    if (match) {
-      return parseFloat(match[1].replace(',', '.'));
-    }
-    return null;
-  };
-
   const handleSearch = async () => {
     if (!barcode.trim()) return;
 
     setIsLoading(true);
     try {
-      // Primeiro, verificar se temos o produto salvo localmente
       const customProduct = await getProductByBarcode(barcode.trim());
       
       if (customProduct) {
-        // Usar produto personalizado
         const nutrition: NutritionData = {
           calories: customProduct.calories,
           protein: customProduct.protein,
@@ -92,40 +106,29 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           sodium: customProduct.sodium || 0,
         };
         
-        const servingSize = `${customProduct.reference_quantity}${customProduct.reference_unit}`;
-        const weight = customProduct.reference_quantity;
-        
         setProduct({
           code: customProduct.barcode,
           name: customProduct.name,
           brand: customProduct.brand || undefined,
           imageUrl: customProduct.image_url || undefined,
           nutrition,
-          servingSize,
+          servingSize: `${customProduct.reference_quantity}${customProduct.reference_unit}`,
         });
         setIsCustomProduct(true);
-        setTotalProductWeight(weight);
-        setPortionGrams(weight);
-        setInputMode('proportion');
-        setPortionMultiplier(1);
+        setPackageWeight(customProduct.reference_quantity.toString());
+        setShowPackageInfo(true);
         toast.success('Produto encontrado (salvo)!', { icon: '⭐' });
       } else {
-        // Buscar do OpenFoodFacts
         const result = await fetchProductByBarcode(barcode.trim());
         if (result) {
           setProduct(result);
           setIsCustomProduct(false);
+          setShowPackageInfo(true);
           
-          // Tentar extrair peso do produto
-          const weight = extractWeightFromServing(result.servingSize);
-          setTotalProductWeight(weight);
-          if (weight) {
-            setInputMode('proportion');
-            setPortionMultiplier(1);
-            setPortionGrams(weight);
-          } else {
-            setInputMode('grams');
-            setPortionGrams(100);
+          // Try to extract weight from serving size
+          const match = result.servingSize?.match(/(\d+(?:[.,]\d+)?)\s*(g|ml)/i);
+          if (match) {
+            setPackageWeight(match[1].replace(',', '.'));
           }
           
           const liquid = isLiquidProduct(result);
@@ -152,7 +155,16 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
   const handleAddProduct = async () => {
     if (!product || !calculatedNutrition) return;
     
-    // Salvar produto para uso futuro se marcado
+    // Validate package info
+    if (!packageWeight || Number(packageWeight) <= 0) {
+      toast.error('Informe o peso da embalagem');
+      return;
+    }
+    if (!itemsInPackage || Number(itemsInPackage) <= 0) {
+      toast.error('Informe a quantidade de itens');
+      return;
+    }
+    
     if (saveForFuture && !isCustomProduct) {
       try {
         await saveProduct({
@@ -168,7 +180,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           trans_fat: product.nutrition.transFat || 0,
           fiber: product.nutrition.fiber || 0,
           sodium: product.nutrition.sodium || 0,
-          reference_quantity: totalProductWeight || 100,
+          reference_quantity: Number(packageWeight),
           reference_unit: 'g',
         });
         toast.success('Produto salvo para próximas vezes!', { icon: '⭐' });
@@ -191,7 +203,6 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     
     const nutritionForVolume = calculateNutritionForPortion(product.nutrition, mlConsumed);
     
-    // Salvar produto líquido
     if (saveForFuture && !isCustomProduct) {
       try {
         await saveProduct({
@@ -218,6 +229,9 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     
     onProductFound({ ...product, nutrition: nutritionForVolume }, mlConsumed, true, mlConsumed);
   };
+
+  // Check if package info is complete
+  const isPackageInfoComplete = Number(packageWeight) > 0 && Number(itemsInPackage) > 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/80 backdrop-blur-sm animate-scale-in">
@@ -274,8 +288,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
                 </div>
                 {product.brand && <p className="text-sm text-muted-foreground truncate">{product.brand}</p>}
                 <p className="text-xs text-muted-foreground mt-1">
-                  {isCustomProduct ? 'Produto salvo' : 'Valores por 100g'}
-                  {totalProductWeight && ` • Peso total: ${totalProductWeight}g`}
+                  Valores por 100g
                 </p>
               </div>
             </div>
@@ -291,111 +304,195 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
             )}
 
             {!isLiquid && (
-              <div className="space-y-3">
-                {/* Toggle modo de entrada se temos peso total */}
-                {totalProductWeight && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant={inputMode === 'proportion' ? 'default' : 'outline'}
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setInputMode('proportion')}
-                    >
-                      Por porção
-                    </Button>
-                    <Button
-                      variant={inputMode === 'grams' ? 'default' : 'outline'}
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setInputMode('grams')}
-                    >
-                      Em gramas
-                    </Button>
+              <>
+                {/* Informações da embalagem - obrigatório */}
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Package className="h-4 w-4 text-amber-600" />
+                    <span className="text-sm font-medium">Informações da Embalagem *</span>
                   </div>
-                )}
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Informe o peso total e quantidade de itens
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">Peso total (g)</label>
+                      <Input
+                        type="number"
+                        value={packageWeight}
+                        onChange={(e) => setPackageWeight(e.target.value)}
+                        placeholder="Ex: 200"
+                        min="1"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">Qtd de itens</label>
+                      <Input
+                        type="number"
+                        value={itemsInPackage}
+                        onChange={(e) => setItemsInPackage(e.target.value)}
+                        placeholder="Ex: 20"
+                        min="1"
+                      />
+                    </div>
+                  </div>
+                  {weightPerItem && (
+                    <p className="mt-2 text-xs text-center text-amber-600 font-medium">
+                      ≈ {weightPerItem.toFixed(1)}g por unidade
+                    </p>
+                  )}
+                </div>
 
-                {inputMode === 'proportion' && totalProductWeight ? (
+                {/* Modo de consumo - só aparece se tiver info da embalagem */}
+                {isPackageInfoComplete && (
                   <div className="space-y-3">
-                    <label className="text-sm font-medium">Quanto consumiu do produto?</label>
+                    <p className="text-sm font-medium">Quanto você consumiu?</p>
                     
-                    {/* Mostra porção e peso calculado */}
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-accent/30">
-                      <div>
-                        <span className="text-2xl font-bold">{getPortionLabel()}</span>
-                        <span className="text-sm text-muted-foreground ml-2">do produto</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-lg font-semibold">{effectiveGrams}</span>
-                        <span className="text-sm text-muted-foreground ml-1">g</span>
-                      </div>
-                    </div>
-
-                    {/* Botões de porção rápida */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {PORTION_OPTIONS.map((option) => (
-                        <button
-                          key={option.value}
-                          onClick={() => setPortionMultiplier(option.value)}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            Math.abs(portionMultiplier - option.value) < 0.01
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-secondary hover:bg-secondary/80'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Ajuste fino */}
-                    <div className="flex items-center gap-2">
+                    {/* Toggle modo de consumo */}
+                    <div className="flex gap-1.5">
                       <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setPortionMultiplier(Math.max(0.1, portionMultiplier - 0.1))}
-                        disabled={portionMultiplier <= 0.1}
+                        variant={consumptionMode === 'items' ? 'default' : 'outline'}
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setConsumptionMode('items')}
                       >
-                        <Minus className="h-4 w-4" />
+                        Unidades
                       </Button>
-                      <div className="flex-1">
+                      <Button
+                        variant={consumptionMode === 'proportion' ? 'default' : 'outline'}
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setConsumptionMode('proportion')}
+                      >
+                        Porção
+                      </Button>
+                      <Button
+                        variant={consumptionMode === 'grams' ? 'default' : 'outline'}
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setConsumptionMode('grams')}
+                      >
+                        Gramas
+                      </Button>
+                    </div>
+
+                    {consumptionMode === 'items' && weightPerItem ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-accent/30">
+                          <div>
+                            <span className="text-2xl font-bold">{consumedItems}</span>
+                            <span className="text-sm text-muted-foreground ml-2">
+                              {consumedItems === 1 ? 'unidade' : 'unidades'}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-lg font-semibold">{effectiveGrams}</span>
+                            <span className="text-sm text-muted-foreground ml-1">g</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setConsumedItems(Math.max(1, consumedItems - 1))}
+                            disabled={consumedItems <= 1}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <div className="flex-1">
+                            <Input
+                              type="number"
+                              min="1"
+                              value={consumedItems}
+                              onChange={(e) => setConsumedItems(Math.max(1, Number(e.target.value)))}
+                              className="text-center"
+                            />
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setConsumedItems(consumedItems + 1)}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : consumptionMode === 'proportion' && totalProductWeight ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-accent/30">
+                          <div>
+                            <span className="text-2xl font-bold">{getPortionLabel()}</span>
+                            <span className="text-sm text-muted-foreground ml-2">do produto</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-lg font-semibold">{effectiveGrams}</span>
+                            <span className="text-sm text-muted-foreground ml-1">g</span>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {PORTION_OPTIONS.map((option) => (
+                            <button
+                              key={option.value}
+                              onClick={() => setPortionMultiplier(option.value)}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                Math.abs(portionMultiplier - option.value) < 0.01
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-secondary hover:bg-secondary/80'
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setPortionMultiplier(Math.max(0.1, portionMultiplier - 0.1))}
+                            disabled={portionMultiplier <= 0.1}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <div className="flex-1">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              min="0.1"
+                              value={portionMultiplier}
+                              onChange={(e) => setPortionMultiplier(Math.max(0.1, Number(e.target.value)))}
+                              className="text-center"
+                            />
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setPortionMultiplier(portionMultiplier + 0.1)}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
                         <Input
                           type="number"
-                          step="0.1"
-                          min="0.1"
-                          value={portionMultiplier}
-                          onChange={(e) => setPortionMultiplier(Math.max(0.1, Number(e.target.value)))}
-                          className="text-center"
+                          value={portionGrams}
+                          onChange={(e) => setPortionGrams(Number(e.target.value))}
+                          min={1}
+                          max={2000}
+                          placeholder="Quantidade em gramas"
                         />
                       </div>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setPortionMultiplier(portionMultiplier + 0.1)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <p className="text-xs text-center text-muted-foreground">
-                      Peso total do produto: {totalProductWeight}g
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Quantidade consumida (g)</label>
-                    <Input
-                      type="number"
-                      value={portionGrams}
-                      onChange={(e) => setPortionGrams(Number(e.target.value))}
-                      min={1}
-                      max={2000}
-                    />
+                    )}
                   </div>
                 )}
-              </div>
+              </>
             )}
 
-            {calculatedNutrition && (
+            {calculatedNutrition && isPackageInfoComplete && (
               <NutritionDisplay nutrition={calculatedNutrition} showAll />
             )}
 
@@ -419,7 +516,12 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
               <Button variant="outline" className="flex-1" onClick={() => setProduct(null)}>
                 Voltar
               </Button>
-              <Button variant="gradient" className="flex-1" onClick={handleAddProduct}>
+              <Button 
+                variant="gradient" 
+                className="flex-1" 
+                onClick={handleAddProduct}
+                disabled={!isPackageInfoComplete}
+              >
                 <Check className="h-4 w-4 mr-2" />
                 Adicionar
               </Button>
