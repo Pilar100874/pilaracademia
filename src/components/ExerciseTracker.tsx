@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Flame, Plus, Dumbbell, Trash2, ChevronDown, Pencil, Check, X } from 'lucide-react';
+import { Flame, Plus, Dumbbell, Trash2, ChevronDown, Pencil, Check, Clock } from 'lucide-react';
 import { useExerciseEntries, EXERCISE_TYPES, calculateCaloriesBurned, ExerciseEntry } from '@/hooks/useExerciseEntries';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
@@ -12,8 +12,8 @@ import { format } from 'date-fns';
 export function ExerciseTracker() {
   const { entries, addExerciseEntry, updateExerciseEntry, deleteExerciseEntry, getTodayTotalBurned } = useExerciseEntries();
   const { profile } = useProfile();
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [showEntries, setShowEntries] = useState(false);
   const [mode, setMode] = useState<'auto' | 'manual'>('manual');
   const [exerciseType, setExerciseType] = useState<keyof typeof EXERCISE_TYPES>('walking_fast');
   const [duration, setDuration] = useState('30');
@@ -81,71 +81,85 @@ export function ExerciseTracker() {
 
   return (
     <>
-      <div className="card-compact overflow-hidden">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-exercise flex-shrink-0">
-              <Dumbbell className="h-4 w-4 text-white" />
+      <div className="space-y-2">
+        {/* Header colapsável */}
+        <button 
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-between p-3 rounded-xl bg-card shadow-card hover:shadow-soft transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-exercise">
+              <Dumbbell className="h-5 w-5 text-white" />
             </div>
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Exercício</p>
-              <p className="text-lg num-display text-rose-500">-{totalBurned}</p>
+            <div className="text-left">
+              <p className="text-sm font-medium">Exercícios</p>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold num-display text-rose-500">-{totalBurned}</span>
+                <span className="text-xs text-muted-foreground">kcal queimadas</span>
+              </div>
             </div>
           </div>
-          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 flex-shrink-0" onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{entries.length} registro(s)</span>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-8 w-8 p-0"
+              onClick={(e) => { e.stopPropagation(); setShowForm(true); }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          </div>
+        </button>
 
-        {entries.length > 0 && (
-          <button 
-            onClick={() => setShowEntries(!showEntries)} 
-            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-          >
-            {entries.length} exercício(s)
-            <ChevronDown className={`h-3 w-3 transition-transform ${showEntries ? 'rotate-180' : ''}`} />
-          </button>
-        )}
-
-        {showEntries && entries.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-border/50 space-y-1 animate-fade-in max-h-40 overflow-y-auto">
-            {entries.map((entry) => {
-              const exerciseInfo = EXERCISE_TYPES[entry.exercise_type as keyof typeof EXERCISE_TYPES];
-              return (
-                <div key={entry.id} className="flex items-center justify-between py-1.5 px-2 rounded-md bg-secondary/50 text-sm gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="flex-shrink-0">{exerciseInfo?.icon || '🏋️'}</span>
-                    <div className="min-w-0 flex-1">
-                      <span className="font-medium truncate block">{entry.name}</span>
+        {/* Lista de entradas */}
+        {isExpanded && (
+          <div className="space-y-2 animate-fade-in pl-2">
+            {entries.length === 0 ? (
+              <div className="text-center py-4 text-sm text-muted-foreground">
+                Nenhum exercício hoje
+              </div>
+            ) : (
+              entries.map((entry) => {
+                const exerciseInfo = EXERCISE_TYPES[entry.exercise_type as keyof typeof EXERCISE_TYPES];
+                return (
+                  <div key={entry.id} className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10">
+                      <span className="text-lg">{exerciseInfo?.icon || '🏋️'}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{entry.name}</p>
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="text-rose-500">-{entry.calories_burned} kcal</span>
-                        <span className="text-muted-foreground">
+                        <span className="text-rose-500 font-semibold">-{entry.calories_burned} kcal</span>
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
                           {format(new Date(entry.performed_at), 'HH:mm')}
                         </span>
                       </div>
                     </div>
+                    <div className="flex gap-1">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                        onClick={() => handleEdit(entry)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDelete(entry.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-1 flex-shrink-0">
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
-                      onClick={() => handleEdit(entry)}
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDelete(entry.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         )}
       </div>
@@ -163,13 +177,13 @@ export function ExerciseTracker() {
           <div className="space-y-4 pt-2">
             <div className="flex gap-2">
               <button 
-                className={`quick-btn flex-1 py-3 ${mode === 'manual' ? 'bg-primary text-white' : 'bg-secondary'}`} 
+                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${mode === 'manual' ? 'bg-primary text-white' : 'bg-secondary hover:bg-secondary/80'}`} 
                 onClick={() => setMode('manual')}
               >
                 🏋️ Equipamento
               </button>
               <button 
-                className={`quick-btn flex-1 py-3 ${mode === 'auto' ? 'bg-primary text-white' : 'bg-secondary'}`} 
+                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${mode === 'auto' ? 'bg-primary text-white' : 'bg-secondary hover:bg-secondary/80'}`} 
                 onClick={() => setMode('auto')}
               >
                 🧮 Calcular
