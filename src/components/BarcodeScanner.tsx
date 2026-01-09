@@ -213,6 +213,12 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           }
         }}
         onSuccess={handleConsumptionSuccess}
+        onBack={() => {
+          setShowConsumptionDialog(false);
+          setFoundProduct(null);
+          // Re-show product form for editing
+          setShowProductForm(true);
+        }}
       />
     );
   }
