@@ -121,8 +121,9 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           reference_unit: 'g',
         });
         toast.success('Produto salvo para próximas vezes!', { icon: '⭐' });
-      } catch {
-        // Silently fail saving
+      } catch (err) {
+        console.error('Erro ao salvar produto:', err);
+        toast.error('Erro ao salvar produto');
       }
     }
     
@@ -153,8 +154,9 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           reference_quantity: 100,
           reference_unit: 'ml',
         });
-      } catch {
-        // Silently fail
+        toast.success('Produto salvo!', { icon: '⭐' });
+      } catch (err) {
+        console.error('Erro ao salvar produto:', err);
       }
     }
     

@@ -69,6 +69,8 @@ export function useCustomProducts() {
   const saveProduct = async (product: Omit<CustomProduct, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<CustomProduct> => {
     if (!user) throw new Error('Usuário não autenticado');
 
+    console.log('Salvando produto:', product);
+    
     // Upsert - insert or update if exists
     const { data, error } = await supabase
       .from('custom_products')
@@ -94,7 +96,12 @@ export function useCustomProducts() {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erro ao salvar no Supabase:', error);
+      throw error;
+    }
+    
+    console.log('Produto salvo:', data);
     
     // Update local state
     setProducts((prev) => {
