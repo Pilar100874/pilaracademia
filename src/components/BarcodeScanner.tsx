@@ -8,6 +8,7 @@ import { LiquidConsumptionDialog } from '@/components/LiquidConsumptionDialog';
 import { fetchProductByBarcode, calculateNutritionForPortion, isLiquidProduct, getLiquidVolumeMl } from '@/lib/openFoodFacts';
 import { useCustomProducts } from '@/hooks/useCustomProducts';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { ZxingScanner } from './ZxingScanner';
 
 interface BarcodeScannerProps {
   onProductFound: (product: BarcodeProduct, portionGrams: number, isLiquid?: boolean, liquidMl?: number) => void;
@@ -574,48 +575,29 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
                   </div>
                 ) : (
                   <>
-                    <div 
-                      id={scannerContainerId}
-                      className="rounded-xl overflow-hidden bg-black aspect-square w-full"
-                      style={{ minHeight: '280px' }}
+                    <ZxingScanner 
+                      onResult={(code) => {
+                        setBarcode(code);
+                        handleSearchWithBarcode(code);
+                      }}
+                      onError={(error) => setScanError(error)}
                     />
                     <div className="text-center space-y-2">
-                      {isScanning ? (
-                        <>
-                          <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Aponte a câmera para o código de barras
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Mantenha o código dentro da área de leitura
-                          </p>
-                          <Button 
-                            variant="link" 
-                            size="sm"
-                            className="text-xs"
-                            onClick={() => setScanMode('photo')}
-                          >
-                            Câmera não foca? Tire uma foto
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Iniciando câmera...
-                          </p>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => {
-                              stopScanner();
-                              setTimeout(() => startScanner(), 200);
-                            }}
-                          >
-                            Tentar novamente
-                          </Button>
-                        </>
-                      )}
+                      <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Aponte a câmera para o código de barras
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Toque na tela para focar
+                      </p>
+                      <Button 
+                        variant="link" 
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => setScanMode('photo')}
+                      >
+                        Câmera não foca? Tire uma foto
+                      </Button>
                     </div>
                   </>
                 )}
