@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Camera, Barcode, Edit3, X } from 'lucide-react';
+import { Plus, Camera, Barcode, Edit3, X, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddFoodMenuProps {
   onOpenPhoto: () => void;
   onOpenBarcode: () => void;
   onOpenManual: () => void;
+  onOpenSearch: () => void;
 }
 
-export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenManual }: AddFoodMenuProps) {
+export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenManual, onOpenSearch }: AddFoodMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleAction = (action: () => void) => {
@@ -18,6 +19,7 @@ export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenManual }: AddFoo
   };
 
   const actions = [
+    { icon: Search, label: 'Buscar', color: 'bg-violet-500', action: onOpenSearch },
     { icon: Camera, label: 'Foto', color: 'bg-emerald-500', action: onOpenPhoto },
     { icon: Barcode, label: 'Código', color: 'bg-amber-500', action: onOpenBarcode },
     { icon: Edit3, label: 'Manual', color: 'bg-sky-500', action: onOpenManual },

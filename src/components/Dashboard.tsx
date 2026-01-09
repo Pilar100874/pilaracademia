@@ -6,6 +6,7 @@ import { AddFoodMenu } from '@/components/AddFoodMenu';
 import { PhotoCapture } from '@/components/PhotoCapture';
 import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { ManualEntryForm } from '@/components/ManualEntryForm';
+import { ProductSearch } from '@/components/ProductSearch';
 import { LiquidTracker } from '@/components/LiquidTracker';
 import { WeightTracker } from '@/components/WeightTracker';
 import { ExerciseTracker } from '@/components/ExerciseTracker';
@@ -22,7 +23,7 @@ import { FoodEntryDB } from '@/types/profile';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
-type ModalType = 'photo' | 'barcode' | 'manual' | null;
+type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | null;
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -176,10 +177,11 @@ export function Dashboard() {
         </div>
       </div>
 
-      <AddFoodMenu onOpenPhoto={() => setActiveModal('photo')} onOpenBarcode={() => setActiveModal('barcode')} onOpenManual={() => setActiveModal('manual')} />
+      <AddFoodMenu onOpenPhoto={() => setActiveModal('photo')} onOpenBarcode={() => setActiveModal('barcode')} onOpenManual={() => setActiveModal('manual')} onOpenSearch={() => setActiveModal('search')} />
       {activeModal === 'photo' && <PhotoCapture onFoodAnalyzed={handlePhotoAnalyzed} onClose={() => setActiveModal(null)} />}
       {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => setActiveModal(null)} />}
       {activeModal === 'manual' && <ManualEntryForm onSubmit={handleManualEntry} onClose={() => setActiveModal(null)} />}
+      <ProductSearch isOpen={activeModal === 'search'} onClose={() => setActiveModal(null)} />
       <WeightReminderPopup />
       <BottomNav />
     </div>
