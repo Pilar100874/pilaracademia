@@ -142,6 +142,10 @@ export function Dashboard() {
         </div>
       </section>
 
+      <section className="px-5 py-2">
+        <LiquidTracker />
+      </section>
+
       <section className="px-5 py-4">
         <h2 className="text-lg font-semibold mb-3">Refeições de Hoje</h2>
         {entries.length === 0 ? (
