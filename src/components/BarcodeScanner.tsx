@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Camera, Loader2, Package, ScanLine, Keyboard, ImagePlus } from 'lucide-react';
+import { X, Camera, Loader2, Keyboard, ImagePlus } from 'lucide-react';
 import { BarcodeProduct } from '@/types/nutrition';
 import { fetchProductByBarcode, isLiquidProduct, getLiquidVolumeMl } from '@/lib/openFoodFacts';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
-import { ZxingScanner } from './ZxingScanner';
 import { ProductFormDialog } from './ProductFormDialog';
 import { ProductConsumptionDialog } from './ProductConsumptionDialog';
 import { toast } from 'sonner';
@@ -22,7 +21,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
   const [isLoading, setIsLoading] = useState(false);
   
   // Scanner mode
-  const [scanMode, setScanMode] = useState<'camera' | 'photo' | 'manual'>('camera');
+  const [scanMode, setScanMode] = useState<'photo' | 'manual'>('photo');
   const [scanError, setScanError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -260,15 +259,6 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           {/* Mode toggle */}
           <div className="flex gap-2">
             <Button
-              variant={scanMode === 'camera' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1"
-              onClick={() => setScanMode('camera')}
-            >
-              <ScanLine className="h-4 w-4 mr-1" />
-              Câmera
-            </Button>
-            <Button
               variant={scanMode === 'photo' ? 'default' : 'outline'}
               size="sm"
               className="flex-1"
@@ -301,45 +291,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
             className="hidden"
           />
 
-          {scanMode === 'camera' ? (
-            <div className="space-y-3">
-              {isLoading ? (
-                <div className="rounded-xl bg-primary/10 p-8 text-center">
-                  <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                  <p className="mt-4 text-sm font-medium">Aguarde, pesquisando produto...</p>
-                  <p className="text-xs text-muted-foreground mt-1">Código: {barcode}</p>
-                </div>
-              ) : scanError ? (
-                <div className="rounded-xl bg-destructive/10 p-4 text-center">
-                  <p className="text-sm text-destructive">{scanError}</p>
-                  <div className="flex gap-2 justify-center mt-2">
-                    <Button variant="outline" size="sm" onClick={() => setScanMode('photo')}>
-                      Tirar foto
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setScanMode('manual')}>
-                      Digitar código
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <ZxingScanner 
-                    onResult={(code) => {
-                      setBarcode(code);
-                      handleSearchWithBarcode(code);
-                    }}
-                    onError={(error) => setScanError(error)}
-                  />
-                  <div className="text-center space-y-2">
-                    <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Aponte a câmera para o código de barras
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-          ) : scanMode === 'photo' ? (
+          {scanMode === 'photo' ? (
             <div className="space-y-4">
               {isLoading ? (
                 <div className="rounded-xl bg-primary/10 p-8 text-center">
