@@ -27,6 +27,9 @@ export type Database = {
           image_url: string | null
           is_liquid: boolean
           name: string
+          package_total_units: number | null
+          package_total_weight: number | null
+          package_volume_ml: number | null
           protein: number
           reference_quantity: number
           reference_unit: string
@@ -48,6 +51,9 @@ export type Database = {
           image_url?: string | null
           is_liquid?: boolean
           name: string
+          package_total_units?: number | null
+          package_total_weight?: number | null
+          package_volume_ml?: number | null
           protein?: number
           reference_quantity?: number
           reference_unit?: string
@@ -69,6 +75,9 @@ export type Database = {
           image_url?: string | null
           is_liquid?: boolean
           name?: string
+          package_total_units?: number | null
+          package_total_weight?: number | null
+          package_volume_ml?: number | null
           protein?: number
           reference_quantity?: number
           reference_unit?: string
