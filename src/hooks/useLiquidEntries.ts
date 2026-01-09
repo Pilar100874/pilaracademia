@@ -1,0 +1,96 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { startOfDay, endOfDay } from 'date-fns';
+
+export interface LiquidEntry {
+  id: string;
+  user_id: string;
+  amount_ml: number;
+  type: string;
+  consumed_at: string;
+  created_at: string;
+}
+
+const LIQUID_TYPES = {
+  water: 'Água',
+  juice: 'Suco',
+  coffee: 'Café',
+  tea: 'Chá',
+  soda: 'Refrigerante',
+  milk: 'Leite',
+  other: 'Outro',
+};
+
+export function useLiquidEntries() {
+  const { user } = useAuth();
+  const [entries, setEntries] = useState<LiquidEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchEntries = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    const today = new Date();
+    
+    const { data, error } = await supabase
+      .from('liquid_entries')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('consumed_at', startOfDay(today).toISOString())
+      .lte('consumed_at', endOfDay(today).toISOString())
+      .order('consumed_at', { ascending: false });
+
+    if (!error && data) {
+      setEntries(data);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchEntries();
+  }, [user]);
+
+  const addLiquidEntry = async (amountMl: number, type: string = 'water') => {
+    if (!user) throw new Error('Usuário não autenticado');
+
+    const { data, error } = await supabase
+      .from('liquid_entries')
+      .insert({
+        user_id: user.id,
+        amount_ml: amountMl,
+        type,
+        consumed_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    setEntries((prev) => [data, ...prev]);
+    return data;
+  };
+
+  const deleteLiquidEntry = async (id: string) => {
+    const { error } = await supabase
+      .from('liquid_entries')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    setEntries((prev) => prev.filter((e) => e.id !== id));
+  };
+
+  const getTodayTotal = () => {
+    return entries.reduce((sum, entry) => sum + entry.amount_ml, 0);
+  };
+
+  return {
+    entries,
+    isLoading,
+    addLiquidEntry,
+    deleteLiquidEntry,
+    getTodayTotal,
+    liquidTypes: LIQUID_TYPES,
+    refetch: fetchEntries,
+  };
+}

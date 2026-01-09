@@ -7,7 +7,9 @@ import { AddFoodMenu } from '@/components/AddFoodMenu';
 import { PhotoCapture } from '@/components/PhotoCapture';
 import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { ManualEntryForm } from '@/components/ManualEntryForm';
+import { LiquidTracker } from '@/components/LiquidTracker';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
+import { useLiquidEntries } from '@/hooks/useLiquidEntries';
 import { useProfile } from '@/hooks/useProfile';
 import { BarcodeProduct, NutritionData } from '@/types/nutrition';
 import { FoodEntryDB } from '@/types/profile';
@@ -20,6 +22,7 @@ type ModalType = 'photo' | 'barcode' | 'manual' | null;
 export function Dashboard() {
   const navigate = useNavigate();
   const { entries, isLoading, addEntry, updateEntry, deleteEntry, getTodaySummary } = useFoodEntries();
+  const { addLiquidEntry } = useLiquidEntries();
   const { profile, getGoals, isProfileComplete } = useProfile();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
 
@@ -30,17 +33,47 @@ export function Dashboard() {
 
   const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
 
-  const handlePhotoAnalyzed = async (name: string, nutrition: NutritionData, imageUrl: string) => {
+  const handlePhotoAnalyzed = async (name: string, nutrition: NutritionData, imageUrl: string, isLiquid?: boolean, liquidMl?: number) => {
     try {
-      await addEntry({ name, nutrition, imageUrl, quantity: 1, unit: 'porção', source: 'photo' });
+      await addEntry({ 
+        name, 
+        nutrition, 
+        imageUrl, 
+        quantity: 1, 
+        unit: 'porção', 
+        source: 'photo',
+        isLiquid: isLiquid || false,
+        liquidMl: liquidMl || 0
+      });
+      
+      // Se for líquido, adicionar também ao controle de hidratação
+      if (isLiquid && liquidMl && liquidMl > 0) {
+        await addLiquidEntry(liquidMl, 'other');
+      }
+      
       toast.success('Refeição adicionada!');
     } catch { toast.error('Erro ao adicionar'); }
     setActiveModal(null);
   };
 
-  const handleBarcodeProduct = async (product: BarcodeProduct, portionGrams: number) => {
+  const handleBarcodeProduct = async (product: BarcodeProduct, portionGrams: number, isLiquid?: boolean, liquidMl?: number) => {
     try {
-      await addEntry({ name: product.name, nutrition: product.nutrition, imageUrl: product.imageUrl, quantity: portionGrams, unit: 'g', source: 'barcode' });
+      await addEntry({ 
+        name: product.name, 
+        nutrition: product.nutrition, 
+        imageUrl: product.imageUrl, 
+        quantity: portionGrams, 
+        unit: isLiquid ? 'ml' : 'g', 
+        source: 'barcode',
+        isLiquid: isLiquid || false,
+        liquidMl: liquidMl || 0
+      });
+      
+      // Se for líquido, adicionar também ao controle de hidratação
+      if (isLiquid && liquidMl && liquidMl > 0) {
+        await addLiquidEntry(liquidMl, 'other');
+      }
+      
       toast.success('Produto adicionado!');
     } catch { toast.error('Erro ao adicionar'); }
     setActiveModal(null);

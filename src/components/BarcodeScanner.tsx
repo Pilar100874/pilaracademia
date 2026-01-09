@@ -4,11 +4,12 @@ import { Input } from '@/components/ui/input';
 import { X, Camera, Loader2 } from 'lucide-react';
 import { BarcodeProduct, NutritionData } from '@/types/nutrition';
 import { NutritionDisplay } from '@/components/NutritionDisplay';
-import { fetchProductByBarcode, calculateNutritionForPortion } from '@/lib/openFoodFacts';
+import { LiquidConsumptionDialog } from '@/components/LiquidConsumptionDialog';
+import { fetchProductByBarcode, calculateNutritionForPortion, isLiquidProduct, getLiquidVolumeMl } from '@/lib/openFoodFacts';
 import { toast } from 'sonner';
 
 interface BarcodeScannerProps {
-  onProductFound: (product: BarcodeProduct, portionGrams: number) => void;
+  onProductFound: (product: BarcodeProduct, portionGrams: number, isLiquid?: boolean, liquidMl?: number) => void;
   onClose: () => void;
 }
 
@@ -18,6 +19,9 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
   const [product, setProduct] = useState<BarcodeProduct | null>(null);
   const [portionGrams, setPortionGrams] = useState(100);
   const [calculatedNutrition, setCalculatedNutrition] = useState<NutritionData | null>(null);
+  const [isLiquid, setIsLiquid] = useState(false);
+  const [liquidVolumeMl, setLiquidVolumeMl] = useState(0);
+  const [showLiquidDialog, setShowLiquidDialog] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -38,6 +42,17 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
       const result = await fetchProductByBarcode(barcode.trim());
       if (result) {
         setProduct(result);
+        
+        // Verificar se é um produto líquido
+        const liquid = isLiquidProduct(result);
+        setIsLiquid(liquid);
+        
+        if (liquid) {
+          const volumeMl = getLiquidVolumeMl(result);
+          setLiquidVolumeMl(volumeMl);
+          setShowLiquidDialog(true);
+        }
+        
         toast.success('Produto encontrado!');
       } else {
         toast.error('Produto não encontrado');
@@ -51,7 +66,15 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
 
   const handleAddProduct = () => {
     if (!product || !calculatedNutrition) return;
-    onProductFound({ ...product, nutrition: calculatedNutrition }, portionGrams);
+    onProductFound({ ...product, nutrition: calculatedNutrition }, portionGrams, false, 0);
+  };
+
+  const handleLiquidConfirm = (mlConsumed: number) => {
+    if (!product) return;
+    
+    // Calcular nutrição baseada no volume consumido (ml ≈ g para líquidos)
+    const nutritionForVolume = calculateNutritionForPortion(product.nutrition, mlConsumed);
+    onProductFound({ ...product, nutrition: nutritionForVolume }, mlConsumed, true, mlConsumed);
   };
 
   return (
@@ -89,6 +112,13 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
               </p>
             </div>
           </div>
+        ) : showLiquidDialog ? (
+          <LiquidConsumptionDialog
+            productName={product.name}
+            defaultMl={liquidVolumeMl}
+            onConfirm={handleLiquidConfirm}
+            onCancel={() => setShowLiquidDialog(false)}
+          />
         ) : (
           <div className="space-y-4">
             <div className="flex gap-4">
@@ -102,16 +132,28 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Quantidade consumida (g)</label>
-              <Input
-                type="number"
-                value={portionGrams}
-                onChange={(e) => setPortionGrams(Number(e.target.value))}
-                min={1}
-                max={2000}
-              />
-            </div>
+            {isLiquid && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowLiquidDialog(true)}
+              >
+                🥤 É uma bebida - Informar quantidade consumida
+              </Button>
+            )}
+
+            {!isLiquid && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Quantidade consumida (g)</label>
+                <Input
+                  type="number"
+                  value={portionGrams}
+                  onChange={(e) => setPortionGrams(Number(e.target.value))}
+                  min={1}
+                  max={2000}
+                />
+              </div>
+            )}
 
             {calculatedNutrition && (
               <NutritionDisplay nutrition={calculatedNutrition} showAll />

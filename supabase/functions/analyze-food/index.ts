@@ -56,7 +56,9 @@ IMPORTANTE: Responda APENAS com um JSON válido no seguinte formato, sem texto a
   "fiber": gramas de fibra alimentar,
   "sodium": miligramas de sódio,
   "confidence": "alta" | "média" | "baixa",
-  "items": ["lista", "de", "ingredientes", "identificados"]
+  "items": ["lista", "de", "ingredientes", "identificados"],
+  "isLiquid": true/false se for uma bebida (suco, refrigerante, água, café, chá, leite, vitamina, shake, etc),
+  "volumeMl": volume estimado em ml se for líquido (copo padrão = 250ml, lata = 350ml, garrafa pequena = 500ml)
 }
 
 Diretrizes para estimativa:
@@ -64,6 +66,7 @@ Diretrizes para estimativa:
 - Gordura trans: 0 para comida caseira, pode haver em frituras industriais
 - Fibra: alta em vegetais, grãos integrais, legumes
 - Sódio: comida caseira ~500-800mg, fast food ~1000-2000mg
+- isLiquid: marque como true para qualquer bebida, suco, vitamina, shake, café, chá, água, refrigerante, leite, etc
 
 Faça uma estimativa realista baseada no tamanho aparente da porção.`
           },
@@ -138,7 +141,9 @@ Faça uma estimativa realista baseada no tamanho aparente da porção.`
         fiber: 3,
         sodium: 600,
         confidence: "baixa",
-        items: []
+        items: [],
+        isLiquid: false,
+        volumeMl: 0
       };
     }
 

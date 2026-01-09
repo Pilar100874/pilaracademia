@@ -49,6 +49,8 @@ export function useFoodEntries() {
     unit: string;
     source: 'photo' | 'barcode' | 'manual';
     consumedAt?: Date;
+    isLiquid?: boolean;
+    liquidMl?: number;
   }) => {
     if (!user) return null;
 
@@ -70,6 +72,8 @@ export function useFoodEntries() {
         unit: entry.unit,
         source: entry.source,
         consumed_at: (entry.consumedAt || new Date()).toISOString(),
+        is_liquid: entry.isLiquid || false,
+        liquid_ml: entry.liquidMl || 0,
       })
       .select()
       .single();

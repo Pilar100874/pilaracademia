@@ -69,6 +69,49 @@ export async function fetchProductByBarcode(barcode: string): Promise<BarcodePro
   }
 }
 
+// Palavras-chave que indicam que o produto é líquido
+const LIQUID_KEYWORDS = [
+  'bebida', 'suco', 'refrigerante', 'água', 'leite', 'iogurte', 'café', 'chá',
+  'néctar', 'drink', 'juice', 'water', 'milk', 'yogurt', 'coffee', 'tea',
+  'energético', 'isotônico', 'refresco', 'limonada', 'guaraná', 'cola',
+  'shake', 'vitamina', 'smoothie', 'achocolatado', 'cerveja', 'vinho',
+  'ml', 'litro', 'l ', ' l', 'lt'
+];
+
+export function isLiquidProduct(product: BarcodeProduct): boolean {
+  const name = (product.name || '').toLowerCase();
+  const servingSize = (product.servingSize || '').toLowerCase();
+  
+  // Verificar se o nome ou tamanho da porção contém palavras-chave de líquidos
+  const hasLiquidKeyword = LIQUID_KEYWORDS.some(keyword => 
+    name.includes(keyword) || servingSize.includes(keyword)
+  );
+  
+  // Verificar se o tamanho da porção está em ml
+  const hasMilliliters = /\d+\s*ml/i.test(servingSize);
+  
+  return hasLiquidKeyword || hasMilliliters;
+}
+
+export function getLiquidVolumeMl(product: BarcodeProduct): number {
+  const servingSize = product.servingSize || '';
+  
+  // Tentar extrair o volume em ml do tamanho da porção
+  const mlMatch = servingSize.match(/(\d+)\s*ml/i);
+  if (mlMatch) {
+    return parseInt(mlMatch[1], 10);
+  }
+  
+  // Tentar extrair litros e converter para ml
+  const literMatch = servingSize.match(/(\d+(?:[.,]\d+)?)\s*(?:l|litro)/i);
+  if (literMatch) {
+    return parseFloat(literMatch[1].replace(',', '.')) * 1000;
+  }
+  
+  // Padrão: 1 copo (250ml)
+  return 250;
+}
+
 export function calculateNutritionForPortion(
   nutritionPer100g: NutritionData,
   portionGrams: number
