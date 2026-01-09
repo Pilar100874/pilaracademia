@@ -1,0 +1,326 @@
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/hooks/useAuth';
+import { activityLabels, goalLabels, calculateAge, calculateBMR, calculateTDEE, calculateDailyCalories, calculateMacros } from '@/types/profile';
+import { toast } from 'sonner';
+import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+export function ProfilePage() {
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+  const { profile, isLoading, updateProfile, isProfileComplete } = useProfile();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [name, setName] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [gender, setGender] = useState<'male' | 'female' | ''>('');
+  const [heightCm, setHeightCm] = useState('');
+  const [weightKg, setWeightKg] = useState('');
+  const [activityLevel, setActivityLevel] = useState<string>('');
+  const [goal, setGoal] = useState<string>('');
+
+  // Preview calculations
+  const [previewCalories, setPreviewCalories] = useState<number | null>(null);
+  const [previewMacros, setPreviewMacros] = useState<{ protein: number; carbs: number; fat: number } | null>(null);
+
+  useEffect(() => {
+    if (profile) {
+      setName(profile.name || '');
+      setBirthDate(profile.birth_date || '');
+      setGender((profile.gender as 'male' | 'female') || '');
+      setHeightCm(profile.height_cm?.toString() || '');
+      setWeightKg(profile.weight_kg?.toString() || '');
+      setActivityLevel(profile.activity_level || '');
+      setGoal(profile.goal || '');
+    }
+  }, [profile]);
+
+  // Calculate preview when inputs change
+  useEffect(() => {
+    if (gender && weightKg && heightCm && birthDate && activityLevel && goal) {
+      const age = calculateAge(birthDate);
+      const bmr = calculateBMR(gender as 'male' | 'female', Number(weightKg), Number(heightCm), age);
+      const tdee = calculateTDEE(bmr, activityLevel as any);
+      const calories = calculateDailyCalories(tdee, goal as any);
+      const macros = calculateMacros(calories, goal as any);
+      
+      setPreviewCalories(calories);
+      setPreviewMacros(macros);
+    } else {
+      setPreviewCalories(null);
+      setPreviewMacros(null);
+    }
+  }, [gender, weightKg, heightCm, birthDate, activityLevel, goal]);
+
+  const handleSave = async () => {
+    if (!name.trim()) {
+      toast.error('Digite seu nome');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await updateProfile({
+        name: name.trim(),
+        birth_date: birthDate || null,
+        gender: gender as 'male' | 'female' || null,
+        height_cm: heightCm ? Number(heightCm) : null,
+        weight_kg: weightKg ? Number(weightKg) : null,
+        activity_level: activityLevel as any || null,
+        goal: goal as any || null,
+      });
+      toast.success('Perfil atualizado!');
+      navigate('/');
+    } catch (error) {
+      toast.error('Erro ao salvar perfil');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen gradient-hero flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen gradient-hero pb-24">
+      {/* Header */}
+      <header className="px-5 pt-6 pb-4 flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl font-bold">Meu Perfil</h1>
+      </header>
+
+      <div className="px-5 space-y-6 animate-slide-up">
+        {/* Name */}
+        <div className="rounded-2xl bg-card p-4 shadow-card space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <h2 className="font-semibold">Informações Pessoais</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nome</label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Seu nome"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Data de nascimento
+              </label>
+              <Input
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Sexo biológico</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setGender('male')}
+                  className={`rounded-xl p-3 text-center transition-all ${
+                    gender === 'male'
+                      ? 'bg-primary text-primary-foreground shadow-soft'
+                      : 'bg-secondary hover:bg-secondary/80'
+                  }`}
+                >
+                  Masculino
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGender('female')}
+                  className={`rounded-xl p-3 text-center transition-all ${
+                    gender === 'female'
+                      ? 'bg-primary text-primary-foreground shadow-soft'
+                      : 'bg-secondary hover:bg-secondary/80'
+                  }`}
+                >
+                  Feminino
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Body Measurements */}
+        <div className="rounded-2xl bg-card p-4 shadow-card space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
+              <Scale className="h-5 w-5 text-accent" />
+            </div>
+            <h2 className="font-semibold">Medidas Corporais</h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Ruler className="h-4 w-4" />
+                Altura (cm)
+              </label>
+              <Input
+                type="number"
+                value={heightCm}
+                onChange={(e) => setHeightCm(e.target.value)}
+                placeholder="170"
+                min={100}
+                max={250}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Scale className="h-4 w-4" />
+                Peso (kg)
+              </label>
+              <Input
+                type="number"
+                value={weightKg}
+                onChange={(e) => setWeightKg(e.target.value)}
+                placeholder="70"
+                min={30}
+                max={300}
+                step={0.1}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Activity Level */}
+        <div className="rounded-2xl bg-card p-4 shadow-card space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
+              <Activity className="h-5 w-5 text-blue-600" />
+            </div>
+            <h2 className="font-semibold">Nível de Atividade</h2>
+          </div>
+
+          <div className="space-y-2">
+            {Object.entries(activityLabels).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActivityLevel(key)}
+                className={`w-full rounded-xl p-3 text-left text-sm transition-all ${
+                  activityLevel === key
+                    ? 'bg-primary text-primary-foreground shadow-soft'
+                    : 'bg-secondary hover:bg-secondary/80'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Goal */}
+        <div className="rounded-2xl bg-card p-4 shadow-card space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-500/10">
+              <Target className="h-5 w-5 text-pink-600" />
+            </div>
+            <h2 className="font-semibold">Objetivo</h2>
+          </div>
+
+          <div className="space-y-2">
+            {Object.entries(goalLabels).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setGoal(key)}
+                className={`w-full rounded-xl p-3 text-left text-sm transition-all ${
+                  goal === key
+                    ? 'bg-primary text-primary-foreground shadow-soft'
+                    : 'bg-secondary hover:bg-secondary/80'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Preview Calculations */}
+        {previewCalories && previewMacros && (
+          <div className="rounded-2xl gradient-card p-4 shadow-card space-y-4 animate-scale-in">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-primary" />
+              <h2 className="font-semibold">Suas Metas Calculadas</h2>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-primary/10 p-3 text-center">
+                <p className="text-2xl font-bold text-primary">{previewCalories}</p>
+                <p className="text-xs text-muted-foreground">kcal/dia</p>
+              </div>
+              <div className="rounded-xl bg-accent/10 p-3 text-center">
+                <p className="text-2xl font-bold text-accent">{previewMacros.protein}g</p>
+                <p className="text-xs text-muted-foreground">proteína</p>
+              </div>
+              <div className="rounded-xl bg-blue-500/10 p-3 text-center">
+                <p className="text-2xl font-bold text-blue-600">{previewMacros.carbs}g</p>
+                <p className="text-xs text-muted-foreground">carboidratos</p>
+              </div>
+              <div className="rounded-xl bg-pink-500/10 p-3 text-center">
+                <p className="text-2xl font-bold text-pink-600">{previewMacros.fat}g</p>
+                <p className="text-xs text-muted-foreground">gordura</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-center text-muted-foreground">
+              Calculado usando a fórmula Mifflin-St Jeor
+            </p>
+          </div>
+        )}
+
+        {/* Save Button */}
+        <Button
+          variant="gradient"
+          size="xl"
+          className="w-full"
+          onClick={handleSave}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            'Salvar Perfil'
+          )}
+        </Button>
+
+        {/* Sign Out */}
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full"
+          onClick={handleSignOut}
+        >
+          Sair da conta
+        </Button>
+      </div>
+    </div>
+  );
+}

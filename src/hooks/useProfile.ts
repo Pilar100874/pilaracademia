@@ -1,0 +1,109 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Profile, calculateBMR, calculateTDEE, calculateDailyCalories, calculateMacros, calculateAge } from '@/types/profile';
+import { useAuth } from '@/hooks/useAuth';
+
+export function useProfile() {
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchProfile = useCallback(async () => {
+    if (!user) {
+      setProfile(null);
+      setIsLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching profile:', error);
+    }
+    
+    setProfile(data as Profile | null);
+    setIsLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const updateProfile = useCallback(async (updates: Partial<Profile>) => {
+    if (!user || !profile) return null;
+
+    // Calculate nutrition goals if we have all required data
+    let nutritionUpdates: Partial<Profile> = {};
+    
+    const gender = updates.gender || profile.gender;
+    const weightKg = updates.weight_kg || profile.weight_kg;
+    const heightCm = updates.height_cm || profile.height_cm;
+    const birthDate = updates.birth_date || profile.birth_date;
+    const activityLevel = updates.activity_level || profile.activity_level;
+    const goal = updates.goal || profile.goal;
+
+    if (gender && weightKg && heightCm && birthDate && activityLevel && goal) {
+      const age = calculateAge(birthDate);
+      const bmr = calculateBMR(gender, weightKg, heightCm, age);
+      const tdee = calculateTDEE(bmr, activityLevel);
+      const dailyCalories = calculateDailyCalories(tdee, goal);
+      const macros = calculateMacros(dailyCalories, goal);
+
+      nutritionUpdates = {
+        daily_calories: dailyCalories,
+        daily_protein: macros.protein,
+        daily_carbs: macros.carbs,
+        daily_fat: macros.fat,
+      };
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ ...updates, ...nutritionUpdates })
+      .eq('user_id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+
+    setProfile(data as Profile);
+    return data as Profile;
+  }, [user, profile]);
+
+  const getGoals = useCallback(() => {
+    return {
+      calories: profile?.daily_calories || 2000,
+      protein: profile?.daily_protein || 150,
+      carbs: profile?.daily_carbs || 250,
+      fat: profile?.daily_fat || 65,
+    };
+  }, [profile]);
+
+  const isProfileComplete = useCallback(() => {
+    if (!profile) return false;
+    return !!(
+      profile.gender &&
+      profile.weight_kg &&
+      profile.height_cm &&
+      profile.birth_date &&
+      profile.activity_level &&
+      profile.goal
+    );
+  }, [profile]);
+
+  return {
+    profile,
+    isLoading,
+    updateProfile,
+    getGoals,
+    isProfileComplete,
+    refetch: fetchProfile,
+  };
+}
