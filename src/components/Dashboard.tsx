@@ -28,7 +28,7 @@ type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | null;
 export function Dashboard() {
   const navigate = useNavigate();
   const { entries, isLoading, addEntry, updateEntry, deleteEntry, getTodaySummary } = useFoodEntries();
-  const { addLiquidEntry } = useLiquidEntries();
+  const { addLiquidEntry, deleteLiquidEntryByFoodId, refetch: refetchLiquids } = useLiquidEntries();
   const { getTodayTotalBurned } = useExerciseEntries();
   const { profile, getGoals, isProfileComplete } = useProfile();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
@@ -46,16 +46,22 @@ export function Dashboard() {
 
   const handlePhotoAnalyzed = async (name: string, nutrition: NutritionData, imageUrl: string, isLiquid?: boolean, liquidMl?: number) => {
     try {
-      await addEntry({ name, nutrition, imageUrl, quantity: 1, unit: 'porção', source: 'photo', isLiquid: isLiquid || false, liquidMl: liquidMl || 0 });
-      if (isLiquid && liquidMl && liquidMl > 0) await addLiquidEntry(liquidMl, 'other');
+      const entry = await addEntry({ name, nutrition, imageUrl, quantity: liquidMl || 1, unit: isLiquid ? 'ml' : 'porção', source: 'photo', isLiquid: isLiquid || false, liquidMl: liquidMl || 0 });
+      if (isLiquid && liquidMl && liquidMl > 0 && entry) {
+        await addLiquidEntry(liquidMl, 'other', entry.id);
+        refetchLiquids();
+      }
     } catch { /* silently fail */ }
     setActiveModal(null);
   };
 
   const handleBarcodeProduct = async (product: BarcodeProduct, portionGrams: number, isLiquid?: boolean, liquidMl?: number) => {
     try {
-      await addEntry({ name: product.name, nutrition: product.nutrition, imageUrl: product.imageUrl, quantity: portionGrams, unit: isLiquid ? 'ml' : 'g', source: 'barcode', isLiquid: isLiquid || false, liquidMl: liquidMl || 0 });
-      if (isLiquid && liquidMl && liquidMl > 0) await addLiquidEntry(liquidMl, 'other');
+      const entry = await addEntry({ name: product.name, nutrition: product.nutrition, imageUrl: product.imageUrl, quantity: portionGrams, unit: isLiquid ? 'ml' : 'g', source: 'barcode', isLiquid: isLiquid || false, liquidMl: liquidMl || 0 });
+      if (isLiquid && liquidMl && liquidMl > 0 && entry) {
+        await addLiquidEntry(liquidMl, 'other', entry.id);
+        refetchLiquids();
+      }
     } catch { /* silently fail */ }
     setActiveModal(null);
   };
@@ -68,11 +74,44 @@ export function Dashboard() {
   };
 
   const handleUpdateEntry = async (id: string, updates: Partial<FoodEntryDB>) => {
-    try { await updateEntry(id, updates); } catch { /* silently fail */ }
+    try { 
+      // Se está mudando de não-líquido para líquido, adicionar liquid_entry
+      const existingEntry = entries.find(e => e.id === id);
+      if (existingEntry) {
+        const wasLiquid = existingEntry.is_liquid;
+        const willBeLiquid = updates.is_liquid;
+        const newLiquidMl = updates.liquid_ml || 0;
+        
+        if (!wasLiquid && willBeLiquid && newLiquidMl > 0) {
+          // Adicionar novo liquid_entry
+          await addLiquidEntry(newLiquidMl, 'other', id);
+        } else if (wasLiquid && !willBeLiquid) {
+          // Remover liquid_entry existente
+          await deleteLiquidEntryByFoodId(id);
+        } else if (wasLiquid && willBeLiquid) {
+          // Atualizar quantidade - remover e adicionar novamente
+          await deleteLiquidEntryByFoodId(id);
+          if (newLiquidMl > 0) {
+            await addLiquidEntry(newLiquidMl, 'other', id);
+          }
+        }
+        refetchLiquids();
+      }
+      
+      await updateEntry(id, updates); 
+    } catch { /* silently fail */ }
   };
 
   const handleDeleteEntry = async (id: string) => {
-    try { await deleteEntry(id); } catch { /* silently fail */ }
+    try { 
+      // Se era líquido, remover também do liquid_entries
+      const entry = entries.find(e => e.id === id);
+      if (entry?.is_liquid) {
+        await deleteLiquidEntryByFoodId(id);
+        refetchLiquids();
+      }
+      await deleteEntry(id); 
+    } catch { /* silently fail */ }
   };
 
   if (isLoading) {

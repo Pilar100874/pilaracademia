@@ -3,7 +3,7 @@ import { FoodEntryDB } from '@/types/profile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Camera, Barcode, Edit3, Trash2, Pencil, X, Check, Clock, Minus, Plus } from 'lucide-react';
+import { Camera, Barcode, Edit3, Trash2, Pencil, X, Check, Clock, Minus, Plus, Droplets } from 'lucide-react';
 
 interface FoodEntryItemDBProps {
   entry: FoodEntryDB;
@@ -35,6 +35,8 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
   const [editTime, setEditTime] = useState(
     new Date(entry.consumed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', ':')
   );
+  const [isLiquid, setIsLiquid] = useState(entry.is_liquid || false);
+  const [liquidMl, setLiquidMl] = useState(entry.liquid_ml || 0);
   
   // Porção como multiplicador (1 = quantidade original)
   const [portionMultiplier, setPortionMultiplier] = useState(1);
@@ -50,6 +52,7 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
     saturated_fat: entry.saturated_fat || 0,
     trans_fat: entry.trans_fat || 0,
     quantity: entry.quantity,
+    liquid_ml: entry.liquid_ml || 0,
   }), [entry]);
 
   // Valores calculados baseados na porção
@@ -63,6 +66,7 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
     saturated_fat: Number((originalValues.saturated_fat * portionMultiplier).toFixed(1)),
     trans_fat: Number((originalValues.trans_fat * portionMultiplier).toFixed(1)),
     quantity: Number((originalValues.quantity * portionMultiplier).toFixed(1)),
+    liquid_ml: Math.round(originalValues.liquid_ml * portionMultiplier),
   }), [originalValues, portionMultiplier]);
 
   const Icon = sourceIcons[entry.source];
@@ -95,6 +99,8 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
         trans_fat: calculatedValues.trans_fat,
         quantity: calculatedValues.quantity,
         consumed_at: originalDate.toISOString(),
+        is_liquid: isLiquid,
+        liquid_ml: isLiquid ? (liquidMl > 0 ? Math.round(liquidMl * portionMultiplier) : calculatedValues.quantity) : 0,
       });
     }
     setIsEditing(false);
@@ -104,11 +110,15 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
     setEditName(entry.name);
     setEditTime(new Date(entry.consumed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
     setPortionMultiplier(1);
+    setIsLiquid(entry.is_liquid || false);
+    setLiquidMl(entry.liquid_ml || 0);
     setIsEditing(false);
   };
 
   const handleOpenEdit = () => {
     setPortionMultiplier(1);
+    setIsLiquid(entry.is_liquid || false);
+    setLiquidMl(entry.liquid_ml || 0);
     setIsEditing(true);
   };
 
@@ -143,6 +153,12 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
 
           {/* Nutrition badges */}
           <div className="mt-1 flex flex-wrap gap-1">
+            {entry.is_liquid && (
+              <span className="inline-flex items-center rounded-md bg-sky-500/10 px-1.5 py-0.5 text-xs font-medium text-sky-600">
+                <Droplets className="h-3 w-3 mr-0.5" />
+                {entry.liquid_ml}ml
+              </span>
+            )}
             <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
               {entry.calories} kcal
             </span>
@@ -217,6 +233,51 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
                   className="flex-1"
                 />
               </div>
+            </div>
+
+            {/* Opção de líquido */}
+            <div 
+              className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                isLiquid 
+                  ? 'border-sky-500 bg-sky-500/10' 
+                  : 'border-muted hover:border-sky-500/50'
+              }`}
+              onClick={() => {
+                setIsLiquid(!isLiquid);
+                if (!isLiquid && liquidMl === 0) {
+                  setLiquidMl(Number(entry.quantity) || 250);
+                }
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  isLiquid ? 'border-sky-500 bg-sky-500' : 'border-muted-foreground'
+                }`}>
+                  {isLiquid && <Check className="h-3 w-3 text-white" />}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium flex items-center gap-1">
+                    <Droplets className="h-4 w-4 text-sky-500" />
+                    Este alimento é líquido
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Contabiliza no consumo diário de líquidos
+                  </p>
+                </div>
+              </div>
+              {isLiquid && (
+                <div className="mt-3 flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={liquidMl > 0 ? liquidMl : calculatedValues.quantity}
+                    onChange={(e) => setLiquidMl(Number(e.target.value))}
+                    onClick={(e) => e.stopPropagation()}
+                    min={1}
+                    className="w-24"
+                  />
+                  <span className="text-sm text-muted-foreground">ml</span>
+                </div>
+              )}
             </div>
 
             {/* Seletor de porção */}
