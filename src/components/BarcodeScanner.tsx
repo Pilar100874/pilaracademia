@@ -101,10 +101,25 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
       const customProduct = await getProductByBarcode(barcodeValue.trim());
       
       if (customProduct) {
-        // Product found in local DB - go directly to consumption dialog
+        // Product found in local DB - show product form for review/edit before consumption
         setFoundProduct(customProduct);
-        setShowConsumptionDialog(true);
+        setPendingProductData({
+          name: customProduct.name,
+          brand: customProduct.brand || undefined,
+          imageUrl: customProduct.image_url || undefined,
+          calories: customProduct.calories,
+          protein: customProduct.protein,
+          carbs: customProduct.carbs,
+          fat: customProduct.fat,
+          fiber: customProduct.fiber || undefined,
+          sodium: customProduct.sodium || undefined,
+          saturatedFat: customProduct.saturated_fat || undefined,
+          transFat: customProduct.trans_fat || undefined,
+          isLiquid: customProduct.is_liquid,
+        });
+        setShowProductForm(true);
         setIsLoading(false);
+        toast.info('Produto encontrado', { description: 'Revise as informações antes de registrar consumo' });
         return;
       }
       
