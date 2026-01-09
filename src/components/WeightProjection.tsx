@@ -24,7 +24,7 @@ export function WeightProjection({ consumedCalories, burnedCalories, goalCalorie
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="w-full mt-3 py-2 rounded-xl bg-primary/10 text-primary text-sm font-medium flex items-center justify-center gap-2 hover:bg-primary/20 transition-colors active:scale-98"
+        className="w-full mt-3 py-2.5 rounded-xl bg-secondary text-foreground text-sm font-medium flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors active:scale-98 border border-border"
       >
         <Calculator className="h-4 w-4" />
         Ver projeção semanal/mensal
