@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      exercise_entries: {
+        Row: {
+          calories_burned: number
+          created_at: string
+          duration_minutes: number
+          exercise_type: string
+          id: string
+          name: string
+          performed_at: string
+          user_id: string
+        }
+        Insert: {
+          calories_burned?: number
+          created_at?: string
+          duration_minutes?: number
+          exercise_type?: string
+          id?: string
+          name: string
+          performed_at?: string
+          user_id: string
+        }
+        Update: {
+          calories_burned?: number
+          created_at?: string
+          duration_minutes?: number
+          exercise_type?: string
+          id?: string
+          name?: string
+          performed_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       food_entries: {
         Row: {
           calories: number
