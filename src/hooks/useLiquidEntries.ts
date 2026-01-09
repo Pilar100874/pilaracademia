@@ -70,6 +70,19 @@ export function useLiquidEntries() {
     return data;
   };
 
+  const updateLiquidEntry = async (id: string, amountMl: number) => {
+    const { data, error } = await supabase
+      .from('liquid_entries')
+      .update({ amount_ml: amountMl })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    setEntries((prev) => prev.map((e) => (e.id === id ? data : e)));
+    return data;
+  };
+
   const deleteLiquidEntry = async (id: string) => {
     const { error } = await supabase
       .from('liquid_entries')
@@ -88,6 +101,7 @@ export function useLiquidEntries() {
     entries,
     isLoading,
     addLiquidEntry,
+    updateLiquidEntry,
     deleteLiquidEntry,
     getTodayTotal,
     liquidTypes: LIQUID_TYPES,
