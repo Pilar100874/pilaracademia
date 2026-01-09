@@ -8,7 +8,9 @@ interface ZxingScannerProps {
 
 export function ZxingScanner({ onResult, onError }: ZxingScannerProps) {
   const [hasError, setHasError] = useState(false);
+  const [isStarting, setIsStarting] = useState(true);
   const hasCalledResult = useRef(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleDecodeResult = useCallback((result: any) => {
     if (hasCalledResult.current) return;
@@ -45,16 +47,40 @@ export function ZxingScanner({ onResult, onError }: ZxingScannerProps) {
     constraints: {
       video: {
         facingMode: 'environment',
-        width: { ideal: 1280, min: 640 },
-        height: { ideal: 720, min: 480 },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
       },
     },
     timeBetweenDecodingAttempts: 200,
+    paused: hasError,
   });
 
-  // Reset on mount
+  // Combine refs
+  useEffect(() => {
+    if (ref.current) {
+      videoRef.current = ref.current;
+    }
+  }, [ref]);
+
+  // Cleanup camera stream on unmount
   useEffect(() => {
     hasCalledResult.current = false;
+    
+    // Small delay to show loading state
+    const timer = setTimeout(() => setIsStarting(false), 500);
+
+    return () => {
+      clearTimeout(timer);
+      // Stop all tracks when component unmounts
+      if (videoRef.current?.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => {
+          track.stop();
+          console.log('Camera track stopped:', track.label);
+        });
+        videoRef.current.srcObject = null;
+      }
+    };
   }, []);
 
   if (hasError) {
@@ -63,6 +89,14 @@ export function ZxingScanner({ onResult, onError }: ZxingScannerProps) {
 
   return (
     <div className="relative rounded-xl overflow-hidden bg-black w-full" style={{ minHeight: '280px' }}>
+      {isStarting && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+          <div className="text-center text-white">
+            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <p className="text-sm">Iniciando câmera...</p>
+          </div>
+        </div>
+      )}
       <video 
         ref={ref} 
         className="w-full h-full object-cover"
