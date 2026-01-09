@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Flame, Apple, User, Loader2 } from 'lucide-react';
 import { ProgressRing } from '@/components/ProgressRing';
-import { NutritionCard } from '@/components/NutritionCard';
 import { FoodEntryItemDB } from '@/components/FoodEntryItemDB';
 import { AddFoodMenu } from '@/components/AddFoodMenu';
 import { PhotoCapture } from '@/components/PhotoCapture';
 import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { ManualEntryForm } from '@/components/ManualEntryForm';
 import { LiquidTracker } from '@/components/LiquidTracker';
+import { WeightTracker } from '@/components/WeightTracker';
+import { NutritionProgressGrid } from '@/components/NutritionProgressGrid';
 import { WeightReminderPopup } from '@/components/WeightReminderPopup';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
@@ -47,7 +48,6 @@ export function Dashboard() {
         liquidMl: liquidMl || 0
       });
       
-      // Se for líquido, adicionar também ao controle de hidratação
       if (isLiquid && liquidMl && liquidMl > 0) {
         await addLiquidEntry(liquidMl, 'other');
       }
@@ -70,7 +70,6 @@ export function Dashboard() {
         liquidMl: liquidMl || 0
       });
       
-      // Se for líquido, adicionar também ao controle de hidratação
       if (isLiquid && liquidMl && liquidMl > 0) {
         await addLiquidEntry(liquidMl, 'other');
       }
@@ -119,6 +118,7 @@ export function Dashboard() {
         )}
       </header>
 
+      {/* Calorias */}
       <section className="px-5 py-4">
         <div className="rounded-3xl gradient-card p-6 shadow-card">
           <div className="flex items-center justify-between">
@@ -134,19 +134,20 @@ export function Dashboard() {
         </div>
       </section>
 
+      {/* Todos os Nutrientes com Percentual */}
       <section className="px-5 py-2">
-        <div className="grid grid-cols-2 gap-3">
-          <NutritionCard label="Proteína" value={consumed.protein} goal={goals.protein} unit="g" color="accent" />
-          <NutritionCard label="Carboidratos" value={consumed.carbs} goal={goals.carbs} unit="g" color="blue" />
-          <NutritionCard label="Gordura" value={consumed.fat} goal={goals.fat} unit="g" color="pink" />
-          <NutritionCard label="Fibra" value={consumed.fiber} goal={goals.fiber} unit="g" color="primary" />
+        <NutritionProgressGrid consumed={consumed} goals={goals} />
+      </section>
+
+      {/* Peso e Hidratação lado a lado */}
+      <section className="px-5 py-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <WeightTracker />
+          <LiquidTracker />
         </div>
       </section>
 
-      <section className="px-5 py-2">
-        <LiquidTracker />
-      </section>
-
+      {/* Refeições */}
       <section className="px-5 py-4">
         <h2 className="text-lg font-semibold mb-3">Refeições de Hoje</h2>
         {entries.length === 0 ? (
