@@ -301,10 +301,19 @@ export function ProductsPage() {
         return `${product.package_volume_ml}ml`;
       }
       if (!product.is_liquid) {
-        const parts = [];
-        if (product.package_total_weight) parts.push(`${product.package_total_weight}g`);
-        if (product.package_total_units) parts.push(`${product.package_total_units} un.`);
-        return parts.length > 0 ? parts.join(' / ') : null;
+        // If has both weight and units, show weight per unit
+        if (product.package_total_weight && product.package_total_units) {
+          const weightPerUnit = product.package_total_weight / product.package_total_units;
+          return `${product.package_total_units} un. (${weightPerUnit.toFixed(0)}g/un)`;
+        }
+        // If only weight
+        if (product.package_total_weight) {
+          return `${product.package_total_weight}g`;
+        }
+        // If only units
+        if (product.package_total_units) {
+          return `${product.package_total_units} un.`;
+        }
       }
       return null;
     };
