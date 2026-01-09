@@ -30,6 +30,10 @@ interface ProductFormDialogProps {
     saturatedFat?: number;
     transFat?: number;
     isLiquid?: boolean;
+    packageWeight?: number;
+    packageUnits?: number;
+    packageVolume?: number;
+    referenceQuantity?: number;
   };
   onProductSaved?: (product: CustomProduct) => void;
   title?: string;
@@ -90,6 +94,10 @@ export function ProductFormDialog({
         setFormTransFat(initialData.transFat?.toString() || '');
         setFormIsLiquid(initialData.isLiquid || false);
         setFormRefUnit(initialData.isLiquid ? 'ml' : 'g');
+        setFormRefQuantity(initialData.referenceQuantity?.toString() || '100');
+        setFormPackageWeight(initialData.packageWeight?.toString() || '');
+        setFormPackageUnits(initialData.packageUnits?.toString() || '');
+        setFormPackageVolume(initialData.packageVolume?.toString() || '');
         if (initialData.imageUrl) {
           setFormImageUrl(initialData.imageUrl);
           setImagePreview(initialData.imageUrl);

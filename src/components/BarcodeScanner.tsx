@@ -45,6 +45,10 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     saturatedFat?: number;
     transFat?: number;
     isLiquid?: boolean;
+    packageWeight?: number;
+    packageUnits?: number;
+    packageVolume?: number;
+    referenceQuantity?: number;
   } | null>(null);
 
   // Handle photo file scan
@@ -214,9 +218,28 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
         }}
         onSuccess={handleConsumptionSuccess}
         onBack={() => {
+          // Preserve current product data when going back
+          setPendingProductData({
+            name: foundProduct.name,
+            brand: foundProduct.brand || undefined,
+            imageUrl: foundProduct.image_url || undefined,
+            calories: foundProduct.calories,
+            protein: foundProduct.protein,
+            carbs: foundProduct.carbs,
+            fat: foundProduct.fat,
+            fiber: foundProduct.fiber || undefined,
+            sodium: foundProduct.sodium || undefined,
+            saturatedFat: foundProduct.saturated_fat || undefined,
+            transFat: foundProduct.trans_fat || undefined,
+            isLiquid: foundProduct.is_liquid,
+            packageWeight: foundProduct.package_total_weight || undefined,
+            packageUnits: foundProduct.package_total_units || undefined,
+            packageVolume: foundProduct.package_volume_ml || undefined,
+            referenceQuantity: foundProduct.reference_quantity,
+          });
+          setScannedBarcode(foundProduct.barcode);
           setShowConsumptionDialog(false);
           setFoundProduct(null);
-          // Re-show product form for editing
           setShowProductForm(true);
         }}
       />
