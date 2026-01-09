@@ -39,7 +39,14 @@ export function Dashboard() {
   const goals = getGoals();
   const { consumed } = getTodaySummary();
   const caloriesBurned = getTodayTotalBurned();
-  const todayLiquid = getTodayTotal();
+  
+  // Calcular total de líquidos: liquid_entries + food_entries com is_liquid=true
+  const liquidFromEntries = getTodayTotal(); // from liquid_entries
+  const liquidFromFood = entries
+    .filter(e => e.is_liquid === true && e.liquid_ml)
+    .reduce((sum, e) => sum + (e.liquid_ml || 0), 0);
+  const todayLiquid = liquidFromEntries + liquidFromFood;
+  
   const dailyLiquidGoal = profile?.daily_liquid_ml || 2000;
   const netCalories = consumed.calories - caloriesBurned;
   const calorieProgress = (netCalories / goals.calories) * 100;
@@ -102,6 +109,12 @@ export function Dashboard() {
 
   // Separar entries em refeições (food_entries não são líquidos)
   const mealEntries = entries.filter(e => e.is_liquid !== true);
+  
+  // food_entries que são líquidos
+  const liquidFoodEntries = entries.filter(e => e.is_liquid === true);
+  
+  // Total de itens líquidos (liquid_entries + food_entries líquidos)
+  const totalLiquidItems = liquidEntriesData.length + liquidFoodEntries.length;
   
   // All entries sorted by time (for 'time' sort mode) - combining food and liquid entries
   const allEntriesByTime = [...entries].sort((a, b) => 
@@ -261,16 +274,17 @@ export function Dashboard() {
               </div>
             )}
 
-            {/* Bebidas - from liquid_entries */}
-            {liquidEntriesData.length > 0 && (
+            {/* Líquidos - from liquid_entries + food_entries com is_liquid */}
+            {totalLiquidItems > 0 && (
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
                   <Droplets className="h-3 w-3 text-sky-500" />
-                  Bebidas ({liquidEntriesData.length})
+                  Líquidos ({totalLiquidItems})
                 </p>
                 <div className="space-y-2">
+                  {/* Liquid entries from liquid_entries table */}
                   {liquidEntriesData.slice(0, 5).map((entry) => (
-                    <div key={entry.id} className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card">
+                    <div key={`liquid-${entry.id}`} className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10">
                         <Droplets className="h-5 w-5 text-sky-500" />
                       </div>
@@ -291,8 +305,14 @@ export function Dashboard() {
                       </button>
                     </div>
                   ))}
-                  {liquidEntriesData.length > 5 && (
-                    <p className="text-xs text-center text-muted-foreground">+{liquidEntriesData.length - 5} mais</p>
+                  
+                  {/* Liquid entries from food_entries with is_liquid=true */}
+                  {liquidFoodEntries.slice(0, Math.max(0, 5 - liquidEntriesData.length)).map((entry) => (
+                    <FoodEntryItemDB key={`food-${entry.id}`} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
+                  ))}
+                  
+                  {totalLiquidItems > 5 && (
+                    <p className="text-xs text-center text-muted-foreground">+{totalLiquidItems - 5} mais</p>
                   )}
                 </div>
               </div>
