@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile, calculateBMR, calculateTDEE, calculateDailyCalories, calculateMacros, calculateAge } from '@/types/profile';
+import { Profile, calculateBMR, calculateTDEE, calculateDailyCalories, calculateAllNutrients, calculateAge } from '@/types/profile';
 import { useAuth } from '@/hooks/useAuth';
 
 export function useProfile() {
@@ -36,7 +36,6 @@ export function useProfile() {
   const updateProfile = useCallback(async (updates: Partial<Profile>) => {
     if (!user || !profile) return null;
 
-    // Calculate nutrition goals if we have all required data
     let nutritionUpdates: Partial<Profile> = {};
     
     const gender = updates.gender || profile.gender;
@@ -51,13 +50,17 @@ export function useProfile() {
       const bmr = calculateBMR(gender, weightKg, heightCm, age);
       const tdee = calculateTDEE(bmr, activityLevel);
       const dailyCalories = calculateDailyCalories(tdee, goal);
-      const macros = calculateMacros(dailyCalories, goal);
+      const nutrients = calculateAllNutrients(dailyCalories, goal);
 
       nutritionUpdates = {
         daily_calories: dailyCalories,
-        daily_protein: macros.protein,
-        daily_carbs: macros.carbs,
-        daily_fat: macros.fat,
+        daily_protein: nutrients.protein,
+        daily_carbs: nutrients.carbs,
+        daily_fat: nutrients.fat,
+        daily_saturated_fat: nutrients.saturatedFat,
+        daily_trans_fat: nutrients.transFat,
+        daily_fiber: nutrients.fiber,
+        daily_sodium: nutrients.sodium,
       };
     }
 
@@ -83,6 +86,10 @@ export function useProfile() {
       protein: profile?.daily_protein || 150,
       carbs: profile?.daily_carbs || 250,
       fat: profile?.daily_fat || 65,
+      saturatedFat: profile?.daily_saturated_fat || 22,
+      transFat: profile?.daily_trans_fat || 2,
+      fiber: profile?.daily_fiber || 25,
+      sodium: profile?.daily_sodium || 2000,
     };
   }, [profile]);
 

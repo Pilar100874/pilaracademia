@@ -42,7 +42,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `Você é um especialista em nutrição. Analise a imagem do prato de comida e estime os valores nutricionais.
+            content: `Você é um especialista em nutrição. Analise a imagem do prato de comida e estime os valores nutricionais completos.
             
 IMPORTANTE: Responda APENAS com um JSON válido no seguinte formato, sem texto adicional:
 {
@@ -50,19 +50,29 @@ IMPORTANTE: Responda APENAS com um JSON válido no seguinte formato, sem texto a
   "calories": número estimado de calorias (kcal),
   "protein": gramas de proteína,
   "carbs": gramas de carboidratos,
-  "fat": gramas de gordura,
+  "fat": gramas de gordura total,
+  "saturatedFat": gramas de gordura saturada,
+  "transFat": gramas de gordura trans (geralmente 0 para comida caseira),
+  "fiber": gramas de fibra alimentar,
+  "sodium": miligramas de sódio,
   "confidence": "alta" | "média" | "baixa",
   "items": ["lista", "de", "ingredientes", "identificados"]
 }
 
-Faça uma estimativa realista baseada no tamanho aparente da porção. Se não conseguir identificar o alimento, retorne valores aproximados e confidence "baixa".`
+Diretrizes para estimativa:
+- Gordura saturada: geralmente 30-40% da gordura total para carnes, menos para vegetais
+- Gordura trans: 0 para comida caseira, pode haver em frituras industriais
+- Fibra: alta em vegetais, grãos integrais, legumes
+- Sódio: comida caseira ~500-800mg, fast food ~1000-2000mg
+
+Faça uma estimativa realista baseada no tamanho aparente da porção.`
           },
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "Analise esta imagem de comida e forneça os valores nutricionais estimados."
+                text: "Analise esta imagem de comida e forneça os valores nutricionais estimados completos."
               },
               {
                 type: "image_url",
@@ -107,10 +117,8 @@ Faça uma estimativa realista baseada no tamanho aparente da porção. Se não c
       );
     }
 
-    // Parse the JSON response from the AI
     let nutritionData;
     try {
-      // Extract JSON from the response (in case there's extra text)
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         nutritionData = JSON.parse(jsonMatch[0]);
@@ -119,13 +127,16 @@ Faça uma estimativa realista baseada no tamanho aparente da porção. Se não c
       }
     } catch (parseError) {
       console.error("Failed to parse AI response:", content);
-      // Fallback with default values
       nutritionData = {
         name: "Prato não identificado",
         calories: 300,
         protein: 15,
         carbs: 40,
         fat: 10,
+        saturatedFat: 3,
+        transFat: 0,
+        fiber: 3,
+        sodium: 600,
         confidence: "baixa",
         items: []
       };

@@ -3,8 +3,10 @@ export interface NutritionData {
   protein: number;
   carbs: number;
   fat: number;
+  saturatedFat?: number;
+  transFat?: number;
   fiber?: number;
-  sugar?: number;
+  sodium?: number;
 }
 
 export interface FoodEntry {
@@ -23,6 +25,10 @@ export interface DailyGoals {
   protein: number;
   carbs: number;
   fat: number;
+  saturatedFat: number;
+  transFat: number;
+  fiber: number;
+  sodium: number;
 }
 
 export interface DailySummary {
