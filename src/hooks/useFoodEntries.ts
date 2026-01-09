@@ -51,6 +51,7 @@ export function useFoodEntries(selectedDate?: Date) {
     consumedAt?: Date;
     isLiquid?: boolean;
     liquidMl?: number;
+    productId?: string;
   }) => {
     if (!user) return null;
 
@@ -77,6 +78,7 @@ export function useFoodEntries(selectedDate?: Date) {
         consumed_at: consumedDate.toISOString(),
         is_liquid: entry.isLiquid || false,
         liquid_ml: entry.liquidMl || 0,
+        product_id: entry.productId || null,
       })
       .select()
       .single();

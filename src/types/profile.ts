@@ -41,6 +41,7 @@ export interface FoodEntryDB {
   consumed_at: string;
   is_liquid: boolean;
   liquid_ml: number;
+  product_id: string | null;
   created_at: string;
   updated_at: string;
 }

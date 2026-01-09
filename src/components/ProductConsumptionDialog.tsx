@@ -181,6 +181,7 @@ export function ProductConsumptionDialog({
         source: 'barcode',
         isLiquid,
         liquidMl,
+        productId: product.id,
       });
       
       toast.success('Consumo registrado!', {

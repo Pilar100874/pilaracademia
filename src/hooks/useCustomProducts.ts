@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 export interface CustomProduct {
   id: string;
@@ -76,6 +77,9 @@ export function useCustomProducts() {
 
     console.log('Salvando produto:', product);
     
+    // Check if this is an update (product already exists)
+    const existingProduct = products.find(p => p.barcode === product.barcode);
+    
     // Upsert - insert or update if exists
     const { data, error } = await supabase
       .from('custom_products')
@@ -113,18 +117,30 @@ export function useCustomProducts() {
     
     console.log('Produto salvo:', data);
     
+    const savedProduct = data as CustomProduct;
+    
+    // If this was an update, reprocess all food entries
+    if (existingProduct) {
+      const reprocessedCount = await reprocessEntriesForProduct(savedProduct);
+      if (reprocessedCount > 0) {
+        toast.success(`${reprocessedCount} consumo(s) atualizado(s)`, {
+          description: `Os registros de "${savedProduct.name}" foram recalculados`,
+        });
+      }
+    }
+    
     // Update local state
     setProducts((prev) => {
       const existing = prev.findIndex((p) => p.barcode === product.barcode);
       if (existing >= 0) {
         const updated = [...prev];
-        updated[existing] = data as CustomProduct;
+        updated[existing] = savedProduct;
         return updated;
       }
-      return [...prev, data as CustomProduct];
+      return [...prev, savedProduct];
     });
 
-    return data as CustomProduct;
+    return savedProduct;
   };
 
   const updateProduct = async (id: string, updates: Partial<CustomProduct>): Promise<CustomProduct> => {
@@ -140,8 +156,71 @@ export function useCustomProducts() {
 
     if (error) throw error;
     
-    setProducts((prev) => prev.map((p) => (p.id === id ? (data as CustomProduct) : p)));
-    return data as CustomProduct;
+    const updatedProduct = data as CustomProduct;
+    
+    // Reprocess all food entries that used this product
+    const reprocessedCount = await reprocessEntriesForProduct(updatedProduct);
+    
+    if (reprocessedCount > 0) {
+      toast.success(`${reprocessedCount} consumo(s) atualizado(s)`, {
+        description: `Os registros de "${updatedProduct.name}" foram recalculados`,
+      });
+    }
+    
+    setProducts((prev) => prev.map((p) => (p.id === id ? updatedProduct : p)));
+    return updatedProduct;
+  };
+  
+  // Reprocess food entries when a product is updated
+  const reprocessEntriesForProduct = async (product: CustomProduct): Promise<number> => {
+    if (!user) return 0;
+
+    // Get all food entries that used this product
+    const { data: entries, error: fetchError } = await supabase
+      .from('food_entries')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('product_id', product.id);
+
+    if (fetchError || !entries || entries.length === 0) {
+      console.log('No entries to reprocess for product:', product.id);
+      return 0;
+    }
+
+    console.log(`Reprocessing ${entries.length} entries for product:`, product.name);
+
+    // Calculate new nutrition values for each entry based on the updated product
+    const refQty = product.reference_quantity || 100;
+    
+    for (const entry of entries) {
+      const consumedQty = entry.quantity || refQty;
+      const factor = consumedQty / refQty;
+      
+      const newNutrition = {
+        calories: Math.round(product.calories * factor),
+        protein: Number((product.protein * factor).toFixed(1)),
+        carbs: Number((product.carbs * factor).toFixed(1)),
+        fat: Number((product.fat * factor).toFixed(1)),
+        saturated_fat: Number(((product.saturated_fat || 0) * factor).toFixed(1)),
+        trans_fat: Number(((product.trans_fat || 0) * factor).toFixed(1)),
+        fiber: Number(((product.fiber || 0) * factor).toFixed(1)),
+        sodium: Number(((product.sodium || 0) * factor).toFixed(1)),
+        name: product.name,
+        image_url: product.image_url,
+      };
+
+      const { error: updateError } = await supabase
+        .from('food_entries')
+        .update(newNutrition)
+        .eq('id', entry.id)
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('Error updating entry:', entry.id, updateError);
+      }
+    }
+
+    return entries.length;
   };
 
   const deleteProduct = async (id: string): Promise<void> => {
@@ -164,6 +243,7 @@ export function useCustomProducts() {
     saveProduct,
     updateProduct,
     deleteProduct,
+    reprocessEntriesForProduct,
     refetch: fetchProducts,
   };
 }
