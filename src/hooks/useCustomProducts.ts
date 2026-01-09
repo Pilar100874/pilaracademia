@@ -95,6 +95,9 @@ export function useCustomProducts() {
         reference_quantity: product.reference_quantity,
         reference_unit: product.reference_unit,
         is_liquid: product.is_liquid || false,
+        package_total_weight: product.package_total_weight,
+        package_total_units: product.package_total_units,
+        package_volume_ml: product.package_volume_ml,
       }, {
         onConflict: 'user_id,barcode'
       })
