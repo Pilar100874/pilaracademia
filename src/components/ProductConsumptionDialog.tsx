@@ -241,28 +241,46 @@ export function ProductConsumptionDialog({
           </div>
 
           {/* Package info display */}
-          {packageInfo.hasPackageInfo && (
-            <div className="p-3 rounded-lg bg-sky-500/10 border border-sky-500/20 space-y-1">
-              <p className="text-xs font-medium flex items-center gap-1 text-sky-600">
-                <Package className="h-3 w-3" />
-                Embalagem
+          <div className={`p-3 rounded-lg border space-y-1 ${
+            packageInfo.hasPackageInfo 
+              ? 'bg-sky-500/10 border-sky-500/20' 
+              : 'bg-amber-500/10 border-amber-500/20'
+          }`}>
+            <p className={`text-xs font-medium flex items-center gap-1 ${
+              packageInfo.hasPackageInfo ? 'text-sky-600' : 'text-amber-600'
+            }`}>
+              <Package className="h-3 w-3" />
+              {packageInfo.hasPackageInfo ? 'Embalagem' : 'Base para cálculo'}
+            </p>
+            {packageInfo.isLiquid ? (
+              <p className="text-lg font-bold text-sky-600">
+                {packageInfo.totalVolume || packageInfo.refQty}ml
               </p>
-              {packageInfo.isLiquid && packageInfo.totalVolume && (
-                <p className="text-lg font-bold text-sky-600">{packageInfo.totalVolume}ml</p>
-              )}
-              {!packageInfo.isLiquid && packageInfo.totalWeight && (
-                <p className="text-sm">Peso total: <strong>{packageInfo.totalWeight}g</strong></p>
-              )}
-              {packageInfo.totalUnits && (
-                <p className="text-sm">
-                  <strong>{packageInfo.totalUnits}</strong> unidades
-                  {packageInfo.weightPerUnit && (
-                    <span className="text-muted-foreground"> ({packageInfo.weightPerUnit.toFixed(0)}g cada)</span>
-                  )}
-                </p>
-              )}
-            </div>
-          )}
+            ) : (
+              <>
+                {packageInfo.totalWeight ? (
+                  <p className="text-sm">Peso total: <strong>{packageInfo.totalWeight}g</strong></p>
+                ) : (
+                  <p className="text-sm text-amber-600">
+                    Usando referência nutricional: <strong>{packageInfo.refQty}g</strong>
+                  </p>
+                )}
+              </>
+            )}
+            {packageInfo.totalUnits && (
+              <p className="text-sm">
+                <strong>{packageInfo.totalUnits}</strong> unidades
+                {packageInfo.weightPerUnit && (
+                  <span className="text-muted-foreground"> ({packageInfo.weightPerUnit.toFixed(0)}g cada)</span>
+                )}
+              </p>
+            )}
+            {!packageInfo.hasPackageInfo && !packageInfo.isLiquid && (
+              <p className="text-xs text-amber-600/80">
+                Cadastre o peso da embalagem para cálculos mais precisos
+              </p>
+            )}
+          </div>
 
           {/* LIQUID OPTIONS */}
           {packageInfo.isLiquid && (
