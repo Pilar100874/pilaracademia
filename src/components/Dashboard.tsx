@@ -8,6 +8,7 @@ import { PhotoCapture } from '@/components/PhotoCapture';
 import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { ManualEntryForm } from '@/components/ManualEntryForm';
 import { LiquidTracker } from '@/components/LiquidTracker';
+import { WeightReminderPopup } from '@/components/WeightReminderPopup';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
 import { useProfile } from '@/hooks/useProfile';
@@ -162,6 +163,7 @@ export function Dashboard() {
       {activeModal === 'photo' && <PhotoCapture onFoodAnalyzed={handlePhotoAnalyzed} onClose={() => setActiveModal(null)} />}
       {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => setActiveModal(null)} />}
       {activeModal === 'manual' && <ManualEntryForm onSubmit={handleManualEntry} onClose={() => setActiveModal(null)} />}
+      <WeightReminderPopup />
     </div>
   );
 }
