@@ -10,6 +10,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { useNavigate } from 'react-router-dom';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { WATER_IMAGE_URL } from '@/components/DefaultLiquidImage';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,6 +41,8 @@ export function ProductsPage() {
   
   const [showAddNaturalDialog, setShowAddNaturalDialog] = useState(false);
   const [formNaturalCategory, setFormNaturalCategory] = useState('frutas');
+  const [deletingProduct, setDeletingProduct] = useState<CustomProduct | null>(null);
+  const [deletingNaturalId, setDeletingNaturalId] = useState<{ id: string; name: string } | null>(null);
   
   // Form state (shared for add/edit)
   const [formName, setFormName] = useState('');
@@ -384,11 +387,18 @@ export function ProductsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteProduct(id);
-    } catch {
-      // silently fail
+  const handleDelete = async (product: CustomProduct) => {
+    setDeletingProduct(product);
+  };
+
+  const confirmDelete = async () => {
+    if (deletingProduct) {
+      try {
+        await deleteProduct(deletingProduct.id);
+        setDeletingProduct(null);
+      } catch {
+        // silently fail
+      }
     }
   };
 
@@ -479,7 +489,7 @@ export function ProductsPage() {
             size="sm"
             variant="ghost"
             className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-            onClick={() => handleDelete(product.id)}
+            onClick={() => handleDelete(product)}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -1159,6 +1169,12 @@ export function ProductsPage() {
         </DialogContent>
       </Dialog>
 
+      <ConfirmDeleteDialog
+        open={!!deletingProduct}
+        onOpenChange={(open) => !open && setDeletingProduct(null)}
+        itemName={deletingProduct?.name}
+        onConfirm={confirmDelete}
+      />
 
       <BottomNav />
     </div>

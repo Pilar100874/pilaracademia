@@ -16,6 +16,7 @@ import { NutritionProgressGrid } from '@/components/NutritionProgressGrid';
 import { WeightReminderPopup } from '@/components/WeightReminderPopup';
 import { WeightProjection } from '@/components/WeightProjection';
 import { BottomNav } from '@/components/BottomNav';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
 import { useExerciseEntries } from '@/hooks/useExerciseEntries';
@@ -53,6 +54,7 @@ export function Dashboard() {
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [sortType, setSortType] = useState<SortType>('type');
   const [editingLiquid, setEditingLiquid] = useState<LiquidEntryData | null>(null);
+  const [deletingLiquid, setDeletingLiquid] = useState<LiquidEntryData | null>(null);
 
   const goals = getGoals();
   const { consumed } = getTodaySummary();
@@ -454,7 +456,7 @@ export function Dashboard() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                          onClick={() => deleteLiquidEntry(entry.id).then(() => refetchLiquids())}
+                          onClick={() => setDeletingLiquid(entry)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -504,6 +506,18 @@ export function Dashboard() {
         onSave={async (id, amountMl) => {
           await updateLiquidEntry(id, amountMl);
           refetchLiquids();
+        }}
+      />
+      <ConfirmDeleteDialog
+        open={!!deletingLiquid}
+        onOpenChange={(open) => !open && setDeletingLiquid(null)}
+        itemName={deletingLiquid ? `${deletingLiquid.amount_ml}ml de ${liquidTypes[deletingLiquid.type as keyof typeof liquidTypes] || deletingLiquid.type}` : ''}
+        onConfirm={async () => {
+          if (deletingLiquid) {
+            await deleteLiquidEntry(deletingLiquid.id);
+            refetchLiquids();
+            setDeletingLiquid(null);
+          }
         }}
       />
       <WeightReminderPopup />

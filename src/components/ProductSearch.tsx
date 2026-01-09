@@ -8,6 +8,7 @@ import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { useFoodKits, FoodKit } from '@/hooks/useFoodKits';
 import { ProductConsumptionDialog } from './ProductConsumptionDialog';
 import { KitFormDialog } from './KitFormDialog';
+import { ConfirmDeleteDialog } from './ConfirmDeleteDialog';
 import { NATURAL_PRODUCTS, NATURAL_PRODUCT_CATEGORIES, naturalToCustomProduct, getCategoryInfo } from '@/data/naturalProducts';
 import { toast } from 'sonner';
 
@@ -27,6 +28,7 @@ export function ProductSearch({ isOpen, onClose }: ProductSearchProps) {
   const [editingKit, setEditingKit] = useState<FoodKit | null>(null);
   const [launchingKitId, setLaunchingKitId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [deletingKit, setDeletingKit] = useState<FoodKit | null>(null);
 
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -99,8 +101,13 @@ export function ProductSearch({ isOpen, onClose }: ProductSearchProps) {
   };
 
   const handleDeleteKit = async (kit: FoodKit) => {
-    if (confirm(`Excluir kit "${kit.name}"?`)) {
-      await deleteKit.mutateAsync(kit.id);
+    setDeletingKit(kit);
+  };
+
+  const confirmDeleteKit = async () => {
+    if (deletingKit) {
+      await deleteKit.mutateAsync(deletingKit.id);
+      setDeletingKit(null);
     }
   };
 
@@ -411,6 +418,13 @@ export function ProductSearch({ isOpen, onClose }: ProductSearchProps) {
         onOpenChange={handleKitFormClose}
         editingKit={editingKit}
         onSaved={handleKitFormClose}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!deletingKit}
+        onOpenChange={(open) => !open && setDeletingKit(null)}
+        itemName={deletingKit?.name}
+        onConfirm={confirmDeleteKit}
       />
     </>
   );
