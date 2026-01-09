@@ -11,6 +11,7 @@ import { WeightTracker } from '@/components/WeightTracker';
 import { ExerciseTracker } from '@/components/ExerciseTracker';
 import { NutritionProgressGrid } from '@/components/NutritionProgressGrid';
 import { WeightReminderPopup } from '@/components/WeightReminderPopup';
+import { WeightProjection } from '@/components/WeightProjection';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
 import { useExerciseEntries } from '@/hooks/useExerciseEntries';
@@ -147,6 +148,14 @@ export function Dashboard() {
               <span className="text-xl font-bold">{Math.round(calorieProgress)}%</span>
             </ProgressRing>
           </div>
+          
+          {/* Botão de projeção de peso */}
+          <WeightProjection 
+            consumedCalories={consumed.calories}
+            burnedCalories={caloriesBurned}
+            goalCalories={goals.calories}
+            currentWeight={profile?.weight_kg || 70}
+          />
         </div>
       </section>
 
