@@ -67,22 +67,36 @@ export function Dashboard() {
 
   const handlePhotoAnalyzed = async (name: string, nutrition: NutritionData, imageUrl: string, isLiquid?: boolean, liquidMl?: number) => {
     try {
-      const entry = await addEntry({ name, nutrition, imageUrl, quantity: liquidMl || 1, unit: isLiquid ? 'ml' : 'porção', source: 'photo', isLiquid: isLiquid || false, liquidMl: liquidMl || 0 });
-      if (isLiquid && liquidMl && liquidMl > 0 && entry) {
-        await addLiquidEntry(liquidMl, 'other');
-        refetchLiquids();
-      }
+      // Add food entry only - liquid tracking comes from is_liquid + liquid_ml fields
+      await addEntry({ 
+        name, 
+        nutrition, 
+        imageUrl, 
+        quantity: liquidMl || 1, 
+        unit: isLiquid ? 'ml' : 'porção', 
+        source: 'photo', 
+        isLiquid: isLiquid || false, 
+        liquidMl: liquidMl || 0 
+      });
+      // Note: Don't add separate liquid_entry - it's already tracked via food_entries.is_liquid
     } catch { /* silently fail */ }
     setActiveModal(null);
   };
 
   const handleBarcodeProduct = async (product: BarcodeProduct, portionGrams: number, isLiquid?: boolean, liquidMl?: number) => {
     try {
-      const entry = await addEntry({ name: product.name, nutrition: product.nutrition, imageUrl: product.imageUrl, quantity: portionGrams, unit: isLiquid ? 'ml' : 'g', source: 'barcode', isLiquid: isLiquid || false, liquidMl: liquidMl || 0 });
-      if (isLiquid && liquidMl && liquidMl > 0 && entry) {
-        await addLiquidEntry(liquidMl, 'other');
-        refetchLiquids();
-      }
+      // Add food entry only - liquid tracking comes from is_liquid + liquid_ml fields
+      await addEntry({ 
+        name: product.name, 
+        nutrition: product.nutrition, 
+        imageUrl: product.imageUrl, 
+        quantity: portionGrams, 
+        unit: isLiquid ? 'ml' : 'g', 
+        source: 'barcode', 
+        isLiquid: isLiquid || false, 
+        liquidMl: liquidMl || 0 
+      });
+      // Note: Don't add separate liquid_entry - it's already tracked via food_entries.is_liquid
     } catch { /* silently fail */ }
     setActiveModal(null);
   };
