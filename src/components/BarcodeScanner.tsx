@@ -610,53 +610,73 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
               </div>
             ) : scanMode === 'photo' ? (
               <div className="space-y-4">
-                {scanError && (
-                  <div className="rounded-xl bg-destructive/10 p-4 text-center">
-                    <p className="text-sm text-destructive">{scanError}</p>
+                {isLoading ? (
+                  <div className="rounded-xl bg-primary/10 p-8 text-center">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+                    <p className="mt-4 text-sm font-medium">Aguarde, pesquisando produto...</p>
+                    <p className="text-xs text-muted-foreground mt-1">Código: {barcode}</p>
                   </div>
-                )}
-                
-                <div 
-                  className="rounded-2xl border-2 border-dashed border-primary/50 p-8 text-center cursor-pointer hover:bg-primary/5 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Camera className="mx-auto h-12 w-12 text-primary" />
-                  <p className="mt-3 text-sm font-medium">
-                    Toque para tirar foto do código de barras
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    O celular vai focar automaticamente na foto
-                  </p>
-                </div>
+                ) : (
+                  <>
+                    {scanError && (
+                      <div className="rounded-xl bg-destructive/10 p-4 text-center">
+                        <p className="text-sm text-destructive">{scanError}</p>
+                      </div>
+                    )}
+                    
+                    <div 
+                      className="rounded-2xl border-2 border-dashed border-primary/50 p-8 text-center cursor-pointer hover:bg-primary/5 transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Camera className="mx-auto h-12 w-12 text-primary" />
+                      <p className="mt-3 text-sm font-medium">
+                        Toque para tirar foto do código de barras
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        O celular vai focar automaticamente na foto
+                      </p>
+                    </div>
 
-                <p className="text-xs text-center text-muted-foreground">
-                  💡 Dica: Aproxime o celular do código de barras e espere focar antes de tirar a foto
-                </p>
+                    <p className="text-xs text-center text-muted-foreground">
+                      💡 Dica: Aproxime o celular do código de barras e espere focar antes de tirar a foto
+                    </p>
+                  </>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    ref={inputRef}
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Digite o código de barras"
-                    value={barcode}
-                    onChange={(e) => setBarcode(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    className="flex-1"
-                  />
-                  <Button onClick={handleSearch} disabled={isLoading || !barcode.trim()}>
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Buscar'}
-                  </Button>
-                </div>
+                {isLoading ? (
+                  <div className="rounded-xl bg-primary/10 p-8 text-center">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+                    <p className="mt-4 text-sm font-medium">Aguarde, pesquisando produto...</p>
+                    <p className="text-xs text-muted-foreground mt-1">Código: {barcode}</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      <Input
+                        ref={inputRef}
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Digite o código de barras"
+                        value={barcode}
+                        onChange={(e) => setBarcode(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        className="flex-1"
+                      />
+                      <Button onClick={handleSearch} disabled={isLoading || !barcode.trim()}>
+                        Buscar
+                      </Button>
+                    </div>
 
-                <div className="rounded-2xl border-2 border-dashed border-muted p-6 text-center">
-                  <Keyboard className="mx-auto h-10 w-10 text-muted-foreground" />
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    Digite o código de barras do produto
-                  </p>
-                </div>
+                    <div className="rounded-2xl border-2 border-dashed border-muted p-6 text-center">
+                      <Keyboard className="mx-auto h-10 w-10 text-muted-foreground" />
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        Digite o código de barras do produto
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
