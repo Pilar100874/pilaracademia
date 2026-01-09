@@ -20,7 +20,7 @@ import { useExerciseEntries } from '@/hooks/useExerciseEntries';
 import { useProfile } from '@/hooks/useProfile';
 import { BarcodeProduct, NutritionData } from '@/types/nutrition';
 import { FoodEntryDB } from '@/types/profile';
-import { toast } from 'sonner';
+
 import { useNavigate } from 'react-router-dom';
 
 type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | null;
@@ -48,8 +48,7 @@ export function Dashboard() {
     try {
       await addEntry({ name, nutrition, imageUrl, quantity: 1, unit: 'porção', source: 'photo', isLiquid: isLiquid || false, liquidMl: liquidMl || 0 });
       if (isLiquid && liquidMl && liquidMl > 0) await addLiquidEntry(liquidMl, 'other');
-      toast.success('Adicionado!');
-    } catch { toast.error('Erro'); }
+    } catch { /* silently fail */ }
     setActiveModal(null);
   };
 
@@ -57,25 +56,23 @@ export function Dashboard() {
     try {
       await addEntry({ name: product.name, nutrition: product.nutrition, imageUrl: product.imageUrl, quantity: portionGrams, unit: isLiquid ? 'ml' : 'g', source: 'barcode', isLiquid: isLiquid || false, liquidMl: liquidMl || 0 });
       if (isLiquid && liquidMl && liquidMl > 0) await addLiquidEntry(liquidMl, 'other');
-      toast.success('Adicionado!');
-    } catch { toast.error('Erro'); }
+    } catch { /* silently fail */ }
     setActiveModal(null);
   };
 
   const handleManualEntry = async (name: string, nutrition: NutritionData, quantity: number, unit: string) => {
     try {
       await addEntry({ name, nutrition, quantity, unit, source: 'manual' });
-      toast.success('Adicionado!');
-    } catch { toast.error('Erro'); }
+    } catch { /* silently fail */ }
     setActiveModal(null);
   };
 
   const handleUpdateEntry = async (id: string, updates: Partial<FoodEntryDB>) => {
-    try { await updateEntry(id, updates); toast.success('Atualizado!'); } catch { toast.error('Erro'); }
+    try { await updateEntry(id, updates); } catch { /* silently fail */ }
   };
 
   const handleDeleteEntry = async (id: string) => {
-    try { await deleteEntry(id); toast.success('Removido!'); } catch { toast.error('Erro'); }
+    try { await deleteEntry(id); } catch { /* silently fail */ }
   };
 
   if (isLoading) {

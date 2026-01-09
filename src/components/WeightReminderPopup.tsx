@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X, Scale } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
-import { toast } from 'sonner';
+
 
 const REMINDER_STORAGE_KEY = 'weight_reminder_last_shown';
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -39,18 +39,14 @@ export function WeightReminderPopup() {
 
   const handleUpdate = async () => {
     const weightNum = parseFloat(weight);
-    if (isNaN(weightNum) || weightNum < 30 || weightNum > 300) {
-      toast.error('Peso inválido');
-      return;
-    }
+    if (isNaN(weightNum) || weightNum < 30 || weightNum > 300) return;
 
     setIsUpdating(true);
     try {
       await updateProfile({ weight_kg: weightNum });
-      toast.success('Peso atualizado! Metas recalculadas.');
       handleClose();
     } catch {
-      toast.error('Erro ao atualizar');
+      // silently fail
     } finally {
       setIsUpdating(false);
     }
@@ -58,7 +54,6 @@ export function WeightReminderPopup() {
 
   const handleSkip = () => {
     handleClose();
-    toast.info('Lembrete adiado por 1 semana');
   };
 
   if (!isOpen) return null;

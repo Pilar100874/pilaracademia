@@ -5,7 +5,7 @@ import { Scale, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { useWeightHistory } from '@/hooks/useWeightHistory';
 import { useProfile } from '@/hooks/useProfile';
-import { toast } from 'sonner';
+
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -24,15 +24,14 @@ export function WeightTracker() {
 
   const handleSubmit = async () => {
     const w = parseFloat(weight);
-    if (isNaN(w) || w < 30 || w > 300) { toast.error('Peso inválido'); return; }
+    if (isNaN(w) || w < 30 || w > 300) return;
     setIsSubmitting(true);
     try {
       await addWeightEntry(w);
       await updateProfile({ weight_kg: w });
-      toast.success('Peso atualizado!');
       setWeight('');
       setShowInput(false);
-    } catch { toast.error('Erro'); }
+    } catch { /* silently fail */ }
     finally { setIsSubmitting(false); }
   };
 

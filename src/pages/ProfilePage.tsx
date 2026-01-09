@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { activityLabels, goalLabels, calculateAge, calculateBMR, calculateTDEE, calculateDailyCalories, calculateAllNutrients } from '@/types/profile';
-import { toast } from 'sonner';
+
 import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -60,10 +60,7 @@ export function ProfilePage() {
   }, [gender, weightKg, heightCm, birthDate, activityLevel, goal]);
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      toast.error('Digite seu nome');
-      return;
-    }
+    if (!name.trim()) return;
 
     setIsSaving(true);
     try {
@@ -76,10 +73,9 @@ export function ProfilePage() {
         activity_level: activityLevel as any || null,
         goal: goal as any || null,
       });
-      toast.success('Perfil atualizado!');
       navigate('/');
     } catch (error) {
-      toast.error('Erro ao salvar perfil');
+      // silently fail
     } finally {
       setIsSaving(false);
     }

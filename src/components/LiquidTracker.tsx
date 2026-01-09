@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Droplets, Plus, Trash2, ChevronDown, Pencil, Check, X, Clock } from 'lucide-react';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
 import { useProfile } from '@/hooks/useProfile';
-import { toast } from 'sonner';
+
 import { format } from 'date-fns';
 
 const QUICK_OPTIONS = [
@@ -32,14 +32,13 @@ export function LiquidTracker() {
   const handleQuickAdd = async (ml: number) => {
     try {
       await addLiquidEntry(ml, 'water');
-      toast.success(`💧 +${ml}ml`);
       setShowAddDialog(false);
-    } catch { toast.error('Erro'); }
+    } catch { /* silently fail */ }
   };
 
   const handleCustomAdd = async () => {
     const ml = parseInt(customAmount);
-    if (ml <= 0) { toast.error('Valor inválido'); return; }
+    if (ml <= 0) return;
     await handleQuickAdd(ml);
     setCustomAmount('');
   };
@@ -52,19 +51,17 @@ export function LiquidTracker() {
   const handleSaveEdit = async () => {
     if (!editingEntry) return;
     const amount = parseInt(editAmount);
-    if (amount <= 0) { toast.error('Valor inválido'); return; }
+    if (amount <= 0) return;
     try {
       await updateLiquidEntry(editingEntry.id, amount);
-      toast.success('Atualizado');
       setEditingEntry(null);
-    } catch { toast.error('Erro ao atualizar'); }
+    } catch { /* silently fail */ }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteLiquidEntry(id);
-      toast.success('Removido');
-    } catch { toast.error('Erro ao remover'); }
+    } catch { /* silently fail */ }
   };
 
   return (

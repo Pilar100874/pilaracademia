@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
+
 import { Loader2, Flame } from 'lucide-react';
 
 export function AuthPage() {
@@ -20,14 +20,11 @@ export function AuthPage() {
     try {
       if (isLogin) {
         await signIn(email, password);
-        toast.success('Bem-vindo de volta!');
       } else {
         await signUp(email, password, name);
-        toast.success('Conta criada com sucesso!');
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao autenticar';
-      toast.error(message);
+      // silently fail
     } finally {
       setIsLoading(false);
     }
