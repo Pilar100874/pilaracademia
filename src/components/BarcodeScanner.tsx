@@ -82,11 +82,43 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
         return;
       }
       
-      // Try to get camera access first
+      // Get the back camera with high resolution
+      const videoConstraints = {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1920, min: 1280 },
+        height: { ideal: 1080, min: 720 },
+      } as MediaTrackConstraints;
+      
+      // Try to get camera access first with optimal settings
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+        video: videoConstraints 
       });
-      // Stop the stream immediately, we just needed permission
+      
+      // Apply advanced constraints for autofocus if supported
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        const capabilities = videoTrack.getCapabilities?.() as any;
+        const advancedConstraints: any = {};
+        
+        if (capabilities?.focusMode?.includes('continuous')) {
+          advancedConstraints.focusMode = 'continuous';
+        }
+        if (capabilities?.focusDistance) {
+          // Set focus for close-up (barcode scanning typically 10-30cm)
+          advancedConstraints.focusDistance = capabilities.focusDistance.min + 
+            (capabilities.focusDistance.max - capabilities.focusDistance.min) * 0.2;
+        }
+        
+        if (Object.keys(advancedConstraints).length > 0) {
+          try {
+            await videoTrack.applyConstraints({ advanced: [advancedConstraints] });
+          } catch (e) {
+            console.log('Could not apply advanced constraints:', e);
+          }
+        }
+      }
+      
+      // Stop the stream, we just needed to set up permissions and get camera info
       stream.getTracks().forEach(track => track.stop());
 
       const html5QrCode = new Html5Qrcode(scannerContainerId, {
@@ -108,20 +140,25 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
       // Get container dimensions for responsive qrbox
       const containerWidth = container.offsetWidth || 300;
       const qrboxWidth = Math.min(containerWidth - 40, 280);
-      const qrboxHeight = Math.round(qrboxWidth * 0.4);
+      const qrboxHeight = Math.round(qrboxWidth * 0.35);
       
       const config = {
-        fps: 15,
+        fps: 10,
         qrbox: { width: qrboxWidth, height: qrboxHeight },
         aspectRatio: 1.0,
         disableFlip: false,
+        videoConstraints: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+        },
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true
         }
       };
       
       await html5QrCode.start(
-        { facingMode: { exact: 'environment' } },
+        { facingMode: 'environment' },
         config,
         (decodedText) => {
           // On successful scan
