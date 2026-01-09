@@ -127,10 +127,11 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
             <div className="relative overflow-hidden rounded-2xl">
               <img src={imageUrl} alt="Prato capturado" className="w-full aspect-square object-cover" />
               {isAnalyzing && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-                  <div className="text-center">
-                    <Loader2 className="mx-auto h-10 w-10 animate-spin text-primary" />
-                    <p className="mt-2 text-sm font-medium">Analisando com IA...</p>
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                  <div className="text-center p-6">
+                    <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+                    <p className="mt-4 text-base font-semibold">Aguarde, analisando...</p>
+                    <p className="mt-1 text-sm text-muted-foreground">A IA está identificando os alimentos</p>
                   </div>
                 </div>
               )}
