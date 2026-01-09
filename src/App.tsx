@@ -8,6 +8,7 @@ import { HistoryPage } from "@/pages/HistoryPage";
 import { ProjectionsPage } from "@/pages/ProjectionsPage";
 import { ProductsPage } from "@/pages/ProductsPage";
 import { Dashboard } from "@/components/Dashboard";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -111,6 +112,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AppRoutes />
+          <InstallPrompt />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
