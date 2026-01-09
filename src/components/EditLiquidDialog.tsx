@@ -19,13 +19,7 @@ interface EditLiquidDialogProps {
   onSave: (id: string, amountMl: number) => Promise<void>;
 }
 
-const GLASS_SIZE = 200;
-
 const QUICK_OPTIONS = [
-  { label: '½ copo', value: GLASS_SIZE * 0.5 },
-  { label: '1 copo', value: GLASS_SIZE },
-  { label: '1½ copo', value: GLASS_SIZE * 1.5 },
-  { label: '2 copos', value: GLASS_SIZE * 2 },
   { label: '250ml', value: 250 },
   { label: '300ml', value: 300 },
   { label: '350ml', value: 350 },
