@@ -1,5 +1,5 @@
 import { useZxing } from 'react-zxing';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 interface ZxingScannerProps {
   onResult: (barcode: string) => void;
@@ -8,80 +8,46 @@ interface ZxingScannerProps {
 
 export function ZxingScanner({ onResult, onError }: ZxingScannerProps) {
   const [hasError, setHasError] = useState(false);
-  const [isStarting, setIsStarting] = useState(true);
   const hasCalledResult = useRef(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  const handleDecodeResult = useCallback((result: any) => {
-    if (hasCalledResult.current) return;
-    const text = result.getText();
-    console.log('Barcode detected:', text);
-    if (text && text.length > 0) {
-      hasCalledResult.current = true;
-      onResult(text);
-    }
-  }, [onResult]);
 
   const { ref } = useZxing({
-    onDecodeResult: handleDecodeResult,
+    onDecodeResult(result) {
+      if (hasCalledResult.current) return;
+      const text = result.getText();
+      console.log('Barcode detected:', text);
+      if (text && text.length > 0) {
+        hasCalledResult.current = true;
+        onResult(text);
+      }
+    },
     onError(error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
+      console.log('ZXing error:', errorMsg);
       
-      // Check for camera access errors
+      // Check for camera access errors (these are critical)
       if (errorMsg.includes('NotAllowedError') || errorMsg.includes('Permission denied')) {
         setHasError(true);
-        onError?.('Permissão de câmera negada. Toque em "Permitir" quando solicitado.');
+        onError?.('Permissão de câmera negada. Permita o acesso à câmera nas configurações.');
       } else if (errorMsg.includes('NotFoundError') || errorMsg.includes('Requested device not found')) {
         setHasError(true);
-        onError?.('Nenhuma câmera encontrada.');
+        onError?.('Nenhuma câmera encontrada no dispositivo.');
       } else if (errorMsg.includes('NotReadableError') || errorMsg.includes('Could not start video source') || errorMsg.includes('in use')) {
         setHasError(true);
-        onError?.('Câmera em uso. Feche outros apps que usam a câmera e tente novamente.');
-      } else if (errorMsg.includes('AbortError')) {
-        setHasError(true);
-        onError?.('Câmera interrompida. Tente novamente.');
-      } else if (!errorMsg.includes('No MultiFormat Readers') && !errorMsg.includes('NotFoundException')) {
-        console.error('Scanner error:', errorMsg);
+        onError?.('Não foi possível acessar a câmera. Feche outros apps e recarregue a página.');
+      } else if (errorMsg.includes('OverconstrainedError')) {
+        // Camera doesn't support constraints, but might still work
+        console.log('Camera constraints not fully supported');
       }
+      // Ignore decode errors (NotFoundException, etc.) - these are normal during scanning
     },
     constraints: {
       video: {
         facingMode: 'environment',
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
       },
+      audio: false,
     },
-    timeBetweenDecodingAttempts: 200,
-    paused: hasError,
+    timeBetweenDecodingAttempts: 300,
   });
-
-  // Combine refs
-  useEffect(() => {
-    if (ref.current) {
-      videoRef.current = ref.current;
-    }
-  }, [ref]);
-
-  // Cleanup camera stream on unmount
-  useEffect(() => {
-    hasCalledResult.current = false;
-    
-    // Small delay to show loading state
-    const timer = setTimeout(() => setIsStarting(false), 500);
-
-    return () => {
-      clearTimeout(timer);
-      // Stop all tracks when component unmounts
-      if (videoRef.current?.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => {
-          track.stop();
-          console.log('Camera track stopped:', track.label);
-        });
-        videoRef.current.srcObject = null;
-      }
-    };
-  }, []);
 
   if (hasError) {
     return null;
@@ -89,21 +55,10 @@ export function ZxingScanner({ onResult, onError }: ZxingScannerProps) {
 
   return (
     <div className="relative rounded-xl overflow-hidden bg-black w-full" style={{ minHeight: '280px' }}>
-      {isStarting && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
-          <div className="text-center text-white">
-            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-            <p className="text-sm">Iniciando câmera...</p>
-          </div>
-        </div>
-      )}
       <video 
         ref={ref} 
         className="w-full h-full object-cover"
         style={{ minHeight: '280px' }}
-        playsInline
-        muted
-        autoPlay
       />
       {/* Scan area overlay */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
