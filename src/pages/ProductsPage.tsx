@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Package, Search, Pencil, Trash2, ChevronLeft, Barcode, Plus, Droplets, Apple, Image, Filter, X } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Package, Search, Pencil, Trash2, ChevronLeft, Barcode, Plus, Droplets, Apple, Image, Filter, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -10,17 +10,23 @@ import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { useNavigate } from 'react-router-dom';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { WATER_IMAGE_URL } from '@/components/DefaultLiquidImage';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 type FilterType = 'all' | 'solid' | 'liquid';
 
 export function ProductsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { products, isLoading, saveProduct, updateProduct, deleteProduct } = useCustomProducts();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingProduct, setEditingProduct] = useState<CustomProduct | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form state (shared for add/edit)
   const [formName, setFormName] = useState('');
@@ -71,11 +77,58 @@ export function ProductsPage() {
     setFormRefUnit('g');
     setFormIsLiquid(false);
     setFormImageUrl('');
+    setImagePreview(null);
   };
 
   const handleOpenAdd = () => {
     resetForm();
     setShowAddDialog(true);
+  };
+
+  const handleImageUpload = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+    
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setImagePreview(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to storage
+    const url = await handleImageUpload(file);
+    if (url) {
+      setFormImageUrl(url);
+    }
   };
 
   const handleEdit = (product: CustomProduct) => {
@@ -232,30 +285,54 @@ export function ProductsPage() {
   };
 
   const ProductForm = ({ isEdit }: { isEdit: boolean }) => {
-    const currentImageUrl = formImageUrl || (formIsLiquid ? WATER_IMAGE_URL : null);
+    const displayImageUrl = imagePreview || formImageUrl || (formIsLiquid ? WATER_IMAGE_URL : null);
     
     return (
       <div className="space-y-4 pt-2">
-        {/* Image preview and edit */}
+        {/* Image upload */}
         <div className="flex items-center gap-4">
           <button
             type="button"
-            onClick={() => currentImageUrl && setZoomImage(currentImageUrl)}
-            className="flex h-16 w-16 items-center justify-center rounded-xl bg-secondary overflow-hidden flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+            onClick={() => displayImageUrl && setZoomImage(displayImageUrl)}
+            className="flex h-16 w-16 items-center justify-center rounded-xl bg-secondary overflow-hidden flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all relative"
           >
-            {currentImageUrl ? (
-              <img src={currentImageUrl} alt="Preview" className="h-full w-full object-cover" />
+            {isUploading ? (
+              <Loader2 className="h-6 w-6 text-primary animate-spin" />
+            ) : displayImageUrl ? (
+              <img src={displayImageUrl} alt="Preview" className="h-full w-full object-cover" />
             ) : (
               <Image className="h-6 w-6 text-muted-foreground" />
             )}
           </button>
           <div className="flex-1">
-            <label className="text-sm text-muted-foreground mb-1 block">URL da imagem</label>
-            <Input 
-              value={formImageUrl} 
-              onChange={(e) => setFormImageUrl(e.target.value)} 
-              placeholder="https://... ou deixe vazio"
+            <label className="text-sm text-muted-foreground mb-1 block">Imagem do produto</label>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
             />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  {formImageUrl || imagePreview ? 'Trocar imagem' : 'Selecionar imagem'}
+                </>
+              )}
+            </Button>
           </div>
         </div>
 
