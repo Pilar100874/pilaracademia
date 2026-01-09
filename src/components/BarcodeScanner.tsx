@@ -19,6 +19,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
   const { getProductByBarcode, saveProduct, products } = useCustomProducts();
   const [barcode, setBarcode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Aguarde...');
   
   // Scanner mode
   const [scanMode, setScanMode] = useState<'photo' | 'manual'>('photo');
@@ -56,6 +57,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     if (!file) return;
 
     setIsLoading(true);
+    setLoadingMessage('Processando foto...');
     setScanError(null);
 
     try {
@@ -69,13 +71,15 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
         verbose: false,
       });
 
+      setLoadingMessage('Lendo código de barras...');
       const decodedText = await html5QrCode.scanFile(file, true);
       setBarcode(decodedText);
+      setLoadingMessage('Buscando produto...');
       handleSearchWithBarcode(decodedText);
     } catch (err) {
+      setIsLoading(false);
       setScanError('Não foi possível ler o código de barras na foto.');
     } finally {
-      setIsLoading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -97,6 +101,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     if (!barcodeValue.trim()) return;
 
     setIsLoading(true);
+    setLoadingMessage('Buscando produto...');
     setScannedBarcode(barcodeValue.trim());
     
     try {
@@ -296,7 +301,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
               {isLoading ? (
                 <div className="rounded-xl bg-primary/10 p-8 text-center">
                   <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                  <p className="mt-4 text-sm font-medium">Aguarde, pesquisando produto...</p>
+                  <p className="mt-4 text-sm font-medium">{loadingMessage}</p>
                 </div>
               ) : (
                 <>
@@ -323,7 +328,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
               {isLoading ? (
                 <div className="rounded-xl bg-primary/10 p-8 text-center">
                   <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                  <p className="mt-4 text-sm font-medium">Aguarde, pesquisando produto...</p>
+                  <p className="mt-4 text-sm font-medium">{loadingMessage}</p>
                 </div>
               ) : (
                 <>
