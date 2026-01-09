@@ -78,7 +78,10 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
   // Original values from product (or fallback to entry values)
   const originalValues = useMemo(() => {
     if (originalProduct) {
-      // Base weight for fractions: use total weight if available, otherwise use reference quantity
+      // For liquids: use package volume if available
+      const packageVolume = originalProduct.package_volume_ml;
+      
+      // For solids: use total weight if available, otherwise use reference quantity
       const baseWeight = originalProduct.package_total_weight || originalProduct.reference_quantity;
       
       // Use original product values as base
@@ -91,12 +94,15 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
         sodium: originalProduct.sodium || 0,
         saturated_fat: originalProduct.saturated_fat || 0,
         trans_fat: originalProduct.trans_fat || 0,
-        quantity: baseWeight, // Use baseWeight for fraction calculations
+        // For fraction calculations: use package volume for liquids, base weight for solids
+        quantity: originalProduct.is_liquid ? (packageVolume || originalProduct.reference_quantity) : baseWeight,
         refQuantity: originalProduct.reference_quantity, // Keep reference for nutrition calculations
-        liquid_ml: originalProduct.package_volume_ml || originalProduct.reference_quantity,
+        // For liquids, this is the total volume of the package (or entry value as fallback)
+        liquid_ml: packageVolume || 0,
         unit: originalProduct.reference_unit,
         hasProduct: true,
         packageWeight: originalProduct.package_total_weight,
+        hasPackageVolume: !!packageVolume,
       };
     }
     
@@ -116,6 +122,7 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
       unit: entry.unit,
       hasProduct: false,
       packageWeight: null,
+      hasPackageVolume: false,
     };
   }, [entry, originalProduct]);
 
@@ -436,79 +443,104 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
                   Quanto você bebeu?
                 </p>
 
-                {/* Fraction presets */}
-                <div className="grid grid-cols-3 gap-2">
-                  {FRACTION_OPTIONS.map((fraction) => {
-                    const ml = Math.round((originalValues.liquid_ml || originalValues.quantity) * fraction.value);
-                    return (
-                      <button
-                        key={fraction.value}
-                        onClick={() => handleFractionSelect(fraction.value)}
-                        className={`p-3 rounded-lg text-center font-medium transition-all border-2 ${
-                          consumeMode === 'fraction' && selectedFraction === fraction.value
-                            ? 'border-sky-500 bg-sky-500/10 text-sky-600'
-                            : 'border-muted bg-secondary/50 hover:border-sky-500/50'
-                        }`}
-                      >
-                        <span className="text-lg">{fraction.label}</span>
-                        <span className="block text-xs text-muted-foreground">{ml}ml</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                {/* Show fraction options only if package volume is available */}
+                {originalValues.hasPackageVolume && originalValues.liquid_ml > 0 ? (
+                  <>
+                    {/* Fraction presets */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {FRACTION_OPTIONS.map((fraction) => {
+                        const ml = Math.round(originalValues.liquid_ml * fraction.value);
+                        return (
+                          <button
+                            key={fraction.value}
+                            onClick={() => handleFractionSelect(fraction.value)}
+                            className={`p-3 rounded-lg text-center font-medium transition-all border-2 ${
+                              consumeMode === 'fraction' && selectedFraction === fraction.value
+                                ? 'border-sky-500 bg-sky-500/10 text-sky-600'
+                                : 'border-muted bg-secondary/50 hover:border-sky-500/50'
+                            }`}
+                          >
+                            <span className="text-lg">{fraction.label}</span>
+                            <span className="block text-xs text-muted-foreground">{ml}ml</span>
+                          </button>
+                        );
+                      })}
+                    </div>
 
-                {/* Additional options */}
-                <div className="space-y-2">
-                  {/* All option */}
-                  <button
-                    onClick={() => {
-                      setConsumeMode('fraction');
-                      setSelectedFraction(1);
-                      setCustomValue('');
-                    }}
-                    className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
-                      consumeMode === 'fraction' && selectedFraction === 1
-                        ? 'border-sky-500 bg-sky-500/10'
-                        : 'border-muted bg-secondary/50 hover:border-sky-500/50'
-                    }`}
-                  >
-                    <span className="text-sm font-medium">Tudo</span>
-                    <p className="text-xs text-muted-foreground">
-                      {originalValues.liquid_ml || originalValues.quantity}ml
+                    {/* All option */}
+                    <button
+                      onClick={() => {
+                        setConsumeMode('fraction');
+                        setSelectedFraction(1);
+                        setCustomValue('');
+                      }}
+                      className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
+                        consumeMode === 'fraction' && selectedFraction === 1
+                          ? 'border-sky-500 bg-sky-500/10'
+                          : 'border-muted bg-secondary/50 hover:border-sky-500/50'
+                      }`}
+                    >
+                      <span className="text-sm font-medium">Tudo</span>
+                      <p className="text-xs text-muted-foreground">
+                        {originalValues.liquid_ml}ml
+                      </p>
+                    </button>
+                  </>
+                ) : (
+                  /* No package volume - show warning */
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <p className="text-xs text-amber-600">
+                      Volume da embalagem não cadastrado. Digite a quantidade em ml.
                     </p>
-                  </button>
+                  </div>
+                )}
 
-                  {/* Quick ML options */}
-                  <button
-                    onClick={() => {
-                      setConsumeMode('ml');
-                      setSelectedFraction(null);
-                    }}
-                    className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
-                      consumeMode === 'ml'
-                        ? 'border-sky-500 bg-sky-500/10'
-                        : 'border-muted bg-secondary/50 hover:border-sky-500/50'
-                    }`}
-                  >
-                    <span className="text-sm font-medium">Outra quantidade</span>
-                    <p className="text-xs text-muted-foreground">Digitar ml</p>
-                  </button>
+                {/* Quick ML options */}
+                <div className="grid grid-cols-4 gap-2">
+                  {QUICK_ML_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleQuickMlSelect(option.value)}
+                      className={`p-2 rounded-lg text-xs font-medium transition-all border-2 ${
+                        consumeMode === 'ml' && parseFloat(customValue) === option.value
+                          ? 'border-sky-500 bg-sky-500/10 text-sky-600'
+                          : 'border-muted bg-secondary/50 hover:border-sky-500/50'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
                 </div>
 
                 {/* Custom ml input */}
-                {consumeMode === 'ml' && (
+                <div 
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    consumeMode === 'ml' && !QUICK_ML_OPTIONS.some(o => o.value === parseFloat(customValue))
+                      ? 'border-sky-500 bg-sky-500/10' 
+                      : 'border-muted'
+                  }`}
+                  onClick={() => {
+                    setConsumeMode('ml');
+                    setSelectedFraction(null);
+                  }}
+                >
+                  <p className="text-sm font-medium mb-2">Digitar quantidade (ml)</p>
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
-                      value={customValue}
-                      onChange={(e) => setCustomValue(e.target.value)}
+                      value={consumeMode === 'ml' ? customValue : ''}
+                      onChange={(e) => {
+                        setCustomValue(e.target.value);
+                        setConsumeMode('ml');
+                        setSelectedFraction(null);
+                      }}
                       placeholder="Ex: 200"
                       min="0"
                       className="flex-1"
                     />
                     <span className="text-sm text-muted-foreground">ml</span>
                   </div>
-                )}
+                </div>
               </div>
             ) : (
               /* SOLID consumption options */
