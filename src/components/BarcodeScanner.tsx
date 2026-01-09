@@ -447,6 +447,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           sodium: product.nutrition.sodium || 0,
           reference_quantity: Number(packageWeight),
           reference_unit: 'g',
+          is_liquid: false,
         });
       } catch (err) {
         console.error('Erro ao salvar produto:', err);
@@ -483,6 +484,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           sodium: product.nutrition.sodium || 0,
           reference_quantity: 100,
           reference_unit: 'ml',
+          is_liquid: true,
         });
       } catch (err) {
         console.error('Erro ao salvar produto:', err);
