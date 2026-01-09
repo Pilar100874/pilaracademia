@@ -553,7 +553,13 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
 
             {scanMode === 'camera' ? (
               <div className="space-y-3">
-                {scanError ? (
+                {isLoading ? (
+                  <div className="rounded-xl bg-primary/10 p-8 text-center">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+                    <p className="mt-4 text-sm font-medium">Aguarde, pesquisando produto...</p>
+                    <p className="text-xs text-muted-foreground mt-1">Código: {barcode}</p>
+                  </div>
+                ) : scanError ? (
                   <div className="rounded-xl bg-destructive/10 p-4 text-center">
                     <p className="text-sm text-destructive">{scanError}</p>
                     <div className="flex gap-2 justify-center mt-2">
