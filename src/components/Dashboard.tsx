@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Apple, User, Loader2, TrendingDown, TrendingUp } from 'lucide-react';
+import { Flame, Apple, Loader2, TrendingDown, TrendingUp } from 'lucide-react';
 import { ProgressRing } from '@/components/ProgressRing';
 import { FoodEntryItemDB } from '@/components/FoodEntryItemDB';
 import { AddFoodMenu } from '@/components/AddFoodMenu';
@@ -12,6 +12,7 @@ import { ExerciseTracker } from '@/components/ExerciseTracker';
 import { NutritionProgressGrid } from '@/components/NutritionProgressGrid';
 import { WeightReminderPopup } from '@/components/WeightReminderPopup';
 import { WeightProjection } from '@/components/WeightProjection';
+import { BottomNav } from '@/components/BottomNav';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
 import { useExerciseEntries } from '@/hooks/useExerciseEntries';
@@ -19,7 +20,6 @@ import { useProfile } from '@/hooks/useProfile';
 import { BarcodeProduct, NutritionData } from '@/types/nutrition';
 import { FoodEntryDB } from '@/types/profile';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 type ModalType = 'photo' | 'barcode' | 'manual' | null;
@@ -90,11 +90,6 @@ export function Dashboard() {
             <h1 className="text-lg font-bold">Olá, {profile?.name?.split(' ')[0] || 'Usuário'} 👋</h1>
             <p className="text-xs text-muted-foreground capitalize">{today}</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => navigate('/profile')} className="rounded-full h-9 w-9">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-              <User className="h-4 w-4 text-primary" />
-            </div>
-          </Button>
         </div>
       </header>
 
@@ -186,6 +181,7 @@ export function Dashboard() {
       {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => setActiveModal(null)} />}
       {activeModal === 'manual' && <ManualEntryForm onSubmit={handleManualEntry} onClose={() => setActiveModal(null)} />}
       <WeightReminderPopup />
+      <BottomNav />
     </div>
   );
 }
