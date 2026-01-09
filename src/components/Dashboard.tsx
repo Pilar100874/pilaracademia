@@ -95,7 +95,7 @@ export function Dashboard() {
       
       // Also add to food_entries so it appears in Bebidas list
       const liquidName = type === 'water' ? 'Água' : type === 'juice' ? 'Suco' : type === 'coffee' ? 'Café' : type === 'tea' ? 'Chá' : type === 'soda' ? 'Refrigerante' : type === 'milk' ? 'Leite' : 'Líquido';
-      await addEntry({
+      const result = await addEntry({
         name: `${liquidName} (${ml}ml)`,
         nutrition: { calories: 0, protein: 0, carbs: 0, fat: 0 },
         quantity: ml,
@@ -104,12 +104,15 @@ export function Dashboard() {
         isLiquid: true,
         liquidMl: ml,
       });
-    } catch { /* silently fail */ }
+      console.log('Liquid entry added:', result);
+    } catch (err) { 
+      console.error('Error adding liquid:', err);
+    }
   };
 
   // Separar entries em refeições e líquidos
-  const mealEntries = entries.filter(e => !e.is_liquid);
-  const liquidEntries = entries.filter(e => e.is_liquid);
+  const mealEntries = entries.filter(e => e.is_liquid !== true);
+  const liquidEntries = entries.filter(e => e.is_liquid === true);
 
   if (isLoading) {
     return <div className="min-h-screen gradient-hero flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
