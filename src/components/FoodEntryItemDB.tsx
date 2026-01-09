@@ -19,21 +19,18 @@ const sourceIcons = {
   manual: Edit3,
 };
 
-// Fraction options for consumption
+// Fraction presets (matching ProductConsumptionDialog)
 const FRACTION_OPTIONS = [
   { label: '1/4', value: 0.25 },
   { label: '1/3', value: 0.33 },
   { label: '1/2', value: 0.5 },
-  { label: '2/3', value: 0.67 },
-  { label: '3/4', value: 0.75 },
-  { label: 'Tudo', value: 1 },
 ];
 
-// Quick ml options for liquids
+// Liquid quick ml options
 const QUICK_ML_OPTIONS = [
-  { label: '250ml', value: 250 },
+  { label: '100ml', value: 100 },
+  { label: '200ml', value: 200 },
   { label: '300ml', value: 300 },
-  { label: '350ml', value: 350 },
   { label: '500ml', value: 500 },
 ];
 
@@ -346,80 +343,79 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
                   Quanto você bebeu?
                 </p>
 
-                {/* Fraction options */}
-                <div className="p-3 rounded-lg bg-sky-500/5 border border-sky-500/20">
-                  <p className="text-xs font-medium text-sky-600 mb-2">
-                    Fração do registro ({originalValues.liquid_ml || originalValues.quantity}ml)
-                  </p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {FRACTION_OPTIONS.map((fraction) => {
-                      const ml = Math.round((originalValues.liquid_ml || originalValues.quantity) * fraction.value);
-                      return (
-                        <button
-                          key={fraction.value}
-                          onClick={() => handleFractionSelect(fraction.value)}
-                          className={`p-2 rounded-lg text-center transition-all border-2 ${
-                            consumeMode === 'fraction' && selectedFraction === fraction.value
-                              ? 'border-sky-500 bg-sky-500/10 text-sky-600'
-                              : 'border-muted bg-secondary/50 hover:border-sky-500/50'
-                          }`}
-                        >
-                          <span className="text-sm font-medium">{fraction.label}</span>
-                          <span className="block text-xs text-muted-foreground">{ml}ml</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                {/* Fraction presets */}
+                <div className="grid grid-cols-3 gap-2">
+                  {FRACTION_OPTIONS.map((fraction) => {
+                    const ml = Math.round((originalValues.liquid_ml || originalValues.quantity) * fraction.value);
+                    return (
+                      <button
+                        key={fraction.value}
+                        onClick={() => handleFractionSelect(fraction.value)}
+                        className={`p-3 rounded-lg text-center font-medium transition-all border-2 ${
+                          consumeMode === 'fraction' && selectedFraction === fraction.value
+                            ? 'border-sky-500 bg-sky-500/10 text-sky-600'
+                            : 'border-muted bg-secondary/50 hover:border-sky-500/50'
+                        }`}
+                      >
+                        <span className="text-lg">{fraction.label}</span>
+                        <span className="block text-xs text-muted-foreground">{ml}ml</span>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                <div className="text-center text-xs text-muted-foreground">ou</div>
+                {/* Additional options */}
+                <div className="space-y-2">
+                  {/* All option */}
+                  <button
+                    onClick={() => {
+                      setConsumeMode('fraction');
+                      setSelectedFraction(1);
+                      setCustomValue('');
+                    }}
+                    className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
+                      consumeMode === 'fraction' && selectedFraction === 1
+                        ? 'border-sky-500 bg-sky-500/10'
+                        : 'border-muted bg-secondary/50 hover:border-sky-500/50'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">Tudo</span>
+                    <p className="text-xs text-muted-foreground">
+                      {originalValues.liquid_ml || originalValues.quantity}ml
+                    </p>
+                  </button>
 
-                {/* Quick ML options */}
-                <div className="grid grid-cols-4 gap-2">
-                  {QUICK_ML_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => handleQuickMlSelect(option.value)}
-                      className={`p-2 rounded-lg text-xs font-medium transition-all border-2 ${
-                        consumeMode === 'ml' && parseFloat(customValue) === option.value
-                          ? 'border-sky-500 bg-sky-500/10 text-sky-600'
-                          : 'border-muted bg-secondary/50 hover:border-sky-500/50'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                  {/* Quick ML options */}
+                  <button
+                    onClick={() => {
+                      setConsumeMode('ml');
+                      setSelectedFraction(null);
+                    }}
+                    className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
+                      consumeMode === 'ml'
+                        ? 'border-sky-500 bg-sky-500/10'
+                        : 'border-muted bg-secondary/50 hover:border-sky-500/50'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">Outra quantidade</span>
+                    <p className="text-xs text-muted-foreground">Digitar ml</p>
+                  </button>
                 </div>
 
                 {/* Custom ml input */}
-                <div 
-                  className={`p-3 rounded-lg border-2 transition-all ${
-                    consumeMode === 'ml' && !QUICK_ML_OPTIONS.some(o => o.value === parseFloat(customValue))
-                      ? 'border-sky-500 bg-sky-500/10' 
-                      : 'border-muted'
-                  }`}
-                  onClick={() => {
-                    setConsumeMode('ml');
-                    setSelectedFraction(null);
-                  }}
-                >
-                  <p className="text-sm font-medium mb-2">Digitar quantidade (ml)</p>
+                {consumeMode === 'ml' && (
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
-                      value={consumeMode === 'ml' ? customValue : ''}
-                      onChange={(e) => {
-                        setCustomValue(e.target.value);
-                        setConsumeMode('ml');
-                        setSelectedFraction(null);
-                      }}
+                      value={customValue}
+                      onChange={(e) => setCustomValue(e.target.value)}
                       placeholder="Ex: 200"
                       min="0"
                       className="flex-1"
                     />
                     <span className="text-sm text-muted-foreground">ml</span>
                   </div>
-                </div>
+                )}
               </div>
             ) : (
               /* SOLID consumption options */
@@ -429,108 +425,130 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
                   Quanto você consumiu?
                 </p>
 
-                {/* Fraction options */}
-                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                  <p className="text-xs font-medium text-primary mb-2">
-                    Fração do registro ({originalValues.quantity}{originalValues.unit})
-                  </p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {FRACTION_OPTIONS.map((fraction) => {
-                      const qty = Number((originalValues.quantity * fraction.value).toFixed(1));
-                      return (
-                        <button
-                          key={fraction.value}
-                          onClick={() => handleFractionSelect(fraction.value)}
-                          className={`p-2 rounded-lg text-center transition-all border-2 ${
-                            consumeMode === 'fraction' && selectedFraction === fraction.value
-                              ? 'border-primary bg-primary/10 text-primary'
-                              : 'border-muted bg-secondary/50 hover:border-primary/50'
-                          }`}
+                {/* Fraction presets */}
+                <div className="grid grid-cols-3 gap-2">
+                  {FRACTION_OPTIONS.map((fraction) => {
+                    const qty = Number((originalValues.quantity * fraction.value).toFixed(1));
+                    return (
+                      <button
+                        key={fraction.value}
+                        onClick={() => handleFractionSelect(fraction.value)}
+                        className={`p-3 rounded-lg text-center font-medium transition-all border-2 ${
+                          consumeMode === 'fraction' && selectedFraction === fraction.value
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-muted bg-secondary/50 hover:border-primary/50'
+                        }`}
+                      >
+                        <span className="text-lg">{fraction.label}</span>
+                        <span className="block text-xs text-muted-foreground">{qty}{originalValues.unit}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Additional options */}
+                <div className="space-y-2">
+                  {/* All option */}
+                  <button
+                    onClick={() => {
+                      setConsumeMode('fraction');
+                      setSelectedFraction(1);
+                      setCustomValue('');
+                    }}
+                    className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
+                      consumeMode === 'fraction' && selectedFraction === 1
+                        ? 'border-primary bg-primary/10'
+                        : 'border-muted bg-secondary/50 hover:border-primary/50'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">Tudo</span>
+                    <p className="text-xs text-muted-foreground">
+                      {originalValues.quantity}{originalValues.unit}
+                    </p>
+                  </button>
+
+                  {/* Custom units option */}
+                  <button
+                    onClick={() => {
+                      setConsumeMode('units');
+                      setSelectedFraction(null);
+                    }}
+                    className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
+                      consumeMode === 'units'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-muted bg-secondary/50 hover:border-primary/50'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">Outra quantidade</span>
+                    <p className="text-xs text-muted-foreground">Digitar unidades</p>
+                  </button>
+
+                  {/* Weight option */}
+                  <button
+                    onClick={() => {
+                      setConsumeMode('weight');
+                      setSelectedFraction(null);
+                    }}
+                    className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
+                      consumeMode === 'weight'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-muted bg-secondary/50 hover:border-primary/50'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">Por gramas</span>
+                    <p className="text-xs text-muted-foreground">Informar peso consumido</p>
+                  </button>
+                </div>
+
+                {/* Input for custom units or weight */}
+                {(consumeMode === 'weight' || consumeMode === 'units') && (
+                  <div className="flex items-center gap-2">
+                    {consumeMode === 'units' ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10"
+                          onClick={() => {
+                            if (unitsCount > 0.5) setUnitsCount(unitsCount - 0.5);
+                          }}
                         >
-                          <span className="text-sm font-medium">{fraction.label}</span>
-                          <span className="block text-xs text-muted-foreground">{qty}{originalValues.unit}</span>
-                        </button>
-                      );
-                    })}
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <Input
+                          type="number"
+                          value={unitsCount}
+                          onChange={(e) => setUnitsCount(Math.max(0.25, parseFloat(e.target.value) || 0.25))}
+                          placeholder="Ex: 1.5"
+                          min="0.25"
+                          step="0.25"
+                          className="flex-1 text-center"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10"
+                          onClick={() => setUnitsCount(unitsCount + 0.5)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                        <span className="text-sm text-muted-foreground">un.</span>
+                      </>
+                    ) : (
+                      <>
+                        <Input
+                          type="number"
+                          value={customValue}
+                          onChange={(e) => setCustomValue(e.target.value)}
+                          placeholder="Ex: 100"
+                          min="0"
+                          className="flex-1"
+                        />
+                        <span className="text-sm text-muted-foreground">g</span>
+                      </>
+                    )}
                   </div>
-                </div>
-
-                <div className="text-center text-xs text-muted-foreground">ou</div>
-
-                {/* Units option */}
-                <div 
-                  className={`p-3 rounded-lg border-2 transition-all ${
-                    consumeMode === 'units' ? 'border-primary bg-primary/10' : 'border-muted'
-                  }`}
-                  onClick={() => setConsumeMode('units')}
-                >
-                  <p className="text-sm font-medium mb-1">Por unidades/porções</p>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Cada unidade = {originalValues.quantity}{originalValues.unit}
-                  </p>
-                  {consumeMode === 'units' && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (unitsCount > 1) setUnitsCount(unitsCount - 1);
-                        }}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <Input
-                        type="number"
-                        value={unitsCount}
-                        onChange={(e) => setUnitsCount(Math.max(1, parseInt(e.target.value) || 1))}
-                        placeholder="Ex: 3"
-                        min="1"
-                        step="1"
-                        className="flex-1 text-center"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setUnitsCount(unitsCount + 1);
-                        }}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                      <span className="text-sm text-muted-foreground">un.</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Weight option */}
-                <div 
-                  className={`p-3 rounded-lg border-2 transition-all ${
-                    consumeMode === 'weight' ? 'border-primary bg-primary/10' : 'border-muted'
-                  }`}
-                  onClick={() => setConsumeMode('weight')}
-                >
-                  <p className="text-sm font-medium mb-1">Por gramas</p>
-                  <p className="text-xs text-muted-foreground mb-2">Informar peso consumido</p>
-                  {consumeMode === 'weight' && (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={customValue}
-                        onChange={(e) => setCustomValue(e.target.value)}
-                        placeholder="Ex: 50"
-                        min="0"
-                        className="flex-1"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <span className="text-sm text-muted-foreground">g</span>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             )}
 
