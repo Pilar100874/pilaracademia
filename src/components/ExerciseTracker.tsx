@@ -31,18 +31,33 @@ export function ExerciseTracker() {
   );
 
   const handleSubmit = async () => {
-    const durationNum = parseInt(duration) || 0;
-    if (durationNum <= 0) {
-      toast.error('Informe a duração');
+    if (mode === 'manual') {
+      const caloriesBurned = parseInt(manualCalories) || 0;
+      if (caloriesBurned <= 0) {
+        toast.error('Informe as calorias');
+        return;
+      }
+
+      try {
+        await addExerciseEntry({
+          name: 'Exercício',
+          duration_minutes: 0,
+          calories_burned: caloriesBurned,
+          exercise_type: 'other',
+        });
+        toast.success(`🏃 ${caloriesBurned} kcal queimadas!`);
+        setShowForm(false);
+        setManualCalories('');
+      } catch {
+        toast.error('Erro ao adicionar');
+      }
       return;
     }
 
-    const caloriesBurned = mode === 'manual' 
-      ? (parseInt(manualCalories) || 0)
-      : calculatedCalories;
-
-    if (caloriesBurned <= 0) {
-      toast.error('Calorias devem ser maior que 0');
+    // Modo automático
+    const durationNum = parseInt(duration) || 0;
+    if (durationNum <= 0) {
+      toast.error('Informe a duração');
       return;
     }
 
@@ -51,13 +66,12 @@ export function ExerciseTracker() {
       await addExerciseEntry({
         name: exercise.name,
         duration_minutes: durationNum,
-        calories_burned: caloriesBurned,
+        calories_burned: calculatedCalories,
         exercise_type: exerciseType,
       });
-      toast.success(`${exercise.icon} ${caloriesBurned} kcal queimadas!`);
+      toast.success(`${exercise.icon} ${calculatedCalories} kcal queimadas!`);
       setShowForm(false);
       setDuration('30');
-      setManualCalories('');
     } catch {
       toast.error('Erro ao adicionar');
     }
@@ -106,7 +120,7 @@ export function ExerciseTracker() {
               className="flex-1 text-xs"
               onClick={() => setMode('auto')}
             >
-              Calcular automático
+              Calcular por exercício
             </Button>
             <Button
               variant={mode === 'manual' ? 'default' : 'outline'}
@@ -114,58 +128,65 @@ export function ExerciseTracker() {
               className="flex-1 text-xs"
               onClick={() => setMode('manual')}
             >
-              Informar calorias
+              Informar do equipamento
             </Button>
           </div>
 
-          {/* Tipo de exercício */}
-          <Select value={exerciseType} onValueChange={(v) => setExerciseType(v as keyof typeof EXERCISE_TYPES)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Tipo de exercício" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(EXERCISE_TYPES).map(([key, exercise]) => (
-                <SelectItem key={key} value={key}>
-                  {exercise.icon} {exercise.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Duração */}
-          <div className="flex gap-2 items-center">
-            <Input
-              type="number"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              placeholder="Duração"
-              min={1}
-              max={300}
-              className="flex-1"
-            />
-            <span className="text-sm text-muted-foreground">minutos</span>
-          </div>
-
           {mode === 'auto' ? (
-            <div className="text-center p-3 bg-orange-500/10 rounded-lg">
-              <p className="text-xs text-muted-foreground">Calorias estimadas</p>
-              <p className="text-2xl font-bold text-orange-500">{calculatedCalories} kcal</p>
-              <p className="text-xs text-muted-foreground">
-                (peso: {userWeight}kg × MET: {EXERCISE_TYPES[exerciseType].met})
-              </p>
-            </div>
+            <>
+              {/* Tipo de exercício */}
+              <Select value={exerciseType} onValueChange={(v) => setExerciseType(v as keyof typeof EXERCISE_TYPES)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tipo de exercício" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(EXERCISE_TYPES).map(([key, exercise]) => (
+                    <SelectItem key={key} value={key}>
+                      {exercise.icon} {exercise.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Duração */}
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="number"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  placeholder="Duração"
+                  min={1}
+                  max={300}
+                  className="flex-1"
+                />
+                <span className="text-sm text-muted-foreground">minutos</span>
+              </div>
+
+              <div className="text-center p-3 bg-orange-500/10 rounded-lg">
+                <p className="text-xs text-muted-foreground">Calorias estimadas</p>
+                <p className="text-2xl font-bold text-orange-500">{calculatedCalories} kcal</p>
+                <p className="text-xs text-muted-foreground">
+                  (peso: {userWeight}kg × MET: {EXERCISE_TYPES[exerciseType].met})
+                </p>
+              </div>
+            </>
           ) : (
-            <div className="flex gap-2 items-center">
-              <Input
-                type="number"
-                value={manualCalories}
-                onChange={(e) => setManualCalories(e.target.value)}
-                placeholder="Calorias queimadas"
-                min={1}
-                max={5000}
-                className="flex-1"
-              />
-              <span className="text-sm text-muted-foreground">kcal</span>
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground text-center">
+                Informe as calorias mostradas no seu equipamento (esteira, relógio, app)
+              </p>
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="number"
+                  value={manualCalories}
+                  onChange={(e) => setManualCalories(e.target.value)}
+                  placeholder="Calorias queimadas"
+                  min={1}
+                  max={5000}
+                  className="flex-1 text-lg"
+                />
+                <span className="text-sm text-muted-foreground">kcal</span>
+              </div>
             </div>
           )}
 
