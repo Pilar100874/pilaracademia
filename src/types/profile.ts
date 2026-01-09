@@ -13,6 +13,10 @@ export interface Profile {
   daily_protein: number | null;
   daily_carbs: number | null;
   daily_fat: number | null;
+  daily_saturated_fat: number | null;
+  daily_trans_fat: number | null;
+  daily_fiber: number | null;
+  daily_sodium: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +30,10 @@ export interface FoodEntryDB {
   protein: number;
   carbs: number;
   fat: number;
+  saturated_fat: number;
+  trans_fat: number;
+  fiber: number;
+  sodium: number;
   quantity: number;
   unit: string;
   source: 'photo' | 'barcode' | 'manual';
@@ -36,11 +44,11 @@ export interface FoodEntryDB {
 
 // Activity level multipliers for TDEE calculation
 export const activityMultipliers = {
-  sedentary: 1.2,      // Pouco ou nenhum exercício
-  light: 1.375,        // Exercício leve 1-3 dias/semana
-  moderate: 1.55,      // Exercício moderado 3-5 dias/semana
-  active: 1.725,       // Exercício intenso 6-7 dias/semana
-  very_active: 1.9,    // Exercício muito intenso, trabalho físico
+  sedentary: 1.2,
+  light: 1.375,
+  moderate: 1.55,
+  active: 1.725,
+  very_active: 1.9,
 };
 
 export const activityLabels = {
@@ -94,37 +102,45 @@ export function calculateDailyCalories(
   }
 }
 
-// Calculate macros based on calories
-export function calculateMacros(calories: number, goal: 'lose' | 'maintain' | 'gain') {
-  // Protein: 2g per kg for weight loss/gain, 1.6g for maintain (approximated by calories)
-  // Carbs: 40-50% of calories
-  // Fat: remaining calories
-
+// Calculate all macros and nutrients based on calories and goal
+// Based on ANVISA/OMS recommendations
+export function calculateAllNutrients(calories: number, goal: 'lose' | 'maintain' | 'gain') {
   let proteinPercent: number;
   let carbPercent: number;
   let fatPercent: number;
 
   switch (goal) {
     case 'lose':
-      proteinPercent = 0.30; // 30% protein
-      fatPercent = 0.30;     // 30% fat
-      carbPercent = 0.40;    // 40% carbs
+      proteinPercent = 0.30;
+      fatPercent = 0.30;
+      carbPercent = 0.40;
       break;
     case 'gain':
-      proteinPercent = 0.25; // 25% protein
-      fatPercent = 0.25;     // 25% fat
-      carbPercent = 0.50;    // 50% carbs
+      proteinPercent = 0.25;
+      fatPercent = 0.25;
+      carbPercent = 0.50;
       break;
     default:
-      proteinPercent = 0.25; // 25% protein
-      fatPercent = 0.30;     // 30% fat
-      carbPercent = 0.45;    // 45% carbs
+      proteinPercent = 0.25;
+      fatPercent = 0.30;
+      carbPercent = 0.45;
   }
 
+  // Daily recommendations based on ANVISA/OMS for 2000kcal diet, scaled proportionally
+  const calorieRatio = calories / 2000;
+
   return {
-    protein: Math.round((calories * proteinPercent) / 4), // 4 cal per gram
-    carbs: Math.round((calories * carbPercent) / 4),      // 4 cal per gram
-    fat: Math.round((calories * fatPercent) / 9),         // 9 cal per gram
+    protein: Math.round((calories * proteinPercent) / 4),
+    carbs: Math.round((calories * carbPercent) / 4),
+    fat: Math.round((calories * fatPercent) / 9),
+    // Saturated fat: max 10% of total calories (ANVISA)
+    saturatedFat: Math.round((calories * 0.10) / 9),
+    // Trans fat: max 1% of total calories (OMS recommends 0, ANVISA allows up to 2g)
+    transFat: Math.round(Math.min(2, (calories * 0.01) / 9)),
+    // Fiber: 25g for 2000kcal, scaled proportionally (ANVISA)
+    fiber: Math.round(25 * calorieRatio),
+    // Sodium: max 2000mg/day (OMS recommendation)
+    sodium: 2000,
   };
 }
 
@@ -139,3 +155,15 @@ export function calculateAge(birthDate: string): number {
   }
   return age;
 }
+
+// Nutrient labels and units for display
+export const nutrientInfo = {
+  calories: { label: 'Calorias', unit: 'kcal', color: 'primary' },
+  protein: { label: 'Proteína', unit: 'g', color: 'accent' },
+  carbs: { label: 'Carboidratos', unit: 'g', color: 'blue' },
+  fat: { label: 'Gordura Total', unit: 'g', color: 'pink' },
+  saturatedFat: { label: 'Gordura Saturada', unit: 'g', color: 'orange' },
+  transFat: { label: 'Gordura Trans', unit: 'g', color: 'red' },
+  fiber: { label: 'Fibra', unit: 'g', color: 'green' },
+  sodium: { label: 'Sódio', unit: 'mg', color: 'purple' },
+};

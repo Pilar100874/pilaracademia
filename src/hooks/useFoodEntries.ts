@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FoodEntryDB } from '@/types/profile';
 import { NutritionData } from '@/types/nutrition';
 import { useAuth } from '@/hooks/useAuth';
+import { useEffect } from 'react';
 
 export function useFoodEntries() {
   const { user } = useAuth();
@@ -61,6 +62,10 @@ export function useFoodEntries() {
         protein: entry.nutrition.protein,
         carbs: entry.nutrition.carbs,
         fat: entry.nutrition.fat,
+        saturated_fat: entry.nutrition.saturatedFat || 0,
+        trans_fat: entry.nutrition.transFat || 0,
+        fiber: entry.nutrition.fiber || 0,
+        sodium: entry.nutrition.sodium || 0,
         quantity: entry.quantity,
         unit: entry.unit,
         source: entry.source,
@@ -78,16 +83,7 @@ export function useFoodEntries() {
     return data as FoodEntryDB;
   }, [user]);
 
-  const updateEntry = useCallback(async (id: string, updates: {
-    name?: string;
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-    quantity?: number;
-    unit?: string;
-    consumed_at?: string;
-  }) => {
+  const updateEntry = useCallback(async (id: string, updates: Partial<FoodEntryDB>) => {
     if (!user) return null;
 
     const { data, error } = await supabase
@@ -131,8 +127,12 @@ export function useFoodEntries() {
         protein: acc.protein + Number(entry.protein || 0),
         carbs: acc.carbs + Number(entry.carbs || 0),
         fat: acc.fat + Number(entry.fat || 0),
+        saturatedFat: acc.saturatedFat + Number(entry.saturated_fat || 0),
+        transFat: acc.transFat + Number(entry.trans_fat || 0),
+        fiber: acc.fiber + Number(entry.fiber || 0),
+        sodium: acc.sodium + Number(entry.sodium || 0),
       }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      { calories: 0, protein: 0, carbs: 0, fat: 0, saturatedFat: 0, transFat: 0, fiber: 0, sodium: 0 }
     );
 
     return { consumed, entries };

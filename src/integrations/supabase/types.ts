@@ -21,12 +21,16 @@ export type Database = {
           consumed_at: string
           created_at: string
           fat: number
+          fiber: number | null
           id: string
           image_url: string | null
           name: string
           protein: number
           quantity: number
+          saturated_fat: number | null
+          sodium: number | null
           source: string
+          trans_fat: number | null
           unit: string
           updated_at: string
           user_id: string
@@ -37,12 +41,16 @@ export type Database = {
           consumed_at?: string
           created_at?: string
           fat?: number
+          fiber?: number | null
           id?: string
           image_url?: string | null
           name: string
           protein?: number
           quantity?: number
+          saturated_fat?: number | null
+          sodium?: number | null
           source?: string
+          trans_fat?: number | null
           unit?: string
           updated_at?: string
           user_id: string
@@ -53,12 +61,16 @@ export type Database = {
           consumed_at?: string
           created_at?: string
           fat?: number
+          fiber?: number | null
           id?: string
           image_url?: string | null
           name?: string
           protein?: number
           quantity?: number
+          saturated_fat?: number | null
+          sodium?: number | null
           source?: string
+          trans_fat?: number | null
           unit?: string
           updated_at?: string
           user_id?: string
@@ -73,7 +85,11 @@ export type Database = {
           daily_calories: number | null
           daily_carbs: number | null
           daily_fat: number | null
+          daily_fiber: number | null
           daily_protein: number | null
+          daily_saturated_fat: number | null
+          daily_sodium: number | null
+          daily_trans_fat: number | null
           email: string | null
           gender: string | null
           goal: string | null
@@ -91,7 +107,11 @@ export type Database = {
           daily_calories?: number | null
           daily_carbs?: number | null
           daily_fat?: number | null
+          daily_fiber?: number | null
           daily_protein?: number | null
+          daily_saturated_fat?: number | null
+          daily_sodium?: number | null
+          daily_trans_fat?: number | null
           email?: string | null
           gender?: string | null
           goal?: string | null
@@ -109,7 +129,11 @@ export type Database = {
           daily_calories?: number | null
           daily_carbs?: number | null
           daily_fat?: number | null
+          daily_fiber?: number | null
           daily_protein?: number | null
+          daily_saturated_fat?: number | null
+          daily_sodium?: number | null
+          daily_trans_fat?: number | null
           email?: string | null
           gender?: string | null
           goal?: string | null

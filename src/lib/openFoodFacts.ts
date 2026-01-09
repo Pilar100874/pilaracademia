@@ -12,8 +12,11 @@ interface OpenFoodFactsProduct {
     'proteins_100g'?: number;
     'carbohydrates_100g'?: number;
     'fat_100g'?: number;
+    'saturated-fat_100g'?: number;
+    'trans-fat_100g'?: number;
     'fiber_100g'?: number;
-    'sugars_100g'?: number;
+    'sodium_100g'?: number;
+    'salt_100g'?: number;
   };
   serving_size?: string;
 }
@@ -35,13 +38,21 @@ export async function fetchProductByBarcode(barcode: string): Promise<BarcodePro
     const product = data.product;
     const nutriments = product.nutriments || {};
 
+    // Sodium can be derived from salt (salt = sodium * 2.5)
+    let sodiumValue = nutriments['sodium_100g'];
+    if (!sodiumValue && nutriments['salt_100g']) {
+      sodiumValue = nutriments['salt_100g'] / 2.5;
+    }
+
     const nutrition: NutritionData = {
       calories: Math.round(nutriments['energy-kcal_100g'] || 0),
       protein: Math.round((nutriments['proteins_100g'] || 0) * 10) / 10,
       carbs: Math.round((nutriments['carbohydrates_100g'] || 0) * 10) / 10,
       fat: Math.round((nutriments['fat_100g'] || 0) * 10) / 10,
-      fiber: nutriments['fiber_100g'],
-      sugar: nutriments['sugars_100g'],
+      saturatedFat: Math.round((nutriments['saturated-fat_100g'] || 0) * 10) / 10,
+      transFat: Math.round((nutriments['trans-fat_100g'] || 0) * 10) / 10,
+      fiber: Math.round((nutriments['fiber_100g'] || 0) * 10) / 10,
+      sodium: Math.round((sodiumValue || 0) * 1000), // Convert g to mg
     };
 
     return {
@@ -68,7 +79,9 @@ export function calculateNutritionForPortion(
     protein: Math.round(nutritionPer100g.protein * multiplier * 10) / 10,
     carbs: Math.round(nutritionPer100g.carbs * multiplier * 10) / 10,
     fat: Math.round(nutritionPer100g.fat * multiplier * 10) / 10,
-    fiber: nutritionPer100g.fiber ? Math.round(nutritionPer100g.fiber * multiplier * 10) / 10 : undefined,
-    sugar: nutritionPer100g.sugar ? Math.round(nutritionPer100g.sugar * multiplier * 10) / 10 : undefined,
+    saturatedFat: nutritionPer100g.saturatedFat ? Math.round(nutritionPer100g.saturatedFat * multiplier * 10) / 10 : 0,
+    transFat: nutritionPer100g.transFat ? Math.round(nutritionPer100g.transFat * multiplier * 10) / 10 : 0,
+    fiber: nutritionPer100g.fiber ? Math.round(nutritionPer100g.fiber * multiplier * 10) / 10 : 0,
+    sodium: nutritionPer100g.sodium ? Math.round(nutritionPer100g.sodium * multiplier) : 0,
   };
 }
