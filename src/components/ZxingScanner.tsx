@@ -1,5 +1,5 @@
 import { useZxing } from 'react-zxing';
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 interface ZxingScannerProps {
   onResult: (barcode: string) => void;
@@ -7,13 +7,15 @@ interface ZxingScannerProps {
 }
 
 export function ZxingScanner({ onResult, onError }: ZxingScannerProps) {
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const hasCalledResult = useRef(false);
 
   const handleDecodeResult = useCallback((result: any) => {
+    if (hasCalledResult.current) return;
     const text = result.getText();
     console.log('Barcode detected:', text);
     if (text && text.length > 0) {
+      hasCalledResult.current = true;
       onResult(text);
     }
   }, [onResult]);
@@ -21,73 +23,53 @@ export function ZxingScanner({ onResult, onError }: ZxingScannerProps) {
   const { ref } = useZxing({
     onDecodeResult: handleDecodeResult,
     onError(error) {
-      // Only log actual errors, not "no barcode found" messages
       const errorMsg = error instanceof Error ? error.message : String(error);
-      if (!errorMsg.includes('No MultiFormat Readers') && !errorMsg.includes('NotFoundException')) {
+      
+      // Check for camera access errors
+      if (errorMsg.includes('NotAllowedError') || errorMsg.includes('Permission denied')) {
+        setHasError(true);
+        onError?.('Permissão de câmera negada. Toque em "Permitir" quando solicitado.');
+      } else if (errorMsg.includes('NotFoundError') || errorMsg.includes('Requested device not found')) {
+        setHasError(true);
+        onError?.('Nenhuma câmera encontrada.');
+      } else if (errorMsg.includes('NotReadableError') || errorMsg.includes('Could not start video source') || errorMsg.includes('in use')) {
+        setHasError(true);
+        onError?.('Câmera em uso. Feche outros apps que usam a câmera e tente novamente.');
+      } else if (errorMsg.includes('AbortError')) {
+        setHasError(true);
+        onError?.('Câmera interrompida. Tente novamente.');
+      } else if (!errorMsg.includes('No MultiFormat Readers') && !errorMsg.includes('NotFoundException')) {
         console.error('Scanner error:', errorMsg);
       }
     },
     constraints: {
       video: {
-        facingMode: { ideal: 'environment' },
-        width: { ideal: 1920, min: 640 },
-        height: { ideal: 1080, min: 480 },
+        facingMode: 'environment',
+        width: { ideal: 1280, min: 640 },
+        height: { ideal: 720, min: 480 },
       },
     },
-    timeBetweenDecodingAttempts: 150,
+    timeBetweenDecodingAttempts: 200,
   });
 
+  // Reset on mount
   useEffect(() => {
-    let mounted = true;
-    
-    // Check camera permission
-    navigator.mediaDevices.getUserMedia({ 
-      video: { 
-        facingMode: { ideal: 'environment' },
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-      } 
-    })
-      .then((stream) => {
-        // Stop the stream immediately, we just needed permission
-        stream.getTracks().forEach(track => track.stop());
-        if (mounted) {
-          setHasPermission(true);
-          // Small delay to ensure video element is mounted
-          setTimeout(() => setIsReady(true), 100);
-        }
-      })
-      .catch((err) => {
-        if (!mounted) return;
-        setHasPermission(false);
-        if (err.name === 'NotAllowedError') {
-          onError?.('Permissão de câmera negada. Toque em "Permitir" quando solicitado.');
-        } else if (err.name === 'NotFoundError') {
-          onError?.('Nenhuma câmera encontrada.');
-        } else if (err.name === 'NotReadableError') {
-          onError?.('Câmera em uso por outro aplicativo.');
-        } else {
-          onError?.('Não foi possível acessar a câmera.');
-        }
-      });
-      
-    return () => {
-      mounted = false;
-    };
-  }, [onError]);
+    hasCalledResult.current = false;
+  }, []);
 
-  if (hasPermission === false) {
+  if (hasError) {
     return null;
   }
 
   return (
-    <div className="relative rounded-xl overflow-hidden bg-black w-full" style={{ minHeight: '300px' }}>
+    <div className="relative rounded-xl overflow-hidden bg-black w-full" style={{ minHeight: '280px' }}>
       <video 
         ref={ref} 
         className="w-full h-full object-cover"
-        style={{ minHeight: '300px' }}
+        style={{ minHeight: '280px' }}
         playsInline
         muted
+        autoPlay
       />
       {/* Scan area overlay */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
