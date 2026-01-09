@@ -314,32 +314,9 @@ export function Dashboard() {
                     </div>
                   ))}
                   
-                  {/* Liquid entries from food_entries with is_liquid=true */}
+                  {/* Liquid entries from food_entries with is_liquid=true - show full nutrition */}
                   {liquidFoodEntries.slice(0, Math.max(0, 5 - liquidEntriesData.length)).map((entry) => (
-                    <div key={`food-${entry.id}`} className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10 overflow-hidden">
-                        {entry.image_url ? (
-                          <img src={entry.image_url} alt={entry.name} className="h-full w-full object-cover" />
-                        ) : (
-                          <Droplets className="h-5 w-5 text-sky-500" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{entry.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(entry.consumed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-sky-500">{entry.liquid_ml || entry.quantity}ml</p>
-                      </div>
-                      <button 
-                        onClick={() => handleDeleteEntry(entry.id)}
-                        className="p-1 text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
                   ))}
                   
                   {totalLiquidItems > 5 && (
