@@ -62,25 +62,32 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
   const startScanner = async () => {
     setScanError(null);
     
-    // Check if container exists
+    // Wait a bit more for container to be in DOM
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     const container = document.getElementById(scannerContainerId);
     if (!container) {
       console.error('Scanner container not found');
       setScanError('Erro ao inicializar o scanner. Tente o modo manual.');
-      setScanMode('manual');
       return;
     }
     
+    // Clear any existing content in container
+    container.innerHTML = '';
+    
     try {
-      // Check for camera permission first
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const hasCamera = devices.some(device => device.kind === 'videoinput');
-      
-      if (!hasCamera) {
-        setScanError('Nenhuma câmera encontrada. Use o modo manual.');
-        setScanMode('manual');
+      // Request camera permission explicitly first
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setScanError('Câmera não suportada neste navegador.');
         return;
       }
+      
+      // Try to get camera access first
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      // Stop the stream immediately, we just needed permission
+      stream.getTracks().forEach(track => track.stop());
 
       const html5QrCode = new Html5Qrcode(scannerContainerId, {
         formatsToSupport: [
@@ -90,24 +97,35 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           Html5QrcodeSupportedFormats.UPC_E,
           Html5QrcodeSupportedFormats.CODE_128,
           Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.CODABAR,
         ],
         verbose: false,
       });
       
       scannerRef.current = html5QrCode;
       
+      // Get container dimensions for responsive qrbox
+      const containerWidth = container.offsetWidth || 300;
+      const qrboxWidth = Math.min(containerWidth - 40, 280);
+      const qrboxHeight = Math.round(qrboxWidth * 0.4);
+      
       const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 120 },
-        aspectRatio: 1.777778,
+        fps: 15,
+        qrbox: { width: qrboxWidth, height: qrboxHeight },
+        aspectRatio: 1.0,
         disableFlip: false,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true
+        }
       };
       
       await html5QrCode.start(
-        { facingMode: 'environment' },
+        { facingMode: { exact: 'environment' } },
         config,
         (decodedText) => {
           // On successful scan
+          console.log('Barcode detected:', decodedText);
           setBarcode(decodedText);
           stopScanner();
           handleSearchWithBarcode(decodedText);
@@ -121,18 +139,56 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     } catch (err: any) {
       console.error('Error starting scanner:', err);
       
+      // Try fallback with any camera
+      try {
+        const container = document.getElementById(scannerContainerId);
+        if (container) container.innerHTML = '';
+        
+        const html5QrCode = new Html5Qrcode(scannerContainerId, {
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+          ],
+          verbose: false,
+        });
+        
+        scannerRef.current = html5QrCode;
+        
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 250, height: 100 } },
+          (decodedText) => {
+            console.log('Barcode detected (fallback):', decodedText);
+            setBarcode(decodedText);
+            stopScanner();
+            handleSearchWithBarcode(decodedText);
+          },
+          () => {}
+        );
+        
+        setIsScanning(true);
+        return;
+      } catch (fallbackErr) {
+        console.error('Fallback scanner also failed:', fallbackErr);
+      }
+      
       let errorMessage = 'Não foi possível acessar a câmera.';
       
       if (err.name === 'NotAllowedError' || err.message?.includes('Permission')) {
-        errorMessage = 'Permissão de câmera negada. Permita o acesso à câmera nas configurações do navegador.';
+        errorMessage = 'Permissão de câmera negada. Toque em "Permitir" quando solicitado.';
       } else if (err.name === 'NotFoundError' || err.message?.includes('not found')) {
         errorMessage = 'Nenhuma câmera encontrada no dispositivo.';
-      } else if (err.message?.includes('insecure')) {
+      } else if (err.name === 'NotReadableError') {
+        errorMessage = 'Câmera em uso por outro aplicativo.';
+      } else if (err.message?.includes('insecure') || err.name === 'SecurityError') {
         errorMessage = 'A câmera requer conexão segura (HTTPS).';
+      } else if (err.name === 'OverconstrainedError') {
+        errorMessage = 'Câmera traseira não disponível.';
       }
       
       setScanError(errorMessage);
-      setScanMode('manual');
     }
   };
 
@@ -413,18 +469,37 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
                   <>
                     <div 
                       id={scannerContainerId}
-                      className="rounded-xl overflow-hidden bg-black aspect-[4/3]"
+                      className="rounded-xl overflow-hidden bg-black aspect-square w-full"
+                      style={{ minHeight: '280px' }}
                     />
-                    <div className="text-center">
+                    <div className="text-center space-y-2">
                       {isScanning ? (
-                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Aponte a câmera para o código de barras
-                        </p>
+                        <>
+                          <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Aponte a câmera para o código de barras
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Mantenha o código dentro da área de leitura
+                          </p>
+                        </>
                       ) : (
-                        <p className="text-sm text-muted-foreground">
-                          Iniciando câmera...
-                        </p>
+                        <>
+                          <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Iniciando câmera...
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => {
+                              stopScanner();
+                              setTimeout(() => startScanner(), 200);
+                            }}
+                          >
+                            Tentar novamente
+                          </Button>
+                        </>
                       )}
                     </div>
                   </>
