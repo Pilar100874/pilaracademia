@@ -4,11 +4,12 @@ import { Input } from '@/components/ui/input';
 import { X, Camera, Upload, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { NutritionData } from '@/types/nutrition';
 import { NutritionDisplay } from '@/components/NutritionDisplay';
+import { LiquidConsumptionDialog } from '@/components/LiquidConsumptionDialog';
 import { toast } from 'sonner';
 import { analyzeFood, fileToBase64, FoodAnalysisResult } from '@/lib/analyzeFood';
 
 interface PhotoCaptureProps {
-  onFoodAnalyzed: (name: string, nutrition: NutritionData, imageUrl: string) => void;
+  onFoodAnalyzed: (name: string, nutrition: NutritionData, imageUrl: string, isLiquid?: boolean, liquidMl?: number) => void;
   onClose: () => void;
 }
 
@@ -18,6 +19,7 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
   const [analysisResult, setAnalysisResult] = useState<FoodAnalysisResult | null>(null);
   const [editedName, setEditedName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [showLiquidDialog, setShowLiquidDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,6 +35,12 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
       const result = await analyzeFood(base64);
       setAnalysisResult(result);
       setEditedName(result.name);
+      
+      // Se for líquido, mostrar diálogo de consumo
+      if (result.isLiquid) {
+        setShowLiquidDialog(true);
+      }
+      
       toast.success('Análise concluída!');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao analisar imagem';
@@ -45,7 +53,12 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
 
   const handleConfirm = () => {
     if (!analysisResult || !imageUrl) return;
-    onFoodAnalyzed(editedName || analysisResult.name, analysisResult.nutrition, imageUrl);
+    onFoodAnalyzed(editedName || analysisResult.name, analysisResult.nutrition, imageUrl, false, 0);
+  };
+
+  const handleLiquidConfirm = (mlConsumed: number) => {
+    if (!analysisResult || !imageUrl) return;
+    onFoodAnalyzed(editedName || analysisResult.name, analysisResult.nutrition, imageUrl, true, mlConsumed);
   };
 
   const resetCapture = () => {
@@ -53,6 +66,7 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
     setAnalysisResult(null);
     setEditedName('');
     setError(null);
+    setShowLiquidDialog(false);
   };
 
   const confidenceColors = {
@@ -135,7 +149,16 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
               </div>
             )}
 
-            {analysisResult && !isAnalyzing && (
+            {analysisResult && !isAnalyzing && showLiquidDialog && (
+              <LiquidConsumptionDialog
+                productName={editedName || analysisResult.name}
+                defaultMl={analysisResult.volumeMl || 250}
+                onConfirm={handleLiquidConfirm}
+                onCancel={() => setShowLiquidDialog(false)}
+              />
+            )}
+
+            {analysisResult && !isAnalyzing && !showLiquidDialog && (
               <>
                 <div className="flex items-center justify-between">
                   <span className={`inline-flex items-center rounded-lg px-3 py-1 text-xs font-medium ${confidenceColors[analysisResult.confidence]}`}>
@@ -154,6 +177,16 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
                 </div>
 
                 <NutritionDisplay nutrition={analysisResult.nutrition} showAll />
+
+                {analysisResult.isLiquid && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setShowLiquidDialog(true)}
+                  >
+                    🥤 É uma bebida - Informar quantidade consumida
+                  </Button>
+                )}
 
                 <p className="text-center text-xs text-muted-foreground">
                   * Valores estimados pela IA. Podem variar conforme porções reais.

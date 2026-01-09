@@ -24,6 +24,8 @@ export type Database = {
           fiber: number | null
           id: string
           image_url: string | null
+          is_liquid: boolean | null
+          liquid_ml: number | null
           name: string
           protein: number
           quantity: number
@@ -44,6 +46,8 @@ export type Database = {
           fiber?: number | null
           id?: string
           image_url?: string | null
+          is_liquid?: boolean | null
+          liquid_ml?: number | null
           name: string
           protein?: number
           quantity?: number
@@ -64,6 +68,8 @@ export type Database = {
           fiber?: number | null
           id?: string
           image_url?: string | null
+          is_liquid?: boolean | null
+          liquid_ml?: number | null
           name?: string
           protein?: number
           quantity?: number
@@ -77,6 +83,33 @@ export type Database = {
         }
         Relationships: []
       }
+      liquid_entries: {
+        Row: {
+          amount_ml: number
+          consumed_at: string
+          created_at: string
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount_ml?: number
+          consumed_at?: string
+          created_at?: string
+          id?: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          amount_ml?: number
+          consumed_at?: string
+          created_at?: string
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           activity_level: string | null
@@ -86,6 +119,7 @@ export type Database = {
           daily_carbs: number | null
           daily_fat: number | null
           daily_fiber: number | null
+          daily_liquid_ml: number | null
           daily_protein: number | null
           daily_saturated_fat: number | null
           daily_sodium: number | null
@@ -108,6 +142,7 @@ export type Database = {
           daily_carbs?: number | null
           daily_fat?: number | null
           daily_fiber?: number | null
+          daily_liquid_ml?: number | null
           daily_protein?: number | null
           daily_saturated_fat?: number | null
           daily_sodium?: number | null
@@ -130,6 +165,7 @@ export type Database = {
           daily_carbs?: number | null
           daily_fat?: number | null
           daily_fiber?: number | null
+          daily_liquid_ml?: number | null
           daily_protein?: number | null
           daily_saturated_fat?: number | null
           daily_sodium?: number | null

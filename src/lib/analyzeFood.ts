@@ -6,6 +6,8 @@ export interface FoodAnalysisResult {
   nutrition: NutritionData;
   confidence: 'alta' | 'média' | 'baixa';
   items: string[];
+  isLiquid: boolean;
+  volumeMl: number;
 }
 
 export async function analyzeFood(imageBase64: string): Promise<FoodAnalysisResult> {
@@ -38,6 +40,8 @@ export async function analyzeFood(imageBase64: string): Promise<FoodAnalysisResu
     },
     confidence: result.confidence || 'baixa',
     items: result.items || [],
+    isLiquid: result.isLiquid || false,
+    volumeMl: result.volumeMl || 0,
   };
 }
 

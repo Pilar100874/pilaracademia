@@ -17,6 +17,7 @@ export interface Profile {
   daily_trans_fat: number | null;
   daily_fiber: number | null;
   daily_sodium: number | null;
+  daily_liquid_ml: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -38,6 +39,8 @@ export interface FoodEntryDB {
   unit: string;
   source: 'photo' | 'barcode' | 'manual';
   consumed_at: string;
+  is_liquid: boolean;
+  liquid_ml: number;
   created_at: string;
   updated_at: string;
 }

@@ -6,7 +6,7 @@ interface ProgressRingProps {
   strokeWidth?: number;
   className?: string;
   children?: React.ReactNode;
-  color?: 'primary' | 'accent' | 'destructive';
+  color?: 'primary' | 'accent' | 'destructive' | 'blue' | 'green' | 'pink';
 }
 
 export function ProgressRing({
@@ -25,6 +25,9 @@ export function ProgressRing({
     primary: 'stroke-primary',
     accent: 'stroke-accent',
     destructive: 'stroke-destructive',
+    blue: 'stroke-blue-500',
+    green: 'stroke-green-500',
+    pink: 'stroke-pink-500',
   };
 
   return (
