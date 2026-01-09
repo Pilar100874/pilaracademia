@@ -78,7 +78,10 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
   // Original values from product (or fallback to entry values)
   const originalValues = useMemo(() => {
     if (originalProduct) {
-      // Use original product values as base (per reference_quantity)
+      // Base weight for fractions: use total weight if available, otherwise use reference quantity
+      const baseWeight = originalProduct.package_total_weight || originalProduct.reference_quantity;
+      
+      // Use original product values as base
       return {
         calories: originalProduct.calories,
         protein: originalProduct.protein,
@@ -88,10 +91,12 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
         sodium: originalProduct.sodium || 0,
         saturated_fat: originalProduct.saturated_fat || 0,
         trans_fat: originalProduct.trans_fat || 0,
-        quantity: originalProduct.reference_quantity,
+        quantity: baseWeight, // Use baseWeight for fraction calculations
+        refQuantity: originalProduct.reference_quantity, // Keep reference for nutrition calculations
         liquid_ml: originalProduct.package_volume_ml || originalProduct.reference_quantity,
         unit: originalProduct.reference_unit,
         hasProduct: true,
+        packageWeight: originalProduct.package_total_weight,
       };
     }
     
@@ -106,45 +111,50 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
       saturated_fat: entry.saturated_fat || 0,
       trans_fat: entry.trans_fat || 0,
       quantity: entry.quantity,
+      refQuantity: entry.quantity,
       liquid_ml: entry.liquid_ml || 0,
       unit: entry.unit,
       hasProduct: false,
+      packageWeight: null,
     };
   }, [entry, originalProduct]);
 
-  // Calculate portion multiplier based on mode
-  const portionMultiplier = useMemo(() => {
+  // Calculate consumed grams based on mode
+  const consumedGrams = useMemo(() => {
     if (consumeMode === 'fraction' && selectedFraction !== null) {
-      return selectedFraction;
+      // Fraction of total product weight
+      return originalValues.quantity * selectedFraction;
     }
     if (consumeMode === 'weight' && customValue) {
-      const grams = parseFloat(customValue) || 0;
-      return grams / originalValues.quantity;
+      return parseFloat(customValue) || 0;
     }
     if (consumeMode === 'ml' && customValue) {
-      const ml = parseFloat(customValue) || 0;
-      return ml / (originalValues.liquid_ml || originalValues.quantity);
+      return parseFloat(customValue) || 0;
     }
     if (consumeMode === 'units') {
-      // Assuming 1 unit = original quantity
-      return unitsCount;
+      return originalValues.quantity * unitsCount;
     }
-    return 1;
+    return originalValues.quantity;
   }, [consumeMode, selectedFraction, customValue, unitsCount, originalValues]);
+
+  // Calculate nutrition multiplier based on consumed grams vs reference quantity
+  const nutritionMultiplier = useMemo(() => {
+    return consumedGrams / originalValues.refQuantity;
+  }, [consumedGrams, originalValues.refQuantity]);
 
   // Calculated values based on portion
   const calculatedValues = useMemo(() => ({
-    calories: Math.round(originalValues.calories * portionMultiplier),
-    protein: Number((originalValues.protein * portionMultiplier).toFixed(1)),
-    carbs: Number((originalValues.carbs * portionMultiplier).toFixed(1)),
-    fat: Number((originalValues.fat * portionMultiplier).toFixed(1)),
-    fiber: Number((originalValues.fiber * portionMultiplier).toFixed(1)),
-    sodium: Math.round(originalValues.sodium * portionMultiplier),
-    saturated_fat: Number((originalValues.saturated_fat * portionMultiplier).toFixed(1)),
-    trans_fat: Number((originalValues.trans_fat * portionMultiplier).toFixed(1)),
-    quantity: Number((originalValues.quantity * portionMultiplier).toFixed(1)),
-    liquid_ml: Math.round((originalValues.liquid_ml || originalValues.quantity) * portionMultiplier),
-  }), [originalValues, portionMultiplier]);
+    calories: Math.round(originalValues.calories * nutritionMultiplier),
+    protein: Number((originalValues.protein * nutritionMultiplier).toFixed(1)),
+    carbs: Number((originalValues.carbs * nutritionMultiplier).toFixed(1)),
+    fat: Number((originalValues.fat * nutritionMultiplier).toFixed(1)),
+    fiber: Number((originalValues.fiber * nutritionMultiplier).toFixed(1)),
+    sodium: Math.round(originalValues.sodium * nutritionMultiplier),
+    saturated_fat: Number((originalValues.saturated_fat * nutritionMultiplier).toFixed(1)),
+    trans_fat: Number((originalValues.trans_fat * nutritionMultiplier).toFixed(1)),
+    quantity: Number(consumedGrams.toFixed(1)),
+    liquid_ml: Math.round(consumedGrams),
+  }), [originalValues, nutritionMultiplier, consumedGrams]);
 
   // Display text for consumption
   const displayText = useMemo(() => {
@@ -179,7 +189,7 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
   });
 
   const handleSave = () => {
-    if (onUpdate && portionMultiplier > 0) {
+    if (onUpdate && consumedGrams > 0) {
       const originalDate = new Date(entry.consumed_at);
       const [hours, minutes] = editTime.split(':').map(Number);
       originalDate.setHours(hours, minutes, 0, 0);
@@ -267,7 +277,7 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
     setCustomValue(value.toString());
   };
 
-  const canSubmit = portionMultiplier > 0;
+  const canSubmit = consumedGrams > 0;
 
   return (
     <>
@@ -390,7 +400,12 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   {originalValues.hasProduct ? (
-                    <>Produto: <strong>{originalValues.quantity}{originalValues.unit}</strong> = {originalValues.calories} kcal</>
+                    <>
+                      Embalagem: <strong>{originalValues.quantity}{originalValues.unit}</strong>
+                      <span className="ml-1 text-muted-foreground/70">
+                        (info nutri: {originalValues.refQuantity}{originalValues.unit} = {originalValues.calories} kcal)
+                      </span>
+                    </>
                   ) : (
                     <>Consumido: <strong>{entry.quantity}{entry.unit}</strong></>
                   )}
