@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Package, Search, Pencil, Trash2, ChevronLeft, Barcode, Plus, Droplets, Apple, Image, Filter, Upload, Loader2 } from 'lucide-react';
+import { Package, Search, Pencil, Trash2, ChevronLeft, Barcode, Plus, Droplets, Apple, Image, Filter, Upload, Loader2, ScanLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -12,6 +12,9 @@ import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { WATER_IMAGE_URL } from '@/components/DefaultLiquidImage';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { ZxingScanner } from '@/components/ZxingScanner';
+import { fetchProductByBarcode, isLiquidProduct } from '@/lib/openFoodFacts';
+import { toast } from 'sonner';
 
 type FilterType = 'all' | 'solid' | 'liquid';
 
@@ -26,6 +29,8 @@ export function ProductsPage() {
   const [zoomImage, setZoomImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [isSearchingBarcode, setIsSearchingBarcode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form state (shared for add/edit)
@@ -128,6 +133,47 @@ export function ProductsPage() {
     const url = await handleImageUpload(file);
     if (url) {
       setFormImageUrl(url);
+    }
+  };
+
+  const handleBarcodeScanned = async (barcode: string) => {
+    setShowBarcodeScanner(false);
+    setIsSearchingBarcode(true);
+    setFormBarcode(barcode);
+    
+    try {
+      const product = await fetchProductByBarcode(barcode);
+      
+      if (product) {
+        setFormName(product.name);
+        setFormBrand(product.brand || '');
+        setFormCalories(product.nutrition.calories.toString());
+        setFormProtein(product.nutrition.protein.toString());
+        setFormCarbs(product.nutrition.carbs.toString());
+        setFormFat(product.nutrition.fat.toString());
+        setFormFiber((product.nutrition.fiber || 0).toString());
+        setFormSodium((product.nutrition.sodium || 0).toString());
+        setFormSaturatedFat((product.nutrition.saturatedFat || 0).toString());
+        setFormTransFat((product.nutrition.transFat || 0).toString());
+        setFormRefQuantity('100');
+        
+        const isLiquid = isLiquidProduct(product);
+        setFormIsLiquid(isLiquid);
+        setFormRefUnit(isLiquid ? 'ml' : 'g');
+        
+        if (product.imageUrl) {
+          setFormImageUrl(product.imageUrl);
+          setImagePreview(product.imageUrl);
+        }
+        
+        toast.success('Produto encontrado!', { description: product.name });
+      } else {
+        toast.error('Produto não encontrado', { description: 'Preencha os dados manualmente' });
+      }
+    } catch {
+      toast.error('Erro ao buscar produto');
+    } finally {
+      setIsSearchingBarcode(false);
     }
   };
 
@@ -344,13 +390,32 @@ export function ProductsPage() {
         )}
 
         {!isEdit && (
-          <div>
-            <label className="text-sm text-muted-foreground mb-1 block">Código de barras (opcional)</label>
-            <Input 
-              value={formBarcode} 
-              onChange={(e) => setFormBarcode(e.target.value)} 
-              placeholder="Deixe em branco para gerar automaticamente"
-            />
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground block">Código de barras</label>
+            <div className="flex gap-2">
+              <Input 
+                value={formBarcode} 
+                onChange={(e) => setFormBarcode(e.target.value)} 
+                placeholder="Deixe em branco para gerar"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setShowBarcodeScanner(true)}
+                disabled={isSearchingBarcode}
+              >
+                {isSearchingBarcode ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ScanLine className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Escaneie para preencher automaticamente
+            </p>
           </div>
         )}
 
@@ -599,6 +664,28 @@ export function ProductsPage() {
         open={!!zoomImage} 
         onOpenChange={(open) => !open && setZoomImage(null)} 
       />
+
+      {/* Barcode Scanner Dialog */}
+      <Dialog open={showBarcodeScanner} onOpenChange={setShowBarcodeScanner}>
+        <DialogContent className="max-w-sm p-0 overflow-hidden">
+          <DialogHeader className="p-4 pb-2">
+            <DialogTitle className="flex items-center gap-2">
+              <ScanLine className="h-5 w-5 text-primary" />
+              Escanear Código de Barras
+            </DialogTitle>
+          </DialogHeader>
+          <div className="px-4 pb-4">
+            <ZxingScanner onResult={handleBarcodeScanned} />
+            <Button 
+              variant="outline" 
+              className="w-full mt-4" 
+              onClick={() => setShowBarcodeScanner(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <BottomNav />
     </div>
