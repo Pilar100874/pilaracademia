@@ -244,6 +244,7 @@ export function ProductFormDialog({
         reference_quantity: Number(formRefQuantity) || 100,
         reference_unit: formIsLiquid ? 'ml' : formRefUnit,
         is_liquid: formIsLiquid,
+        is_natural: false,
         package_total_weight: formPackageWeight ? Number(formPackageWeight) : null,
         package_total_units: formPackageUnits ? Number(formPackageUnits) : null,
         package_volume_ml: formPackageVolume ? Number(formPackageVolume) : null,
