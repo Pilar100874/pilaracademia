@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Camera, Loader2, Check, Star, Minus, Plus, Package, ScanLine, Keyboard } from 'lucide-react';
+import { X, Camera, Loader2, Check, Star, Minus, Plus, Package, ScanLine, Keyboard, ImagePlus } from 'lucide-react';
 import { BarcodeProduct, NutritionData } from '@/types/nutrition';
 import { NutritionDisplay } from '@/components/NutritionDisplay';
 import { LiquidConsumptionDialog } from '@/components/LiquidConsumptionDialog';
@@ -34,10 +34,11 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
   const [isCustomProduct, setIsCustomProduct] = useState(false);
   
   // Scanner mode
-  const [scanMode, setScanMode] = useState<'camera' | 'manual'>('camera');
+  const [scanMode, setScanMode] = useState<'camera' | 'photo' | 'manual'>('camera');
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerContainerId = 'barcode-scanner-container';
   
   // Package info
@@ -243,6 +244,45 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
       }
     }
     setIsScanning(false);
+  };
+
+  // Handle photo file scan
+  const handlePhotoScan = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsLoading(true);
+    setScanError(null);
+
+    try {
+      const html5QrCode = new Html5Qrcode('photo-scanner-temp', {
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.CODABAR,
+        ],
+        verbose: false,
+      });
+
+      const decodedText = await html5QrCode.scanFile(file, true);
+      console.log('Barcode from photo:', decodedText);
+      setBarcode(decodedText);
+      handleSearchWithBarcode(decodedText);
+    } catch (err) {
+      console.error('Error scanning photo:', err);
+      setScanError('Não foi possível ler o código de barras na foto. Tente tirar uma foto mais nítida ou use o modo manual.');
+    } finally {
+      setIsLoading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   // Cleanup on unmount
@@ -474,8 +514,17 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
                 className="flex-1"
                 onClick={() => setScanMode('camera')}
               >
-                <ScanLine className="h-4 w-4 mr-2" />
+                <ScanLine className="h-4 w-4 mr-1" />
                 Câmera
+              </Button>
+              <Button
+                variant={scanMode === 'photo' ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1"
+                onClick={() => setScanMode('photo')}
+              >
+                <ImagePlus className="h-4 w-4 mr-1" />
+                Foto
               </Button>
               <Button
                 variant={scanMode === 'manual' ? 'default' : 'outline'}
@@ -483,24 +532,45 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
                 className="flex-1"
                 onClick={() => setScanMode('manual')}
               >
-                <Keyboard className="h-4 w-4 mr-2" />
+                <Keyboard className="h-4 w-4 mr-1" />
                 Manual
               </Button>
             </div>
+
+            {/* Hidden temp div for photo scanning */}
+            <div id="photo-scanner-temp" className="hidden" />
+            
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handlePhotoScan}
+              className="hidden"
+            />
 
             {scanMode === 'camera' ? (
               <div className="space-y-3">
                 {scanError ? (
                   <div className="rounded-xl bg-destructive/10 p-4 text-center">
                     <p className="text-sm text-destructive">{scanError}</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="mt-2"
-                      onClick={() => setScanMode('manual')}
-                    >
-                      Usar modo manual
-                    </Button>
+                    <div className="flex gap-2 justify-center mt-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setScanMode('photo')}
+                      >
+                        Tirar foto
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setScanMode('manual')}
+                      >
+                        Digitar código
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -519,6 +589,14 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
                           <p className="text-xs text-muted-foreground">
                             Mantenha o código dentro da área de leitura
                           </p>
+                          <Button 
+                            variant="link" 
+                            size="sm"
+                            className="text-xs"
+                            onClick={() => setScanMode('photo')}
+                          >
+                            Câmera não foca? Tire uma foto
+                          </Button>
                         </>
                       ) : (
                         <>
@@ -541,6 +619,31 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
                     </div>
                   </>
                 )}
+              </div>
+            ) : scanMode === 'photo' ? (
+              <div className="space-y-4">
+                {scanError && (
+                  <div className="rounded-xl bg-destructive/10 p-4 text-center">
+                    <p className="text-sm text-destructive">{scanError}</p>
+                  </div>
+                )}
+                
+                <div 
+                  className="rounded-2xl border-2 border-dashed border-primary/50 p-8 text-center cursor-pointer hover:bg-primary/5 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Camera className="mx-auto h-12 w-12 text-primary" />
+                  <p className="mt-3 text-sm font-medium">
+                    Toque para tirar foto do código de barras
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    O celular vai focar automaticamente na foto
+                  </p>
+                </div>
+
+                <p className="text-xs text-center text-muted-foreground">
+                  💡 Dica: Aproxime o celular do código de barras e espere focar antes de tirar a foto
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
