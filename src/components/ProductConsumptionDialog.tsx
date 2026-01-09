@@ -3,8 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Droplets, Apple, Calculator, Package, UtensilsCrossed, Check } from 'lucide-react';
+import { Droplets, Apple, Calculator, Package, UtensilsCrossed, Check, GlassWater } from 'lucide-react';
 import { CustomProduct } from '@/hooks/useCustomProducts';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { toast } from 'sonner';
@@ -16,7 +15,16 @@ interface ProductConsumptionDialogProps {
   onSuccess?: () => void;
 }
 
-type ConsumptionMode = 'all' | 'partial_ml' | 'partial_units' | 'partial_weight';
+// Glass size in ml (standard glass)
+const GLASS_SIZE = 200;
+
+// Liquid portion presets
+const LIQUID_PORTIONS = [
+  { label: '½ copo', value: GLASS_SIZE * 0.5, icon: '🥛' },
+  { label: '1 copo', value: GLASS_SIZE, icon: '🥛' },
+  { label: '1½ copo', value: GLASS_SIZE * 1.5, icon: '🥛' },
+  { label: '2 copos', value: GLASS_SIZE * 2, icon: '🥛' },
+];
 
 export function ProductConsumptionDialog({ 
   product, 
@@ -25,15 +33,23 @@ export function ProductConsumptionDialog({
   onSuccess 
 }: ProductConsumptionDialogProps) {
   const { addEntry } = useFoodEntries();
-  const [mode, setMode] = useState<ConsumptionMode>('all');
-  const [partialValue, setPartialValue] = useState('');
+  const [selectedMl, setSelectedMl] = useState<number | null>(null);
+  const [customMl, setCustomMl] = useState('');
+  const [isCustom, setIsCustom] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // For solids
+  const [solidMode, setSolidMode] = useState<'all' | 'units' | 'weight'>('all');
+  const [solidValue, setSolidValue] = useState('');
 
-  // Reset state when product changes
+  // Reset state when dialog closes
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
-      setMode('all');
-      setPartialValue('');
+      setSelectedMl(null);
+      setCustomMl('');
+      setIsCustom(false);
+      setSolidMode('all');
+      setSolidValue('');
     }
     onOpenChange(newOpen);
   };
@@ -49,7 +65,6 @@ export function ProductConsumptionDialog({
     const refQty = product.reference_quantity;
     const refUnit = product.reference_unit;
     
-    // Calculate weight per unit if both are available
     const weightPerUnit = totalWeight && totalUnits ? totalWeight / totalUnits : null;
     
     return {
@@ -64,66 +79,49 @@ export function ProductConsumptionDialog({
     };
   }, [product]);
 
-  // Calculate consumed quantity based on mode
-  const consumedQuantity = useMemo(() => {
-    if (!product || !packageInfo) return { grams: 0, ml: 0, display: '' };
+  // Get consumed ml for liquids
+  const consumedMl = useMemo(() => {
+    if (!packageInfo?.isLiquid) return 0;
+    if (isCustom) return parseFloat(customMl) || 0;
+    return selectedMl || 0;
+  }, [isCustom, customMl, selectedMl, packageInfo]);
+
+  // Get consumed grams/quantity for solids
+  const consumedSolid = useMemo(() => {
+    if (!packageInfo || packageInfo.isLiquid) return { grams: 0, display: '' };
     
-    const partial = parseFloat(partialValue) || 0;
-    
-    if (mode === 'all') {
-      if (packageInfo.isLiquid && packageInfo.totalVolume) {
-        return { 
-          grams: 0, 
-          ml: packageInfo.totalVolume, 
-          display: `${packageInfo.totalVolume}ml (pacote inteiro)` 
-        };
-      } else if (packageInfo.totalWeight) {
-        return { 
-          grams: packageInfo.totalWeight, 
-          ml: 0, 
-          display: `${packageInfo.totalWeight}g (pacote inteiro)` 
-        };
-      } else {
-        // No package info, use reference quantity
-        return { 
-          grams: packageInfo.isLiquid ? 0 : packageInfo.refQty, 
-          ml: packageInfo.isLiquid ? packageInfo.refQty : 0, 
-          display: `${packageInfo.refQty}${packageInfo.refUnit}` 
-        };
-      }
-    }
-    
-    if (mode === 'partial_ml') {
-      return { grams: 0, ml: partial, display: `${partial}ml` };
-    }
-    
-    if (mode === 'partial_weight') {
-      return { grams: partial, ml: 0, display: `${partial}g` };
-    }
-    
-    if (mode === 'partial_units' && packageInfo.weightPerUnit) {
-      const grams = partial * packageInfo.weightPerUnit;
+    if (solidMode === 'all') {
+      const grams = packageInfo.totalWeight || packageInfo.refQty;
       return { 
         grams, 
-        ml: 0, 
-        display: `${partial} unidade(s) = ${grams.toFixed(0)}g` 
+        display: packageInfo.totalWeight 
+          ? `${packageInfo.totalWeight}g (tudo)` 
+          : `${packageInfo.refQty}${packageInfo.refUnit}`
       };
     }
     
-    return { grams: 0, ml: 0, display: '' };
-  }, [mode, partialValue, product, packageInfo]);
+    if (solidMode === 'weight') {
+      const grams = parseFloat(solidValue) || 0;
+      return { grams, display: `${grams}g` };
+    }
+    
+    if (solidMode === 'units' && packageInfo.weightPerUnit) {
+      const units = parseFloat(solidValue) || 0;
+      const grams = units * packageInfo.weightPerUnit;
+      return { grams, display: `${units} un. = ${grams.toFixed(0)}g` };
+    }
+    
+    return { grams: 0, display: '' };
+  }, [solidMode, solidValue, packageInfo]);
 
   // Calculate nutrition based on consumed quantity
   const calculatedNutrition = useMemo(() => {
-    if (!product) return null;
+    if (!product || !packageInfo) return null;
     
     const refQty = product.reference_quantity || 100;
-    let consumedQty = packageInfo?.isLiquid ? consumedQuantity.ml : consumedQuantity.grams;
+    let consumedQty = packageInfo.isLiquid ? consumedMl : consumedSolid.grams;
     
-    // If no quantity calculated, use reference quantity
-    if (consumedQty === 0 && mode === 'all') {
-      consumedQty = refQty;
-    }
+    if (consumedQty === 0) return null;
     
     const factor = consumedQty / refQty;
     
@@ -137,16 +135,16 @@ export function ProductConsumptionDialog({
       fiber: Number(((product.fiber || 0) * factor).toFixed(1)),
       sodium: Number(((product.sodium || 0) * factor).toFixed(1)),
     };
-  }, [product, consumedQuantity, packageInfo, mode]);
+  }, [product, consumedMl, consumedSolid, packageInfo]);
 
   const handleSubmit = async () => {
-    if (!product || !calculatedNutrition) return;
+    if (!product || !calculatedNutrition || !packageInfo) return;
     
     setIsSubmitting(true);
     try {
       const isLiquid = product.is_liquid;
-      const liquidMl = isLiquid ? consumedQuantity.ml : 0;
-      const quantity = isLiquid ? consumedQuantity.ml : consumedQuantity.grams;
+      const liquidMl = isLiquid ? consumedMl : 0;
+      const quantity = isLiquid ? consumedMl : consumedSolid.grams;
       
       await addEntry({
         name: product.name,
@@ -175,11 +173,9 @@ export function ProductConsumptionDialog({
 
   if (!product || !packageInfo) return null;
 
-  // Determine available options based on product type
-  const showMlOption = packageInfo.isLiquid;
-  const showWeightOption = !packageInfo.isLiquid;
-  const showUnitsOption = !packageInfo.isLiquid && !!packageInfo.totalUnits && !!packageInfo.weightPerUnit;
-  const hasAllOption = packageInfo.hasPackageInfo;
+  const canSubmit = packageInfo.isLiquid 
+    ? consumedMl > 0 
+    : (solidMode === 'all' || (solidValue && parseFloat(solidValue) > 0));
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -218,20 +214,20 @@ export function ProductConsumptionDialog({
 
           {/* Package info display */}
           {packageInfo.hasPackageInfo && (
-            <div className="p-3 rounded-lg bg-muted/50 space-y-1">
-              <p className="text-xs font-medium flex items-center gap-1 text-muted-foreground">
+            <div className="p-3 rounded-lg bg-sky-500/10 border border-sky-500/20 space-y-1">
+              <p className="text-xs font-medium flex items-center gap-1 text-sky-600">
                 <Package className="h-3 w-3" />
-                Informações da Embalagem
+                Embalagem
               </p>
               {packageInfo.isLiquid && packageInfo.totalVolume && (
-                <p className="text-sm">Volume total: <strong>{packageInfo.totalVolume}ml</strong></p>
+                <p className="text-lg font-bold text-sky-600">{packageInfo.totalVolume}ml</p>
               )}
               {!packageInfo.isLiquid && packageInfo.totalWeight && (
                 <p className="text-sm">Peso total: <strong>{packageInfo.totalWeight}g</strong></p>
               )}
               {packageInfo.totalUnits && (
                 <p className="text-sm">
-                  Unidades: <strong>{packageInfo.totalUnits}</strong>
+                  <strong>{packageInfo.totalUnits}</strong> unidades
                   {packageInfo.weightPerUnit && (
                     <span className="text-muted-foreground"> ({packageInfo.weightPerUnit.toFixed(0)}g cada)</span>
                   )}
@@ -240,95 +236,176 @@ export function ProductConsumptionDialog({
             </div>
           )}
 
-          {/* Consumption mode selection */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Quanto você consumiu?</Label>
-            <RadioGroup 
-              value={mode} 
-              onValueChange={(v) => {
-                setMode(v as ConsumptionMode);
-                setPartialValue('');
-              }}
-              className="space-y-2"
-            >
-              {hasAllOption && (
-                <label className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 cursor-pointer hover:bg-secondary/80 transition-colors">
-                  <RadioGroupItem value="all" id="all" />
-                  <div className="flex-1">
+          {/* LIQUID OPTIONS */}
+          {packageInfo.isLiquid && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <GlassWater className="h-4 w-4 text-sky-500" />
+                Quanto você bebeu?
+              </Label>
+              
+              {/* Quick portion buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                {LIQUID_PORTIONS.map((portion) => (
+                  <button
+                    key={portion.value}
+                    onClick={() => {
+                      setSelectedMl(portion.value);
+                      setIsCustom(false);
+                    }}
+                    className={`p-3 rounded-lg text-sm font-medium transition-all border-2 ${
+                      !isCustom && selectedMl === portion.value
+                        ? 'border-sky-500 bg-sky-500/10 text-sky-600'
+                        : 'border-muted bg-secondary/50 hover:border-sky-500/50'
+                    }`}
+                  >
+                    <span className="text-lg mr-1">{portion.icon}</span>
+                    {portion.label}
+                    <span className="block text-xs text-muted-foreground">{portion.value}ml</span>
+                  </button>
+                ))}
+                
+                {/* "Tudo" option if package info exists */}
+                {packageInfo.totalVolume && (
+                  <button
+                    onClick={() => {
+                      setSelectedMl(packageInfo.totalVolume!);
+                      setIsCustom(false);
+                    }}
+                    className={`p-3 rounded-lg text-sm font-medium transition-all border-2 ${
+                      !isCustom && selectedMl === packageInfo.totalVolume
+                        ? 'border-sky-500 bg-sky-500/10 text-sky-600'
+                        : 'border-muted bg-secondary/50 hover:border-sky-500/50'
+                    }`}
+                  >
+                    <span className="text-lg mr-1">🍾</span>
+                    Tudo
+                    <span className="block text-xs text-muted-foreground">{packageInfo.totalVolume}ml</span>
+                  </button>
+                )}
+                
+                {/* Custom option */}
+                <button
+                  onClick={() => {
+                    setIsCustom(true);
+                    setSelectedMl(null);
+                  }}
+                  className={`p-3 rounded-lg text-sm font-medium transition-all border-2 ${
+                    isCustom
+                      ? 'border-sky-500 bg-sky-500/10 text-sky-600'
+                      : 'border-muted bg-secondary/50 hover:border-sky-500/50'
+                  }`}
+                >
+                  <span className="text-lg mr-1">✏️</span>
+                  Outro
+                  <span className="block text-xs text-muted-foreground">Digitar ml</span>
+                </button>
+              </div>
+              
+              {/* Custom ml input */}
+              {isCustom && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={customMl}
+                    onChange={(e) => setCustomMl(e.target.value)}
+                    placeholder="Ex: 350"
+                    min="0"
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-muted-foreground">ml</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SOLID OPTIONS */}
+          {!packageInfo.isLiquid && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Quanto você consumiu?</Label>
+              
+              <div className="space-y-2">
+                {/* All option */}
+                {packageInfo.hasPackageInfo && (
+                  <button
+                    onClick={() => {
+                      setSolidMode('all');
+                      setSolidValue('');
+                    }}
+                    className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
+                      solidMode === 'all'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-muted bg-secondary/50 hover:border-primary/50'
+                    }`}
+                  >
                     <span className="text-sm font-medium">Tudo</span>
                     <p className="text-xs text-muted-foreground">
-                      {packageInfo.isLiquid 
-                        ? `${packageInfo.totalVolume}ml` 
-                        : `${packageInfo.totalWeight}g${packageInfo.totalUnits ? ` (${packageInfo.totalUnits} unidades)` : ''}`
-                      }
+                      {packageInfo.totalWeight}g
+                      {packageInfo.totalUnits && ` (${packageInfo.totalUnits} unidades)`}
                     </p>
-                  </div>
-                </label>
-              )}
-
-              {showMlOption && (
-                <label className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 cursor-pointer hover:bg-secondary/80 transition-colors">
-                  <RadioGroupItem value="partial_ml" id="partial_ml" />
-                  <div className="flex-1">
-                    <span className="text-sm font-medium">Quantidade em ml</span>
-                    <p className="text-xs text-muted-foreground">Informar quanto bebi</p>
-                  </div>
-                </label>
-              )}
-
-              {showWeightOption && (
-                <label className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 cursor-pointer hover:bg-secondary/80 transition-colors">
-                  <RadioGroupItem value="partial_weight" id="partial_weight" />
-                  <div className="flex-1">
-                    <span className="text-sm font-medium">Quantidade em gramas</span>
-                    <p className="text-xs text-muted-foreground">Informar peso consumido</p>
-                  </div>
-                </label>
-              )}
-
-              {showUnitsOption && (
-                <label className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 cursor-pointer hover:bg-secondary/80 transition-colors">
-                  <RadioGroupItem value="partial_units" id="partial_units" />
-                  <div className="flex-1">
-                    <span className="text-sm font-medium">Quantidade de unidades</span>
+                  </button>
+                )}
+                
+                {/* Units option */}
+                {packageInfo.totalUnits && packageInfo.weightPerUnit && (
+                  <button
+                    onClick={() => setSolidMode('units')}
+                    className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
+                      solidMode === 'units'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-muted bg-secondary/50 hover:border-primary/50'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">Por unidades</span>
                     <p className="text-xs text-muted-foreground">
-                      Cada unidade = {packageInfo.weightPerUnit?.toFixed(0)}g
+                      Cada unidade = {packageInfo.weightPerUnit.toFixed(0)}g
                     </p>
-                  </div>
-                </label>
+                  </button>
+                )}
+                
+                {/* Weight option */}
+                <button
+                  onClick={() => setSolidMode('weight')}
+                  className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
+                    solidMode === 'weight'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-muted bg-secondary/50 hover:border-primary/50'
+                  }`}
+                >
+                  <span className="text-sm font-medium">Por gramas</span>
+                  <p className="text-xs text-muted-foreground">Informar peso consumido</p>
+                </button>
+              </div>
+              
+              {/* Input for units or weight */}
+              {solidMode !== 'all' && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={solidValue}
+                    onChange={(e) => setSolidValue(e.target.value)}
+                    placeholder={solidMode === 'units' ? 'Ex: 2' : 'Ex: 100'}
+                    min="0"
+                    step={solidMode === 'units' ? '1' : 'any'}
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {solidMode === 'units' ? 'un.' : 'g'}
+                  </span>
+                </div>
               )}
-            </RadioGroup>
-          </div>
-
-          {/* Partial value input */}
-          {mode !== 'all' && (
-            <div className="space-y-2">
-              <Label htmlFor="partial-value" className="text-sm">
-                {mode === 'partial_ml' && 'Quantidade (ml)'}
-                {mode === 'partial_weight' && 'Quantidade (g)'}
-                {mode === 'partial_units' && 'Número de unidades'}
-              </Label>
-              <Input
-                id="partial-value"
-                type="number"
-                value={partialValue}
-                onChange={(e) => setPartialValue(e.target.value)}
-                placeholder={mode === 'partial_units' ? 'Ex: 2' : 'Ex: 100'}
-                min="0"
-                step={mode === 'partial_units' ? '1' : 'any'}
-              />
             </div>
           )}
 
           {/* Calculated nutrition preview */}
-          {calculatedNutrition && (consumedQuantity.grams > 0 || consumedQuantity.ml > 0 || mode === 'all') && (
+          {calculatedNutrition && (
             <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
               <p className="text-xs font-medium flex items-center gap-1 text-primary">
                 <Calculator className="h-3 w-3" />
                 Valores Calculados
-                {consumedQuantity.display && (
-                  <span className="text-muted-foreground ml-1">({consumedQuantity.display})</span>
-                )}
+                <span className="text-muted-foreground ml-1">
+                  ({packageInfo.isLiquid ? `${consumedMl}ml` : consumedSolid.display})
+                </span>
               </p>
               <div className="grid grid-cols-4 gap-2 text-center">
                 <div>
@@ -355,7 +432,7 @@ export function ProductConsumptionDialog({
           <Button 
             className="w-full" 
             onClick={handleSubmit}
-            disabled={isSubmitting || (mode !== 'all' && !partialValue)}
+            disabled={isSubmitting || !canSubmit}
           >
             <Check className="h-4 w-4 mr-2" />
             {isSubmitting ? 'Registrando...' : 'Confirmar Consumo'}
