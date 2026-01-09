@@ -37,7 +37,7 @@ interface LiquidEntryData {
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { entries, isLoading, addEntry, updateEntry, deleteEntry, getTodaySummary } = useFoodEntries();
+  const { entries, isLoading, addEntry, updateEntry, deleteEntry, getTodaySummary, refetch: refetchFood } = useFoodEntries();
   const { entries: liquidEntriesData, addLiquidEntry, updateLiquidEntry, deleteLiquidEntry, getTodayTotal, refetch: refetchLiquids, liquidTypes } = useLiquidEntries();
   const { profile, getGoals, isProfileComplete } = useProfile();
   const { getTodayTotalBurned } = useExerciseEntries();
@@ -388,9 +388,9 @@ export function Dashboard() {
         onOpenLiquid={() => setActiveModal('liquid')}
       />
       {activeModal === 'photo' && <PhotoCapture onFoodAnalyzed={handlePhotoAnalyzed} onClose={() => setActiveModal(null)} />}
-      {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => setActiveModal(null)} />}
-      {activeModal === 'manual' && <ManualEntryForm onSubmit={handleManualEntry} onClose={() => setActiveModal(null)} />}
-      <ProductSearch isOpen={activeModal === 'search'} onClose={() => setActiveModal(null)} />
+      {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => { setActiveModal(null); refetchFood(); }} />}
+      {activeModal === 'manual' && <ManualEntryForm onSubmit={handleManualEntry} onClose={() => { setActiveModal(null); refetchFood(); }} />}
+      <ProductSearch isOpen={activeModal === 'search'} onClose={() => { setActiveModal(null); refetchFood(); }} />
       <AddLiquidDialog open={activeModal === 'liquid'} onOpenChange={(open) => !open && setActiveModal(null)} onAddLiquid={handleAddLiquid} />
       <EditLiquidDialog 
         entry={editingLiquid}
