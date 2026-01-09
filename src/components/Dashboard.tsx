@@ -140,9 +140,15 @@ export function Dashboard() {
                 <p>🍽️ Consumido: {Math.round(consumed.calories)} kcal</p>
                 {caloriesBurned > 0 && <p>🏃 Exercícios: -{caloriesBurned} kcal</p>}
               </div>
-              <p className="mt-2 text-sm text-muted-foreground font-medium">
-                {remainingCalories > 0 ? `Restam ${Math.round(remainingCalories)} kcal` : 'Meta atingida! 🎉'}
-              </p>
+              {/* Balanço e previsão de peso na mesma linha */}
+              <div className="mt-2 flex items-center gap-3 flex-wrap">
+                <span className="text-sm text-muted-foreground font-medium">
+                  {remainingCalories > 0 ? `Restam ${Math.round(remainingCalories)} kcal` : 'Meta atingida! 🎉'}
+                </span>
+                <span className={`text-sm font-bold ${(netCalories - goals.calories) < 0 ? 'text-green-500' : 'text-orange-500'}`}>
+                  ⚖️ {((netCalories - goals.calories) / 7700 * 1000).toFixed(0)}g/dia
+                </span>
+              </div>
             </div>
             <ProgressRing progress={calorieProgress} size={100} strokeWidth={8} color={calorieProgress > 100 ? 'destructive' : 'primary'}>
               <span className="text-xl font-bold">{Math.round(calorieProgress)}%</span>
