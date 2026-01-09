@@ -77,9 +77,17 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
       return;
     }
 
+    // Use package weight as default quantity (same logic as ProductConsumptionDialog)
+    let defaultQuantity: number;
+    if (product.is_liquid) {
+      defaultQuantity = product.package_volume_ml || product.reference_quantity || 100;
+    } else {
+      defaultQuantity = product.package_total_weight || product.reference_quantity || 100;
+    }
+
     setItems([...items, {
       product,
-      quantity: product.reference_quantity || 100,
+      quantity: defaultQuantity,
       unit: product.is_liquid ? 'ml' : 'g',
     }]);
     setShowProductSearch(false);
