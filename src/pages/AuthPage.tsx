@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 
-import { Loader2, Flame } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export function AuthPage() {
   const { signIn, signUp } = useAuth();
@@ -35,12 +35,14 @@ export function AuthPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8 animate-slide-up">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary shadow-elevated mb-4">
-            <Flame className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <h1 className="text-3xl font-bold">CalorieTracker</h1>
+          <img 
+            src="/pwa-512x512.png" 
+            alt="Pilar Logo" 
+            className="h-20 w-20 mx-auto mb-4"
+          />
+          <h1 className="text-3xl font-bold">Pilar</h1>
           <p className="text-muted-foreground mt-2">
-            Controle suas calorias com IA
+            Controle Calórico Inteligente
           </p>
         </div>
 
