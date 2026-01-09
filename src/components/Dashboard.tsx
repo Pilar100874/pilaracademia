@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Flame, Apple, Loader2, TrendingDown, TrendingUp, Droplets } from 'lucide-react';
+import { Flame, Apple, Loader2, TrendingDown, TrendingUp, Droplets, ArrowDownUp, Clock, Layers } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { ProgressRing } from '@/components/ProgressRing';
 import { FoodEntryItemDB } from '@/components/FoodEntryItemDB';
 import { AddFoodMenu } from '@/components/AddFoodMenu';
@@ -24,6 +25,7 @@ import { FoodEntryDB } from '@/types/profile';
 import { useNavigate } from 'react-router-dom';
 
 type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | 'liquid' | null;
+type SortType = 'time' | 'type';
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -32,6 +34,7 @@ export function Dashboard() {
   const { profile, getGoals, isProfileComplete } = useProfile();
   const { getTodayTotalBurned } = useExerciseEntries();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [sortType, setSortType] = useState<SortType>('type');
 
   const goals = getGoals();
   const { consumed } = getTodaySummary();
@@ -113,6 +116,11 @@ export function Dashboard() {
   // Separar entries em refeições e líquidos
   const mealEntries = entries.filter(e => e.is_liquid !== true);
   const liquidEntries = entries.filter(e => e.is_liquid === true);
+  
+  // All entries sorted by time (for 'time' sort mode)
+  const allEntriesByTime = [...entries].sort((a, b) => 
+    new Date(b.consumed_at).getTime() - new Date(a.consumed_at).getTime()
+  );
 
   if (isLoading) {
     return <div className="min-h-screen gradient-hero flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -182,23 +190,34 @@ export function Dashboard() {
         <ExerciseTracker />
 
         {/* Info Líquidos no Balanço */}
-        <div className="card-compact flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-water">
-              <Droplets className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">Líquidos</p>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold num-display text-sky-500">{(todayLiquid / 1000).toFixed(1)}L</span>
-                <span className="text-xs text-muted-foreground">/ {(dailyLiquidGoal / 1000).toFixed(1)}L</span>
+        {(() => {
+          const remainingLiquid = Math.max(0, dailyLiquidGoal - todayLiquid);
+          const progressPercent = Math.min((todayLiquid / dailyLiquidGoal) * 100, 100);
+          const isComplete = todayLiquid >= dailyLiquidGoal;
+          
+          return (
+            <div className="card-compact flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-water">
+                  <Droplets className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Líquidos</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold num-display text-sky-500">{(todayLiquid / 1000).toFixed(1)}L</span>
+                    <span className="text-xs text-muted-foreground">/ {(dailyLiquidGoal / 1000).toFixed(1)}L</span>
+                  </div>
+                  <p className={`text-xs font-medium ${isComplete ? 'text-emerald-500' : 'text-sky-500'}`}>
+                    {isComplete ? '🎉 Meta atingida!' : `Faltam ${remainingLiquid >= 1000 ? (remainingLiquid / 1000).toFixed(1) + 'L' : remainingLiquid + 'ml'}`}
+                  </p>
+                </div>
+              </div>
+              <div className="w-16 h-2 rounded-full bg-secondary overflow-hidden">
+                <div className="h-full rounded-full bg-sky-500 transition-all" style={{ width: `${progressPercent}%` }} />
               </div>
             </div>
-          </div>
-          <div className="w-16 h-2 rounded-full bg-secondary overflow-hidden">
-            <div className="h-full rounded-full bg-sky-500 transition-all" style={{ width: `${Math.min((todayLiquid / dailyLiquidGoal) * 100, 100)}%` }} />
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Peso */}
         <WeightTracker />
@@ -206,49 +225,84 @@ export function Dashboard() {
         {/* Nutrientes */}
         <NutritionProgressGrid consumed={consumed} goals={goals} />
 
-        {/* Refeições */}
-        <div>
-          <h2 className="text-sm font-semibold mb-2 flex items-center gap-2">
+        {/* Consumo do dia - Header com toggle de ordenação */}
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-semibold flex items-center gap-2">
             <Apple className="h-4 w-4 text-primary" />
-            Refeições
+            Consumo do dia
           </h2>
-          {mealEntries.length === 0 ? (
-            <div className="card-compact text-center py-6">
-              <p className="text-sm text-muted-foreground">Nenhuma refeição</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {mealEntries.slice(0, 5).map((entry) => (
-                <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
-              ))}
-              {mealEntries.length > 5 && (
-                <p className="text-xs text-center text-muted-foreground">+{mealEntries.length - 5} mais</p>
-              )}
-            </div>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setSortType(sortType === 'type' ? 'time' : 'type')}
+          >
+            {sortType === 'type' ? (
+              <>
+                <Layers className="h-3 w-3 mr-1" />
+                Por tipo
+              </>
+            ) : (
+              <>
+                <Clock className="h-3 w-3 mr-1" />
+                Por horário
+              </>
+            )}
+          </Button>
         </div>
 
-        {/* Líquidos (produtos) */}
-        <div>
-          <h2 className="text-sm font-semibold mb-2 flex items-center gap-2">
-            <Droplets className="h-4 w-4 text-sky-500" />
-            Bebidas
-          </h2>
-          {liquidEntries.length === 0 ? (
-            <div className="card-compact text-center py-6">
-              <p className="text-sm text-muted-foreground">Nenhuma bebida registrada</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {liquidEntries.slice(0, 5).map((entry) => (
-                <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
-              ))}
-              {liquidEntries.length > 5 && (
-                <p className="text-xs text-center text-muted-foreground">+{liquidEntries.length - 5} mais</p>
-              )}
-            </div>
-          )}
-        </div>
+        {entries.length === 0 ? (
+          <div className="card-compact text-center py-6">
+            <p className="text-sm text-muted-foreground">Nenhum registro hoje</p>
+          </div>
+        ) : sortType === 'type' ? (
+          <div className="space-y-4">
+            {/* Refeições */}
+            {mealEntries.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                  <Apple className="h-3 w-3" />
+                  Refeições ({mealEntries.length})
+                </p>
+                <div className="space-y-2">
+                  {mealEntries.slice(0, 5).map((entry) => (
+                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
+                  ))}
+                  {mealEntries.length > 5 && (
+                    <p className="text-xs text-center text-muted-foreground">+{mealEntries.length - 5} mais</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Bebidas */}
+            {liquidEntries.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                  <Droplets className="h-3 w-3 text-sky-500" />
+                  Bebidas ({liquidEntries.length})
+                </p>
+                <div className="space-y-2">
+                  {liquidEntries.slice(0, 5).map((entry) => (
+                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
+                  ))}
+                  {liquidEntries.length > 5 && (
+                    <p className="text-xs text-center text-muted-foreground">+{liquidEntries.length - 5} mais</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {allEntriesByTime.slice(0, 10).map((entry) => (
+              <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
+            ))}
+            {allEntriesByTime.length > 10 && (
+              <p className="text-xs text-center text-muted-foreground">+{allEntriesByTime.length - 10} mais</p>
+            )}
+          </div>
+        )}
       </div>
 
       <AddFoodMenu 
