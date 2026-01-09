@@ -8,6 +8,10 @@ export interface FoodAnalysisResult {
   items: string[];
   isLiquid: boolean;
   volumeMl: number;
+  isIndustrialized: boolean;
+  brand?: string;
+  packageWeight?: number;
+  referenceQuantity?: number;
 }
 
 export async function analyzeFood(imageBase64: string): Promise<FoodAnalysisResult> {
@@ -42,6 +46,10 @@ export async function analyzeFood(imageBase64: string): Promise<FoodAnalysisResu
     items: result.items || [],
     isLiquid: result.isLiquid || false,
     volumeMl: result.volumeMl || 0,
+    isIndustrialized: result.isIndustrialized || false,
+    brand: result.brand || undefined,
+    packageWeight: result.packageWeight || undefined,
+    referenceQuantity: result.referenceQuantity || 100,
   };
 }
 
