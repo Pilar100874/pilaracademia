@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Apple, User, Loader2 } from 'lucide-react';
+import { Flame, Apple, User, Loader2, TrendingDown, TrendingUp } from 'lucide-react';
 import { ProgressRing } from '@/components/ProgressRing';
 import { FoodEntryItemDB } from '@/components/FoodEntryItemDB';
 import { AddFoodMenu } from '@/components/AddFoodMenu';
@@ -35,63 +35,37 @@ export function Dashboard() {
   const goals = getGoals();
   const { consumed } = getTodaySummary();
   const caloriesBurned = getTodayTotalBurned();
-  
-  // Calorias líquidas = consumidas - queimadas com exercício
   const netCalories = consumed.calories - caloriesBurned;
   const calorieProgress = (netCalories / goals.calories) * 100;
   const remainingCalories = Math.max(0, goals.calories - netCalories);
+  const dailyWeightChange = ((netCalories - goals.calories) / 7700 * 1000);
+  const isDeficit = dailyWeightChange < 0;
 
-  const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const today = new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
 
   const handlePhotoAnalyzed = async (name: string, nutrition: NutritionData, imageUrl: string, isLiquid?: boolean, liquidMl?: number) => {
     try {
-      await addEntry({ 
-        name, 
-        nutrition, 
-        imageUrl, 
-        quantity: 1, 
-        unit: 'porção', 
-        source: 'photo',
-        isLiquid: isLiquid || false,
-        liquidMl: liquidMl || 0
-      });
-      
-      if (isLiquid && liquidMl && liquidMl > 0) {
-        await addLiquidEntry(liquidMl, 'other');
-      }
-      
-      toast.success('Refeição adicionada!');
-    } catch { toast.error('Erro ao adicionar'); }
+      await addEntry({ name, nutrition, imageUrl, quantity: 1, unit: 'porção', source: 'photo', isLiquid: isLiquid || false, liquidMl: liquidMl || 0 });
+      if (isLiquid && liquidMl && liquidMl > 0) await addLiquidEntry(liquidMl, 'other');
+      toast.success('Adicionado!');
+    } catch { toast.error('Erro'); }
     setActiveModal(null);
   };
 
   const handleBarcodeProduct = async (product: BarcodeProduct, portionGrams: number, isLiquid?: boolean, liquidMl?: number) => {
     try {
-      await addEntry({ 
-        name: product.name, 
-        nutrition: product.nutrition, 
-        imageUrl: product.imageUrl, 
-        quantity: portionGrams, 
-        unit: isLiquid ? 'ml' : 'g', 
-        source: 'barcode',
-        isLiquid: isLiquid || false,
-        liquidMl: liquidMl || 0
-      });
-      
-      if (isLiquid && liquidMl && liquidMl > 0) {
-        await addLiquidEntry(liquidMl, 'other');
-      }
-      
-      toast.success('Produto adicionado!');
-    } catch { toast.error('Erro ao adicionar'); }
+      await addEntry({ name: product.name, nutrition: product.nutrition, imageUrl: product.imageUrl, quantity: portionGrams, unit: isLiquid ? 'ml' : 'g', source: 'barcode', isLiquid: isLiquid || false, liquidMl: liquidMl || 0 });
+      if (isLiquid && liquidMl && liquidMl > 0) await addLiquidEntry(liquidMl, 'other');
+      toast.success('Adicionado!');
+    } catch { toast.error('Erro'); }
     setActiveModal(null);
   };
 
   const handleManualEntry = async (name: string, nutrition: NutritionData, quantity: number, unit: string) => {
     try {
       await addEntry({ name, nutrition, quantity, unit, source: 'manual' });
-      toast.success('Alimento adicionado!');
-    } catch { toast.error('Erro ao adicionar'); }
+      toast.success('Adicionado!');
+    } catch { toast.error('Erro'); }
     setActiveModal(null);
   };
 
@@ -108,54 +82,62 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen gradient-hero pb-24">
-      <header className="px-5 pt-8 pb-2">
+    <div className="min-h-screen gradient-hero pb-28">
+      {/* Header compacto */}
+      <header className="sticky top-0 z-30 glass border-b border-border/50 px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Olá, {profile?.name?.split(' ')[0] || 'Usuário'}! 👋</h1>
-            <p className="text-sm text-muted-foreground capitalize">{today}</p>
+            <h1 className="text-lg font-bold">Olá, {profile?.name?.split(' ')[0] || 'Usuário'} 👋</h1>
+            <p className="text-xs text-muted-foreground capitalize">{today}</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => navigate('/profile')} className="rounded-full">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10"><User className="h-5 w-5 text-primary" /></div>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/profile')} className="rounded-full h-9 w-9">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+              <User className="h-4 w-4 text-primary" />
+            </div>
           </Button>
         </div>
-        {!isProfileComplete() && (
-          <button onClick={() => navigate('/profile')} className="mt-4 w-full rounded-xl bg-accent/10 p-3 text-left">
-            <p className="text-sm font-medium text-accent">⚠️ Complete seu perfil para metas personalizadas</p>
-          </button>
-        )}
       </header>
 
-      {/* Calorias */}
-      <section className="px-5 py-4">
-        <div className="rounded-3xl gradient-card p-6 shadow-card">
+      <div className="px-4 space-y-3 pt-4">
+        {/* Alerta perfil incompleto */}
+        {!isProfileComplete() && (
+          <button onClick={() => navigate('/profile')} className="w-full rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-left animate-fade-in">
+            <p className="text-sm font-medium text-amber-600">⚠️ Complete seu perfil</p>
+          </button>
+        )}
+
+        {/* Card Principal - Calorias */}
+        <div className="card-feature gradient-calories text-white">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <div className="flex items-center gap-2 text-muted-foreground"><Flame className="h-4 w-4" /><span className="text-sm font-medium">Balanço Calórico</span></div>
-              <div className="mt-2">
-                <span className="text-4xl font-bold">{Math.round(netCalories)}</span>
-                <span className="text-lg text-muted-foreground"> / {goals.calories}</span>
+              <div className="flex items-center gap-1.5 opacity-90">
+                <Flame className="h-4 w-4" />
+                <span className="text-xs font-medium">Balanço do dia</span>
               </div>
-              <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
-                <p>🍽️ Consumido: {Math.round(consumed.calories)} kcal</p>
-                {caloriesBurned > 0 && <p>🏃 Exercícios: -{caloriesBurned} kcal</p>}
+              <div className="mt-1 flex items-baseline gap-1">
+                <span className="text-3xl num-display">{Math.round(netCalories)}</span>
+                <span className="text-sm opacity-80">/ {goals.calories} kcal</span>
               </div>
-              {/* Balanço e previsão de peso na mesma linha */}
-              <div className="mt-2 flex items-center gap-3 flex-wrap">
-                <span className="text-sm text-muted-foreground font-medium">
-                  {remainingCalories > 0 ? `Restam ${Math.round(remainingCalories)} kcal` : 'Meta atingida! 🎉'}
+              
+              {/* Info rápida */}
+              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs opacity-90">
+                <span>🍽️ {Math.round(consumed.calories)}</span>
+                {caloriesBurned > 0 && <span>🏃 -{caloriesBurned}</span>}
+                <span className={`font-semibold flex items-center gap-0.5 ${isDeficit ? 'text-emerald-200' : 'text-amber-200'}`}>
+                  {isDeficit ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+                  {dailyWeightChange.toFixed(0)}g
                 </span>
-                <span className={`text-sm font-bold ${(netCalories - goals.calories) < 0 ? 'text-green-500' : 'text-orange-500'}`}>
-                  ⚖️ {((netCalories - goals.calories) / 7700 * 1000).toFixed(0)}g/dia
-                </span>
               </div>
+
+              <p className="mt-2 text-sm font-semibold">
+                {remainingCalories > 0 ? `Restam ${Math.round(remainingCalories)} kcal` : '🎉 Meta atingida!'}
+              </p>
             </div>
-            <ProgressRing progress={calorieProgress} size={100} strokeWidth={8} color={calorieProgress > 100 ? 'destructive' : 'primary'}>
-              <span className="text-xl font-bold">{Math.round(calorieProgress)}%</span>
+            <ProgressRing progress={calorieProgress} size={80} strokeWidth={6} color={calorieProgress > 100 ? 'destructive' : 'primary'}>
+              <span className="text-lg font-bold text-white">{Math.round(calorieProgress)}%</span>
             </ProgressRing>
           </div>
           
-          {/* Botão de projeção de peso */}
           <WeightProjection 
             consumedCalories={consumed.calories}
             burnedCalories={caloriesBurned}
@@ -163,38 +145,41 @@ export function Dashboard() {
             currentWeight={profile?.weight_kg || 70}
           />
         </div>
-      </section>
 
-      {/* Todos os Nutrientes com Percentual */}
-      <section className="px-5 py-2">
-        <NutritionProgressGrid consumed={consumed} goals={goals} />
-      </section>
-
-      {/* Exercícios */}
-      <section className="px-5 py-2">
-        <ExerciseTracker />
-      </section>
-
-      {/* Peso e Hidratação lado a lado */}
-      <section className="px-5 py-2">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <WeightTracker />
+        {/* Grid 2x2 - Ações Rápidas */}
+        <div className="grid grid-cols-2 gap-3">
+          <ExerciseTracker />
           <LiquidTracker />
         </div>
-      </section>
 
-      {/* Refeições */}
-      <section className="px-5 py-4">
-        <h2 className="text-lg font-semibold mb-3">Refeições de Hoje</h2>
-        {entries.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-muted p-8 text-center">
-            <Apple className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-3 text-muted-foreground">Nenhuma refeição registrada</p>
-          </div>
-        ) : (
-          <div className="space-y-3">{entries.map((entry) => <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />)}</div>
-        )}
-      </section>
+        {/* Peso */}
+        <WeightTracker />
+
+        {/* Nutrientes */}
+        <NutritionProgressGrid consumed={consumed} goals={goals} />
+
+        {/* Refeições */}
+        <div>
+          <h2 className="text-sm font-semibold mb-2 flex items-center gap-2">
+            <Apple className="h-4 w-4 text-primary" />
+            Refeições
+          </h2>
+          {entries.length === 0 ? (
+            <div className="card-compact text-center py-6">
+              <p className="text-sm text-muted-foreground">Nenhuma refeição</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {entries.slice(0, 5).map((entry) => (
+                <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
+              ))}
+              {entries.length > 5 && (
+                <p className="text-xs text-center text-muted-foreground">+{entries.length - 5} mais</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
       <AddFoodMenu onOpenPhoto={() => setActiveModal('photo')} onOpenBarcode={() => setActiveModal('barcode')} onOpenManual={() => setActiveModal('manual')} />
       {activeModal === 'photo' && <PhotoCapture onFoodAnalyzed={handlePhotoAnalyzed} onClose={() => setActiveModal(null)} />}

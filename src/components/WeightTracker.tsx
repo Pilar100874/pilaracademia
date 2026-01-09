@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Scale, X, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { Scale, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { useWeightHistory } from '@/hooks/useWeightHistory';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
@@ -17,135 +17,83 @@ export function WeightTracker() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const currentWeight = profile?.weight_kg || 0;
-  const lastEntry = entries[entries.length - 1];
   const previousWeight = entries.length >= 2 ? entries[entries.length - 2]?.weight_kg : currentWeight;
   const weightDiff = currentWeight - previousWeight;
 
-  const chartData = entries.map((entry) => ({
-    date: format(new Date(entry.recorded_at), 'dd/MM', { locale: ptBR }),
-    peso: Number(entry.weight_kg),
-  }));
+  const chartData = entries.slice(-7).map((e) => ({ peso: Number(e.weight_kg) }));
 
   const handleSubmit = async () => {
-    const weightNum = parseFloat(weight);
-    if (isNaN(weightNum) || weightNum < 30 || weightNum > 300) {
-      toast.error('Peso inválido (30-300kg)');
-      return;
-    }
-
+    const w = parseFloat(weight);
+    if (isNaN(w) || w < 30 || w > 300) { toast.error('Peso inválido'); return; }
     setIsSubmitting(true);
     try {
-      // Adicionar ao histórico
-      await addWeightEntry(weightNum);
-      
-      // Atualizar perfil (isso recalcula todas as metas)
-      await updateProfile({ weight_kg: weightNum });
-      
-      toast.success('Peso atualizado! Metas recalculadas.');
+      await addWeightEntry(w);
+      await updateProfile({ weight_kg: w });
+      toast.success('Peso atualizado!');
       setWeight('');
       setShowInput(false);
-    } catch {
-      toast.error('Erro ao salvar peso');
-    } finally {
-      setIsSubmitting(false);
-    }
+    } catch { toast.error('Erro'); }
+    finally { setIsSubmitting(false); }
   };
 
   const getTrendIcon = () => {
-    if (weightDiff > 0.5) return <TrendingUp className="h-4 w-4 text-orange-500" />;
-    if (weightDiff < -0.5) return <TrendingDown className="h-4 w-4 text-green-500" />;
-    return <Minus className="h-4 w-4 text-muted-foreground" />;
+    if (Math.abs(weightDiff) < 0.3) return <Minus className="h-3 w-3 text-muted-foreground" />;
+    if (weightDiff < 0) return <TrendingDown className="h-3 w-3 text-emerald-500" />;
+    return <TrendingUp className="h-3 w-3 text-amber-500" />;
   };
 
   return (
-    <div className="rounded-2xl bg-card border border-border p-4 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
+    <div className="card-compact">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/10">
-            <Scale className="h-5 w-5 text-purple-500" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
+            <Scale className="h-5 w-5 text-violet-500" />
           </div>
           <div>
-            <h3 className="font-semibold">Peso</h3>
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold">{currentWeight}kg</span>
+            <p className="text-xs text-muted-foreground">Peso atual</p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xl num-display">{currentWeight}</span>
+              <span className="text-sm text-muted-foreground">kg</span>
               {entries.length >= 2 && (
-                <span className="flex items-center gap-1 text-xs">
+                <span className="flex items-center text-xs gap-0.5">
                   {getTrendIcon()}
-                  {weightDiff > 0 ? '+' : ''}{weightDiff.toFixed(1)}kg
+                  {weightDiff > 0 ? '+' : ''}{weightDiff.toFixed(1)}
                 </span>
               )}
             </div>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowInput(!showInput)}
-        >
-          {showInput ? <X className="h-4 w-4" /> : 'Atualizar'}
+
+        {/* Mini chart */}
+        {chartData.length >= 2 && (
+          <div className="w-16 h-8">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <Line type="monotone" dataKey="peso" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setShowInput(!showInput)}>
+          {showInput ? '✕' : 'Atualizar'}
         </Button>
       </div>
 
       {showInput && (
-        <div className="flex gap-2 mb-3">
+        <div className="flex gap-2 mt-3 pt-3 border-t border-border/50 animate-fade-in">
           <Input
             type="number"
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
             placeholder="Novo peso (kg)"
-            min={30}
-            max={300}
+            className="flex-1 h-10"
             step={0.1}
-            className="flex-1"
           />
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
+          <Button onClick={handleSubmit} disabled={isSubmitting} className="h-10">
             {isSubmitting ? '...' : 'Salvar'}
           </Button>
         </div>
-      )}
-
-      {chartData.length >= 2 && (
-        <div className="h-24 mt-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <XAxis 
-                dataKey="date" 
-                tick={{ fontSize: 10 }} 
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis 
-                domain={['dataMin - 2', 'dataMax + 2']} 
-                tick={{ fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-                width={30}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                  fontSize: '12px'
-                }}
-                formatter={(value: number) => [`${value}kg`, 'Peso']}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="peso" 
-                stroke="hsl(var(--primary))" 
-                strokeWidth={2}
-                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 3 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {chartData.length < 2 && (
-        <p className="text-xs text-muted-foreground text-center py-2">
-          Registre seu peso regularmente para ver o gráfico de evolução
-        </p>
       )}
     </div>
   );

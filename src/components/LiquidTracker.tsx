@@ -1,24 +1,20 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ProgressRing } from '@/components/ProgressRing';
-import { Droplets, Plus, Trash2 } from 'lucide-react';
+import { Droplets, Plus } from 'lucide-react';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
-const QUICK_ADD_OPTIONS = [
-  { label: '1 copo', ml: 250 },
-  { label: '2 copos', ml: 500 },
-  { label: '500ml', ml: 500 },
-  { label: '1L', ml: 1000 },
+const QUICK_OPTIONS = [
+  { label: '🥛', ml: 250, title: '1 copo' },
+  { label: '🥤', ml: 500, title: '500ml' },
+  { label: '🍶', ml: 1000, title: '1L' },
 ];
 
 export function LiquidTracker() {
-  const { entries, addLiquidEntry, deleteLiquidEntry, getTodayTotal, liquidTypes } = useLiquidEntries();
+  const { entries, addLiquidEntry, getTodayTotal } = useLiquidEntries();
   const { profile } = useProfile();
-  const [showEntries, setShowEntries] = useState(false);
+  const [showButtons, setShowButtons] = useState(false);
 
   const dailyGoal = profile?.daily_liquid_ml || 2000;
   const todayTotal = getTodayTotal();
@@ -28,101 +24,46 @@ export function LiquidTracker() {
   const handleQuickAdd = async (ml: number) => {
     try {
       await addLiquidEntry(ml, 'water');
-      toast.success(`+${ml}ml de água adicionado!`);
-    } catch {
-      toast.error('Erro ao adicionar');
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteLiquidEntry(id);
-      toast.success('Removido!');
-    } catch {
-      toast.error('Erro ao remover');
-    }
+      toast.success(`💧 +${ml}ml`);
+    } catch { toast.error('Erro'); }
   };
 
   return (
-    <div className="rounded-2xl bg-card border border-border p-4 shadow-sm">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/10">
-          <Droplets className="h-5 w-5 text-blue-500" />
+    <div className="card-compact">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-water">
+            <Droplets className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Água</p>
+            <p className="text-lg num-display text-sky-500">{(todayTotal / 1000).toFixed(1)}L</p>
+          </div>
         </div>
-        <div className="flex-1">
-          <h3 className="font-semibold">Hidratação</h3>
-          <p className="text-sm text-muted-foreground">
-            {todayTotal}ml / {dailyGoal}ml
-          </p>
-        </div>
-        <ProgressRing progress={progress} size={50} strokeWidth={4} color="blue">
-          <span className="text-xs font-bold">{Math.round(progress)}%</span>
-        </ProgressRing>
+        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setShowButtons(!showButtons)}>
+          <Plus className={`h-4 w-4 transition-transform ${showButtons ? 'rotate-45' : ''}`} />
+        </Button>
       </div>
 
-      {remaining > 0 && (
-        <p className="text-xs text-muted-foreground mb-3">
-          Faltam {remaining}ml ({Math.ceil(remaining / 250)} copos)
-        </p>
-      )}
-
-      <div className="grid grid-cols-4 gap-2 mb-3">
-        {QUICK_ADD_OPTIONS.map((option) => (
-          <Button
-            key={option.label}
-            variant="outline"
-            size="sm"
-            className="text-xs"
-            onClick={() => handleQuickAdd(option.ml)}
-          >
-            <Plus className="h-3 w-3 mr-1" />
-            {option.label}
-          </Button>
-        ))}
+      {/* Progress bar */}
+      <div className="h-1.5 rounded-full bg-secondary overflow-hidden mb-1">
+        <div className="h-full rounded-full bg-sky-500 transition-all duration-500" style={{ width: `${progress}%` }} />
       </div>
+      <p className="text-xs text-muted-foreground">{remaining > 0 ? `Faltam ${Math.ceil(remaining / 250)} copos` : '✅ Meta!'}</p>
 
-      {entries.length > 0 && (
-        <>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full text-xs"
-            onClick={() => setShowEntries(!showEntries)}
-          >
-            {showEntries ? 'Ocultar histórico' : `Ver histórico (${entries.length})`}
-          </Button>
-
-          {showEntries && (
-            <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
-              {entries.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2 text-sm"
-                >
-                  <div>
-                    <span className="font-medium">{entry.amount_ml}ml</span>
-                    <span className="text-muted-foreground ml-2">
-                      {liquidTypes[entry.type as keyof typeof liquidTypes] || entry.type}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(entry.consumed_at), 'HH:mm', { locale: ptBR })}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => handleDelete(entry.id)}
-                    >
-                      <Trash2 className="h-3 w-3 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
+      {showButtons && (
+        <div className="flex gap-1 pt-2 border-t border-border/50 mt-2 animate-fade-in">
+          {QUICK_OPTIONS.map((opt) => (
+            <button
+              key={opt.ml}
+              onClick={() => handleQuickAdd(opt.ml)}
+              className="quick-btn flex-1 bg-sky-500/10 text-sky-600 hover:bg-sky-500/20"
+              title={opt.title}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
