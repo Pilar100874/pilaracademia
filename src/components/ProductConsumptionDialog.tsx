@@ -172,6 +172,9 @@ export function ProductConsumptionDialog({
       const liquidMl = isLiquid ? consumedMl : 0;
       const quantity = isLiquid ? consumedMl : consumedSolid.grams;
       
+      // Only pass productId if it's a valid UUID (not a natural product id like 'nat_banana')
+      const isValidUuid = product.id && product.id.includes('-') && product.id.length === 36;
+      
       await addEntry({
         name: product.name,
         nutrition: calculatedNutrition,
@@ -181,7 +184,7 @@ export function ProductConsumptionDialog({
         source: 'barcode',
         isLiquid,
         liquidMl,
-        productId: product.id,
+        productId: isValidUuid ? product.id : undefined,
       });
       
       toast.success('Consumo registrado!', {

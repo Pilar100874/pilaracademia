@@ -7,6 +7,7 @@ import { Camera, Barcode, Edit3, Trash2, Pencil, Check, Clock, Minus, Plus, Drop
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { WATER_IMAGE_URL } from '@/components/DefaultLiquidImage';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 
 interface FoodEntryItemDBProps {
   entry: FoodEntryDB;
@@ -43,6 +44,7 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
     new Date(entry.consumed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', ':')
   );
   const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   // Consumption mode and values
   const [consumeMode, setConsumeMode] = useState<'fraction' | 'units' | 'weight' | 'ml'>('fraction');
@@ -358,7 +360,7 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-muted-foreground hover:text-destructive"
-              onClick={() => onDelete(entry.id)}
+              onClick={() => setShowDeleteConfirm(true)}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
@@ -725,6 +727,17 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
         alt={entry.name}
         open={!!zoomImage} 
         onOpenChange={(open) => !open && setZoomImage(null)} 
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDeleteDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        itemName={entry.name}
+        onConfirm={() => {
+          onDelete?.(entry.id);
+          setShowDeleteConfirm(false);
+        }}
       />
     </>
   );
