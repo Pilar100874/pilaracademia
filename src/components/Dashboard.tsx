@@ -194,6 +194,14 @@ export function Dashboard() {
           const progressPercent = Math.min((todayLiquid / dailyLiquidGoal) * 100, 100);
           const isComplete = todayLiquid >= dailyLiquidGoal;
           
+          // Formatar líquidos: ml se < 1000, L se >= 1000
+          const formatLiquid = (ml: number) => {
+            if (ml >= 1000) {
+              return `${(ml / 1000).toFixed(1)}L`;
+            }
+            return `${Math.round(ml)}ml`;
+          };
+          
           return (
             <div className="card-compact flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -203,11 +211,11 @@ export function Dashboard() {
                 <div>
                   <p className="text-sm font-medium">Líquidos</p>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold num-display text-sky-500">{(todayLiquid / 1000).toFixed(1)}L</span>
-                    <span className="text-xs text-muted-foreground">/ {(dailyLiquidGoal / 1000).toFixed(1)}L</span>
+                    <span className="text-lg font-bold num-display text-sky-500">{formatLiquid(todayLiquid)}</span>
+                    <span className="text-xs text-muted-foreground">/ {formatLiquid(dailyLiquidGoal)}</span>
                   </div>
                   <p className={`text-xs font-medium ${isComplete ? 'text-emerald-500' : 'text-sky-500'}`}>
-                    {isComplete ? '🎉 Meta atingida!' : `Faltam ${remainingLiquid >= 1000 ? (remainingLiquid / 1000).toFixed(1) + 'L' : remainingLiquid + 'ml'}`}
+                    {isComplete ? '🎉 Meta atingida!' : `Faltam ${formatLiquid(remainingLiquid)}`}
                   </p>
                 </div>
               </div>
