@@ -1,17 +1,16 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Camera, Barcode, Edit3, X, Search, Droplets } from 'lucide-react';
+import { Plus, Camera, Barcode, X, Search, Droplets } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddFoodMenuProps {
   onOpenPhoto: () => void;
   onOpenBarcode: () => void;
-  onOpenManual: () => void;
   onOpenSearch: () => void;
   onOpenLiquid: () => void;
 }
 
-export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenManual, onOpenSearch, onOpenLiquid }: AddFoodMenuProps) {
+export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenSearch, onOpenLiquid }: AddFoodMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleAction = (action: () => void) => {
@@ -23,7 +22,6 @@ export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenManual, onOpenSe
     { icon: Search, label: 'Buscar', color: 'bg-violet-500', action: onOpenSearch },
     { icon: Camera, label: 'Foto', color: 'bg-emerald-500', action: onOpenPhoto },
     { icon: Barcode, label: 'Código', color: 'bg-amber-500', action: onOpenBarcode },
-    { icon: Edit3, label: 'Manual', color: 'bg-sky-500', action: onOpenManual },
     { icon: Droplets, label: 'Líquido', color: 'bg-cyan-500', action: onOpenLiquid },
   ];
 

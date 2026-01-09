@@ -394,13 +394,11 @@ export function Dashboard() {
       <AddFoodMenu 
         onOpenPhoto={() => setActiveModal('photo')} 
         onOpenBarcode={() => setActiveModal('barcode')} 
-        onOpenManual={() => setActiveModal('manual')} 
         onOpenSearch={() => setActiveModal('search')} 
         onOpenLiquid={() => setActiveModal('liquid')}
       />
       {activeModal === 'photo' && <PhotoCapture onFoodAnalyzed={handlePhotoAnalyzed} onClose={() => setActiveModal(null)} />}
       {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => { setActiveModal(null); refetchFood(); }} />}
-      {activeModal === 'manual' && <ManualEntryForm onSubmit={handleManualEntry} onClose={() => { setActiveModal(null); refetchFood(); }} />}
       <ProductSearch isOpen={activeModal === 'search'} onClose={() => { setActiveModal(null); refetchFood(); }} />
       <AddLiquidDialog open={activeModal === 'liquid'} onOpenChange={(open) => !open && setActiveModal(null)} onAddLiquid={handleAddLiquid} />
       <EditLiquidDialog 
