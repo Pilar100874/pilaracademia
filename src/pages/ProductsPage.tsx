@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Package, Search, Pencil, Trash2, ChevronLeft, Barcode, Plus, Droplets, Apple, Image, Filter, Upload, Loader2, ScanLine } from 'lucide-react';
+import { Package, Search, Pencil, Trash2, ChevronLeft, Barcode, Plus, Droplets, Apple, Image, Filter, Upload, Loader2, ScanLine, UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ZxingScanner } from '@/components/ZxingScanner';
 import { fetchProductByBarcode, isLiquidProduct } from '@/lib/openFoodFacts';
 import { toast } from 'sonner';
+import { ProductConsumptionDialog } from '@/components/ProductConsumptionDialog';
 
 type FilterType = 'all' | 'solid' | 'liquid';
 
@@ -32,6 +33,7 @@ export function ProductsPage() {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [isSearchingBarcode, setIsSearchingBarcode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [consumingProduct, setConsumingProduct] = useState<CustomProduct | null>(null);
   
   // Form state (shared for add/edit)
   const [formName, setFormName] = useState('');
@@ -49,6 +51,10 @@ export function ProductsPage() {
   const [formRefUnit, setFormRefUnit] = useState('g');
   const [formIsLiquid, setFormIsLiquid] = useState(false);
   const [formImageUrl, setFormImageUrl] = useState('');
+  // Package info fields
+  const [formPackageWeight, setFormPackageWeight] = useState('');
+  const [formPackageUnits, setFormPackageUnits] = useState('');
+  const [formPackageVolume, setFormPackageVolume] = useState('');
 
   // Filter products by search and type
   const filteredProducts = products.filter((p) => {
@@ -83,6 +89,9 @@ export function ProductsPage() {
     setFormIsLiquid(false);
     setFormImageUrl('');
     setImagePreview(null);
+    setFormPackageWeight('');
+    setFormPackageUnits('');
+    setFormPackageVolume('');
   };
 
   const handleOpenAdd = () => {
@@ -194,6 +203,9 @@ export function ProductsPage() {
     setFormRefUnit(product.reference_unit);
     setFormIsLiquid(product.is_liquid || false);
     setFormImageUrl(product.image_url || '');
+    setFormPackageWeight(product.package_total_weight?.toString() || '');
+    setFormPackageUnits(product.package_total_units?.toString() || '');
+    setFormPackageVolume(product.package_volume_ml?.toString() || '');
   };
 
   const getProductImageUrl = (product: CustomProduct) => {
@@ -225,6 +237,9 @@ export function ProductsPage() {
         reference_quantity: Number(formRefQuantity) || 100,
         reference_unit: formIsLiquid ? 'ml' : formRefUnit,
         is_liquid: formIsLiquid,
+        package_total_weight: formPackageWeight ? Number(formPackageWeight) : null,
+        package_total_units: formPackageUnits ? Number(formPackageUnits) : null,
+        package_volume_ml: formPackageVolume ? Number(formPackageVolume) : null,
       });
       setShowAddDialog(false);
       resetForm();
@@ -251,6 +266,9 @@ export function ProductsPage() {
         reference_quantity: Number(formRefQuantity) || 100,
         reference_unit: formIsLiquid ? 'ml' : formRefUnit,
         is_liquid: formIsLiquid,
+        package_total_weight: formPackageWeight ? Number(formPackageWeight) : null,
+        package_total_units: formPackageUnits ? Number(formPackageUnits) : null,
+        package_volume_ml: formPackageVolume ? Number(formPackageVolume) : null,
       });
       setEditingProduct(null);
       resetForm();
@@ -277,6 +295,22 @@ export function ProductsPage() {
   const ProductCard = ({ product }: { product: CustomProduct }) => {
     const imageUrl = getProductImageUrl(product);
     
+    // Build package info display
+    const getPackageDisplay = () => {
+      if (product.is_liquid && product.package_volume_ml) {
+        return `${product.package_volume_ml}ml`;
+      }
+      if (!product.is_liquid) {
+        const parts = [];
+        if (product.package_total_weight) parts.push(`${product.package_total_weight}g`);
+        if (product.package_total_units) parts.push(`${product.package_total_units} un.`);
+        return parts.length > 0 ? parts.join(' / ') : null;
+      }
+      return null;
+    };
+    
+    const packageDisplay = getPackageDisplay();
+    
     return (
       <div className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card">
         <button 
@@ -301,6 +335,12 @@ export function ProductsPage() {
             <span className="text-xs px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
               /{product.reference_quantity}{product.reference_unit}
             </span>
+            {packageDisplay && (
+              <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 flex items-center gap-0.5">
+                <Package className="h-3 w-3" />
+                {packageDisplay}
+              </span>
+            )}
             {product.is_liquid && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-500">
                 <Droplets className="h-3 w-3 inline" />
@@ -309,6 +349,14 @@ export function ProductsPage() {
           </div>
         </div>
         <div className="flex gap-1 flex-shrink-0">
+          <Button
+            size="sm"
+            variant="default"
+            className="h-8 w-8 p-0"
+            onClick={() => setConsumingProduct(product)}
+          >
+            <UtensilsCrossed className="h-4 w-4" />
+          </Button>
           <Button
             size="sm"
             variant="ghost"
@@ -443,6 +491,55 @@ export function ProductsPage() {
               else setFormRefUnit('g');
             }} 
           />
+        </div>
+
+        {/* Package info section */}
+        <div className="border-t pt-4">
+          <p className="text-sm font-medium mb-3 flex items-center gap-2">
+            <Package className="h-4 w-4 text-primary" />
+            Informações da Embalagem
+          </p>
+          <p className="text-xs text-muted-foreground mb-3">
+            Preencha para calcular consumo por porção ou unidade
+          </p>
+          
+          {formIsLiquid ? (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Volume total (ml)</label>
+              <Input 
+                type="number" 
+                value={formPackageVolume} 
+                onChange={(e) => setFormPackageVolume(e.target.value)} 
+                placeholder="Ex: 350"
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Peso total (g)</label>
+                <Input 
+                  type="number" 
+                  value={formPackageWeight} 
+                  onChange={(e) => setFormPackageWeight(e.target.value)} 
+                  placeholder="Ex: 500"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Unidades</label>
+                <Input 
+                  type="number" 
+                  value={formPackageUnits} 
+                  onChange={(e) => setFormPackageUnits(e.target.value)} 
+                  placeholder="Ex: 10"
+                />
+              </div>
+              {formPackageWeight && formPackageUnits && Number(formPackageUnits) > 0 && (
+                <div className="col-span-2 text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
+                  Cada unidade: <strong>{(Number(formPackageWeight) / Number(formPackageUnits)).toFixed(0)}g</strong>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="border-t pt-4">
@@ -686,6 +783,13 @@ export function ProductsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Consumption Dialog */}
+      <ProductConsumptionDialog
+        product={consumingProduct}
+        open={!!consumingProduct}
+        onOpenChange={(open) => !open && setConsumingProduct(null)}
+      />
 
       <BottomNav />
     </div>

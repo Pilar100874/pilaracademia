@@ -448,6 +448,9 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           reference_quantity: Number(packageWeight),
           reference_unit: 'g',
           is_liquid: false,
+          package_total_weight: Number(packageWeight) || null,
+          package_total_units: Number(itemsInPackage) || null,
+          package_volume_ml: null,
         });
       } catch (err) {
         console.error('Erro ao salvar produto:', err);
@@ -485,6 +488,9 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           reference_quantity: 100,
           reference_unit: 'ml',
           is_liquid: true,
+          package_total_weight: null,
+          package_total_units: null,
+          package_volume_ml: null,
         });
       } catch (err) {
         console.error('Erro ao salvar produto:', err);

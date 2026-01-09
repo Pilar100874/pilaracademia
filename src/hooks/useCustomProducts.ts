@@ -20,6 +20,9 @@ export interface CustomProduct {
   reference_quantity: number;
   reference_unit: string;
   is_liquid: boolean;
+  package_total_weight: number | null;
+  package_total_units: number | null;
+  package_volume_ml: number | null;
   created_at: string;
   updated_at: string;
 }
