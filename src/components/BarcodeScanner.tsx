@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Camera, Loader2 } from 'lucide-react';
+import { X, Camera, Loader2, Check, Star } from 'lucide-react';
 import { BarcodeProduct, NutritionData } from '@/types/nutrition';
 import { NutritionDisplay } from '@/components/NutritionDisplay';
 import { LiquidConsumptionDialog } from '@/components/LiquidConsumptionDialog';
 import { fetchProductByBarcode, calculateNutritionForPortion, isLiquidProduct, getLiquidVolumeMl } from '@/lib/openFoodFacts';
+import { useCustomProducts } from '@/hooks/useCustomProducts';
 import { toast } from 'sonner';
 
 interface BarcodeScannerProps {
@@ -14,14 +15,17 @@ interface BarcodeScannerProps {
 }
 
 export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps) {
+  const { getProductByBarcode, saveProduct } = useCustomProducts();
   const [barcode, setBarcode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [product, setProduct] = useState<BarcodeProduct | null>(null);
+  const [isCustomProduct, setIsCustomProduct] = useState(false);
   const [portionGrams, setPortionGrams] = useState(100);
   const [calculatedNutrition, setCalculatedNutrition] = useState<NutritionData | null>(null);
   const [isLiquid, setIsLiquid] = useState(false);
   const [liquidVolumeMl, setLiquidVolumeMl] = useState(0);
   const [showLiquidDialog, setShowLiquidDialog] = useState(false);
+  const [saveForFuture, setSaveForFuture] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -39,23 +43,53 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
 
     setIsLoading(true);
     try {
-      const result = await fetchProductByBarcode(barcode.trim());
-      if (result) {
-        setProduct(result);
+      // Primeiro, verificar se temos o produto salvo localmente
+      const customProduct = await getProductByBarcode(barcode.trim());
+      
+      if (customProduct) {
+        // Usar produto personalizado
+        const nutrition: NutritionData = {
+          calories: customProduct.calories,
+          protein: customProduct.protein,
+          carbs: customProduct.carbs,
+          fat: customProduct.fat,
+          saturatedFat: customProduct.saturated_fat || 0,
+          transFat: customProduct.trans_fat || 0,
+          fiber: customProduct.fiber || 0,
+          sodium: customProduct.sodium || 0,
+        };
         
-        // Verificar se é um produto líquido
-        const liquid = isLiquidProduct(result);
-        setIsLiquid(liquid);
-        
-        if (liquid) {
-          const volumeMl = getLiquidVolumeMl(result);
-          setLiquidVolumeMl(volumeMl);
-          setShowLiquidDialog(true);
-        }
-        
-        toast.success('Produto encontrado!');
+        setProduct({
+          code: customProduct.barcode,
+          name: customProduct.name,
+          brand: customProduct.brand || undefined,
+          imageUrl: customProduct.image_url || undefined,
+          nutrition,
+          servingSize: `${customProduct.reference_quantity}${customProduct.reference_unit}`,
+        });
+        setIsCustomProduct(true);
+        setPortionGrams(customProduct.reference_quantity);
+        toast.success('Produto encontrado (salvo)!', { icon: '⭐' });
       } else {
-        toast.error('Produto não encontrado');
+        // Buscar do OpenFoodFacts
+        const result = await fetchProductByBarcode(barcode.trim());
+        if (result) {
+          setProduct(result);
+          setIsCustomProduct(false);
+          
+          const liquid = isLiquidProduct(result);
+          setIsLiquid(liquid);
+          
+          if (liquid) {
+            const volumeMl = getLiquidVolumeMl(result);
+            setLiquidVolumeMl(volumeMl);
+            setShowLiquidDialog(true);
+          }
+          
+          toast.success('Produto encontrado!');
+        } else {
+          toast.error('Produto não encontrado');
+        }
       }
     } catch {
       toast.error('Erro ao buscar produto');
@@ -64,16 +98,66 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     }
   };
 
-  const handleAddProduct = () => {
+  const handleAddProduct = async () => {
     if (!product || !calculatedNutrition) return;
+    
+    // Salvar produto para uso futuro se marcado
+    if (saveForFuture && !isCustomProduct) {
+      try {
+        await saveProduct({
+          barcode: product.code,
+          name: product.name,
+          brand: product.brand || null,
+          image_url: product.imageUrl || null,
+          calories: product.nutrition.calories,
+          protein: product.nutrition.protein,
+          carbs: product.nutrition.carbs,
+          fat: product.nutrition.fat,
+          saturated_fat: product.nutrition.saturatedFat || 0,
+          trans_fat: product.nutrition.transFat || 0,
+          fiber: product.nutrition.fiber || 0,
+          sodium: product.nutrition.sodium || 0,
+          reference_quantity: 100,
+          reference_unit: 'g',
+        });
+        toast.success('Produto salvo para próximas vezes!', { icon: '⭐' });
+      } catch {
+        // Silently fail saving
+      }
+    }
+    
     onProductFound({ ...product, nutrition: calculatedNutrition }, portionGrams, false, 0);
   };
 
-  const handleLiquidConfirm = (mlConsumed: number) => {
+  const handleLiquidConfirm = async (mlConsumed: number) => {
     if (!product) return;
     
-    // Calcular nutrição baseada no volume consumido (ml ≈ g para líquidos)
     const nutritionForVolume = calculateNutritionForPortion(product.nutrition, mlConsumed);
+    
+    // Salvar produto líquido
+    if (saveForFuture && !isCustomProduct) {
+      try {
+        await saveProduct({
+          barcode: product.code,
+          name: product.name,
+          brand: product.brand || null,
+          image_url: product.imageUrl || null,
+          calories: product.nutrition.calories,
+          protein: product.nutrition.protein,
+          carbs: product.nutrition.carbs,
+          fat: product.nutrition.fat,
+          saturated_fat: product.nutrition.saturatedFat || 0,
+          trans_fat: product.nutrition.transFat || 0,
+          fiber: product.nutrition.fiber || 0,
+          sodium: product.nutrition.sodium || 0,
+          reference_quantity: 100,
+          reference_unit: 'ml',
+        });
+      } catch {
+        // Silently fail
+      }
+    }
+    
     onProductFound({ ...product, nutrition: nutritionForVolume }, mlConsumed, true, mlConsumed);
   };
 
@@ -108,7 +192,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
             <div className="rounded-2xl border-2 border-dashed border-muted p-8 text-center">
               <Camera className="mx-auto h-12 w-12 text-muted-foreground" />
               <p className="mt-4 text-sm text-muted-foreground">
-                Digite o código de barras para buscar informações nutricionais completas
+                Digite o código de barras para buscar informações nutricionais
               </p>
             </div>
           </div>
@@ -125,10 +209,15 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
               {product.imageUrl && (
                 <img src={product.imageUrl} alt={product.name} className="h-20 w-20 rounded-xl object-cover" />
               )}
-              <div className="flex-1">
-                <h3 className="font-semibold">{product.name}</h3>
-                {product.brand && <p className="text-sm text-muted-foreground">{product.brand}</p>}
-                <p className="text-xs text-muted-foreground mt-1">Valores por 100g</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold truncate">{product.name}</h3>
+                  {isCustomProduct && <Star className="h-4 w-4 text-amber-500 flex-shrink-0" />}
+                </div>
+                {product.brand && <p className="text-sm text-muted-foreground truncate">{product.brand}</p>}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {isCustomProduct ? 'Produto salvo' : 'Valores por 100g'}
+                </p>
               </div>
             </div>
 
@@ -159,11 +248,28 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
               <NutritionDisplay nutrition={calculatedNutrition} showAll />
             )}
 
+            {!isCustomProduct && (
+              <label className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={saveForFuture}
+                  onChange={(e) => setSaveForFuture(e.target.checked)}
+                  className="rounded"
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Salvar para próximas vezes</p>
+                  <p className="text-xs text-muted-foreground">O produto será lembrado com esses valores</p>
+                </div>
+                <Star className="h-4 w-4 text-amber-500" />
+              </label>
+            )}
+
             <div className="flex gap-3 pt-2">
               <Button variant="outline" className="flex-1" onClick={() => setProduct(null)}>
                 Voltar
               </Button>
               <Button variant="gradient" className="flex-1" onClick={handleAddProduct}>
+                <Check className="h-4 w-4 mr-2" />
                 Adicionar
               </Button>
             </div>
