@@ -219,8 +219,41 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
     setUnitsCount(1);
   };
 
+  // Calculate what was originally consumed to set initial state
+  const getInitialConsumeState = () => {
+    if (!originalValues.hasProduct) {
+      // No product found, default to "Tudo" with entry values
+      return { mode: 'fraction' as const, fraction: 1, customValue: '', units: 1 };
+    }
+    
+    // Calculate the ratio of consumed vs original
+    const ratio = entry.calories / originalValues.calories;
+    
+    // Check if it matches a fraction preset
+    const matchingFraction = FRACTION_OPTIONS.find(f => Math.abs(f.value - ratio) < 0.05);
+    if (matchingFraction) {
+      return { mode: 'fraction' as const, fraction: matchingFraction.value, customValue: '', units: 1 };
+    }
+    
+    // Check if it's "Tudo" (ratio ~= 1)
+    if (Math.abs(ratio - 1) < 0.05) {
+      return { mode: 'fraction' as const, fraction: 1, customValue: '', units: 1 };
+    }
+    
+    // Otherwise, set to weight/ml mode with the actual consumed value
+    if (isLiquid) {
+      return { mode: 'ml' as const, fraction: null, customValue: String(entry.liquid_ml || entry.quantity), units: 1 };
+    } else {
+      return { mode: 'weight' as const, fraction: null, customValue: String(entry.quantity), units: 1 };
+    }
+  };
+
   const handleOpenEdit = () => {
-    resetConsumeState();
+    const initial = getInitialConsumeState();
+    setConsumeMode(initial.mode);
+    setSelectedFraction(initial.fraction);
+    setCustomValue(initial.customValue);
+    setUnitsCount(initial.units);
     setIsEditing(true);
   };
 
