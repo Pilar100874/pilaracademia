@@ -101,6 +101,19 @@ export function useExerciseEntries() {
     return data as ExerciseEntry;
   };
 
+  const updateExerciseEntry = async (id: string, updates: Partial<ExerciseEntry>) => {
+    const { data, error } = await supabase
+      .from('exercise_entries')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    setEntries((prev) => prev.map((e) => (e.id === id ? (data as ExerciseEntry) : e)));
+    return data as ExerciseEntry;
+  };
+
   const deleteExerciseEntry = async (id: string) => {
     const { error } = await supabase
       .from('exercise_entries')
@@ -119,6 +132,7 @@ export function useExerciseEntries() {
     entries,
     isLoading,
     addExerciseEntry,
+    updateExerciseEntry,
     deleteExerciseEntry,
     getTodayTotalBurned,
     refetch: fetchEntries,
