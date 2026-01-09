@@ -209,9 +209,7 @@ export function ProductsPage() {
   };
 
   const getProductImageUrl = (product: CustomProduct) => {
-    if (product.image_url) return product.image_url;
-    if (product.is_liquid) return WATER_IMAGE_URL;
-    return null;
+    return product.image_url || null;
   };
 
   const handleSaveAdd = async () => {
@@ -328,8 +326,10 @@ export function ProductsPage() {
         >
           {imageUrl ? (
             <img src={imageUrl} alt={product.name} className="h-full w-full object-cover" />
+          ) : product.is_liquid ? (
+            <Droplets className="h-5 w-5 text-sky-500" />
           ) : (
-            <Barcode className="h-5 w-5 text-muted-foreground" />
+            <UtensilsCrossed className="h-5 w-5 text-primary" />
           )}
         </button>
         <div className="flex-1 min-w-0">
@@ -388,7 +388,7 @@ export function ProductsPage() {
   };
 
   const ProductForm = ({ isEdit }: { isEdit: boolean }) => {
-    const displayImageUrl = imagePreview || formImageUrl || (formIsLiquid ? WATER_IMAGE_URL : null);
+    const displayImageUrl = imagePreview || formImageUrl;
     
     return (
       <div className="space-y-4 pt-2">
@@ -403,8 +403,10 @@ export function ProductsPage() {
               <Loader2 className="h-6 w-6 text-primary animate-spin" />
             ) : displayImageUrl ? (
               <img src={displayImageUrl} alt="Preview" className="h-full w-full object-cover" />
+            ) : formIsLiquid ? (
+              <Droplets className="h-6 w-6 text-sky-500" />
             ) : (
-              <Image className="h-6 w-6 text-muted-foreground" />
+              <UtensilsCrossed className="h-6 w-6 text-primary" />
             )}
           </button>
           <div className="flex-1">
