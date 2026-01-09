@@ -62,7 +62,26 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
   const startScanner = async () => {
     setScanError(null);
     
+    // Check if container exists
+    const container = document.getElementById(scannerContainerId);
+    if (!container) {
+      console.error('Scanner container not found');
+      setScanError('Erro ao inicializar o scanner. Tente o modo manual.');
+      setScanMode('manual');
+      return;
+    }
+    
     try {
+      // Check for camera permission first
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasCamera = devices.some(device => device.kind === 'videoinput');
+      
+      if (!hasCamera) {
+        setScanError('Nenhuma câmera encontrada. Use o modo manual.');
+        setScanMode('manual');
+        return;
+      }
+
       const html5QrCode = new Html5Qrcode(scannerContainerId, {
         formatsToSupport: [
           Html5QrcodeSupportedFormats.EAN_13,
@@ -77,13 +96,16 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
       
       scannerRef.current = html5QrCode;
       
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 120 },
+        aspectRatio: 1.777778,
+        disableFlip: false,
+      };
+      
       await html5QrCode.start(
         { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 150 },
-          aspectRatio: 1.5,
-        },
+        config,
         (decodedText) => {
           // On successful scan
           setBarcode(decodedText);
@@ -96,9 +118,20 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
       );
       
       setIsScanning(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error starting scanner:', err);
-      setScanError('Não foi possível acessar a câmera. Verifique as permissões ou use o modo manual.');
+      
+      let errorMessage = 'Não foi possível acessar a câmera.';
+      
+      if (err.name === 'NotAllowedError' || err.message?.includes('Permission')) {
+        errorMessage = 'Permissão de câmera negada. Permita o acesso à câmera nas configurações do navegador.';
+      } else if (err.name === 'NotFoundError' || err.message?.includes('not found')) {
+        errorMessage = 'Nenhuma câmera encontrada no dispositivo.';
+      } else if (err.message?.includes('insecure')) {
+        errorMessage = 'A câmera requer conexão segura (HTTPS).';
+      }
+      
+      setScanError(errorMessage);
       setScanMode('manual');
     }
   };
@@ -107,7 +140,10 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
   const stopScanner = async () => {
     if (scannerRef.current) {
       try {
-        await scannerRef.current.stop();
+        const state = scannerRef.current.getState();
+        if (state === 2) { // SCANNING state
+          await scannerRef.current.stop();
+        }
         scannerRef.current = null;
       } catch (err) {
         console.error('Error stopping scanner:', err);
@@ -116,24 +152,39 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
     setIsScanning(false);
   };
 
-  // Cleanup on unmount or mode change
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopScanner();
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current = null;
+      }
     };
   }, []);
 
   // Start scanner when in camera mode and no product
   useEffect(() => {
+    let mounted = true;
+    
     if (scanMode === 'camera' && !product && !isLoading) {
-      // Small delay to ensure DOM is ready
+      // Longer delay to ensure DOM is ready
       const timer = setTimeout(() => {
-        startScanner();
-      }, 100);
-      return () => clearTimeout(timer);
+        if (mounted) {
+          startScanner();
+        }
+      }, 300);
+      return () => {
+        mounted = false;
+        clearTimeout(timer);
+        stopScanner();
+      };
     } else {
       stopScanner();
     }
+    
+    return () => {
+      mounted = false;
+    };
   }, [scanMode, product, isLoading]);
 
   useEffect(() => {
