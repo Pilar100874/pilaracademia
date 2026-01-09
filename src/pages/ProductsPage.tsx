@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Package, Search, Pencil, Trash2, ChevronLeft, Barcode, Plus, Droplets, Apple } from 'lucide-react';
+import { Package, Search, Pencil, Trash2, ChevronLeft, Barcode, Plus, Droplets, Apple, Image, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,6 +8,10 @@ import { Label } from '@/components/ui/label';
 import { BottomNav } from '@/components/BottomNav';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { useNavigate } from 'react-router-dom';
+import { ImageZoomDialog } from '@/components/ImageZoomDialog';
+import { WATER_IMAGE_URL } from '@/components/DefaultLiquidImage';
+
+type FilterType = 'all' | 'solid' | 'liquid';
 
 export function ProductsPage() {
   const navigate = useNavigate();
@@ -15,6 +19,8 @@ export function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingProduct, setEditingProduct] = useState<CustomProduct | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [filterType, setFilterType] = useState<FilterType>('all');
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
   
   // Form state (shared for add/edit)
   const [formName, setFormName] = useState('');
@@ -31,14 +37,21 @@ export function ProductsPage() {
   const [formRefQuantity, setFormRefQuantity] = useState('100');
   const [formRefUnit, setFormRefUnit] = useState('g');
   const [formIsLiquid, setFormIsLiquid] = useState(false);
+  const [formImageUrl, setFormImageUrl] = useState('');
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.barcode.includes(searchTerm) ||
-    (p.brand && p.brand.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Filter products by search and type
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.barcode.includes(searchTerm) ||
+      (p.brand && p.brand.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    if (filterType === 'all') return matchesSearch;
+    if (filterType === 'liquid') return matchesSearch && p.is_liquid;
+    if (filterType === 'solid') return matchesSearch && !p.is_liquid;
+    return matchesSearch;
+  });
 
-  // Group products by type
+  // Group products by type (only when filter is 'all')
   const solidProducts = filteredProducts.filter(p => !p.is_liquid);
   const liquidProducts = filteredProducts.filter(p => p.is_liquid);
 
@@ -57,6 +70,7 @@ export function ProductsPage() {
     setFormRefQuantity('100');
     setFormRefUnit('g');
     setFormIsLiquid(false);
+    setFormImageUrl('');
   };
 
   const handleOpenAdd = () => {
@@ -80,6 +94,13 @@ export function ProductsPage() {
     setFormRefQuantity(product.reference_quantity.toString());
     setFormRefUnit(product.reference_unit);
     setFormIsLiquid(product.is_liquid || false);
+    setFormImageUrl(product.image_url || '');
+  };
+
+  const getProductImageUrl = (product: CustomProduct) => {
+    if (product.image_url) return product.image_url;
+    if (product.is_liquid) return WATER_IMAGE_URL;
+    return null;
   };
 
   const handleSaveAdd = async () => {
@@ -93,7 +114,7 @@ export function ProductsPage() {
         barcode,
         name: formName.trim(),
         brand: formBrand.trim() || null,
-        image_url: null,
+        image_url: formImageUrl.trim() || null,
         calories: Number(formCalories) || 0,
         protein: Number(formProtein) || 0,
         carbs: Number(formCarbs) || 0,
@@ -119,6 +140,7 @@ export function ProductsPage() {
       await updateProduct(editingProduct.id, {
         name: formName,
         brand: formBrand || null,
+        image_url: formImageUrl.trim() || null,
         calories: Number(formCalories) || 0,
         protein: Number(formProtein) || 0,
         carbs: Number(formCarbs) || 0,
@@ -146,161 +168,205 @@ export function ProductsPage() {
     }
   };
 
-  const ProductCard = ({ product }: { product: CustomProduct }) => (
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card">
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary overflow-hidden flex-shrink-0">
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" />
-        ) : product.is_liquid ? (
-          <Droplets className="h-5 w-5 text-sky-500" />
-        ) : (
-          <Barcode className="h-5 w-5 text-muted-foreground" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm truncate">{product.name}</p>
-        {product.brand && (
-          <p className="text-xs text-muted-foreground truncate">{product.brand}</p>
-        )}
-        <div className="flex flex-wrap gap-1 mt-1">
-          <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-            {product.calories} kcal
-          </span>
-          <span className="text-xs px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
-            /{product.reference_quantity}{product.reference_unit}
-          </span>
+  const handleImageClick = (product: CustomProduct) => {
+    const imageUrl = getProductImageUrl(product);
+    if (imageUrl) {
+      setZoomImage(imageUrl);
+    }
+  };
+
+  const ProductCard = ({ product }: { product: CustomProduct }) => {
+    const imageUrl = getProductImageUrl(product);
+    
+    return (
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card">
+        <button 
+          onClick={() => handleImageClick(product)}
+          className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary overflow-hidden flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+        >
+          {imageUrl ? (
+            <img src={imageUrl} alt={product.name} className="h-full w-full object-cover" />
+          ) : (
+            <Barcode className="h-5 w-5 text-muted-foreground" />
+          )}
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm truncate">{product.name}</p>
+          {product.brand && (
+            <p className="text-xs text-muted-foreground truncate">{product.brand}</p>
+          )}
+          <div className="flex flex-wrap gap-1 mt-1">
+            <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+              {product.calories} kcal
+            </span>
+            <span className="text-xs px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+              /{product.reference_quantity}{product.reference_unit}
+            </span>
+            {product.is_liquid && (
+              <span className="text-xs px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-500">
+                <Droplets className="h-3 w-3 inline" />
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-1 flex-shrink-0">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0"
+            onClick={() => handleEdit(product)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+            onClick={() => handleDelete(product.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       </div>
-      <div className="flex gap-1 flex-shrink-0">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 w-8 p-0"
-          onClick={() => handleEdit(product)}
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-          onClick={() => handleDelete(product.id)}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
+    );
+  };
 
-  const ProductForm = ({ isEdit }: { isEdit: boolean }) => (
-    <div className="space-y-4 pt-2">
-      {isEdit && editingProduct && (
-        <div className="p-2 rounded-lg bg-secondary/50 text-center">
-          <p className="text-xs text-muted-foreground">Código de barras</p>
-          <p className="font-mono text-sm">{editingProduct.barcode}</p>
+  const ProductForm = ({ isEdit }: { isEdit: boolean }) => {
+    const currentImageUrl = formImageUrl || (formIsLiquid ? WATER_IMAGE_URL : null);
+    
+    return (
+      <div className="space-y-4 pt-2">
+        {/* Image preview and edit */}
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => currentImageUrl && setZoomImage(currentImageUrl)}
+            className="flex h-16 w-16 items-center justify-center rounded-xl bg-secondary overflow-hidden flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+          >
+            {currentImageUrl ? (
+              <img src={currentImageUrl} alt="Preview" className="h-full w-full object-cover" />
+            ) : (
+              <Image className="h-6 w-6 text-muted-foreground" />
+            )}
+          </button>
+          <div className="flex-1">
+            <label className="text-sm text-muted-foreground mb-1 block">URL da imagem</label>
+            <Input 
+              value={formImageUrl} 
+              onChange={(e) => setFormImageUrl(e.target.value)} 
+              placeholder="https://... ou deixe vazio"
+            />
+          </div>
         </div>
-      )}
 
-      {!isEdit && (
+        {isEdit && editingProduct && (
+          <div className="p-2 rounded-lg bg-secondary/50 text-center">
+            <p className="text-xs text-muted-foreground">Código de barras</p>
+            <p className="font-mono text-sm">{editingProduct.barcode}</p>
+          </div>
+        )}
+
+        {!isEdit && (
+          <div>
+            <label className="text-sm text-muted-foreground mb-1 block">Código de barras (opcional)</label>
+            <Input 
+              value={formBarcode} 
+              onChange={(e) => setFormBarcode(e.target.value)} 
+              placeholder="Deixe em branco para gerar automaticamente"
+            />
+          </div>
+        )}
+
         <div>
-          <label className="text-sm text-muted-foreground mb-1 block">Código de barras (opcional)</label>
-          <Input 
-            value={formBarcode} 
-            onChange={(e) => setFormBarcode(e.target.value)} 
-            placeholder="Deixe em branco para gerar automaticamente"
+          <label className="text-sm text-muted-foreground mb-1 block">Nome *</label>
+          <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Nome do produto" />
+        </div>
+
+        <div>
+          <label className="text-sm text-muted-foreground mb-1 block">Marca</label>
+          <Input value={formBrand} onChange={(e) => setFormBrand(e.target.value)} placeholder="Opcional" />
+        </div>
+
+        <div className="flex items-center justify-between p-3 rounded-lg bg-sky-500/10">
+          <div className="flex items-center gap-2">
+            <Droplets className="h-4 w-4 text-sky-500" />
+            <Label htmlFor="is-liquid" className="text-sm">Produto líquido</Label>
+          </div>
+          <Switch 
+            id="is-liquid" 
+            checked={formIsLiquid} 
+            onCheckedChange={(checked) => {
+              setFormIsLiquid(checked);
+              if (checked) setFormRefUnit('ml');
+              else setFormRefUnit('g');
+            }} 
           />
         </div>
-      )}
 
-      <div>
-        <label className="text-sm text-muted-foreground mb-1 block">Nome *</label>
-        <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Nome do produto" />
-      </div>
-
-      <div>
-        <label className="text-sm text-muted-foreground mb-1 block">Marca</label>
-        <Input value={formBrand} onChange={(e) => setFormBrand(e.target.value)} placeholder="Opcional" />
-      </div>
-
-      <div className="flex items-center justify-between p-3 rounded-lg bg-sky-500/10">
-        <div className="flex items-center gap-2">
-          <Droplets className="h-4 w-4 text-sky-500" />
-          <Label htmlFor="is-liquid" className="text-sm">Produto líquido</Label>
-        </div>
-        <Switch 
-          id="is-liquid" 
-          checked={formIsLiquid} 
-          onCheckedChange={(checked) => {
-            setFormIsLiquid(checked);
-            if (checked) setFormRefUnit('ml');
-            else setFormRefUnit('g');
-          }} 
-        />
-      </div>
-
-      <div className="border-t pt-4">
-        <p className="text-sm font-medium mb-1">Informações Nutricionais</p>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs text-muted-foreground">Por</span>
-          <Input 
-            type="number" 
-            value={formRefQuantity} 
-            onChange={(e) => setFormRefQuantity(e.target.value)} 
-            className="w-20 h-8 text-sm"
-          />
-          <span className="text-xs text-muted-foreground">{formIsLiquid ? 'ml' : 'g'}</span>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Calorias</label>
-            <Input type="number" value={formCalories} onChange={(e) => setFormCalories(e.target.value)} />
+        <div className="border-t pt-4">
+          <p className="text-sm font-medium mb-1">Informações Nutricionais</p>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs text-muted-foreground">Por</span>
+            <Input 
+              type="number" 
+              value={formRefQuantity} 
+              onChange={(e) => setFormRefQuantity(e.target.value)} 
+              className="w-20 h-8 text-sm"
+            />
+            <span className="text-xs text-muted-foreground">{formIsLiquid ? 'ml' : 'g'}</span>
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Proteína (g)</label>
-            <Input type="number" value={formProtein} onChange={(e) => setFormProtein(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Carboidratos (g)</label>
-            <Input type="number" value={formCarbs} onChange={(e) => setFormCarbs(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Gorduras (g)</label>
-            <Input type="number" value={formFat} onChange={(e) => setFormFat(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Fibras (g)</label>
-            <Input type="number" value={formFiber} onChange={(e) => setFormFiber(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Sódio (mg)</label>
-            <Input type="number" value={formSodium} onChange={(e) => setFormSodium(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">G. Saturada (g)</label>
-            <Input type="number" value={formSaturatedFat} onChange={(e) => setFormSaturatedFat(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">G. Trans (g)</label>
-            <Input type="number" value={formTransFat} onChange={(e) => setFormTransFat(e.target.value)} />
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Calorias</label>
+              <Input type="number" value={formCalories} onChange={(e) => setFormCalories(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Proteína (g)</label>
+              <Input type="number" value={formProtein} onChange={(e) => setFormProtein(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Carboidratos (g)</label>
+              <Input type="number" value={formCarbs} onChange={(e) => setFormCarbs(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Gorduras (g)</label>
+              <Input type="number" value={formFat} onChange={(e) => setFormFat(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Fibras (g)</label>
+              <Input type="number" value={formFiber} onChange={(e) => setFormFiber(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Sódio (mg)</label>
+              <Input type="number" value={formSodium} onChange={(e) => setFormSodium(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">G. Saturada (g)</label>
+              <Input type="number" value={formSaturatedFat} onChange={(e) => setFormSaturatedFat(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">G. Trans (g)</label>
+              <Input type="number" value={formTransFat} onChange={(e) => setFormTransFat(e.target.value)} />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex gap-2 pt-2">
-        <Button variant="outline" className="flex-1" onClick={() => {
-          if (isEdit) setEditingProduct(null);
-          else setShowAddDialog(false);
-          resetForm();
-        }}>
-          Cancelar
-        </Button>
-        <Button className="flex-1" onClick={isEdit ? handleSaveEdit : handleSaveAdd}>
-          Salvar
-        </Button>
+        <div className="flex gap-2 pt-2">
+          <Button variant="outline" className="flex-1" onClick={() => {
+            if (isEdit) setEditingProduct(null);
+            else setShowAddDialog(false);
+            resetForm();
+          }}>
+            Cancelar
+          </Button>
+          <Button className="flex-1" onClick={isEdit ? handleSaveEdit : handleSaveAdd}>
+            Salvar
+          </Button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen gradient-hero pb-20">
@@ -337,6 +403,37 @@ export function ProductsPage() {
           />
         </div>
 
+        {/* Filtros */}
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant={filterType === 'all' ? 'default' : 'outline'}
+            onClick={() => setFilterType('all')}
+            className="flex-1"
+          >
+            <Filter className="h-3 w-3 mr-1" />
+            Todos
+          </Button>
+          <Button
+            size="sm"
+            variant={filterType === 'solid' ? 'default' : 'outline'}
+            onClick={() => setFilterType('solid')}
+            className="flex-1"
+          >
+            <Apple className="h-3 w-3 mr-1" />
+            Alimentos
+          </Button>
+          <Button
+            size="sm"
+            variant={filterType === 'liquid' ? 'default' : 'outline'}
+            onClick={() => setFilterType('liquid')}
+            className="flex-1"
+          >
+            <Droplets className="h-3 w-3 mr-1" />
+            Bebidas
+          </Button>
+        </div>
+
         {/* Lista de produtos */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -352,7 +449,7 @@ export function ProductsPage() {
               Clique em "Novo" para cadastrar um produto
             </p>
           </div>
-        ) : (
+        ) : filterType === 'all' ? (
           <div className="space-y-6">
             {/* Alimentos */}
             {solidProducts.length > 0 && (
@@ -384,6 +481,12 @@ export function ProductsPage() {
               </div>
             )}
           </div>
+        ) : (
+          <div className="space-y-2">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
         )}
       </div>
 
@@ -412,6 +515,13 @@ export function ProductsPage() {
           <ProductForm isEdit={true} />
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de zoom */}
+      <ImageZoomDialog 
+        imageUrl={zoomImage} 
+        open={!!zoomImage} 
+        onOpenChange={(open) => !open && setZoomImage(null)} 
+      />
 
       <BottomNav />
     </div>

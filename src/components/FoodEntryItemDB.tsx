@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Camera, Barcode, Edit3, Trash2, Pencil, X, Check, Clock, Minus, Plus, Droplets } from 'lucide-react';
+import { ImageZoomDialog } from '@/components/ImageZoomDialog';
+import { WATER_IMAGE_URL } from '@/components/DefaultLiquidImage';
 
 interface FoodEntryItemDBProps {
   entry: FoodEntryDB;
@@ -37,9 +39,17 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
   );
   const [isLiquid, setIsLiquid] = useState(entry.is_liquid || false);
   const [liquidMl, setLiquidMl] = useState(entry.liquid_ml || 0);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
   
   // Porção como multiplicador (1 = quantidade original)
   const [portionMultiplier, setPortionMultiplier] = useState(1);
+  
+  // Get image URL for entry
+  const getEntryImageUrl = () => {
+    if (entry.image_url) return entry.image_url;
+    if (entry.is_liquid) return WATER_IMAGE_URL;
+    return null;
+  };
   
   // Valores originais (base para cálculos)
   const originalValues = useMemo(() => ({
@@ -130,18 +140,24 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
   return (
     <>
       <div className="group flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card transition-all duration-200 hover:shadow-soft animate-scale-in overflow-hidden">
-        {/* Image or Icon */}
-        <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-secondary">
-          {entry.image_url ? (
+        {/* Image or Icon - clickable for zoom */}
+        <button 
+          onClick={() => {
+            const imageUrl = getEntryImageUrl();
+            if (imageUrl) setZoomImage(imageUrl);
+          }}
+          className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-secondary cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+        >
+          {getEntryImageUrl() ? (
             <img
-              src={entry.image_url}
+              src={getEntryImageUrl()!}
               alt={entry.name}
               className="h-full w-full object-cover"
             />
           ) : (
             <Icon className="h-5 w-5 text-muted-foreground" />
           )}
-        </div>
+        </button>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
@@ -394,6 +410,14 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Image Zoom Dialog */}
+      <ImageZoomDialog 
+        imageUrl={zoomImage} 
+        alt={entry.name}
+        open={!!zoomImage} 
+        onOpenChange={(open) => !open && setZoomImage(null)} 
+      />
     </>
   );
 }
