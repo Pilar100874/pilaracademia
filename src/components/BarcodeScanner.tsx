@@ -112,76 +112,29 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
       const result = await fetchProductByBarcode(barcodeValue.trim());
       
       if (result) {
-        // Found in OpenFoodFacts - save and go to consumption
+        // Found in OpenFoodFacts - show product form for user to review/edit
         const isLiquid = isLiquidProduct(result);
         const volumeMl = isLiquid ? getLiquidVolumeMl(result) : null;
         
-        // Save to local DB first
-        try {
-          await saveProduct({
-            barcode: barcodeValue.trim(),
-            name: result.name,
-            brand: result.brand || null,
-            image_url: result.imageUrl || null,
-            calories: result.nutrition.calories,
-            protein: result.nutrition.protein,
-            carbs: result.nutrition.carbs,
-            fat: result.nutrition.fat,
-            saturated_fat: result.nutrition.saturatedFat || 0,
-            trans_fat: result.nutrition.transFat || 0,
-            fiber: result.nutrition.fiber || 0,
-            sodium: result.nutrition.sodium || 0,
-            reference_quantity: 100,
-            reference_unit: isLiquid ? 'ml' : 'g',
-            is_liquid: isLiquid,
-            package_total_weight: null,
-            package_total_units: null,
-            package_volume_ml: volumeMl || null,
-          });
-          
-          // Wait a bit for product to be saved, then find it
-          setTimeout(() => {
-            const savedProduct = products.find(p => p.barcode === barcodeValue.trim());
-            if (savedProduct) {
-              setFoundProduct(savedProduct);
-              setShowConsumptionDialog(true);
-            } else {
-              // Fallback - create a temporary product object
-              const tempProduct: CustomProduct = {
-                id: 'temp',
-                barcode: barcodeValue.trim(),
-                name: result.name,
-                brand: result.brand || null,
-                image_url: result.imageUrl || null,
-                calories: result.nutrition.calories,
-                protein: result.nutrition.protein,
-                carbs: result.nutrition.carbs,
-                fat: result.nutrition.fat,
-                saturated_fat: result.nutrition.saturatedFat || 0,
-                trans_fat: result.nutrition.transFat || 0,
-                fiber: result.nutrition.fiber || 0,
-                sodium: result.nutrition.sodium || 0,
-                reference_quantity: 100,
-                reference_unit: isLiquid ? 'ml' : 'g',
-                is_liquid: isLiquid,
-                package_total_weight: null,
-                package_total_units: null,
-                package_volume_ml: volumeMl || null,
-                user_id: '',
-                created_at: '',
-                updated_at: '',
-              };
-              setFoundProduct(tempProduct);
-              setShowConsumptionDialog(true);
-            }
-            setIsLoading(false);
-          }, 500);
-          
-          toast.success('Produto encontrado!', { description: result.name });
-          return;
-        } catch (err) {
-          console.error('Error saving product:', err);
-        }
+        toast.info('Produto encontrado online', { description: 'Revise as informações antes de salvar' });
+        
+        setPendingProductData({
+          name: result.name,
+          brand: result.brand || undefined,
+          imageUrl: result.imageUrl || undefined,
+          calories: result.nutrition.calories,
+          protein: result.nutrition.protein,
+          carbs: result.nutrition.carbs,
+          fat: result.nutrition.fat,
+          fiber: result.nutrition.fiber,
+          sodium: result.nutrition.sodium,
+          saturatedFat: result.nutrition.saturatedFat,
+          transFat: result.nutrition.transFat,
+          isLiquid: isLiquid,
+        });
+        setShowProductForm(true);
+        setIsLoading(false);
+        return;
       }
       
       // Product not found anywhere - show registration form
