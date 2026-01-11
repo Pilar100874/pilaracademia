@@ -7,7 +7,11 @@ import { useWeightHistory } from '@/hooks/useWeightHistory';
 import { useProfile } from '@/hooks/useProfile';
 import { WeightProjectionDialog } from './WeightProjectionDialog';
 
-export function WeightTracker() {
+interface WeightTrackerProps {
+  dailyCalorieDeficit?: number;
+}
+
+export function WeightTracker({ dailyCalorieDeficit = 0 }: WeightTrackerProps) {
   const { entries, addWeightEntry } = useWeightHistory();
   const { profile, updateProfile } = useProfile();
   const [showInput, setShowInput] = useState(false);
@@ -117,6 +121,7 @@ export function WeightTracker() {
         entries={entries}
         currentWeight={currentWeight}
         goalWeight={profile?.weight_kg && profile.goal === 'lose' ? profile.weight_kg - 5 : undefined}
+        dailyCalorieDeficit={dailyCalorieDeficit}
       />
     </>
   );

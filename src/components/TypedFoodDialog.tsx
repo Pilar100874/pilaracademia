@@ -165,26 +165,26 @@ export function TypedFoodDialog({
             </label>
             
             {items.map((item, index) => (
-              <div key={item.id} className="flex gap-2 animate-fade-in">
-                <div className="flex-1 space-y-2">
+              <div key={item.id} className="flex gap-2 items-center animate-fade-in">
+                <div className="flex-1 flex gap-2">
                   <Input
                     value={item.food}
                     onChange={(e) => updateItem(item.id, 'food', e.target.value)}
-                    placeholder="Ex: Carne fraldinha"
-                    className="h-10"
+                    placeholder="Ex: Fraldinha"
+                    className="h-10 flex-1"
                   />
                   <Input
                     value={item.quantity}
                     onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
-                    placeholder="Ex: 150g, 2 colheres, 1 xícara"
-                    className="h-10"
+                    placeholder="150g ou 2 colheres"
+                    className="h-10 w-32"
                   />
                 </div>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-10 w-10 shrink-0 self-start text-muted-foreground hover:text-destructive"
+                  className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive"
                   onClick={() => removeItem(item.id)}
                   disabled={items.length === 1}
                 >
@@ -204,6 +204,11 @@ export function TypedFoodDialog({
               Adicionar mais um alimento
             </Button>
           </div>
+
+          {/* Help text */}
+          <p className="text-[10px] text-muted-foreground">
+            Exemplos de quantidade: 150g, 2 colheres de sopa, 1 xícara, 1 filé médio
+          </p>
         </div>
 
         {/* Actions */}
@@ -224,7 +229,7 @@ export function TypedFoodDialog({
             {isAnalyzing ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Analisando...
+                Calculando...
               </>
             ) : (
               'Salvar'

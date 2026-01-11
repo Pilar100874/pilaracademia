@@ -72,6 +72,7 @@ export function Dashboard() {
   const netCalories = consumed.calories - caloriesBurned;
   const calorieProgress = (netCalories / goals.calories) * 100;
   const remainingCalories = Math.max(0, goals.calories - netCalories);
+  const dailyCalorieDeficit = goals.calories - netCalories; // positive = deficit, negative = surplus
   const dailyWeightChange = ((netCalories - goals.calories) / 7700 * 1000);
   const isDeficit = dailyWeightChange < 0;
 
@@ -357,7 +358,7 @@ export function Dashboard() {
         })()}
 
         {/* Peso */}
-        <WeightTracker />
+        <WeightTracker dailyCalorieDeficit={dailyCalorieDeficit} />
 
         {/* Nutrientes */}
         <NutritionProgressGrid consumed={consumed} goals={goals} />
