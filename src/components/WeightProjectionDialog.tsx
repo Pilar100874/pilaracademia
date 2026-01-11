@@ -192,22 +192,22 @@ export function WeightProjectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-[95vw] sm:max-w-sm max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader className="pr-8">
+          <DialogTitle className="flex items-center gap-2 text-base">
             <Calendar className="h-5 w-5 text-primary" />
             Projeção de Peso
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto -mx-1 px-1">
           <Tabs defaultValue={hasWeightData ? "weight" : "calorie"} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="weight" className="text-xs gap-1">
+            <TabsList className="grid w-full grid-cols-2 mb-4 h-11">
+              <TabsTrigger value="weight" className="text-xs gap-1 h-9">
                 <Scale className="h-3 w-3" />
                 Peso Registrado
               </TabsTrigger>
-              <TabsTrigger value="calorie" className="text-xs gap-1">
+              <TabsTrigger value="calorie" className="text-xs gap-1 h-9">
                 <Flame className="h-3 w-3" />
                 Calorias
               </TabsTrigger>

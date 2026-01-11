@@ -102,13 +102,14 @@ export function WeightTracker({ dailyCalorieDeficit = 0 }: WeightTrackerProps) {
           <div className="flex gap-2 mt-3 pt-3 border-t border-border/50 animate-fade-in">
             <Input
               type="number"
+              inputMode="decimal"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="Novo peso (kg)"
-              className="flex-1 h-10"
+              className="flex-1 h-12 text-base"
               step={0.1}
             />
-            <Button onClick={handleSubmit} disabled={isSubmitting} className="h-10">
+            <Button onClick={handleSubmit} disabled={isSubmitting} className="h-12 px-6">
               {isSubmitting ? '...' : 'Salvar'}
             </Button>
           </div>

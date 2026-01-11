@@ -136,15 +136,15 @@ export function TypedFoodDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {isEditing ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+      <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader className="pr-8">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            {isEditing ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             {isEditing ? 'Editar Alimentos' : 'Digitar Alimentos'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+        <div className="flex-1 overflow-y-auto space-y-3 -mx-1 px-1">
           {/* Custom name input */}
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">
@@ -153,8 +153,8 @@ export function TypedFoodDialog({
             <Input
               value={customName}
               onChange={(e) => setCustomName(e.target.value)}
-              placeholder="Ex: Almoço, Lanche da tarde..."
-              className="h-10"
+              placeholder="Ex: Almoço, Lanche..."
+              className="h-11 text-base"
             />
           </div>
 
@@ -164,32 +164,34 @@ export function TypedFoodDialog({
               Alimentos e quantidades
             </label>
             
-            {items.map((item, index) => (
-              <div key={item.id} className="flex gap-2 items-center animate-fade-in">
-                <div className="flex-1 flex gap-2">
-                  <Input
-                    value={item.food}
-                    onChange={(e) => updateItem(item.id, 'food', e.target.value)}
-                    placeholder="Ex: Fraldinha"
-                    className="h-10 flex-1"
-                  />
-                  <Input
-                    value={item.quantity}
-                    onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
-                    placeholder="150g ou 2 colheres"
-                    className="h-10 w-32"
-                  />
+            {items.map((item) => (
+              <div key={item.id} className="space-y-2 p-3 rounded-xl bg-muted/30 animate-fade-in">
+                <div className="flex gap-2 items-start">
+                  <div className="flex-1 space-y-2">
+                    <Input
+                      value={item.food}
+                      onChange={(e) => updateItem(item.id, 'food', e.target.value)}
+                      placeholder="Alimento (ex: Fraldinha)"
+                      className="h-11 text-base"
+                    />
+                    <Input
+                      value={item.quantity}
+                      onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
+                      placeholder="Quantidade (ex: 150g)"
+                      className="h-11 text-base"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeItem(item.id)}
+                    disabled={items.length === 1}
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive"
-                  onClick={() => removeItem(item.id)}
-                  disabled={items.length === 1}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
               </div>
             ))}
 
@@ -197,32 +199,32 @@ export function TypedFoodDialog({
               type="button"
               variant="outline"
               size="sm"
-              className="w-full"
+              className="w-full h-11"
               onClick={addItem}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Adicionar mais um alimento
+              Adicionar alimento
             </Button>
           </div>
 
           {/* Help text */}
-          <p className="text-[10px] text-muted-foreground">
-            Exemplos de quantidade: 150g, 2 colheres de sopa, 1 xícara, 1 filé médio
+          <p className="text-[11px] text-muted-foreground text-center">
+            Ex: 150g, 2 colheres, 1 xícara, 1 filé
           </p>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 pt-4 border-t">
+        <div className="flex gap-2 pt-3 border-t">
           <Button
             variant="outline"
-            className="flex-1"
+            className="flex-1 h-12 text-base"
             onClick={handleClose}
             disabled={isAnalyzing}
           >
             Cancelar
           </Button>
           <Button
-            className="flex-1"
+            className="flex-1 h-12 text-base"
             onClick={handleAnalyze}
             disabled={isAnalyzing}
           >

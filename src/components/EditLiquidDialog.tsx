@@ -68,9 +68,9 @@ export function EditLiquidDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-[95vw] sm:max-w-sm">
+        <DialogHeader className="pr-8">
+          <DialogTitle className="flex items-center gap-2 text-base">
             <Droplets className="h-5 w-5 text-sky-500" />
             Editar Líquido
           </DialogTitle>
@@ -118,6 +118,7 @@ export function EditLiquidDialog({
             <div className="flex items-center gap-2">
               <Input
                 type="number"
+                inputMode="numeric"
                 value={customMl}
                 onChange={(e) => setCustomMl(e.target.value)}
                 placeholder="Ex: 200"
@@ -129,16 +130,16 @@ export function EditLiquidDialog({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-2">
             <Button 
               variant="outline" 
-              className="flex-1" 
+              className="flex-1 h-12" 
               onClick={() => onOpenChange(false)}
             >
               Cancelar
             </Button>
             <Button 
-              className="flex-1" 
+              className="flex-1 h-12" 
               onClick={handleSave}
               disabled={isSaving || finalAmount <= 0}
             >
