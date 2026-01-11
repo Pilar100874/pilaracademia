@@ -1,8 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { TrendingDown, TrendingUp, Calendar, Target } from 'lucide-react';
+import { TrendingDown, TrendingUp, Calendar, Target, Scale, Flame, Info } from 'lucide-react';
 import { WeightEntry } from '@/hooks/useWeightHistory';
 import { differenceInDays, format, addDays, addWeeks, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface WeightProjectionDialogProps {
   open: boolean;
@@ -10,6 +11,7 @@ interface WeightProjectionDialogProps {
   entries: WeightEntry[];
   currentWeight: number;
   goalWeight?: number;
+  dailyCalorieDeficit?: number; // déficit calórico diário em kcal
 }
 
 export function WeightProjectionDialog({
@@ -18,9 +20,10 @@ export function WeightProjectionDialog({
   entries,
   currentWeight,
   goalWeight,
+  dailyCalorieDeficit = 0,
 }: WeightProjectionDialogProps) {
-  // Calculate weight loss rate based on history
-  const calculateProjections = () => {
+  // Calculate weight loss rate based on recorded weight history
+  const calculateWeightBasedProjections = () => {
     if (entries.length < 2) {
       return null;
     }
@@ -47,31 +50,11 @@ export function WeightProjectionDialog({
       weeklyChange,
       monthlyChange,
       projections: [
-        {
-          label: '1 Semana',
-          date: addWeeks(today, 1),
-          weight: currentWeight + weeklyChange,
-        },
-        {
-          label: '2 Semanas',
-          date: addWeeks(today, 2),
-          weight: currentWeight + weeklyChange * 2,
-        },
-        {
-          label: '1 Mês',
-          date: addMonths(today, 1),
-          weight: currentWeight + monthlyChange,
-        },
-        {
-          label: '2 Meses',
-          date: addMonths(today, 2),
-          weight: currentWeight + monthlyChange * 2,
-        },
-        {
-          label: '3 Meses',
-          date: addMonths(today, 3),
-          weight: currentWeight + monthlyChange * 3,
-        },
+        { label: '1 Semana', date: addWeeks(today, 1), weight: currentWeight + weeklyChange },
+        { label: '2 Semanas', date: addWeeks(today, 2), weight: currentWeight + weeklyChange * 2 },
+        { label: '1 Mês', date: addMonths(today, 1), weight: currentWeight + monthlyChange },
+        { label: '2 Meses', date: addMonths(today, 2), weight: currentWeight + monthlyChange * 2 },
+        { label: '3 Meses', date: addMonths(today, 3), weight: currentWeight + monthlyChange * 3 },
       ],
       daysToGoal: goalWeight && dailyChange < 0 
         ? Math.ceil((goalWeight - currentWeight) / dailyChange)
@@ -79,12 +62,137 @@ export function WeightProjectionDialog({
     };
   };
 
-  const projectionData = calculateProjections();
-  const isLosingWeight = projectionData && projectionData.weeklyChange < 0;
+  // Calculate projections based on calorie deficit (7700 kcal = 1kg)
+  const calculateCalorieBasedProjections = () => {
+    // 7700 kcal deficit = 1 kg weight loss
+    const dailyWeightChange = dailyCalorieDeficit / 7700; // kg per day (negative = loss)
+    const weeklyChange = dailyWeightChange * 7;
+    const monthlyChange = dailyWeightChange * 30;
+
+    const today = new Date();
+    
+    return {
+      dailyChange: dailyWeightChange,
+      weeklyChange,
+      monthlyChange,
+      projections: [
+        { label: '1 Semana', date: addWeeks(today, 1), weight: currentWeight + weeklyChange },
+        { label: '2 Semanas', date: addWeeks(today, 2), weight: currentWeight + weeklyChange * 2 },
+        { label: '1 Mês', date: addMonths(today, 1), weight: currentWeight + monthlyChange },
+        { label: '2 Meses', date: addMonths(today, 2), weight: currentWeight + monthlyChange * 2 },
+        { label: '3 Meses', date: addMonths(today, 3), weight: currentWeight + monthlyChange * 3 },
+      ],
+      daysToGoal: goalWeight && dailyWeightChange < 0 
+        ? Math.ceil((goalWeight - currentWeight) / dailyWeightChange)
+        : null,
+    };
+  };
+
+  const weightProjections = calculateWeightBasedProjections();
+  const calorieProjections = calculateCalorieBasedProjections();
+
+  const renderProjectionContent = (
+    projectionData: ReturnType<typeof calculateWeightBasedProjections>,
+    type: 'weight' | 'calorie'
+  ) => {
+    if (!projectionData) {
+      return (
+        <div className="text-center py-6 text-muted-foreground">
+          <p className="text-sm">
+            {type === 'weight' 
+              ? 'Registre pelo menos 2 pesos em dias diferentes para ver projeções.'
+              : 'Sem dados de déficit calórico disponíveis.'
+            }
+          </p>
+        </div>
+      );
+    }
+
+    const isLosingWeight = projectionData.weeklyChange < 0;
+
+    return (
+      <div className="space-y-4">
+        {/* Info box explaining the projection type */}
+        <div className="flex gap-2 p-3 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-300">
+          <Info className="h-4 w-4 shrink-0 mt-0.5" />
+          <p className="text-xs">
+            {type === 'weight' 
+              ? 'Projeção baseada nos pesos que você registrou. Quanto mais registros, mais precisa a estimativa.'
+              : 'Projeção baseada no seu déficit/superávit calórico diário (7.700 kcal = 1kg).'
+            }
+          </p>
+        </div>
+
+        {/* Current trend */}
+        <div className="p-4 rounded-xl bg-muted/50">
+          <p className="text-xs text-muted-foreground mb-2">Taxa estimada</p>
+          <div className="flex items-center gap-2">
+            {isLosingWeight ? (
+              <TrendingDown className="h-5 w-5 text-emerald-500" />
+            ) : (
+              <TrendingUp className="h-5 w-5 text-amber-500" />
+            )}
+            <span className={`text-lg font-semibold ${isLosingWeight ? 'text-emerald-500' : 'text-amber-500'}`}>
+              {projectionData.weeklyChange > 0 ? '+' : ''}
+              {projectionData.weeklyChange.toFixed(2)} kg/semana
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {projectionData.monthlyChange > 0 ? '+' : ''}
+            {projectionData.monthlyChange.toFixed(2)} kg/mês
+          </p>
+        </div>
+
+        {/* Projections list */}
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground font-medium">Projeções</p>
+          {projectionData.projections.map((proj) => (
+            <div
+              key={proj.label}
+              className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+            >
+              <div>
+                <p className="text-sm font-medium">{proj.label}</p>
+                <p className="text-xs text-muted-foreground">
+                  {format(proj.date, "dd 'de' MMM", { locale: ptBR })}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-semibold">{proj.weight.toFixed(1)} kg</p>
+                <p className={`text-xs ${isLosingWeight ? 'text-emerald-500' : 'text-amber-500'}`}>
+                  {(proj.weight - currentWeight) > 0 ? '+' : ''}
+                  {(proj.weight - currentWeight).toFixed(1)} kg
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Goal estimate */}
+        {goalWeight && projectionData.daysToGoal && projectionData.daysToGoal > 0 && (
+          <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="h-4 w-4 text-primary" />
+              <p className="text-sm font-medium">Meta: {goalWeight} kg</p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Estimativa de alcance em{' '}
+              <span className="font-semibold text-foreground">
+                {projectionData.daysToGoal} dias
+              </span>{' '}
+              ({format(addDays(new Date(), projectionData.daysToGoal), "dd 'de' MMM 'de' yyyy", { locale: ptBR })})
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const hasWeightData = entries.length >= 2;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
@@ -92,80 +200,27 @@ export function WeightProjectionDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {!projectionData ? (
-            <div className="text-center py-6 text-muted-foreground">
-              <p className="text-sm">Registre pelo menos 2 pesos em dias diferentes para ver projeções.</p>
-            </div>
-          ) : (
-            <>
-              {/* Current trend */}
-              <div className="p-4 rounded-xl bg-muted/50">
-                <p className="text-xs text-muted-foreground mb-2">Taxa atual</p>
-                <div className="flex items-center gap-2">
-                  {isLosingWeight ? (
-                    <TrendingDown className="h-5 w-5 text-emerald-500" />
-                  ) : (
-                    <TrendingUp className="h-5 w-5 text-amber-500" />
-                  )}
-                  <span className={`text-lg font-semibold ${isLosingWeight ? 'text-emerald-500' : 'text-amber-500'}`}>
-                    {projectionData.weeklyChange > 0 ? '+' : ''}
-                    {projectionData.weeklyChange.toFixed(2)} kg/semana
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {projectionData.monthlyChange > 0 ? '+' : ''}
-                  {projectionData.monthlyChange.toFixed(2)} kg/mês
-                </p>
-              </div>
+        <div className="flex-1 overflow-y-auto">
+          <Tabs defaultValue={hasWeightData ? "weight" : "calorie"} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="weight" className="text-xs gap-1">
+                <Scale className="h-3 w-3" />
+                Peso Registrado
+              </TabsTrigger>
+              <TabsTrigger value="calorie" className="text-xs gap-1">
+                <Flame className="h-3 w-3" />
+                Calorias
+              </TabsTrigger>
+            </TabsList>
 
-              {/* Projections list */}
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-medium">Projeções</p>
-                {projectionData.projections.map((proj) => (
-                  <div
-                    key={proj.label}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{proj.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(proj.date, "dd 'de' MMM", { locale: ptBR })}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-semibold">{proj.weight.toFixed(1)} kg</p>
-                      <p className={`text-xs ${isLosingWeight ? 'text-emerald-500' : 'text-amber-500'}`}>
-                        {(proj.weight - currentWeight) > 0 ? '+' : ''}
-                        {(proj.weight - currentWeight).toFixed(1)} kg
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <TabsContent value="weight" className="mt-0">
+              {renderProjectionContent(weightProjections, 'weight')}
+            </TabsContent>
 
-              {/* Goal estimate */}
-              {goalWeight && projectionData.daysToGoal && projectionData.daysToGoal > 0 && (
-                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Target className="h-4 w-4 text-primary" />
-                    <p className="text-sm font-medium">Meta: {goalWeight} kg</p>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Estimativa de alcance em{' '}
-                    <span className="font-semibold text-foreground">
-                      {projectionData.daysToGoal} dias
-                    </span>{' '}
-                    ({format(addDays(new Date(), projectionData.daysToGoal), "dd 'de' MMM 'de' yyyy", { locale: ptBR })})
-                  </p>
-                </div>
-              )}
-
-              <p className="text-[10px] text-muted-foreground text-center">
-                * Projeções baseadas na taxa média de mudança de peso registrada
-              </p>
-            </>
-          )}
+            <TabsContent value="calorie" className="mt-0">
+              {renderProjectionContent(calorieProjections, 'calorie')}
+            </TabsContent>
+          </Tabs>
         </div>
       </DialogContent>
     </Dialog>
