@@ -239,6 +239,16 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped }: Food
 
   // Calculate what was originally consumed to set initial state
   const getInitialConsumeState = () => {
+    // Para entradas de foto sem produto, usar o peso em gramas salvo
+    if (entry.source === 'photo' && !originalValues.hasProduct) {
+      if (isLiquid) {
+        return { mode: 'ml' as const, fraction: null, customValue: String(entry.liquid_ml || entry.quantity), units: 1 };
+      } else {
+        // Mostrar gramas salvas para edição
+        return { mode: 'weight' as const, fraction: null, customValue: String(entry.quantity), units: 1 };
+      }
+    }
+    
     if (!originalValues.hasProduct) {
       // No product found, default to "Tudo" with entry values
       return { mode: 'fraction' as const, fraction: 1, customValue: '', units: 1 };
@@ -329,6 +339,12 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped }: Food
 
           {/* Nutrition badges */}
           <div className="mt-1 flex flex-wrap gap-1">
+            {/* Show grams for photo entries (non-liquid) */}
+            {entry.source === 'photo' && !entry.is_liquid && entry.unit === 'g' && (
+              <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                {entry.quantity}g
+              </span>
+            )}
             {entry.is_liquid && (
               <span className="inline-flex items-center rounded-md bg-sky-500/10 px-1.5 py-0.5 text-xs font-medium text-sky-600">
                 <Droplets className="h-3 w-3 mr-0.5" />

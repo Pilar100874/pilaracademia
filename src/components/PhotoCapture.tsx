@@ -12,7 +12,7 @@ import { CustomProduct } from '@/hooks/useCustomProducts';
 import { analyzeFood, fileToBase64, FoodAnalysisResult } from '@/lib/analyzeFood';
 
 interface PhotoCaptureProps {
-  onFoodAnalyzed: (name: string, nutrition: NutritionData, imageUrl: string, isLiquid?: boolean, liquidMl?: number) => void;
+  onFoodAnalyzed: (name: string, nutrition: NutritionData, imageUrl: string, isLiquid?: boolean, liquidMl?: number, grams?: number) => void;
   onClose: () => void;
 }
 
@@ -78,7 +78,8 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
       sodium: Math.round((analysisResult.nutrition.sodium || 0) * multiplier),
     };
     
-    onFoodAnalyzed(editedName || analysisResult.name, adjustedNutrition, imageUrl, false, 0);
+    const grams = parseFloat(editedGrams) || 300;
+    onFoodAnalyzed(editedName || analysisResult.name, adjustedNutrition, imageUrl, false, 0, grams);
   };
 
   const handleLiquidConfirm = (mlConsumed: number) => {
