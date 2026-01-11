@@ -60,18 +60,16 @@ export function WeightTracker() {
                     {weightDiff > 0 ? '+' : ''}{weightDiff.toFixed(1)}
                   </span>
                 )}
-                {/* Botão de projeção ao lado do peso */}
-                {entries.length >= 2 && (
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-6 w-6 p-0 ml-1" 
-                    onClick={() => setShowProjection(true)}
-                    title="Ver projeções"
-                  >
-                    <ChartLine className="h-4 w-4 text-primary" />
-                  </Button>
-                )}
+                {/* Botão de projeção sempre visível ao lado do peso */}
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-6 w-6 p-0 ml-1" 
+                  onClick={() => setShowProjection(true)}
+                  title="Ver projeções"
+                >
+                  <ChartLine className="h-4 w-4 text-primary" />
+                </Button>
               </div>
             </div>
           </div>
