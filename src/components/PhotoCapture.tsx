@@ -19,6 +19,7 @@ interface PhotoCaptureProps {
 export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<FoodAnalysisResult | null>(null);
   const [editedName, setEditedName] = useState('');
   const [editedGrams, setEditedGrams] = useState('');
@@ -59,8 +60,10 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
     }
   };
 
-  const handleConfirm = () => {
-    if (!analysisResult || !imageUrl) return;
+  const handleConfirm = async () => {
+    if (!analysisResult || !imageUrl || isConfirming) return;
+    
+    setIsConfirming(true);
     
     // Calculate nutrition based on adjusted grams
     const originalGrams = analysisResult.estimatedGrams || 300;
@@ -79,12 +82,22 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
     };
     
     const grams = parseFloat(editedGrams) || 300;
-    onFoodAnalyzed(editedName || analysisResult.name, adjustedNutrition, imageUrl, false, 0, grams);
+    
+    try {
+      await onFoodAnalyzed(editedName || analysisResult.name, adjustedNutrition, imageUrl, false, 0, grams);
+    } finally {
+      setIsConfirming(false);
+    }
   };
 
-  const handleLiquidConfirm = (mlConsumed: number) => {
-    if (!analysisResult || !imageUrl) return;
-    onFoodAnalyzed(editedName || analysisResult.name, analysisResult.nutrition, imageUrl, true, mlConsumed);
+  const handleLiquidConfirm = async (mlConsumed: number) => {
+    if (!analysisResult || !imageUrl || isConfirming) return;
+    setIsConfirming(true);
+    try {
+      await onFoodAnalyzed(editedName || analysisResult.name, analysisResult.nutrition, imageUrl, true, mlConsumed);
+    } finally {
+      setIsConfirming(false);
+    }
   };
 
   const resetCapture = () => {
@@ -177,6 +190,33 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
                     <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
                     <p className="mt-4 text-base font-semibold">Aguarde, analisando...</p>
                     <p className="mt-1 text-sm text-muted-foreground">A IA está identificando os alimentos</p>
+                  </div>
+                </div>
+              )}
+              {/* Calories overlay on photo */}
+              {analysisResult && !isAnalyzing && (
+                <div className="absolute bottom-3 left-3 right-3">
+                  <div className="bg-black/70 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">🔥</span>
+                      <div>
+                        <p className="text-white text-2xl font-bold leading-none">
+                          {(() => {
+                            const originalGrams = analysisResult.estimatedGrams || 300;
+                            const adjustedGrams = parseFloat(editedGrams) || originalGrams;
+                            const multiplier = adjustedGrams / originalGrams;
+                            return Math.round(analysisResult.nutrition.calories * multiplier);
+                          })()}
+                        </p>
+                        <p className="text-white/70 text-xs">calorias</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-white/90 text-sm font-medium truncate max-w-[150px]">
+                        {editedName || analysisResult.name}
+                      </p>
+                      <p className="text-white/60 text-xs">{editedGrams || analysisResult.estimatedGrams || 300}g</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -344,12 +384,13 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
                 </p>
 
                 <div className="flex gap-3 pt-2">
-                  <Button variant="outline" className="flex-1" onClick={resetCapture}>
+                  <Button variant="outline" className="flex-1" onClick={resetCapture} disabled={isConfirming}>
                     Nova Foto
                   </Button>
                   {!analysisResult.isIndustrialized && (
-                    <Button variant="gradient" className="flex-1" onClick={handleConfirm}>
-                      Confirmar
+                    <Button variant="gradient" className="flex-1" onClick={handleConfirm} disabled={isConfirming}>
+                      {isConfirming && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {isConfirming ? 'Salvando...' : 'Confirmar'}
                     </Button>
                   )}
                 </div>
