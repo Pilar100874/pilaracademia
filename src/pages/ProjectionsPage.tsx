@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { format, subDays, addDays, addWeeks, addMonths } from 'date-fns';
+import { format, subDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingDown, TrendingUp, Target, Scale, Calendar } from 'lucide-react';
+import { TrendingDown, TrendingUp, Target, Scale, Calendar, Flame, History } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { useFoodEntries } from '@/hooks/useFoodEntries';
+import { useExerciseEntries } from '@/hooks/useExerciseEntries';
 import { supabase } from '@/integrations/supabase/client';
 import { BottomNav } from '@/components/BottomNav';
 
@@ -16,15 +19,29 @@ interface DayData {
   net: number;
 }
 
+const KCAL_PER_KG = 7700;
+
 export function ProjectionsPage() {
   const { user } = useAuth();
   const { profile, getGoals } = useProfile();
+  const { entries: todayFood } = useFoodEntries();
+  const { entries: todayExercise } = useExerciseEntries();
   const [period, setPeriod] = useState<'week' | 'month'>('week');
   const [historyData, setHistoryData] = useState<DayData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const goals = getGoals();
   const currentWeight = profile?.weight_kg || 70;
+
+  // Cálculo baseado nas calorias de HOJE
+  const todayConsumed = todayFood.reduce((sum, e) => sum + (e.calories || 0), 0);
+  const todayBurned = todayExercise.reduce((sum, e) => sum + (e.calories_burned || 0), 0);
+  const todayNet = todayConsumed - todayBurned;
+  const todayBalance = todayNet - goals.calories;
+  const todayDailyChange = todayBalance / KCAL_PER_KG;
+  const todayWeeklyProjection = todayDailyChange * 7;
+  const todayMonthlyProjection = todayDailyChange * 30;
+  const todayIsDeficit = todayBalance < 0;
 
   useEffect(() => {
     if (user) fetchHistoryData();
@@ -34,7 +51,6 @@ export function ProjectionsPage() {
     if (!user) return;
     setIsLoading(true);
 
-    // Buscar últimos 14 dias para calcular média
     const daysToFetch = 14;
     const startDate = subDays(new Date(), daysToFetch);
     
@@ -53,7 +69,6 @@ export function ProjectionsPage() {
         .order('performed_at', { ascending: true }),
     ]);
 
-    // Agrupar por dia
     const dailyData: Record<string, { calories: number; burned: number }> = {};
     
     (foodRes.data || []).forEach((entry) => {
@@ -79,28 +94,24 @@ export function ProjectionsPage() {
     setIsLoading(false);
   };
 
-  // Calcular média de déficit/superávit
+  // Cálculo baseado no HISTÓRICO
   const avgDailyBalance = historyData.length > 0 
     ? historyData.reduce((sum, d) => sum + (d.net - goals.calories), 0) / historyData.length 
     : 0;
 
-  // 7700 kcal = 1 kg
-  const dailyWeightChange = avgDailyBalance / 7700;
-  const weeklyProjection = dailyWeightChange * 7;
-  const monthlyProjection = dailyWeightChange * 30;
+  const historyDailyWeightChange = avgDailyBalance / KCAL_PER_KG;
+  const historyWeeklyProjection = historyDailyWeightChange * 7;
+  const historyMonthlyProjection = historyDailyWeightChange * 30;
+  const historyIsLosingWeight = historyDailyWeightChange < 0;
 
-  const projectedWeightWeek = currentWeight + weeklyProjection;
-  const projectedWeightMonth = currentWeight + monthlyProjection;
-
-  // Dados para o gráfico de projeção
-  const generateProjectionData = () => {
+  const generateProjectionData = (dailyChange: number) => {
     const data = [];
     const today = new Date();
     const days = period === 'week' ? 7 : 30;
 
     for (let i = 0; i <= days; i++) {
       const date = addDays(today, i);
-      const projectedWeight = currentWeight + (dailyWeightChange * i);
+      const projectedWeight = currentWeight + (dailyChange * i);
       data.push({
         date: format(date, 'dd/MM'),
         peso: Number(projectedWeight.toFixed(1)),
@@ -110,8 +121,8 @@ export function ProjectionsPage() {
     return data;
   };
 
-  const projectionData = generateProjectionData();
-  const isLosingWeight = dailyWeightChange < 0;
+  const historyProjectionData = generateProjectionData(historyDailyWeightChange);
+  const todayProjectionData = generateProjectionData(todayDailyChange);
 
   return (
     <div className="min-h-screen gradient-hero pb-20">
@@ -120,7 +131,6 @@ export function ProjectionsPage() {
           <TrendingUp className="h-5 w-5 text-primary" />
           Projeções
         </h1>
-        <p className="text-xs text-muted-foreground">Baseado nos últimos {historyData.length} dias</p>
       </header>
 
       <div className="px-4 py-4 space-y-4">
@@ -129,137 +139,271 @@ export function ProjectionsPage() {
             <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <>
-            {/* Card de resumo */}
-            <div className={`card-feature ${isLosingWeight ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-orange-500 to-red-500'} text-white`}>
-              <div className="flex items-center gap-2 mb-2">
-                {isLosingWeight ? <TrendingDown className="h-5 w-5" /> : <TrendingUp className="h-5 w-5" />}
-                <span className="font-semibold">
-                  {isLosingWeight ? 'Você está perdendo peso! 🎉' : 'Você está ganhando peso'}
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="text-center p-3 rounded-lg bg-white/10">
-                  <p className="text-xs opacity-80">Média diária</p>
-                  <p className="text-2xl font-bold num-display">{(dailyWeightChange * 1000).toFixed(0)}g</p>
-                  <p className="text-xs opacity-80">/dia</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-white/10">
-                  <p className="text-xs opacity-80">Déficit médio</p>
-                  <p className="text-2xl font-bold num-display">{Math.round(avgDailyBalance)}</p>
-                  <p className="text-xs opacity-80">kcal/dia</p>
-                </div>
-              </div>
-            </div>
+          <Tabs defaultValue="today" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4 h-11">
+              <TabsTrigger value="today" className="flex items-center gap-1.5 text-xs">
+                <Flame className="h-4 w-4" />
+                Calorias de Hoje
+              </TabsTrigger>
+              <TabsTrigger value="history" className="flex items-center gap-1.5 text-xs">
+                <History className="h-4 w-4" />
+                Histórico ({historyData.length}d)
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Projeções */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="card-compact">
+            {/* Tab: Projeção baseada nas calorias de HOJE */}
+            <TabsContent value="today" className="space-y-4 mt-0">
+              <div className={`card-feature ${todayIsDeficit ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-orange-500 to-red-500'} text-white`}>
                 <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="h-4 w-4 text-primary" />
-                  <span className="text-xs text-muted-foreground">Em 1 semana</span>
+                  {todayIsDeficit ? <TrendingDown className="h-5 w-5" /> : <TrendingUp className="h-5 w-5" />}
+                  <span className="font-semibold">
+                    {todayIsDeficit ? 'Se manter esse ritmo hoje 🎉' : 'Atenção ao consumo hoje'}
+                  </span>
                 </div>
-                <p className="text-xl font-bold num-display">{projectedWeightWeek.toFixed(1)} kg</p>
-                <p className={`text-sm font-medium ${weeklyProjection < 0 ? 'text-emerald-500' : 'text-orange-500'}`}>
-                  {weeklyProjection > 0 ? '+' : ''}{(weeklyProjection * 1000).toFixed(0)}g
+                
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="text-center p-3 rounded-lg bg-white/10">
+                    <p className="text-xs opacity-80">Balanço hoje</p>
+                    <p className="text-2xl font-bold num-display">{todayBalance > 0 ? '+' : ''}{Math.round(todayBalance)}</p>
+                    <p className="text-xs opacity-80">kcal</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-white/10">
+                    <p className="text-xs opacity-80">Consumo líquido</p>
+                    <p className="text-2xl font-bold num-display">{Math.round(todayNet)}</p>
+                    <p className="text-xs opacity-80">kcal</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="card-compact">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <span className="text-xs text-muted-foreground">Em 1 semana</span>
+                  </div>
+                  <p className="text-xl font-bold num-display">{(currentWeight + todayWeeklyProjection).toFixed(1)} kg</p>
+                  <p className={`text-sm font-medium ${todayWeeklyProjection < 0 ? 'text-emerald-500' : 'text-orange-500'}`}>
+                    {todayWeeklyProjection > 0 ? '+' : ''}{(todayWeeklyProjection * 1000).toFixed(0)}g
+                  </p>
+                </div>
+
+                <div className="card-compact">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target className="h-4 w-4 text-primary" />
+                    <span className="text-xs text-muted-foreground">Em 1 mês</span>
+                  </div>
+                  <p className="text-xl font-bold num-display">{(currentWeight + todayMonthlyProjection).toFixed(1)} kg</p>
+                  <p className={`text-sm font-medium ${todayMonthlyProjection < 0 ? 'text-emerald-500' : 'text-orange-500'}`}>
+                    {todayMonthlyProjection > 0 ? '+' : ''}{todayMonthlyProjection.toFixed(1)}kg
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button 
+                  variant={period === 'week' ? 'default' : 'outline'} 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => setPeriod('week')}
+                >
+                  1 Semana
+                </Button>
+                <Button 
+                  variant={period === 'month' ? 'default' : 'outline'} 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => setPeriod('month')}
+                >
+                  1 Mês
+                </Button>
+              </div>
+
+              <div className="card-compact">
+                <div className="flex items-center gap-2 mb-4">
+                  <Scale className="h-4 w-4 text-purple-500" />
+                  <span className="text-sm font-semibold">Se mantiver esse ritmo</span>
+                </div>
+                
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={todayProjectionData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis 
+                        domain={['auto', 'auto']}
+                        tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={35}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          fontSize: '12px'
+                        }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                      />
+                      <ReferenceLine 
+                        y={currentWeight} 
+                        stroke="hsl(var(--muted-foreground))" 
+                        strokeDasharray="5 5" 
+                        label={{ value: 'Atual', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="peso" 
+                        stroke={todayIsDeficit ? '#10b981' : '#f97316'}
+                        strokeWidth={3}
+                        dot={false}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>Nota:</strong> Esta projeção assume que você manterá o mesmo padrão de consumo de hoje todos os dias.
                 </p>
               </div>
+            </TabsContent>
+
+            {/* Tab: Projeção baseada no HISTÓRICO */}
+            <TabsContent value="history" className="space-y-4 mt-0">
+              <div className={`card-feature ${historyIsLosingWeight ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-orange-500 to-red-500'} text-white`}>
+                <div className="flex items-center gap-2 mb-2">
+                  {historyIsLosingWeight ? <TrendingDown className="h-5 w-5" /> : <TrendingUp className="h-5 w-5" />}
+                  <span className="font-semibold">
+                    {historyIsLosingWeight ? 'Você está perdendo peso! 🎉' : 'Você está ganhando peso'}
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="text-center p-3 rounded-lg bg-white/10">
+                    <p className="text-xs opacity-80">Média diária</p>
+                    <p className="text-2xl font-bold num-display">{(historyDailyWeightChange * 1000).toFixed(0)}g</p>
+                    <p className="text-xs opacity-80">/dia</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-white/10">
+                    <p className="text-xs opacity-80">Déficit médio</p>
+                    <p className="text-2xl font-bold num-display">{Math.round(avgDailyBalance)}</p>
+                    <p className="text-xs opacity-80">kcal/dia</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="card-compact">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <span className="text-xs text-muted-foreground">Em 1 semana</span>
+                  </div>
+                  <p className="text-xl font-bold num-display">{(currentWeight + historyWeeklyProjection).toFixed(1)} kg</p>
+                  <p className={`text-sm font-medium ${historyWeeklyProjection < 0 ? 'text-emerald-500' : 'text-orange-500'}`}>
+                    {historyWeeklyProjection > 0 ? '+' : ''}{(historyWeeklyProjection * 1000).toFixed(0)}g
+                  </p>
+                </div>
+
+                <div className="card-compact">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target className="h-4 w-4 text-primary" />
+                    <span className="text-xs text-muted-foreground">Em 1 mês</span>
+                  </div>
+                  <p className="text-xl font-bold num-display">{(currentWeight + historyMonthlyProjection).toFixed(1)} kg</p>
+                  <p className={`text-sm font-medium ${historyMonthlyProjection < 0 ? 'text-emerald-500' : 'text-orange-500'}`}>
+                    {historyMonthlyProjection > 0 ? '+' : ''}{historyMonthlyProjection.toFixed(1)}kg
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button 
+                  variant={period === 'week' ? 'default' : 'outline'} 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => setPeriod('week')}
+                >
+                  1 Semana
+                </Button>
+                <Button 
+                  variant={period === 'month' ? 'default' : 'outline'} 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => setPeriod('month')}
+                >
+                  1 Mês
+                </Button>
+              </div>
 
               <div className="card-compact">
-                <div className="flex items-center gap-2 mb-2">
-                  <Target className="h-4 w-4 text-primary" />
-                  <span className="text-xs text-muted-foreground">Em 1 mês</span>
+                <div className="flex items-center gap-2 mb-4">
+                  <Scale className="h-4 w-4 text-purple-500" />
+                  <span className="text-sm font-semibold">Projeção baseada no histórico</span>
                 </div>
-                <p className="text-xl font-bold num-display">{projectedWeightMonth.toFixed(1)} kg</p>
-                <p className={`text-sm font-medium ${monthlyProjection < 0 ? 'text-emerald-500' : 'text-orange-500'}`}>
-                  {monthlyProjection > 0 ? '+' : ''}{monthlyProjection.toFixed(1)}kg
+                
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={historyProjectionData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis 
+                        domain={['auto', 'auto']}
+                        tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={35}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          fontSize: '12px'
+                        }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                      />
+                      <ReferenceLine 
+                        y={currentWeight} 
+                        stroke="hsl(var(--muted-foreground))" 
+                        strokeDasharray="5 5" 
+                        label={{ value: 'Atual', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="peso" 
+                        stroke={historyIsLosingWeight ? '#10b981' : '#f97316'}
+                        strokeWidth={3}
+                        dot={false}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>Dica:</strong> Para {historyIsLosingWeight ? 'manter' : 'melhorar'} seus resultados, 
+                  {historyIsLosingWeight 
+                    ? ' continue mantendo o déficit calórico consistente.' 
+                    : ' tente aumentar a atividade física ou reduzir a ingestão calórica.'}
                 </p>
               </div>
-            </div>
-
-            {/* Seletor de período */}
-            <div className="flex gap-2">
-              <Button 
-                variant={period === 'week' ? 'default' : 'outline'} 
-                size="sm" 
-                className="flex-1"
-                onClick={() => setPeriod('week')}
-              >
-                1 Semana
-              </Button>
-              <Button 
-                variant={period === 'month' ? 'default' : 'outline'} 
-                size="sm" 
-                className="flex-1"
-                onClick={() => setPeriod('month')}
-              >
-                1 Mês
-              </Button>
-            </div>
-
-            {/* Gráfico de projeção */}
-            <div className="card-compact">
-              <div className="flex items-center gap-2 mb-4">
-                <Scale className="h-4 w-4 text-purple-500" />
-                <span className="text-sm font-semibold">Projeção de peso</span>
-              </div>
-              
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={projectionData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="date" 
-                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis 
-                      domain={['auto', 'auto']}
-                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                      tickLine={false}
-                      axisLine={false}
-                      width={35}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontSize: '12px'
-                      }}
-                      labelStyle={{ color: 'hsl(var(--foreground))' }}
-                    />
-                    <ReferenceLine 
-                      y={currentWeight} 
-                      stroke="hsl(var(--muted-foreground))" 
-                      strokeDasharray="5 5" 
-                      label={{ value: 'Atual', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="peso" 
-                      stroke={isLosingWeight ? '#10b981' : '#f97316'}
-                      strokeWidth={3}
-                      dot={false}
-                      activeDot={{ r: 6 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Dica */}
-            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-              <p className="text-sm text-muted-foreground">
-                💡 <strong>Dica:</strong> Para {isLosingWeight ? 'manter' : 'melhorar'} seus resultados, 
-                {isLosingWeight 
-                  ? ' continue mantendo o déficit calórico consistente.' 
-                  : ' tente aumentar a atividade física ou reduzir a ingestão calórica.'}
-              </p>
-            </div>
-          </>
+            </TabsContent>
+          </Tabs>
         )}
       </div>
 

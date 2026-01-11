@@ -7,6 +7,7 @@ import { ProfilePage } from "@/pages/ProfilePage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { ProjectionsPage } from "@/pages/ProjectionsPage";
 import { ProductsPage } from "@/pages/ProductsPage";
+import { HealthPage } from "@/pages/HealthPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import NotFound from "./pages/NotFound";
@@ -74,6 +75,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProjectionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/health"
+        element={
+          <ProtectedRoute>
+            <HealthPage />
           </ProtectedRoute>
         }
       />

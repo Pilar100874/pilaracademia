@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Calendar, TrendingUp, User, Package } from 'lucide-react';
+import { Home, Calendar, TrendingUp, User, Package, Heart } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: Home, label: 'Hoje' },
   { to: '/history', icon: Calendar, label: 'Histórico' },
   { to: '/projections', icon: TrendingUp, label: 'Projeções' },
+  { to: '/health', icon: Heart, label: 'Saúde' },
   { to: '/products', icon: Package, label: 'Produtos' },
   { to: '/profile', icon: User, label: 'Perfil' },
 ];
@@ -18,7 +19,7 @@ export function BottomNav() {
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg transition-colors ${
+              `flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg transition-colors ${
                 isActive 
                   ? 'text-primary bg-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -26,7 +27,7 @@ export function BottomNav() {
             }
           >
             <item.icon className="h-5 w-5" />
-            <span className="text-[10px] font-medium">{item.label}</span>
+            <span className="text-[9px] font-medium">{item.label}</span>
           </NavLink>
         ))}
       </div>
