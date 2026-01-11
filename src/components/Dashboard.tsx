@@ -89,20 +89,19 @@ export function Dashboard() {
   };
   const goToToday = () => setSelectedDate(new Date());
 
-  const handlePhotoAnalyzed = async (name: string, nutrition: NutritionData, imageUrl: string, isLiquid?: boolean, liquidMl?: number) => {
+  const handlePhotoAnalyzed = async (name: string, nutrition: NutritionData, imageUrl: string, isLiquid?: boolean, liquidMl?: number, grams?: number) => {
     try {
-      // Add food entry only - liquid tracking comes from is_liquid + liquid_ml fields
+      // Add food entry - save grams in quantity field
       await addEntry({ 
         name, 
         nutrition, 
         imageUrl, 
-        quantity: liquidMl || 1, 
-        unit: isLiquid ? 'ml' : 'porção', 
+        quantity: isLiquid ? (liquidMl || 250) : (grams || 300), 
+        unit: isLiquid ? 'ml' : 'g', 
         source: 'photo', 
         isLiquid: isLiquid || false, 
         liquidMl: liquidMl || 0 
       });
-      // Note: Don't add separate liquid_entry - it's already tracked via food_entries.is_liquid
     } catch { /* silently fail */ }
     setActiveModal(null);
   };
