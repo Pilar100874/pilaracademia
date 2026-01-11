@@ -501,35 +501,17 @@ export function Dashboard() {
       {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => { setActiveModal(null); refetchFood(); }} />}
       <ProductSearch isOpen={activeModal === 'search'} onClose={() => { setActiveModal(null); refetchFood(); }} />
       <AddLiquidDialog open={activeModal === 'liquid'} onOpenChange={(open) => !open && setActiveModal(null)} onAddLiquid={handleAddLiquid} />
+      {/* Dialog para adicionar OU editar alimento digitado */}
       <TypedFoodDialog 
-        open={activeModal === 'typed'} 
-        onOpenChange={(open) => !open && setActiveModal(null)} 
-        onSave={async (data) => {
-          await addEntry({
-            name: data.name,
-            nutrition: {
-              calories: Math.round(data.total.calories),
-              protein: Math.round(data.total.protein * 10) / 10,
-              carbs: Math.round(data.total.carbs * 10) / 10,
-              fat: Math.round(data.total.fat * 10) / 10,
-              saturatedFat: Math.round((data.total.saturatedFat || 0) * 10) / 10,
-              transFat: Math.round((data.total.transFat || 0) * 10) / 10,
-              fiber: Math.round((data.total.fiber || 0) * 10) / 10,
-              sodium: Math.round(data.total.sodium || 0),
-            },
-            quantity: 1,
-            unit: 'porção',
-            source: 'manual',
-          });
-          refetchFood();
+        open={activeModal === 'typed' || !!editingTypedEntry} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveModal(null);
+            setEditingTypedEntry(null);
+          }
         }}
-      />
-      {/* Dialog para editar alimento digitado */}
-      <TypedFoodDialog 
-        open={!!editingTypedEntry} 
-        onOpenChange={(open) => !open && setEditingTypedEntry(null)} 
-        isEditing
-        initialName={editingTypedEntry?.name}
+        isEditing={!!editingTypedEntry}
+        initialName={editingTypedEntry?.name || ''}
         initialItems={editingTypedEntry ? [{
           name: editingTypedEntry.name,
           quantity: editingTypedEntry.unit === 'porção' ? '' : `${editingTypedEntry.quantity}${editingTypedEntry.unit}`,
@@ -541,6 +523,7 @@ export function Dashboard() {
         }] : undefined}
         onSave={async (data) => {
           if (editingTypedEntry) {
+            // Editando entrada existente
             await updateEntry(editingTypedEntry.id, {
               name: data.name,
               calories: Math.round(data.total.calories),
@@ -553,8 +536,27 @@ export function Dashboard() {
               sodium: Math.round(data.total.sodium || 0),
             });
             setEditingTypedEntry(null);
-            refetchFood();
+          } else {
+            // Adicionando nova entrada
+            await addEntry({
+              name: data.name,
+              nutrition: {
+                calories: Math.round(data.total.calories),
+                protein: Math.round(data.total.protein * 10) / 10,
+                carbs: Math.round(data.total.carbs * 10) / 10,
+                fat: Math.round(data.total.fat * 10) / 10,
+                saturatedFat: Math.round((data.total.saturatedFat || 0) * 10) / 10,
+                transFat: Math.round((data.total.transFat || 0) * 10) / 10,
+                fiber: Math.round((data.total.fiber || 0) * 10) / 10,
+                sodium: Math.round(data.total.sodium || 0),
+              },
+              quantity: 1,
+              unit: 'porção',
+              source: 'manual',
+            });
+            setActiveModal(null);
           }
+          refetchFood();
         }}
       />
       <EditLiquidDialog 
