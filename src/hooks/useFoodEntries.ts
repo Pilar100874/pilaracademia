@@ -32,7 +32,7 @@ export function useFoodEntries(selectedDate?: Date) {
     if (error) {
       console.error('Error fetching entries:', error);
     } else {
-      setEntries(data as FoodEntryDB[] || []);
+      setEntries((data as unknown as FoodEntryDB[]) || []);
     }
     setIsLoading(false);
   }, [user, selectedDate]);
@@ -52,6 +52,14 @@ export function useFoodEntries(selectedDate?: Date) {
     isLiquid?: boolean;
     liquidMl?: number;
     productId?: string;
+    originalItems?: Array<{
+      name: string;
+      quantity: string;
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+    }>;
   }) => {
     if (!user) return null;
 
@@ -79,6 +87,7 @@ export function useFoodEntries(selectedDate?: Date) {
         is_liquid: entry.isLiquid || false,
         liquid_ml: entry.liquidMl || 0,
         product_id: entry.productId || null,
+        original_items: entry.originalItems || null,
       })
       .select()
       .single();
@@ -88,16 +97,17 @@ export function useFoodEntries(selectedDate?: Date) {
       throw error;
     }
 
-    setEntries(prev => [data as FoodEntryDB, ...prev]);
-    return data as FoodEntryDB;
+    setEntries(prev => [data as unknown as FoodEntryDB, ...prev]);
+    return data as unknown as FoodEntryDB;
   }, [user, selectedDate]);
 
   const updateEntry = useCallback(async (id: string, updates: Partial<FoodEntryDB>) => {
     if (!user) return null;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await supabase
       .from('food_entries')
-      .update(updates)
+      .update(updates as any)
       .eq('id', id)
       .eq('user_id', user.id)
       .select()
@@ -108,8 +118,8 @@ export function useFoodEntries(selectedDate?: Date) {
       throw error;
     }
 
-    setEntries(prev => prev.map(e => e.id === id ? data as FoodEntryDB : e));
-    return data as FoodEntryDB;
+    setEntries(prev => prev.map(e => e.id === id ? data as unknown as FoodEntryDB : e));
+    return data as unknown as FoodEntryDB;
   }, [user]);
 
   const deleteEntry = useCallback(async (id: string) => {

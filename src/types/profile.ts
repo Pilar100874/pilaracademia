@@ -22,6 +22,15 @@ export interface Profile {
   updated_at: string;
 }
 
+export interface OriginalFoodItem {
+  name: string;
+  quantity: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 export interface FoodEntryDB {
   id: string;
   user_id: string;
@@ -42,6 +51,7 @@ export interface FoodEntryDB {
   is_liquid: boolean;
   liquid_ml: number;
   product_id: string | null;
+  original_items: OriginalFoodItem[] | null;
   created_at: string;
   updated_at: string;
 }
