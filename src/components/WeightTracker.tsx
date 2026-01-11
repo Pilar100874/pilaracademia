@@ -44,12 +44,12 @@ export function WeightTracker() {
   return (
     <>
       <div className="card-compact">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10">
               <Scale className="h-5 w-5 text-violet-500" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-muted-foreground">Peso atual</p>
               <div className="flex items-center gap-1.5">
                 <span className="text-xl num-display">{currentWeight}</span>
@@ -60,40 +60,38 @@ export function WeightTracker() {
                     {weightDiff > 0 ? '+' : ''}{weightDiff.toFixed(1)}
                   </span>
                 )}
+                {/* Botão de projeção ao lado do peso */}
+                {entries.length >= 2 && (
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-6 w-6 p-0 ml-1" 
+                    onClick={() => setShowProjection(true)}
+                    title="Ver projeções"
+                  >
+                    <ChartLine className="h-4 w-4 text-primary" />
+                  </Button>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Mini chart with projection button */}
-          <div className="flex items-center gap-2">
-            {chartData.length >= 2 && (
-              <button 
-                onClick={() => setShowProjection(true)}
-                className="w-16 h-8 hover:opacity-70 transition-opacity cursor-pointer"
-                title="Ver projeções"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <Line type="monotone" dataKey="peso" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </button>
-            )}
-            
-            {entries.length >= 2 && (
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                className="h-8 w-8 p-0" 
-                onClick={() => setShowProjection(true)}
-                title="Ver projeções"
-              >
-                <ChartLine className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            )}
-          </div>
+          {/* Mini chart */}
+          {chartData.length >= 2 && (
+            <button 
+              onClick={() => setShowProjection(true)}
+              className="w-16 h-8 hover:opacity-70 transition-opacity cursor-pointer shrink-0"
+              title="Ver projeções"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <Line type="monotone" dataKey="peso" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </button>
+          )}
 
-          <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setShowInput(!showInput)}>
+          <Button size="sm" variant="outline" className="h-8 text-xs shrink-0" onClick={() => setShowInput(!showInput)}>
             {showInput ? '✕' : 'Atualizar'}
           </Button>
         </div>
