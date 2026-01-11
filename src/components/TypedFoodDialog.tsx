@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,15 +52,25 @@ export function TypedFoodDialog({
   initialName,
   isEditing = false,
 }: TypedFoodDialogProps) {
-  const [items, setItems] = useState<FoodItem[]>(
-    initialItems?.map((item, i) => ({
-      id: `${i}`,
-      food: item.name,
-      quantity: item.quantity,
-    })) || [{ id: '1', food: '', quantity: '' }]
-  );
+  const [items, setItems] = useState<FoodItem[]>([{ id: '1', food: '', quantity: '' }]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [customName, setCustomName] = useState(initialName || '');
+  const [customName, setCustomName] = useState('');
+
+  // Atualizar estado quando abrir para edição
+  useEffect(() => {
+    if (open) {
+      if (initialItems && initialItems.length > 0) {
+        setItems(initialItems.map((item, i) => ({
+          id: `${i}`,
+          food: item.name,
+          quantity: item.quantity,
+        })));
+      } else {
+        setItems([{ id: '1', food: '', quantity: '' }]);
+      }
+      setCustomName(initialName || '');
+    }
+  }, [open, initialItems, initialName]);
 
   const addItem = () => {
     setItems([...items, { id: Date.now().toString(), food: '', quantity: '' }]);
