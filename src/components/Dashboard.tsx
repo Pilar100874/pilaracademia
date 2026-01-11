@@ -532,7 +532,7 @@ export function Dashboard() {
         initialName={editingTypedEntry?.name}
         initialItems={editingTypedEntry ? [{
           name: editingTypedEntry.name,
-          quantity: `${editingTypedEntry.quantity}${editingTypedEntry.unit}`,
+          quantity: editingTypedEntry.unit === 'porção' ? '' : `${editingTypedEntry.quantity}${editingTypedEntry.unit}`,
           quantityGrams: editingTypedEntry.quantity,
           calories: editingTypedEntry.calories,
           protein: editingTypedEntry.protein,
