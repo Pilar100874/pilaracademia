@@ -21,6 +21,7 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<FoodAnalysisResult | null>(null);
   const [editedName, setEditedName] = useState('');
+  const [editedGrams, setEditedGrams] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showLiquidDialog, setShowLiquidDialog] = useState(false);
   const [showProductForm, setShowProductForm] = useState(false);
@@ -41,7 +42,7 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
       const result = await analyzeFood(base64);
       setAnalysisResult(result);
       setEditedName(result.name);
-      
+      setEditedGrams(String(result.estimatedGrams || 300));
       // Se for produto industrializado, mostrar formulário de cadastro completo
       if (result.isIndustrialized) {
         setShowProductForm(true);
@@ -60,7 +61,24 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
 
   const handleConfirm = () => {
     if (!analysisResult || !imageUrl) return;
-    onFoodAnalyzed(editedName || analysisResult.name, analysisResult.nutrition, imageUrl, false, 0);
+    
+    // Calculate nutrition based on adjusted grams
+    const originalGrams = analysisResult.estimatedGrams || 300;
+    const adjustedGrams = parseFloat(editedGrams) || originalGrams;
+    const multiplier = adjustedGrams / originalGrams;
+    
+    const adjustedNutrition = {
+      calories: Math.round(analysisResult.nutrition.calories * multiplier),
+      protein: Math.round(analysisResult.nutrition.protein * multiplier * 10) / 10,
+      carbs: Math.round(analysisResult.nutrition.carbs * multiplier * 10) / 10,
+      fat: Math.round(analysisResult.nutrition.fat * multiplier * 10) / 10,
+      saturatedFat: Math.round((analysisResult.nutrition.saturatedFat || 0) * multiplier * 10) / 10,
+      transFat: Math.round((analysisResult.nutrition.transFat || 0) * multiplier * 10) / 10,
+      fiber: Math.round((analysisResult.nutrition.fiber || 0) * multiplier * 10) / 10,
+      sodium: Math.round((analysisResult.nutrition.sodium || 0) * multiplier),
+    };
+    
+    onFoodAnalyzed(editedName || analysisResult.name, adjustedNutrition, imageUrl, false, 0);
   };
 
   const handleLiquidConfirm = (mlConsumed: number) => {
@@ -72,6 +90,7 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
     setImageUrl(null);
     setAnalysisResult(null);
     setEditedName('');
+    setEditedGrams('');
     setError(null);
     setShowLiquidDialog(false);
     setShowProductForm(false);
@@ -256,12 +275,47 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Nome do prato</label>
-                  <Input value={editedName} onChange={(e) => setEditedName(e.target.value)} placeholder="Nome do prato" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Nome do prato</label>
+                    <Input 
+                      value={editedName} 
+                      onChange={(e) => setEditedName(e.target.value)} 
+                      placeholder="Nome do prato" 
+                      className="h-11 text-base"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Peso estimado (g)</label>
+                    <Input 
+                      type="number"
+                      inputMode="numeric"
+                      value={editedGrams} 
+                      onChange={(e) => setEditedGrams(e.target.value)} 
+                      placeholder="300"
+                      className="h-11 text-base"
+                    />
+                  </div>
                 </div>
 
-                <NutritionDisplay nutrition={analysisResult.nutrition} showAll />
+                <NutritionDisplay 
+                  nutrition={(() => {
+                    const originalGrams = analysisResult.estimatedGrams || 300;
+                    const adjustedGrams = parseFloat(editedGrams) || originalGrams;
+                    const multiplier = adjustedGrams / originalGrams;
+                    return {
+                      calories: Math.round(analysisResult.nutrition.calories * multiplier),
+                      protein: Math.round(analysisResult.nutrition.protein * multiplier * 10) / 10,
+                      carbs: Math.round(analysisResult.nutrition.carbs * multiplier * 10) / 10,
+                      fat: Math.round(analysisResult.nutrition.fat * multiplier * 10) / 10,
+                      saturatedFat: Math.round((analysisResult.nutrition.saturatedFat || 0) * multiplier * 10) / 10,
+                      transFat: Math.round((analysisResult.nutrition.transFat || 0) * multiplier * 10) / 10,
+                      fiber: Math.round((analysisResult.nutrition.fiber || 0) * multiplier * 10) / 10,
+                      sodium: Math.round((analysisResult.nutrition.sodium || 0) * multiplier),
+                    };
+                  })()}
+                  showAll 
+                />
 
                 {analysisResult.isIndustrialized && (
                   <Button

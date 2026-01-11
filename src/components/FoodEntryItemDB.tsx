@@ -13,6 +13,7 @@ interface FoodEntryItemDBProps {
   entry: FoodEntryDB;
   onUpdate?: (id: string, updates: Partial<FoodEntryDB>) => void;
   onDelete?: (id: string) => void;
+  onEditTyped?: (entry: FoodEntryDB) => void;
 }
 
 const sourceIcons = {
@@ -36,7 +37,7 @@ const QUICK_ML_OPTIONS = [
   { label: '500ml', value: 500 },
 ];
 
-export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBProps) {
+export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped }: FoodEntryItemDBProps) {
   const { products } = useCustomProducts();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(entry.name);
@@ -266,6 +267,12 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete }: FoodEntryItemDBPr
   };
 
   const handleOpenEdit = () => {
+    // Se for entrada manual (digitada), abrir TypedFoodDialog em vez do dialog interno
+    if (entry.source === 'manual' && onEditTyped) {
+      onEditTyped(entry);
+      return;
+    }
+    
     const initial = getInitialConsumeState();
     setConsumeMode(initial.mode);
     setSelectedFraction(initial.fraction);
