@@ -15,6 +15,7 @@ import { ExerciseTracker } from '@/components/ExerciseTracker';
 import { NutritionProgressGrid } from '@/components/NutritionProgressGrid';
 import { WeightReminderPopup } from '@/components/WeightReminderPopup';
 import { WeightProjection } from '@/components/WeightProjection';
+import { TypedFoodDialog } from '@/components/TypedFoodDialog';
 import { BottomNav } from '@/components/BottomNav';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
@@ -30,7 +31,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 import { useNavigate } from 'react-router-dom';
 
-type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | 'liquid' | null;
+type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | 'liquid' | 'typed' | null;
 type SortType = 'time' | 'type';
 
 interface LiquidEntryData {
@@ -493,11 +494,35 @@ export function Dashboard() {
         onOpenBarcode={() => setActiveModal('barcode')} 
         onOpenSearch={() => setActiveModal('search')} 
         onOpenLiquid={() => setActiveModal('liquid')}
+        onOpenTyped={() => setActiveModal('typed')}
       />
       {activeModal === 'photo' && <PhotoCapture onFoodAnalyzed={handlePhotoAnalyzed} onClose={() => setActiveModal(null)} />}
       {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => { setActiveModal(null); refetchFood(); }} />}
       <ProductSearch isOpen={activeModal === 'search'} onClose={() => { setActiveModal(null); refetchFood(); }} />
       <AddLiquidDialog open={activeModal === 'liquid'} onOpenChange={(open) => !open && setActiveModal(null)} onAddLiquid={handleAddLiquid} />
+      <TypedFoodDialog 
+        open={activeModal === 'typed'} 
+        onOpenChange={(open) => !open && setActiveModal(null)} 
+        onSave={async (data) => {
+          await addEntry({
+            name: data.name,
+            nutrition: {
+              calories: Math.round(data.total.calories),
+              protein: Math.round(data.total.protein * 10) / 10,
+              carbs: Math.round(data.total.carbs * 10) / 10,
+              fat: Math.round(data.total.fat * 10) / 10,
+              saturatedFat: Math.round((data.total.saturatedFat || 0) * 10) / 10,
+              transFat: Math.round((data.total.transFat || 0) * 10) / 10,
+              fiber: Math.round((data.total.fiber || 0) * 10) / 10,
+              sodium: Math.round(data.total.sodium || 0),
+            },
+            quantity: 1,
+            unit: 'porção',
+            source: 'manual',
+          });
+          refetchFood();
+        }}
+      />
       <EditLiquidDialog 
         entry={editingLiquid}
         liquidTypes={liquidTypes}

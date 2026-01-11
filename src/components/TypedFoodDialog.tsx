@@ -1,0 +1,237 @@
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Plus, Trash2, Loader2, Pencil } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface FoodItem {
+  id: string;
+  food: string;
+  quantity: string;
+}
+
+interface AnalyzedItem {
+  name: string;
+  quantity: string;
+  quantityGrams: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+interface TypedFoodDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (data: {
+    name: string;
+    items: AnalyzedItem[];
+    total: {
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+      saturatedFat: number;
+      transFat: number;
+      fiber: number;
+      sodium: number;
+    };
+  }) => void;
+  initialItems?: AnalyzedItem[];
+  initialName?: string;
+  isEditing?: boolean;
+}
+
+export function TypedFoodDialog({
+  open,
+  onOpenChange,
+  onSave,
+  initialItems,
+  initialName,
+  isEditing = false,
+}: TypedFoodDialogProps) {
+  const [items, setItems] = useState<FoodItem[]>(
+    initialItems?.map((item, i) => ({
+      id: `${i}`,
+      food: item.name,
+      quantity: item.quantity,
+    })) || [{ id: '1', food: '', quantity: '' }]
+  );
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [customName, setCustomName] = useState(initialName || '');
+
+  const addItem = () => {
+    setItems([...items, { id: Date.now().toString(), food: '', quantity: '' }]);
+  };
+
+  const removeItem = (id: string) => {
+    if (items.length > 1) {
+      setItems(items.filter(item => item.id !== id));
+    }
+  };
+
+  const updateItem = (id: string, field: 'food' | 'quantity', value: string) => {
+    setItems(items.map(item => 
+      item.id === id ? { ...item, [field]: value } : item
+    ));
+  };
+
+  const handleAnalyze = async () => {
+    const validItems = items.filter(item => item.food.trim() && item.quantity.trim());
+    
+    if (validItems.length === 0) {
+      toast.error('Adicione pelo menos um alimento com quantidade');
+      return;
+    }
+
+    setIsAnalyzing(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-food-text', {
+        body: { 
+          items: validItems.map(item => ({
+            food: item.food.trim(),
+            quantity: item.quantity.trim(),
+          }))
+        },
+      });
+
+      if (error) throw error;
+
+      if (!data.success) {
+        throw new Error(data.error || 'Erro ao analisar alimentos');
+      }
+
+      const result = data.data;
+      const entryName = customName.trim() || 'Alimentos digitados';
+
+      onSave({
+        name: entryName,
+        items: result.items,
+        total: result.total,
+      });
+
+      // Reset form
+      setItems([{ id: '1', food: '', quantity: '' }]);
+      setCustomName('');
+      onOpenChange(false);
+      toast.success('Alimentos registrados com sucesso!');
+    } catch (error) {
+      console.error('Error analyzing foods:', error);
+      toast.error('Erro ao analisar alimentos. Tente novamente.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!isEditing) {
+      setItems([{ id: '1', food: '', quantity: '' }]);
+      setCustomName('');
+    }
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-md max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {isEditing ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+            {isEditing ? 'Editar Alimentos' : 'Digitar Alimentos'}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+          {/* Custom name input */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">
+              Nome do registro (opcional)
+            </label>
+            <Input
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              placeholder="Ex: Almoço, Lanche da tarde..."
+              className="h-10"
+            />
+          </div>
+
+          {/* Food items */}
+          <div className="space-y-3">
+            <label className="text-xs text-muted-foreground">
+              Alimentos e quantidades
+            </label>
+            
+            {items.map((item, index) => (
+              <div key={item.id} className="flex gap-2 animate-fade-in">
+                <div className="flex-1 space-y-2">
+                  <Input
+                    value={item.food}
+                    onChange={(e) => updateItem(item.id, 'food', e.target.value)}
+                    placeholder="Ex: Carne fraldinha"
+                    className="h-10"
+                  />
+                  <Input
+                    value={item.quantity}
+                    onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
+                    placeholder="Ex: 150g, 2 colheres, 1 xícara"
+                    className="h-10"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 shrink-0 self-start text-muted-foreground hover:text-destructive"
+                  onClick={() => removeItem(item.id)}
+                  disabled={items.length === 1}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={addItem}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar mais um alimento
+            </Button>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2 pt-4 border-t">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={handleClose}
+            disabled={isAnalyzing}
+          >
+            Cancelar
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+          >
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Analisando...
+              </>
+            ) : (
+              'Salvar'
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
