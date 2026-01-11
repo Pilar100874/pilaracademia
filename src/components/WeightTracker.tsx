@@ -16,9 +16,10 @@ export function WeightTracker() {
   const [weight, setWeight] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const currentWeight = profile?.weight_kg || 0;
+  // Peso atual sempre vem do último registro do histórico
+  const currentWeight = entries.length > 0 ? entries[entries.length - 1]?.weight_kg : (profile?.weight_kg || 0);
   const previousWeight = entries.length >= 2 ? entries[entries.length - 2]?.weight_kg : currentWeight;
-  const weightDiff = currentWeight - previousWeight;
+  const weightDiff = entries.length >= 2 ? currentWeight - previousWeight : 0;
 
   const chartData = entries.slice(-7).map((e) => ({ peso: Number(e.weight_kg) }));
 
