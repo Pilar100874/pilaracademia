@@ -106,8 +106,15 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped }: Food
         hasProduct: true,
         packageWeight: originalProduct.package_total_weight,
         hasPackageVolume: !!packageVolume,
+        isPhotoEntry: false,
+        savedGrams: entry.quantity, // Gramas salvas originalmente
       };
     }
+    
+    // Para entradas de foto: usar valores salvos como base
+    // Os valores nutricionais são para a quantidade (gramas) salva em entry.quantity
+    const isPhotoEntry = entry.source === 'photo';
+    const savedGrams = entry.unit === 'g' ? entry.quantity : (entry.quantity > 10 ? entry.quantity : 300);
     
     // Fallback to entry values (for manual entries or when product not found)
     return {
@@ -119,13 +126,15 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped }: Food
       sodium: entry.sodium || 0,
       saturated_fat: entry.saturated_fat || 0,
       trans_fat: entry.trans_fat || 0,
-      quantity: entry.quantity,
-      refQuantity: entry.quantity,
+      quantity: savedGrams,
+      refQuantity: savedGrams, // Para foto, a referência são as gramas salvas
       liquid_ml: entry.liquid_ml || 0,
-      unit: entry.unit,
+      unit: isPhotoEntry ? 'g' : entry.unit,
       hasProduct: false,
       packageWeight: null,
       hasPackageVolume: false,
+      isPhotoEntry,
+      savedGrams, // Gramas salvas originalmente
     };
   }, [entry, originalProduct]);
 
@@ -245,7 +254,9 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped }: Food
         return { mode: 'ml' as const, fraction: null, customValue: String(entry.liquid_ml || entry.quantity), units: 1 };
       } else {
         // Mostrar gramas salvas para edição
-        return { mode: 'weight' as const, fraction: null, customValue: String(entry.quantity), units: 1 };
+        // Para entradas antigas que não tinham gramas, usar o savedGrams calculado
+        const grams = originalValues.savedGrams || entry.quantity;
+        return { mode: 'weight' as const, fraction: null, customValue: String(Math.round(grams)), units: 1 };
       }
     }
     
@@ -438,6 +449,13 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped }: Food
                         (info nutri: {originalValues.refQuantity}{originalValues.unit} = {originalValues.calories} kcal)
                       </span>
                     </>
+                  ) : originalValues.isPhotoEntry ? (
+                    <>
+                      Peso registrado: <strong>{Math.round(originalValues.savedGrams)}g</strong>
+                      <span className="ml-1 text-muted-foreground/70">
+                        ({originalValues.calories} kcal)
+                      </span>
+                    </>
                   ) : (
                     <>Consumido: <strong>{entry.quantity}{entry.unit}</strong></>
                   )}
@@ -566,6 +584,61 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped }: Food
                     <span className="text-sm text-muted-foreground">ml</span>
                   </div>
                 </div>
+              </div>
+            ) : originalValues.isPhotoEntry && !originalValues.hasProduct ? (
+              /* Photo entry without product - show grams input directly */
+              <div className="space-y-3">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Calculator className="h-4 w-4 text-primary" />
+                  Peso do prato (gramas)
+                </p>
+                
+                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Ajuste o peso e os valores nutricionais serão recalculados proporcionalmente
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      value={customValue}
+                      onChange={(e) => {
+                        setCustomValue(e.target.value);
+                        setConsumeMode('weight');
+                        setSelectedFraction(null);
+                      }}
+                      placeholder="Ex: 300"
+                      min="0"
+                      className="flex-1 h-12 text-lg text-center font-medium"
+                    />
+                    <span className="text-sm font-medium text-muted-foreground">g</span>
+                  </div>
+                </div>
+
+                {/* Quick weight options */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[150, 250, 350, 450].map((grams) => (
+                    <button
+                      key={grams}
+                      onClick={() => {
+                        setCustomValue(String(grams));
+                        setConsumeMode('weight');
+                        setSelectedFraction(null);
+                      }}
+                      className={`p-2 rounded-lg text-xs font-medium transition-all border-2 ${
+                        consumeMode === 'weight' && parseFloat(customValue) === grams
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-muted bg-secondary/50 hover:border-primary/50'
+                      }`}
+                    >
+                      {grams}g
+                    </button>
+                  ))}
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  Original: {originalValues.savedGrams}g = {originalValues.calories} kcal
+                </p>
               </div>
             ) : (
               /* SOLID consumption options */
