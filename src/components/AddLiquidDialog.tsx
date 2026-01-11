@@ -36,24 +36,24 @@ export function AddLiquidDialog({ open, onOpenChange, onAddLiquid }: AddLiquidDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-[95vw] sm:max-w-sm">
+        <DialogHeader className="pr-8">
+          <DialogTitle className="flex items-center gap-2 text-base">
             <Droplets className="h-5 w-5 text-sky-500" />
             Adicionar Líquido
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 pt-2">
+        <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            💡 Água pura e outras bebidas contabilizam no consumo diário
+            💡 Água e outras bebidas contam no consumo diário
           </p>
           <div className="grid grid-cols-2 gap-2">
             {QUICK_OPTIONS.map((opt) => (
               <button
                 key={opt.ml}
                 onClick={() => handleQuickAdd(opt.ml)}
-                className="p-4 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 font-medium transition-colors text-center"
+                className="p-4 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 active:scale-95 text-sky-600 font-medium transition-all text-center text-base"
               >
                 {opt.label}
               </button>
@@ -65,12 +65,13 @@ export function AddLiquidDialog({ open, onOpenChange, onAddLiquid }: AddLiquidDi
             <div className="flex gap-2">
               <Input
                 type="number"
+                inputMode="numeric"
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
                 placeholder="ml"
-                className="flex-1"
+                className="flex-1 h-12 text-base"
               />
-              <Button onClick={handleCustomAdd} disabled={!customAmount}>
+              <Button onClick={handleCustomAdd} disabled={!customAmount} className="h-12 px-6">
                 Adicionar
               </Button>
             </div>

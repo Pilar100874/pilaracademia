@@ -125,25 +125,25 @@ export function ProductSearch({ isOpen, onClose }: ProductSearchProps) {
   return (
     <>
       <Dialog open={isOpen && !showConsumption && !showKitForm} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader className="pr-8">
+            <DialogTitle className="flex items-center gap-2 text-base">
               <Search className="h-5 w-5" />
               Buscar
             </DialogTitle>
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'products' | 'natural' | 'kits')} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="products" className="flex items-center gap-1 text-xs">
+            <TabsList className="grid w-full grid-cols-3 h-11">
+              <TabsTrigger value="products" className="flex items-center gap-1 text-xs h-9">
                 <Package className="h-3 w-3" />
                 Produtos
               </TabsTrigger>
-              <TabsTrigger value="natural" className="flex items-center gap-1 text-xs">
+              <TabsTrigger value="natural" className="flex items-center gap-1 text-xs h-9">
                 <Leaf className="h-3 w-3" />
                 Naturais
               </TabsTrigger>
-              <TabsTrigger value="kits" className="flex items-center gap-1 text-xs">
+              <TabsTrigger value="kits" className="flex items-center gap-1 text-xs h-9">
                 <Boxes className="h-3 w-3" />
                 Kits
               </TabsTrigger>
@@ -159,7 +159,7 @@ export function ProductSearch({ isOpen, onClose }: ProductSearchProps) {
                 }
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-12 text-base"
                 autoFocus
               />
             </div>
