@@ -12,6 +12,7 @@ export interface FoodAnalysisResult {
   brand?: string;
   packageWeight?: number;
   referenceQuantity?: number;
+  estimatedGrams: number;
 }
 
 export async function analyzeFood(imageBase64: string): Promise<FoodAnalysisResult> {
@@ -50,6 +51,7 @@ export async function analyzeFood(imageBase64: string): Promise<FoodAnalysisResu
     brand: result.brand || undefined,
     packageWeight: result.packageWeight || undefined,
     referenceQuantity: result.referenceQuantity || 100,
+    estimatedGrams: result.estimatedGrams || 300,
   };
 }
 

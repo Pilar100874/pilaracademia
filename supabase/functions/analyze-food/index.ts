@@ -47,6 +47,7 @@ serve(async (req) => {
 IMPORTANTE: Responda APENAS com um JSON válido no seguinte formato, sem texto adicional:
 {
   "name": "Nome do prato identificado",
+  "estimatedGrams": peso estimado total do prato em gramas (baseado no tamanho visual - prato cheio ~400-500g, metade ~200-250g, porção pequena ~100-150g),
   "calories": número estimado de calorias (kcal),
   "protein": gramas de proteína,
   "carbs": gramas de carboidratos,
@@ -66,6 +67,7 @@ IMPORTANTE: Responda APENAS com um JSON válido no seguinte formato, sem texto a
 }
 
 Diretrizes para estimativa:
+- estimatedGrams: estime o peso total baseado no tamanho do prato/recipiente (prato raso cheio ~400g, fundo ~500g, tigela ~300g, lanche ~200g)
 - Gordura saturada: geralmente 30-40% da gordura total para carnes, menos para vegetais
 - Gordura trans: 0 para comida caseira, pode haver em frituras industriais
 - Fibra: alta em vegetais, grãos integrais, legumes

@@ -56,6 +56,7 @@ export function Dashboard() {
   const [sortType, setSortType] = useState<SortType>('type');
   const [editingLiquid, setEditingLiquid] = useState<LiquidEntryData | null>(null);
   const [deletingLiquid, setDeletingLiquid] = useState<LiquidEntryData | null>(null);
+  const [editingTypedEntry, setEditingTypedEntry] = useState<FoodEntryDB | null>(null);
 
   const goals = getGoals();
   const { consumed } = getTodaySummary();
@@ -406,7 +407,7 @@ export function Dashboard() {
                 </p>
                 <div className="space-y-2">
                   {mealEntries.slice(0, 5).map((entry) => (
-                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
+                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} />
                   ))}
                   {mealEntries.length > 5 && (
                     <p className="text-xs text-center text-muted-foreground">+{mealEntries.length - 5} mais</p>
@@ -468,7 +469,7 @@ export function Dashboard() {
                   
                   {/* Liquid entries from food_entries with is_liquid=true - show full nutrition */}
                   {liquidFoodEntries.slice(0, Math.max(0, 5 - liquidEntriesData.length)).map((entry) => (
-                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
+                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} />
                   ))}
                   
                   {totalLiquidItems > 5 && (
@@ -481,7 +482,7 @@ export function Dashboard() {
         ) : (
           <div className="space-y-2">
             {allEntriesByTime.slice(0, 10).map((entry) => (
-              <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} />
+              <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} />
             ))}
             {allEntriesByTime.length > 10 && (
               <p className="text-xs text-center text-muted-foreground">+{allEntriesByTime.length - 10} mais</p>
@@ -522,6 +523,39 @@ export function Dashboard() {
             source: 'manual',
           });
           refetchFood();
+        }}
+      />
+      {/* Dialog para editar alimento digitado */}
+      <TypedFoodDialog 
+        open={!!editingTypedEntry} 
+        onOpenChange={(open) => !open && setEditingTypedEntry(null)} 
+        isEditing
+        initialName={editingTypedEntry?.name}
+        initialItems={editingTypedEntry ? [{
+          name: editingTypedEntry.name,
+          quantity: `${editingTypedEntry.quantity}${editingTypedEntry.unit}`,
+          quantityGrams: editingTypedEntry.quantity,
+          calories: editingTypedEntry.calories,
+          protein: editingTypedEntry.protein,
+          carbs: editingTypedEntry.carbs,
+          fat: editingTypedEntry.fat,
+        }] : undefined}
+        onSave={async (data) => {
+          if (editingTypedEntry) {
+            await updateEntry(editingTypedEntry.id, {
+              name: data.name,
+              calories: Math.round(data.total.calories),
+              protein: Math.round(data.total.protein * 10) / 10,
+              carbs: Math.round(data.total.carbs * 10) / 10,
+              fat: Math.round(data.total.fat * 10) / 10,
+              saturated_fat: Math.round((data.total.saturatedFat || 0) * 10) / 10,
+              trans_fat: Math.round((data.total.transFat || 0) * 10) / 10,
+              fiber: Math.round((data.total.fiber || 0) * 10) / 10,
+              sodium: Math.round(data.total.sodium || 0),
+            });
+            setEditingTypedEntry(null);
+            refetchFood();
+          }
         }}
       />
       <EditLiquidDialog 
