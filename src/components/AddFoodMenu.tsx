@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Camera, Barcode, X, Search, Droplets } from 'lucide-react';
+import { Plus, Camera, Barcode, X, Search, Droplets, Keyboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddFoodMenuProps {
@@ -8,9 +8,10 @@ interface AddFoodMenuProps {
   onOpenBarcode: () => void;
   onOpenSearch: () => void;
   onOpenLiquid: () => void;
+  onOpenTyped: () => void;
 }
 
-export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenSearch, onOpenLiquid }: AddFoodMenuProps) {
+export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenSearch, onOpenLiquid, onOpenTyped }: AddFoodMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleAction = (action: () => void) => {
@@ -19,6 +20,7 @@ export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenSearch, onOpenLi
   };
 
   const actions = [
+    { icon: Keyboard, label: 'Digitar', color: 'bg-blue-500', action: onOpenTyped },
     { icon: Search, label: 'Buscar', color: 'bg-violet-500', action: onOpenSearch },
     { icon: Camera, label: 'Foto', color: 'bg-emerald-500', action: onOpenPhoto },
     { icon: Barcode, label: 'Código', color: 'bg-amber-500', action: onOpenBarcode },
@@ -40,7 +42,7 @@ export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenSearch, onOpenLi
             key={item.label}
             onClick={() => handleAction(item.action)}
             className={cn(
-              "flex flex-col items-center gap-1 rounded-2xl px-5 py-3 shadow-floating bg-card transition-all active:scale-95 animate-scale-in",
+              "flex flex-col items-center gap-1 rounded-2xl px-4 py-3 shadow-floating bg-card transition-all active:scale-95 animate-scale-in",
             )}
             style={{ animationDelay: `${i * 50}ms` }}
           >
