@@ -138,6 +138,7 @@ export type Database = {
           is_liquid: boolean | null
           liquid_ml: number | null
           name: string
+          original_items: Json | null
           product_id: string | null
           protein: number
           quantity: number
@@ -161,6 +162,7 @@ export type Database = {
           is_liquid?: boolean | null
           liquid_ml?: number | null
           name: string
+          original_items?: Json | null
           product_id?: string | null
           protein?: number
           quantity?: number
@@ -184,6 +186,7 @@ export type Database = {
           is_liquid?: boolean | null
           liquid_ml?: number | null
           name?: string
+          original_items?: Json | null
           product_id?: string | null
           protein?: number
           quantity?: number

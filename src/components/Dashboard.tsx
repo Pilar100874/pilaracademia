@@ -512,16 +512,42 @@ export function Dashboard() {
         }}
         isEditing={!!editingTypedEntry}
         initialName={editingTypedEntry?.name || ''}
-        initialItems={editingTypedEntry ? [{
-          name: editingTypedEntry.name,
-          quantity: editingTypedEntry.unit === 'porção' ? '' : `${editingTypedEntry.quantity}${editingTypedEntry.unit}`,
-          quantityGrams: editingTypedEntry.quantity,
-          calories: editingTypedEntry.calories,
-          protein: editingTypedEntry.protein,
-          carbs: editingTypedEntry.carbs,
-          fat: editingTypedEntry.fat,
-        }] : undefined}
+        initialItems={
+          // Se tiver original_items salvos, usar eles
+          editingTypedEntry?.original_items && editingTypedEntry.original_items.length > 0
+            ? editingTypedEntry.original_items.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                quantityGrams: 0,
+                calories: item.calories,
+                protein: item.protein,
+                carbs: item.carbs,
+                fat: item.fat,
+              }))
+            // Senão, usar fallback com o nome da entrada
+            : editingTypedEntry 
+              ? [{
+                  name: editingTypedEntry.name,
+                  quantity: editingTypedEntry.unit === 'porção' ? '' : `${editingTypedEntry.quantity}${editingTypedEntry.unit}`,
+                  quantityGrams: editingTypedEntry.quantity,
+                  calories: editingTypedEntry.calories,
+                  protein: editingTypedEntry.protein,
+                  carbs: editingTypedEntry.carbs,
+                  fat: editingTypedEntry.fat,
+                }]
+              : undefined
+        }
         onSave={async (data) => {
+          // Preparar os itens originais para salvar
+          const originalItems = data.items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            calories: item.calories,
+            protein: item.protein,
+            carbs: item.carbs,
+            fat: item.fat,
+          }));
+
           if (editingTypedEntry) {
             // Editando entrada existente
             await updateEntry(editingTypedEntry.id, {
@@ -534,6 +560,7 @@ export function Dashboard() {
               trans_fat: Math.round((data.total.transFat || 0) * 10) / 10,
               fiber: Math.round((data.total.fiber || 0) * 10) / 10,
               sodium: Math.round(data.total.sodium || 0),
+              original_items: originalItems,
             });
             setEditingTypedEntry(null);
           } else {
@@ -553,6 +580,7 @@ export function Dashboard() {
               quantity: 1,
               unit: 'porção',
               source: 'manual',
+              originalItems: originalItems,
             });
             setActiveModal(null);
           }
