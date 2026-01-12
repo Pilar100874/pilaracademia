@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mic, MicOff, Loader2, Volume2, AlertCircle, Keyboard, ArrowLeft } from 'lucide-react';
+import { Mic, MicOff, Loader2, Volume2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -40,10 +40,9 @@ interface VoiceFoodDialogProps {
   isEditing?: boolean;
 }
 
-// Check for browser speech recognition support
 const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-interface ManualFormData {
+interface FallbackData {
   name: string;
   calories: string;
   protein: string;
@@ -65,8 +64,8 @@ export function VoiceFoodDialog({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [customName, setCustomName] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [showManualForm, setShowManualForm] = useState(false);
-  const [manualData, setManualData] = useState<ManualFormData>({
+  const [showFallbackForm, setShowFallbackForm] = useState(false);
+  const [fallbackData, setFallbackData] = useState<FallbackData>({
     name: '',
     calories: '',
     protein: '',
@@ -78,7 +77,6 @@ export function VoiceFoodDialog({
 
   const isSupported = !!SpeechRecognition;
 
-  // Reset state when dialog opens
   useEffect(() => {
     if (open) {
       if (isEditing && initialItems && initialItems.length > 0) {
@@ -94,11 +92,10 @@ export function VoiceFoodDialog({
       setInterimText('');
       setError(null);
       setIsListening(false);
-      setShowManualForm(false);
-      setManualData({ name: '', calories: '', protein: '', carbs: '', fat: '' });
+      setShowFallbackForm(false);
+      setFallbackData({ name: '', calories: '', protein: '', carbs: '', fat: '' });
       shouldRestartRef.current = false;
       
-      // Cleanup any existing recognition
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
@@ -110,7 +107,6 @@ export function VoiceFoodDialog({
     }
   }, [open, isEditing, initialItems, initialName]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       shouldRestartRef.current = false;
@@ -128,9 +124,8 @@ export function VoiceFoodDialog({
   const startListening = () => {
     if (!isSupported) return;
 
-    // Create fresh recognition instance each time
     const recognition = new SpeechRecognition();
-    recognition.continuous = false; // Single result mode to avoid duplicates
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = 'pt-BR';
     recognition.maxAlternatives = 1;
@@ -163,21 +158,19 @@ export function VoiceFoodDialog({
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
       if (event.error === 'not-allowed') {
-        setError('Permissão de microfone negada. Por favor, permita o acesso ao microfone.');
+        setError('Permissão de microfone negada.');
         shouldRestartRef.current = false;
       } else if (event.error === 'no-speech') {
-        // Will retry automatically via onend
+        // Will retry
       } else if (event.error === 'aborted') {
-        // User stopped, don't show error
         shouldRestartRef.current = false;
       } else {
-        setError('Erro no reconhecimento de voz. Tente novamente.');
+        setError('Erro no reconhecimento. Tente novamente.');
         shouldRestartRef.current = false;
       }
     };
 
     recognition.onend = () => {
-      // Only restart if we should continue listening
       if (shouldRestartRef.current) {
         try {
           setTimeout(() => {
@@ -186,7 +179,6 @@ export function VoiceFoodDialog({
             }
           }, 100);
         } catch {
-          // Failed to restart
           shouldRestartRef.current = false;
           setIsListening(false);
         }
@@ -199,13 +191,14 @@ export function VoiceFoodDialog({
     shouldRestartRef.current = true;
     setError(null);
     setInterimText('');
+    setShowFallbackForm(false);
 
     try {
       recognition.start();
       setIsListening(true);
     } catch (e) {
       console.error('Failed to start recognition:', e);
-      setError('Não foi possível iniciar o reconhecimento de voz.');
+      setError('Não foi possível iniciar o reconhecimento.');
       shouldRestartRef.current = false;
     }
   };
@@ -231,26 +224,12 @@ export function VoiceFoodDialog({
     }
   };
 
-  const switchToManualMode = () => {
-    stopListening();
-    setShowManualForm(true);
-    // Pre-fill with transcript if available
-    if (transcript.trim()) {
-      setManualData(prev => ({ ...prev, name: transcript.trim() }));
-    }
-  };
-
-  const switchToVoiceMode = () => {
-    setShowManualForm(false);
-    setError(null);
-  };
-
-  const handleManualSave = async () => {
-    const name = manualData.name.trim() || customName.trim() || 'Refeição';
-    const calories = parseFloat(manualData.calories) || 0;
-    const protein = parseFloat(manualData.protein) || 0;
-    const carbs = parseFloat(manualData.carbs) || 0;
-    const fat = parseFloat(manualData.fat) || 0;
+  const handleFallbackSave = async () => {
+    const name = fallbackData.name.trim() || transcript.trim() || 'Refeição';
+    const calories = parseFloat(fallbackData.calories) || 0;
+    const protein = parseFloat(fallbackData.protein) || 0;
+    const carbs = parseFloat(fallbackData.carbs) || 0;
+    const fat = parseFloat(fallbackData.fat) || 0;
 
     if (calories === 0 && protein === 0 && carbs === 0 && fat === 0) {
       toast.error('Informe pelo menos um valor nutricional');
@@ -281,15 +260,14 @@ export function VoiceFoodDialog({
         },
       });
 
-      // Reset and close
       setTranscript('');
       setCustomName('Gravado');
-      setManualData({ name: '', calories: '', protein: '', carbs: '', fat: '' });
-      setShowManualForm(false);
+      setFallbackData({ name: '', calories: '', protein: '', carbs: '', fat: '' });
+      setShowFallbackForm(false);
       onOpenChange(false);
       toast.success('Alimento registrado com sucesso!');
     } catch (error) {
-      console.error('Error saving manual entry:', error);
+      console.error('Error saving:', error);
       toast.error('Erro ao salvar. Tente novamente.');
     }
   };
@@ -300,15 +278,11 @@ export function VoiceFoodDialog({
       return;
     }
 
-    // Stop listening before analyzing
     stopListening();
-
     setIsAnalyzing(true);
     setError(null);
 
     try {
-      // Parse transcript into items
-      // Split by common separators like "e", ",", "mais"
       const rawItems = transcript
         .replace(/\s+e\s+/gi, ', ')
         .replace(/\s+mais\s+/gi, ', ')
@@ -317,15 +291,10 @@ export function VoiceFoodDialog({
         .filter(s => s.length > 0);
 
       if (rawItems.length === 0) {
-        throw new Error('Nenhum alimento identificado. Tente falar novamente.');
+        throw new Error('Nenhum alimento identificado.');
       }
 
-      console.log('Raw items parsed:', rawItems);
-
-      // Create items with best-guess quantity extraction
       const items = rawItems.map(item => {
-        // Try to extract quantity from the item text
-        // Patterns like "100g de picanha", "2 colheres de arroz", "um pouco de feijão"
         const quantityMatch = item.match(/^(\d+(?:[.,]\d+)?)\s*(g|gr|gramas?|kg|ml|l|colheres?|xícaras?|unidades?|fatias?|pedaços?|porções?)?\s*(?:de\s+)?(.+)/i);
         
         if (quantityMatch) {
@@ -334,7 +303,6 @@ export function VoiceFoodDialog({
           return { food: food.trim(), quantity: unitStr };
         }
 
-        // Check for patterns like "uma colher de", "um pouco de"
         const textQuantityMatch = item.match(/^(um|uma|dois|duas|três|quatro|cinco|meia|meio|um pouco)\s*(colheres?|xícaras?|fatias?|pedaços?|porções?)?\s*(?:de\s+)?(.+)/i);
         
         if (textQuantityMatch) {
@@ -349,82 +317,62 @@ export function VoiceFoodDialog({
           return { food: food.trim(), quantity: `${numStr} ${unitStr}` };
         }
 
-        // Default: assume it's just a food with implied quantity
         return { food: item, quantity: '1 porção' };
       });
-
-      console.log('Items to analyze:', items);
 
       const { data, error: invokeError } = await supabase.functions.invoke('analyze-food-text', {
         body: { items },
       });
 
-      console.log('API response:', data, 'Error:', invokeError);
-
       if (invokeError) {
-        console.error('Invoke error:', invokeError);
         throw new Error(invokeError.message || 'Erro ao conectar com o servidor');
       }
 
-      if (!data) {
-        throw new Error('Resposta vazia do servidor');
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || 'Erro ao analisar alimentos');
+      if (!data || !data.success) {
+        throw new Error(data?.error || 'Erro ao analisar alimentos');
       }
 
       const result = data.data;
       
       if (!result || !result.items || !result.total) {
-        console.error('Invalid result structure:', result);
-        throw new Error('Formato de resposta inválido');
+        throw new Error('Dados insuficientes na análise');
       }
-
-      console.log('Analysis result:', result);
 
       const entryName = customName.trim() || 'Gravado';
 
-      // Call onSave with validated data
-      try {
-        await onSave({
-          name: entryName,
-          items: result.items.map((item: any) => ({
-            name: item.name || 'Alimento',
-            quantity: item.quantity || '1 porção',
-            quantityGrams: item.quantityGrams || 100,
-            calories: item.calories || 0,
-            protein: item.protein || 0,
-            carbs: item.carbs || 0,
-            fat: item.fat || 0,
-          })),
-          total: {
-            calories: result.total.calories || 0,
-            protein: result.total.protein || 0,
-            carbs: result.total.carbs || 0,
-            fat: result.total.fat || 0,
-            saturatedFat: result.total.saturatedFat || 0,
-            transFat: result.total.transFat || 0,
-            fiber: result.total.fiber || 0,
-            sodium: result.total.sodium || 0,
-          },
-        });
+      await onSave({
+        name: entryName,
+        items: result.items.map((item: any) => ({
+          name: item.name || 'Alimento',
+          quantity: item.quantity || '1 porção',
+          quantityGrams: item.quantityGrams || 100,
+          calories: item.calories || 0,
+          protein: item.protein || 0,
+          carbs: item.carbs || 0,
+          fat: item.fat || 0,
+        })),
+        total: {
+          calories: result.total.calories || 0,
+          protein: result.total.protein || 0,
+          carbs: result.total.carbs || 0,
+          fat: result.total.fat || 0,
+          saturatedFat: result.total.saturatedFat || 0,
+          transFat: result.total.transFat || 0,
+          fiber: result.total.fiber || 0,
+          sodium: result.total.sodium || 0,
+        },
+      });
 
-        // Reset form only after successful save
-        setTranscript('');
-        setCustomName('Gravado');
-        onOpenChange(false);
-        toast.success('Alimentos registrados com sucesso!');
-      } catch (saveError) {
-        console.error('Error saving entry:', saveError);
-        throw new Error('Erro ao salvar o registro. Tente novamente.');
-      }
+      setTranscript('');
+      setCustomName('Gravado');
+      onOpenChange(false);
+      toast.success('Alimentos registrados com sucesso!');
     } catch (error) {
       console.error('Error analyzing foods:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      setError(`${errorMessage}. Você pode digitar os dados manualmente.`);
-      // Pre-fill manual form with transcript
-      setManualData(prev => ({ ...prev, name: transcript.trim() }));
+      setError(errorMessage);
+      setShowFallbackForm(true);
+      setFallbackData(prev => ({ ...prev, name: transcript.trim() }));
     } finally {
       setIsAnalyzing(false);
     }
@@ -438,8 +386,8 @@ export function VoiceFoodDialog({
     }
     setInterimText('');
     setError(null);
-    setShowManualForm(false);
-    setManualData({ name: '', calories: '', protein: '', carbs: '', fat: '' });
+    setShowFallbackForm(false);
+    setFallbackData({ name: '', calories: '', protein: '', carbs: '', fat: '' });
     onOpenChange(false);
   };
 
@@ -457,136 +405,10 @@ export function VoiceFoodDialog({
             <p className="text-sm text-muted-foreground">
               Seu navegador não suporta reconhecimento de voz.
             </p>
-            <p className="text-xs text-muted-foreground mt-2">
-              Tente usar o Chrome ou Safari em um dispositivo mais recente.
-            </p>
           </div>
           <Button variant="outline" onClick={handleClose}>
             Fechar
           </Button>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  // Manual form mode
-  if (showManualForm) {
-    return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <Keyboard className="h-4 w-4" />
-              Digitar Alimento
-            </DialogTitle>
-            <DialogDescription className="sr-only">
-              Digite as informações nutricionais do alimento manualmente
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {/* Back button */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="gap-1 -ml-2"
-              onClick={switchToVoiceMode}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Voltar para voz
-            </Button>
-
-            {/* Custom name */}
-            <div>
-              <Label className="text-xs text-muted-foreground">Nome do registro</Label>
-              <Input
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                placeholder="Ex: Almoço, Lanche..."
-                className="h-11 text-base mt-1"
-              />
-            </div>
-
-            {/* Food name/description */}
-            <div>
-              <Label className="text-xs text-muted-foreground">Descrição do alimento *</Label>
-              <Input
-                value={manualData.name}
-                onChange={(e) => setManualData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Ex: Arroz, feijão e frango"
-                className="h-11 text-base mt-1"
-              />
-            </div>
-
-            {/* Nutrition values grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-muted-foreground">Calorias (kcal)</Label>
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  value={manualData.calories}
-                  onChange={(e) => setManualData(prev => ({ ...prev, calories: e.target.value }))}
-                  placeholder="0"
-                  className="h-11 text-base mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Proteína (g)</Label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  value={manualData.protein}
-                  onChange={(e) => setManualData(prev => ({ ...prev, protein: e.target.value }))}
-                  placeholder="0"
-                  className="h-11 text-base mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Carboidratos (g)</Label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  value={manualData.carbs}
-                  onChange={(e) => setManualData(prev => ({ ...prev, carbs: e.target.value }))}
-                  placeholder="0"
-                  className="h-11 text-base mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Gordura (g)</Label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  value={manualData.fat}
-                  onChange={(e) => setManualData(prev => ({ ...prev, fat: e.target.value }))}
-                  placeholder="0"
-                  className="h-11 text-base mt-1"
-                />
-              </div>
-            </div>
-
-            <p className="text-xs text-muted-foreground text-center">
-              💡 Informe pelo menos um valor nutricional
-            </p>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-2 pt-3 border-t">
-            <Button
-              variant="outline"
-              className="flex-1 h-12 text-base"
-              onClick={handleClose}
-            >
-              Cancelar
-            </Button>
-            <Button
-              className="flex-1 h-12 text-base"
-              onClick={handleManualSave}
-            >
-              Salvar
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
     );
@@ -606,7 +428,6 @@ export function VoiceFoodDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Custom name input */}
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">
               Nome do registro (opcional)
@@ -619,131 +440,199 @@ export function VoiceFoodDialog({
             />
           </div>
 
-          {/* Voice input area */}
-          <div className="text-center space-y-4">
-            <p className="text-sm text-muted-foreground">
-              {isListening 
-                ? 'Fale os alimentos e quantidades...' 
-                : 'Toque no microfone para começar'}
-            </p>
-
-            {/* Mic button */}
-            <button
-              onClick={toggleListening}
-              disabled={isAnalyzing}
-              className={cn(
-                "mx-auto flex h-20 w-20 items-center justify-center rounded-full transition-all duration-300",
-                isListening 
-                  ? "bg-destructive animate-pulse shadow-lg shadow-destructive/30" 
-                  : "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30"
-              )}
-            >
-              {isListening ? (
-                <MicOff className="h-8 w-8 text-white" />
-              ) : (
-                <Mic className="h-8 w-8 text-white" />
-              )}
-            </button>
-
-            {isListening && (
-              <div className="flex items-center justify-center gap-1 animate-fade-in">
-                <Volume2 className="h-4 w-4 text-primary animate-pulse" />
-                <span className="text-xs text-primary font-medium">Ouvindo...</span>
-              </div>
-            )}
-
-            {error && (
-              <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm space-y-2">
-                <p>{error}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-1"
-                  onClick={switchToManualMode}
-                >
-                  <Keyboard className="h-4 w-4" />
-                  Digitar manualmente
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Transcript display */}
-          {(transcript || interimText) && (
-            <div className="space-y-2">
-              <label className="text-xs text-muted-foreground">
-                O que você disse:
-              </label>
-              <div className="p-3 rounded-xl bg-muted/50 min-h-[80px]">
-                <p className="text-sm">
-                  {transcript}
-                  {interimText && (
-                    <span className="text-muted-foreground italic">
-                      {transcript ? ' ' : ''}{interimText}
-                    </span>
-                  )}
+          {showFallbackForm ? (
+            <div className="space-y-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+              <div className="text-center">
+                <p className="text-sm font-medium text-amber-600">
+                  ⚠️ Não foi possível analisar automaticamente
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Complete os dados nutricionais abaixo:
                 </p>
               </div>
-              {transcript && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full"
+
+              <div>
+                <Label className="text-xs text-muted-foreground">Descrição</Label>
+                <Input
+                  value={fallbackData.name}
+                  onChange={(e) => setFallbackData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Ex: Arroz, feijão e frango"
+                  className="h-11 text-base mt-1"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Calorias</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    value={fallbackData.calories}
+                    onChange={(e) => setFallbackData(prev => ({ ...prev, calories: e.target.value }))}
+                    placeholder="kcal"
+                    className="h-11 text-base mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Proteína</Label>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    value={fallbackData.protein}
+                    onChange={(e) => setFallbackData(prev => ({ ...prev, protein: e.target.value }))}
+                    placeholder="g"
+                    className="h-11 text-base mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Carboidratos</Label>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    value={fallbackData.carbs}
+                    onChange={(e) => setFallbackData(prev => ({ ...prev, carbs: e.target.value }))}
+                    placeholder="g"
+                    className="h-11 text-base mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Gordura</Label>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    value={fallbackData.fat}
+                    onChange={(e) => setFallbackData(prev => ({ ...prev, fat: e.target.value }))}
+                    placeholder="g"
+                    className="h-11 text-base mt-1"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
                   onClick={() => {
-                    setTranscript('');
-                    setInterimText('');
+                    setShowFallbackForm(false);
+                    setError(null);
                   }}
                 >
-                  Limpar e falar novamente
+                  Tentar novamente
                 </Button>
-              )}
+                <Button
+                  className="flex-1"
+                  onClick={handleFallbackSave}
+                >
+                  Salvar
+                </Button>
+              </div>
             </div>
+          ) : (
+            <>
+              <div className="text-center space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {isListening 
+                    ? 'Fale os alimentos e quantidades...' 
+                    : 'Toque no microfone para começar'}
+                </p>
+
+                <button
+                  onClick={toggleListening}
+                  disabled={isAnalyzing}
+                  className={cn(
+                    "mx-auto flex h-20 w-20 items-center justify-center rounded-full transition-all duration-300",
+                    isListening 
+                      ? "bg-destructive animate-pulse shadow-lg shadow-destructive/30" 
+                      : "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30"
+                  )}
+                >
+                  {isListening ? (
+                    <MicOff className="h-8 w-8 text-white" />
+                  ) : (
+                    <Mic className="h-8 w-8 text-white" />
+                  )}
+                </button>
+
+                {isListening && (
+                  <div className="flex items-center justify-center gap-1 animate-fade-in">
+                    <Volume2 className="h-4 w-4 text-primary animate-pulse" />
+                    <span className="text-xs text-primary font-medium">Ouvindo...</span>
+                  </div>
+                )}
+
+                {error && !showFallbackForm && (
+                  <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                    {error}
+                  </div>
+                )}
+              </div>
+
+              {(transcript || interimText) && (
+                <div className="space-y-2">
+                  <label className="text-xs text-muted-foreground">
+                    O que você disse:
+                  </label>
+                  <div className="p-3 rounded-xl bg-muted/50 min-h-[60px]">
+                    <p className="text-sm">
+                      {transcript}
+                      {interimText && (
+                        <span className="text-muted-foreground italic">
+                          {transcript ? ' ' : ''}{interimText}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  {transcript && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => {
+                        setTranscript('');
+                        setInterimText('');
+                      }}
+                    >
+                      Limpar e falar novamente
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              <div className="p-3 rounded-xl bg-muted/30 text-xs text-muted-foreground space-y-1">
+                <p className="font-medium">💡 Dicas:</p>
+                <p>• "100 gramas de picanha, 2 colheres de arroz"</p>
+                <p>• "um filé de frango, salada e suco"</p>
+              </div>
+            </>
           )}
+        </div>
 
-          {/* Manual entry button */}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="w-full gap-1.5 text-muted-foreground"
-            onClick={switchToManualMode}
-          >
-            <Keyboard className="h-4 w-4" />
-            Prefiro digitar manualmente
-          </Button>
-
-          {/* Help text */}
-          <div className="p-3 rounded-xl bg-muted/30 text-xs text-muted-foreground space-y-1">
-            <p className="font-medium">💡 Dicas:</p>
-            <p>• "100 gramas de picanha, 2 colheres de arroz e uma colher de feijão"</p>
-            <p>• "um filé de frango, salada e meio copo de suco"</p>
+        {!showFallbackForm && (
+          <div className="flex gap-2 pt-3 border-t">
+            <Button
+              variant="outline"
+              className="flex-1 h-12 text-base"
+              onClick={handleClose}
+              disabled={isAnalyzing}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1 h-12 text-base"
+              onClick={handleAnalyze}
+              disabled={isAnalyzing || !transcript.trim()}
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Analisando...
+                </>
+              ) : (
+                'Salvar'
+              )}
+            </Button>
           </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2 pt-3 border-t">
-          <Button
-            variant="outline"
-            className="flex-1 h-12 text-base"
-            onClick={handleClose}
-            disabled={isAnalyzing}
-          >
-            Cancelar
-          </Button>
-          <Button
-            className="flex-1 h-12 text-base"
-            onClick={handleAnalyze}
-            disabled={isAnalyzing || !transcript.trim()}
-          >
-            {isAnalyzing ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Analisando...
-              </>
-            ) : (
-              'Salvar'
-            )}
-          </Button>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
