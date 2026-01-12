@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mic, MicOff, Loader2, Volume2, AlertCircle } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Mic, MicOff, Loader2, Volume2, AlertCircle, Keyboard, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,14 @@ interface VoiceFoodDialogProps {
 // Check for browser speech recognition support
 const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
+interface ManualFormData {
+  name: string;
+  calories: string;
+  protein: string;
+  carbs: string;
+  fat: string;
+}
+
 export function VoiceFoodDialog({
   open,
   onOpenChange,
@@ -56,6 +65,14 @@ export function VoiceFoodDialog({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [customName, setCustomName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [manualData, setManualData] = useState<ManualFormData>({
+    name: '',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+  });
   const recognitionRef = useRef<any>(null);
   const shouldRestartRef = useRef(false);
 
@@ -77,6 +94,8 @@ export function VoiceFoodDialog({
       setInterimText('');
       setError(null);
       setIsListening(false);
+      setShowManualForm(false);
+      setManualData({ name: '', calories: '', protein: '', carbs: '', fat: '' });
       shouldRestartRef.current = false;
       
       // Cleanup any existing recognition
@@ -212,6 +231,69 @@ export function VoiceFoodDialog({
     }
   };
 
+  const switchToManualMode = () => {
+    stopListening();
+    setShowManualForm(true);
+    // Pre-fill with transcript if available
+    if (transcript.trim()) {
+      setManualData(prev => ({ ...prev, name: transcript.trim() }));
+    }
+  };
+
+  const switchToVoiceMode = () => {
+    setShowManualForm(false);
+    setError(null);
+  };
+
+  const handleManualSave = async () => {
+    const name = manualData.name.trim() || customName.trim() || 'Refeição';
+    const calories = parseFloat(manualData.calories) || 0;
+    const protein = parseFloat(manualData.protein) || 0;
+    const carbs = parseFloat(manualData.carbs) || 0;
+    const fat = parseFloat(manualData.fat) || 0;
+
+    if (calories === 0 && protein === 0 && carbs === 0 && fat === 0) {
+      toast.error('Informe pelo menos um valor nutricional');
+      return;
+    }
+
+    try {
+      await onSave({
+        name: customName.trim() || 'Gravado',
+        items: [{
+          name,
+          quantity: '1 porção',
+          quantityGrams: 100,
+          calories,
+          protein,
+          carbs,
+          fat,
+        }],
+        total: {
+          calories,
+          protein,
+          carbs,
+          fat,
+          saturatedFat: 0,
+          transFat: 0,
+          fiber: 0,
+          sodium: 0,
+        },
+      });
+
+      // Reset and close
+      setTranscript('');
+      setCustomName('Gravado');
+      setManualData({ name: '', calories: '', protein: '', carbs: '', fat: '' });
+      setShowManualForm(false);
+      onOpenChange(false);
+      toast.success('Alimento registrado com sucesso!');
+    } catch (error) {
+      console.error('Error saving manual entry:', error);
+      toast.error('Erro ao salvar. Tente novamente.');
+    }
+  };
+
   const handleAnalyze = async () => {
     if (!transcript.trim()) {
       toast.error('Diga os alimentos que você consumiu');
@@ -340,8 +422,9 @@ export function VoiceFoodDialog({
     } catch (error) {
       console.error('Error analyzing foods:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      setError(`${errorMessage}. Você pode digitar os dados manualmente.`);
+      // Pre-fill manual form with transcript
+      setManualData(prev => ({ ...prev, name: transcript.trim() }));
     } finally {
       setIsAnalyzing(false);
     }
@@ -355,6 +438,8 @@ export function VoiceFoodDialog({
     }
     setInterimText('');
     setError(null);
+    setShowManualForm(false);
+    setManualData({ name: '', calories: '', protein: '', carbs: '', fat: '' });
     onOpenChange(false);
   };
 
@@ -379,6 +464,129 @@ export function VoiceFoodDialog({
           <Button variant="outline" onClick={handleClose}>
             Fechar
           </Button>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Manual form mode
+  if (showManualForm) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Keyboard className="h-4 w-4" />
+              Digitar Alimento
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Digite as informações nutricionais do alimento manualmente
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Back button */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-1 -ml-2"
+              onClick={switchToVoiceMode}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar para voz
+            </Button>
+
+            {/* Custom name */}
+            <div>
+              <Label className="text-xs text-muted-foreground">Nome do registro</Label>
+              <Input
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                placeholder="Ex: Almoço, Lanche..."
+                className="h-11 text-base mt-1"
+              />
+            </div>
+
+            {/* Food name/description */}
+            <div>
+              <Label className="text-xs text-muted-foreground">Descrição do alimento *</Label>
+              <Input
+                value={manualData.name}
+                onChange={(e) => setManualData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Ex: Arroz, feijão e frango"
+                className="h-11 text-base mt-1"
+              />
+            </div>
+
+            {/* Nutrition values grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Calorias (kcal)</Label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={manualData.calories}
+                  onChange={(e) => setManualData(prev => ({ ...prev, calories: e.target.value }))}
+                  placeholder="0"
+                  className="h-11 text-base mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Proteína (g)</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={manualData.protein}
+                  onChange={(e) => setManualData(prev => ({ ...prev, protein: e.target.value }))}
+                  placeholder="0"
+                  className="h-11 text-base mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Carboidratos (g)</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={manualData.carbs}
+                  onChange={(e) => setManualData(prev => ({ ...prev, carbs: e.target.value }))}
+                  placeholder="0"
+                  className="h-11 text-base mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Gordura (g)</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={manualData.fat}
+                  onChange={(e) => setManualData(prev => ({ ...prev, fat: e.target.value }))}
+                  placeholder="0"
+                  className="h-11 text-base mt-1"
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center">
+              💡 Informe pelo menos um valor nutricional
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-3 border-t">
+            <Button
+              variant="outline"
+              className="flex-1 h-12 text-base"
+              onClick={handleClose}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1 h-12 text-base"
+              onClick={handleManualSave}
+            >
+              Salvar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     );
@@ -445,8 +653,17 @@ export function VoiceFoodDialog({
             )}
 
             {error && (
-              <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                {error}
+              <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm space-y-2">
+                <p>{error}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1"
+                  onClick={switchToManualMode}
+                >
+                  <Keyboard className="h-4 w-4" />
+                  Digitar manualmente
+                </Button>
               </div>
             )}
           </div>
@@ -482,6 +699,17 @@ export function VoiceFoodDialog({
               )}
             </div>
           )}
+
+          {/* Manual entry button */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full gap-1.5 text-muted-foreground"
+            onClick={switchToManualMode}
+          >
+            <Keyboard className="h-4 w-4" />
+            Prefiro digitar manualmente
+          </Button>
 
           {/* Help text */}
           <div className="p-3 rounded-xl bg-muted/30 text-xs text-muted-foreground space-y-1">
