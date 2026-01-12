@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mic, MicOff, Loader2, Volume2, AlertCircle } from 'lucide-react';
@@ -52,59 +52,92 @@ export function VoiceFoodDialog({
 }: VoiceFoodDialogProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [interimText, setInterimText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [customName, setCustomName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
+  const shouldRestartRef = useRef(false);
 
   const isSupported = !!SpeechRecognition;
 
+  // Reset state when dialog opens
   useEffect(() => {
     if (open) {
-      // When editing, pre-fill with initial data
       if (isEditing && initialItems && initialItems.length > 0) {
-        // Convert items to transcript format
         const transcriptText = initialItems
           .map(item => `${item.quantity} de ${item.name}`)
           .join(', ');
         setTranscript(transcriptText);
         setCustomName(initialName || 'Gravado');
       } else {
-        // New entry - pre-fill with "Gravado"
         setTranscript('');
         setCustomName('Gravado');
       }
+      setInterimText('');
       setError(null);
       setIsListening(false);
+      shouldRestartRef.current = false;
+      
+      // Cleanup any existing recognition
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // Already stopped
+        }
+        recognitionRef.current = null;
       }
     }
   }, [open, isEditing, initialItems, initialName]);
 
+  // Cleanup on unmount
   useEffect(() => {
-    if (!isSupported || !open) return;
+    return () => {
+      shouldRestartRef.current = false;
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // Already stopped
+        }
+        recognitionRef.current = null;
+      }
+    };
+  }, []);
 
+  const startListening = () => {
+    if (!isSupported) return;
+
+    // Create fresh recognition instance each time
     const recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    recognition.continuous = false; // Single result mode to avoid duplicates
     recognition.interimResults = true;
     recognition.lang = 'pt-BR';
+    recognition.maxAlternatives = 1;
 
     recognition.onresult = (event: any) => {
-      let finalTranscript = '';
-      let interimTranscript = '';
+      let finalText = '';
+      let interimTextResult = '';
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      for (let i = 0; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
-          finalTranscript += result[0].transcript;
+          finalText += result[0].transcript;
         } else {
-          interimTranscript += result[0].transcript;
+          interimTextResult += result[0].transcript;
         }
       }
 
-      if (finalTranscript) {
-        setTranscript(prev => prev + (prev ? ' ' : '') + finalTranscript);
+      setInterimText(interimTextResult);
+
+      if (finalText) {
+        setTranscript(prev => {
+          const trimmedFinal = finalText.trim();
+          if (!prev) return trimmedFinal;
+          return prev + ', ' + trimmedFinal;
+        });
+        setInterimText('');
       }
     };
 
@@ -112,49 +145,70 @@ export function VoiceFoodDialog({
       console.error('Speech recognition error:', event.error);
       if (event.error === 'not-allowed') {
         setError('Permissão de microfone negada. Por favor, permita o acesso ao microfone.');
+        shouldRestartRef.current = false;
       } else if (event.error === 'no-speech') {
-        // Ignore no-speech errors during continuous listening
+        // Will retry automatically via onend
+      } else if (event.error === 'aborted') {
+        // User stopped, don't show error
+        shouldRestartRef.current = false;
       } else {
         setError('Erro no reconhecimento de voz. Tente novamente.');
+        shouldRestartRef.current = false;
       }
-      setIsListening(false);
     };
 
     recognition.onend = () => {
-      // Only restart if still listening
-      if (isListening && recognitionRef.current) {
+      // Only restart if we should continue listening
+      if (shouldRestartRef.current) {
         try {
-          recognition.start();
+          setTimeout(() => {
+            if (shouldRestartRef.current && recognitionRef.current) {
+              recognitionRef.current.start();
+            }
+          }, 100);
         } catch {
-          // Already started
+          // Failed to restart
+          shouldRestartRef.current = false;
+          setIsListening(false);
         }
+      } else {
+        setIsListening(false);
       }
     };
 
     recognitionRef.current = recognition;
+    shouldRestartRef.current = true;
+    setError(null);
+    setInterimText('');
 
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, [isSupported, open, isListening]);
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch (e) {
+      console.error('Failed to start recognition:', e);
+      setError('Não foi possível iniciar o reconhecimento de voz.');
+      shouldRestartRef.current = false;
+    }
+  };
 
-  const toggleListening = async () => {
-    if (!recognitionRef.current) return;
-
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      setError(null);
+  const stopListening = () => {
+    shouldRestartRef.current = false;
+    if (recognitionRef.current) {
       try {
-        recognitionRef.current.start();
-        setIsListening(true);
-      } catch (e) {
-        console.error('Failed to start recognition:', e);
-        setError('Não foi possível iniciar o reconhecimento de voz.');
+        recognitionRef.current.stop();
+      } catch {
+        // Already stopped
       }
+    }
+    setIsListening(false);
+    setInterimText('');
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
     }
   };
 
@@ -165,10 +219,7 @@ export function VoiceFoodDialog({
     }
 
     // Stop listening before analyzing
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
+    stopListening();
 
     setIsAnalyzing(true);
 
@@ -246,13 +297,12 @@ export function VoiceFoodDialog({
   };
 
   const handleClose = () => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-    }
+    stopListening();
     if (!isEditing) {
       setTranscript('');
       setCustomName('Gravado');
     }
+    setInterimText('');
     setError(null);
     onOpenChange(false);
   };
@@ -291,6 +341,9 @@ export function VoiceFoodDialog({
             <Mic className="h-4 w-4" />
             Falar Alimentos
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Fale os alimentos que você consumiu para registrá-los
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -348,22 +401,34 @@ export function VoiceFoodDialog({
           </div>
 
           {/* Transcript display */}
-          {transcript && (
+          {(transcript || interimText) && (
             <div className="space-y-2">
               <label className="text-xs text-muted-foreground">
                 O que você disse:
               </label>
               <div className="p-3 rounded-xl bg-muted/50 min-h-[80px]">
-                <p className="text-sm">{transcript}</p>
+                <p className="text-sm">
+                  {transcript}
+                  {interimText && (
+                    <span className="text-muted-foreground italic">
+                      {transcript ? ' ' : ''}{interimText}
+                    </span>
+                  )}
+                </p>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="w-full"
-                onClick={() => setTranscript('')}
-              >
-                Limpar e falar novamente
-              </Button>
+              {transcript && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => {
+                    setTranscript('');
+                    setInterimText('');
+                  }}
+                >
+                  Limpar e falar novamente
+                </Button>
+              )}
             </div>
           )}
 
