@@ -28,7 +28,8 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
   const [showProductForm, setShowProductForm] = useState(false);
   const [showConsumptionDialog, setShowConsumptionDialog] = useState(false);
   const [savedProduct, setSavedProduct] = useState<CustomProduct | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -143,18 +144,27 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
           </Button>
         </div>
 
+        {/* Input para câmera */}
         <input
-          ref={fileInputRef}
+          ref={cameraInputRef}
           type="file"
           accept="image/*"
           capture="environment"
           onChange={handleFileSelect}
           className="hidden"
         />
+        {/* Input para galeria (sem capture) */}
+        <input
+          ref={galleryInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
 
         {!imageUrl ? (
           <div className="space-y-4">
-            <Button variant="gradient" size="xl" className="w-full" onClick={() => fileInputRef.current?.click()}>
+            <Button variant="gradient" size="xl" className="w-full" onClick={() => cameraInputRef.current?.click()}>
               <Camera className="mr-2 h-5 w-5" />
               Tirar Foto
             </Button>
@@ -168,7 +178,7 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
               </div>
             </div>
 
-            <Button variant="outline" size="lg" className="w-full" onClick={() => fileInputRef.current?.click()}>
+            <Button variant="outline" size="lg" className="w-full" onClick={() => galleryInputRef.current?.click()}>
               <Upload className="mr-2 h-5 w-5" />
               Escolher da Galeria
             </Button>
@@ -402,7 +412,7 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
                 <Button variant="outline" className="flex-1" onClick={resetCapture}>
                   Nova Foto
                 </Button>
-                <Button variant="gradient" className="flex-1" onClick={() => fileInputRef.current?.click()}>
+                <Button variant="gradient" className="flex-1" onClick={() => cameraInputRef.current?.click()}>
                   Tentar Novamente
                 </Button>
               </div>
