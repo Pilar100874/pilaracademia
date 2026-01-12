@@ -46,7 +46,7 @@ export interface FoodEntryDB {
   sodium: number;
   quantity: number;
   unit: string;
-  source: 'photo' | 'barcode' | 'manual';
+  source: 'photo' | 'barcode' | 'manual' | 'voice';
   consumed_at: string;
   is_liquid: boolean;
   liquid_ml: number;
