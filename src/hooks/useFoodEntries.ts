@@ -47,7 +47,7 @@ export function useFoodEntries(selectedDate?: Date) {
     imageUrl?: string;
     quantity: number;
     unit: string;
-    source: 'photo' | 'barcode' | 'manual';
+    source: 'photo' | 'barcode' | 'manual' | 'voice';
     consumedAt?: Date;
     isLiquid?: boolean;
     liquidMl?: number;

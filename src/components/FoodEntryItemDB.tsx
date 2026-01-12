@@ -3,7 +3,7 @@ import { FoodEntryDB } from '@/types/profile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Camera, Barcode, Edit3, Trash2, Pencil, Check, Clock, Minus, Plus, Droplets, Apple, GlassWater, Calculator, UtensilsCrossed } from 'lucide-react';
+import { Camera, Barcode, Edit3, Trash2, Pencil, Check, Clock, Minus, Plus, Droplets, Apple, GlassWater, Calculator, UtensilsCrossed, Mic } from 'lucide-react';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { WATER_IMAGE_URL } from '@/components/DefaultLiquidImage';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
@@ -14,12 +14,14 @@ interface FoodEntryItemDBProps {
   onUpdate?: (id: string, updates: Partial<FoodEntryDB>) => void;
   onDelete?: (id: string) => void;
   onEditTyped?: (entry: FoodEntryDB) => void;
+  onEditVoice?: (entry: FoodEntryDB) => void;
 }
 
-const sourceIcons = {
+const sourceIcons: Record<string, any> = {
   photo: Camera,
   barcode: Barcode,
   manual: Edit3,
+  voice: Mic,
 };
 
 // Fraction presets (matching ProductConsumptionDialog)
@@ -37,7 +39,7 @@ const QUICK_ML_OPTIONS = [
   { label: '500ml', value: 500 },
 ];
 
-export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped }: FoodEntryItemDBProps) {
+export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped, onEditVoice }: FoodEntryItemDBProps) {
   const { products } = useCustomProducts();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(entry.name);
@@ -288,6 +290,12 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped }: Food
   };
 
   const handleOpenEdit = () => {
+    // Se for entrada de voz, abrir VoiceFoodDialog
+    if (entry.source === 'voice' && onEditVoice) {
+      onEditVoice(entry);
+      return;
+    }
+    
     // Se for entrada manual (digitada), abrir TypedFoodDialog em vez do dialog interno
     if (entry.source === 'manual' && onEditTyped) {
       onEditTyped(entry);

@@ -58,6 +58,7 @@ export function Dashboard() {
   const [editingLiquid, setEditingLiquid] = useState<LiquidEntryData | null>(null);
   const [deletingLiquid, setDeletingLiquid] = useState<LiquidEntryData | null>(null);
   const [editingTypedEntry, setEditingTypedEntry] = useState<FoodEntryDB | null>(null);
+  const [editingVoiceEntry, setEditingVoiceEntry] = useState<FoodEntryDB | null>(null);
 
   const goals = getGoals();
   const { consumed } = getTodaySummary();
@@ -407,7 +408,7 @@ export function Dashboard() {
                 </p>
                 <div className="space-y-2">
                   {mealEntries.slice(0, 5).map((entry) => (
-                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} />
+                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} onEditVoice={setEditingVoiceEntry} />
                   ))}
                   {mealEntries.length > 5 && (
                     <p className="text-xs text-center text-muted-foreground">+{mealEntries.length - 5} mais</p>
@@ -469,7 +470,7 @@ export function Dashboard() {
                   
                   {/* Liquid entries from food_entries with is_liquid=true - show full nutrition */}
                   {liquidFoodEntries.slice(0, Math.max(0, 5 - liquidEntriesData.length)).map((entry) => (
-                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} />
+                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} onEditVoice={setEditingVoiceEntry} />
                   ))}
                   
                   {totalLiquidItems > 5 && (
@@ -482,7 +483,7 @@ export function Dashboard() {
         ) : (
           <div className="space-y-2">
             {allEntriesByTime.slice(0, 10).map((entry) => (
-              <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} />
+              <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} onEditVoice={setEditingVoiceEntry} />
             ))}
             {allEntriesByTime.length > 10 && (
               <p className="text-xs text-center text-muted-foreground">+{allEntriesByTime.length - 10} mais</p>
@@ -504,10 +505,40 @@ export function Dashboard() {
       <ProductSearch isOpen={activeModal === 'search'} onClose={() => { setActiveModal(null); refetchFood(); }} />
       <AddLiquidDialog open={activeModal === 'liquid'} onOpenChange={(open) => !open && setActiveModal(null)} onAddLiquid={handleAddLiquid} />
       
-      {/* Voice Food Dialog */}
+      {/* Voice Food Dialog - Add new or Edit existing */}
       <VoiceFoodDialog
-        open={activeModal === 'voice'}
-        onOpenChange={(open) => !open && setActiveModal(null)}
+        open={activeModal === 'voice' || !!editingVoiceEntry}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveModal(null);
+            setEditingVoiceEntry(null);
+          }
+        }}
+        isEditing={!!editingVoiceEntry}
+        initialName={editingVoiceEntry?.name || ''}
+        initialItems={
+          editingVoiceEntry?.original_items && editingVoiceEntry.original_items.length > 0
+            ? editingVoiceEntry.original_items.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                quantityGrams: 0,
+                calories: item.calories,
+                protein: item.protein,
+                carbs: item.carbs,
+                fat: item.fat,
+              }))
+            : editingVoiceEntry 
+              ? [{
+                  name: editingVoiceEntry.name,
+                  quantity: editingVoiceEntry.unit === 'porção' ? '' : `${editingVoiceEntry.quantity}${editingVoiceEntry.unit}`,
+                  quantityGrams: editingVoiceEntry.quantity,
+                  calories: editingVoiceEntry.calories,
+                  protein: editingVoiceEntry.protein,
+                  carbs: editingVoiceEntry.carbs,
+                  fat: editingVoiceEntry.fat,
+                }]
+              : undefined
+        }
         onSave={async (data) => {
           const originalItems = data.items.map(item => ({
             name: item.name,
@@ -518,24 +549,42 @@ export function Dashboard() {
             fat: item.fat,
           }));
 
-          await addEntry({
-            name: data.name,
-            nutrition: {
+          if (editingVoiceEntry) {
+            // Editing existing entry
+            await updateEntry(editingVoiceEntry.id, {
+              name: data.name,
               calories: Math.round(data.total.calories),
               protein: Math.round(data.total.protein * 10) / 10,
               carbs: Math.round(data.total.carbs * 10) / 10,
               fat: Math.round(data.total.fat * 10) / 10,
-              saturatedFat: Math.round((data.total.saturatedFat || 0) * 10) / 10,
-              transFat: Math.round((data.total.transFat || 0) * 10) / 10,
+              saturated_fat: Math.round((data.total.saturatedFat || 0) * 10) / 10,
+              trans_fat: Math.round((data.total.transFat || 0) * 10) / 10,
               fiber: Math.round((data.total.fiber || 0) * 10) / 10,
               sodium: Math.round(data.total.sodium || 0),
-            },
-            quantity: 1,
-            unit: 'porção',
-            source: 'manual',
-            originalItems: originalItems,
-          });
-          setActiveModal(null);
+              original_items: originalItems,
+            });
+            setEditingVoiceEntry(null);
+          } else {
+            // Adding new entry
+            await addEntry({
+              name: data.name,
+              nutrition: {
+                calories: Math.round(data.total.calories),
+                protein: Math.round(data.total.protein * 10) / 10,
+                carbs: Math.round(data.total.carbs * 10) / 10,
+                fat: Math.round(data.total.fat * 10) / 10,
+                saturatedFat: Math.round((data.total.saturatedFat || 0) * 10) / 10,
+                transFat: Math.round((data.total.transFat || 0) * 10) / 10,
+                fiber: Math.round((data.total.fiber || 0) * 10) / 10,
+                sodium: Math.round(data.total.sodium || 0),
+              },
+              quantity: 1,
+              unit: 'porção',
+              source: 'voice',
+              originalItems: originalItems,
+            });
+            setActiveModal(null);
+          }
           refetchFood();
         }}
       />

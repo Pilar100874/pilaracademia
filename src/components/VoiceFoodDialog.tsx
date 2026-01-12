@@ -34,6 +34,9 @@ interface VoiceFoodDialogProps {
       sodium: number;
     };
   }) => void;
+  initialItems?: AnalyzedItem[];
+  initialName?: string;
+  isEditing?: boolean;
 }
 
 // Check for browser speech recognition support
@@ -43,6 +46,9 @@ export function VoiceFoodDialog({
   open,
   onOpenChange,
   onSave,
+  initialItems,
+  initialName,
+  isEditing = false,
 }: VoiceFoodDialogProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -54,17 +60,27 @@ export function VoiceFoodDialog({
   const isSupported = !!SpeechRecognition;
 
   useEffect(() => {
-    if (!open) {
-      // Reset state when closing
-      setTranscript('');
-      setCustomName('');
+    if (open) {
+      // When editing, pre-fill with initial data
+      if (isEditing && initialItems && initialItems.length > 0) {
+        // Convert items to transcript format
+        const transcriptText = initialItems
+          .map(item => `${item.quantity} de ${item.name}`)
+          .join(', ');
+        setTranscript(transcriptText);
+        setCustomName(initialName || 'Gravado');
+      } else {
+        // New entry - pre-fill with "Gravado"
+        setTranscript('');
+        setCustomName('Gravado');
+      }
       setError(null);
       setIsListening(false);
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
     }
-  }, [open]);
+  }, [open, isEditing, initialItems, initialName]);
 
   useEffect(() => {
     if (!isSupported || !open) return;
@@ -233,8 +249,10 @@ export function VoiceFoodDialog({
     if (recognitionRef.current && isListening) {
       recognitionRef.current.stop();
     }
-    setTranscript('');
-    setCustomName('');
+    if (!isEditing) {
+      setTranscript('');
+      setCustomName('Gravado');
+    }
     setError(null);
     onOpenChange(false);
   };
