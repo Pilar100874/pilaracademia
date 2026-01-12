@@ -16,8 +16,8 @@ interface DaySummary {
   liquidMl: number;
   exerciseCalories: number;
   weight: number | null;
-  foodEntries: Array<{ id: string; name: string; calories: number; consumed_at: string }>;
-  liquidEntries: Array<{ id: string; amount_ml: number; consumed_at: string }>;
+  foodEntries: Array<{ id: string; name: string; calories: number; consumed_at: string; is_liquid?: boolean }>;
+  liquidEntries: Array<{ id: string; amount_ml: number; type: string; consumed_at: string }>;
   exerciseEntries: Array<{ id: string; name: string; calories_burned: number; performed_at: string }>;
 }
 
@@ -41,14 +41,14 @@ export function HistoryPage() {
     const [foodRes, liquidRes, exerciseRes, weightRes] = await Promise.all([
       supabase
         .from('food_entries')
-        .select('id, name, calories, protein, carbs, fat, consumed_at')
+        .select('id, name, calories, protein, carbs, fat, consumed_at, is_liquid')
         .eq('user_id', user.id)
         .gte('consumed_at', dayStart)
         .lte('consumed_at', dayEnd)
         .order('consumed_at', { ascending: true }),
       supabase
         .from('liquid_entries')
-        .select('id, amount_ml, consumed_at')
+        .select('id, amount_ml, type, consumed_at')
         .eq('user_id', user.id)
         .gte('consumed_at', dayStart)
         .lte('consumed_at', dayEnd)
@@ -182,15 +182,51 @@ export function HistoryPage() {
               </div>
             </div>
 
-            {/* Refeições do dia */}
-            {summary.foodEntries.length > 0 && (
+            {/* Refeições do dia (apenas não-líquidos) */}
+            {summary.foodEntries.filter(e => !e.is_liquid).length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
                   <Apple className="h-4 w-4 text-primary" />
-                  Refeições ({summary.foodEntries.length})
+                  Refeições ({summary.foodEntries.filter(e => !e.is_liquid).length})
                 </h3>
                 <div className="space-y-2">
-                  {summary.foodEntries.map((entry) => (
+                  {summary.foodEntries.filter(e => !e.is_liquid).map((entry) => (
+                    <div key={entry.id} className="card-compact flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">{entry.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(entry.consumed_at), 'HH:mm')}
+                        </p>
+                      </div>
+                      <p className="font-semibold text-sm">{entry.calories} kcal</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Líquidos do dia (liquid_entries + food_entries com is_liquid) */}
+            {(summary.liquidEntries.length > 0 || summary.foodEntries.filter(e => e.is_liquid).length > 0) && (
+              <div>
+                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <Droplets className="h-4 w-4 text-sky-500" />
+                  Líquidos ({summary.liquidEntries.length + summary.foodEntries.filter(e => e.is_liquid).length})
+                </h3>
+                <div className="space-y-2">
+                  {/* Líquidos simples (liquid_entries) */}
+                  {summary.liquidEntries.map((entry) => (
+                    <div key={`liquid-${entry.id}`} className="card-compact flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm capitalize">{entry.type}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(entry.consumed_at), 'HH:mm')}
+                        </p>
+                      </div>
+                      <p className="font-semibold text-sm text-sky-500">{entry.amount_ml}ml</p>
+                    </div>
+                  ))}
+                  {/* Bebidas com calorias (food_entries com is_liquid) */}
+                  {summary.foodEntries.filter(e => e.is_liquid).map((entry) => (
                     <div key={entry.id} className="card-compact flex items-center justify-between">
                       <div>
                         <p className="font-medium text-sm">{entry.name}</p>
@@ -228,7 +264,7 @@ export function HistoryPage() {
               </div>
             )}
 
-            {summary.foodEntries.length === 0 && summary.exerciseEntries.length === 0 && (
+            {summary.foodEntries.length === 0 && summary.liquidEntries.length === 0 && summary.exerciseEntries.length === 0 && (
               <div className="card-compact text-center py-8">
                 <p className="text-muted-foreground">Nenhum registro neste dia</p>
               </div>

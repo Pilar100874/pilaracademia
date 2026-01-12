@@ -407,12 +407,9 @@ export function Dashboard() {
                   Refeições ({mealEntries.length})
                 </p>
                 <div className="space-y-2">
-                  {mealEntries.slice(0, 5).map((entry) => (
+                  {mealEntries.map((entry) => (
                     <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} onEditVoice={setEditingVoiceEntry} />
                   ))}
-                  {mealEntries.length > 5 && (
-                    <p className="text-xs text-center text-muted-foreground">+{mealEntries.length - 5} mais</p>
-                  )}
                 </div>
               </div>
             )}
@@ -426,7 +423,7 @@ export function Dashboard() {
                 </p>
                 <div className="space-y-2">
                   {/* Liquid entries from liquid_entries table */}
-                  {liquidEntriesData.slice(0, 5).map((entry) => (
+                  {liquidEntriesData.map((entry) => (
                     <div key={`liquid-${entry.id}`} className="group flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card transition-all duration-200 hover:shadow-soft animate-scale-in overflow-hidden">
                       <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-sky-500/10">
                         <Droplets className="h-6 w-6 text-sky-500" />
@@ -469,25 +466,18 @@ export function Dashboard() {
                   ))}
                   
                   {/* Liquid entries from food_entries with is_liquid=true - show full nutrition */}
-                  {liquidFoodEntries.slice(0, Math.max(0, 5 - liquidEntriesData.length)).map((entry) => (
+                  {liquidFoodEntries.map((entry) => (
                     <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} onEditVoice={setEditingVoiceEntry} />
                   ))}
-                  
-                  {totalLiquidItems > 5 && (
-                    <p className="text-xs text-center text-muted-foreground">+{totalLiquidItems - 5} mais</p>
-                  )}
                 </div>
               </div>
             )}
           </div>
         ) : (
           <div className="space-y-2">
-            {allEntriesByTime.slice(0, 10).map((entry) => (
+            {allEntriesByTime.map((entry) => (
               <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} onEditVoice={setEditingVoiceEntry} />
             ))}
-            {allEntriesByTime.length > 10 && (
-              <p className="text-xs text-center text-muted-foreground">+{allEntriesByTime.length - 10} mais</p>
-            )}
           </div>
         )}
       </div>
