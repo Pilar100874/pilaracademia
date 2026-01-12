@@ -16,6 +16,7 @@ import { NutritionProgressGrid } from '@/components/NutritionProgressGrid';
 import { WeightReminderPopup } from '@/components/WeightReminderPopup';
 import { WeightProjection } from '@/components/WeightProjection';
 import { TypedFoodDialog } from '@/components/TypedFoodDialog';
+import { VoiceFoodDialog } from '@/components/VoiceFoodDialog';
 import { BottomNav } from '@/components/BottomNav';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
@@ -31,7 +32,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 import { useNavigate } from 'react-router-dom';
 
-type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | 'liquid' | 'typed' | null;
+type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | 'liquid' | 'typed' | 'voice' | null;
 type SortType = 'time' | 'type';
 
 interface LiquidEntryData {
@@ -496,11 +497,49 @@ export function Dashboard() {
         onOpenSearch={() => setActiveModal('search')} 
         onOpenLiquid={() => setActiveModal('liquid')}
         onOpenTyped={() => setActiveModal('typed')}
+        onOpenVoice={() => setActiveModal('voice')}
       />
       {activeModal === 'photo' && <PhotoCapture onFoodAnalyzed={handlePhotoAnalyzed} onClose={() => setActiveModal(null)} />}
       {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => { setActiveModal(null); refetchFood(); }} />}
       <ProductSearch isOpen={activeModal === 'search'} onClose={() => { setActiveModal(null); refetchFood(); }} />
       <AddLiquidDialog open={activeModal === 'liquid'} onOpenChange={(open) => !open && setActiveModal(null)} onAddLiquid={handleAddLiquid} />
+      
+      {/* Voice Food Dialog */}
+      <VoiceFoodDialog
+        open={activeModal === 'voice'}
+        onOpenChange={(open) => !open && setActiveModal(null)}
+        onSave={async (data) => {
+          const originalItems = data.items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            calories: item.calories,
+            protein: item.protein,
+            carbs: item.carbs,
+            fat: item.fat,
+          }));
+
+          await addEntry({
+            name: data.name,
+            nutrition: {
+              calories: Math.round(data.total.calories),
+              protein: Math.round(data.total.protein * 10) / 10,
+              carbs: Math.round(data.total.carbs * 10) / 10,
+              fat: Math.round(data.total.fat * 10) / 10,
+              saturatedFat: Math.round((data.total.saturatedFat || 0) * 10) / 10,
+              transFat: Math.round((data.total.transFat || 0) * 10) / 10,
+              fiber: Math.round((data.total.fiber || 0) * 10) / 10,
+              sodium: Math.round(data.total.sodium || 0),
+            },
+            quantity: 1,
+            unit: 'porção',
+            source: 'manual',
+            originalItems: originalItems,
+          });
+          setActiveModal(null);
+          refetchFood();
+        }}
+      />
+
       {/* Dialog para adicionar OU editar alimento digitado */}
       <TypedFoodDialog 
         open={activeModal === 'typed' || !!editingTypedEntry} 
