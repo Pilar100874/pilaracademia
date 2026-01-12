@@ -222,6 +222,7 @@ export function VoiceFoodDialog({
     stopListening();
 
     setIsAnalyzing(true);
+    setError(null);
 
     try {
       // Parse transcript into items
@@ -232,6 +233,12 @@ export function VoiceFoodDialog({
         .split(/[,;]/)
         .map(s => s.trim())
         .filter(s => s.length > 0);
+
+      if (rawItems.length === 0) {
+        throw new Error('Nenhum alimento identificado. Tente falar novamente.');
+      }
+
+      console.log('Raw items parsed:', rawItems);
 
       // Create items with best-guess quantity extraction
       const items = rawItems.map(item => {
@@ -264,33 +271,77 @@ export function VoiceFoodDialog({
         return { food: item, quantity: '1 porção' };
       });
 
-      const { data, error } = await supabase.functions.invoke('analyze-food-text', {
+      console.log('Items to analyze:', items);
+
+      const { data, error: invokeError } = await supabase.functions.invoke('analyze-food-text', {
         body: { items },
       });
 
-      if (error) throw error;
+      console.log('API response:', data, 'Error:', invokeError);
+
+      if (invokeError) {
+        console.error('Invoke error:', invokeError);
+        throw new Error(invokeError.message || 'Erro ao conectar com o servidor');
+      }
+
+      if (!data) {
+        throw new Error('Resposta vazia do servidor');
+      }
 
       if (!data.success) {
         throw new Error(data.error || 'Erro ao analisar alimentos');
       }
 
       const result = data.data;
-      const entryName = customName.trim() || 'Alimentos por voz';
+      
+      if (!result || !result.items || !result.total) {
+        console.error('Invalid result structure:', result);
+        throw new Error('Formato de resposta inválido');
+      }
 
-      onSave({
-        name: entryName,
-        items: result.items,
-        total: result.total,
-      });
+      console.log('Analysis result:', result);
 
-      // Reset form
-      setTranscript('');
-      setCustomName('');
-      onOpenChange(false);
-      toast.success('Alimentos registrados com sucesso!');
+      const entryName = customName.trim() || 'Gravado';
+
+      // Call onSave with validated data
+      try {
+        await onSave({
+          name: entryName,
+          items: result.items.map((item: any) => ({
+            name: item.name || 'Alimento',
+            quantity: item.quantity || '1 porção',
+            quantityGrams: item.quantityGrams || 100,
+            calories: item.calories || 0,
+            protein: item.protein || 0,
+            carbs: item.carbs || 0,
+            fat: item.fat || 0,
+          })),
+          total: {
+            calories: result.total.calories || 0,
+            protein: result.total.protein || 0,
+            carbs: result.total.carbs || 0,
+            fat: result.total.fat || 0,
+            saturatedFat: result.total.saturatedFat || 0,
+            transFat: result.total.transFat || 0,
+            fiber: result.total.fiber || 0,
+            sodium: result.total.sodium || 0,
+          },
+        });
+
+        // Reset form only after successful save
+        setTranscript('');
+        setCustomName('Gravado');
+        onOpenChange(false);
+        toast.success('Alimentos registrados com sucesso!');
+      } catch (saveError) {
+        console.error('Error saving entry:', saveError);
+        throw new Error('Erro ao salvar o registro. Tente novamente.');
+      }
     } catch (error) {
       console.error('Error analyzing foods:', error);
-      toast.error('Erro ao analisar alimentos. Tente novamente.');
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsAnalyzing(false);
     }
