@@ -629,9 +629,10 @@ export function ProductsPage() {
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Volume total (ml)</label>
               <Input 
-                type="number" 
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formPackageVolume} 
-                onChange={(e) => setFormPackageVolume(e.target.value)} 
+                onChange={(e) => setFormPackageVolume(e.target.value.replace(/[^0-9]/g, ''))} 
                 placeholder="Ex: 350"
               />
             </div>
@@ -640,18 +641,20 @@ export function ProductsPage() {
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Peso total (g)</label>
                 <Input 
-                  type="number" 
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={formPackageWeight} 
-                  onChange={(e) => setFormPackageWeight(e.target.value)} 
+                  onChange={(e) => setFormPackageWeight(e.target.value.replace(/[^0-9]/g, ''))} 
                   placeholder="Ex: 500"
                 />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Unidades</label>
                 <Input 
-                  type="number" 
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={formPackageUnits} 
-                  onChange={(e) => setFormPackageUnits(e.target.value)} 
+                  onChange={(e) => setFormPackageUnits(e.target.value.replace(/[^0-9]/g, ''))} 
                   placeholder="Ex: 10"
                 />
               </div>
@@ -669,9 +672,10 @@ export function ProductsPage() {
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xs text-muted-foreground">Por</span>
             <Input 
-              type="number" 
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={formRefQuantity} 
-              onChange={(e) => setFormRefQuantity(e.target.value)} 
+              onChange={(e) => setFormRefQuantity(e.target.value.replace(/[^0-9]/g, ''))} 
               className="w-20 h-8 text-sm"
             />
             <span className="text-xs text-muted-foreground">{formIsLiquid ? 'ml' : 'g'}</span>
@@ -680,35 +684,35 @@ export function ProductsPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Calorias</label>
-              <Input type="number" value={formCalories} onChange={(e) => setFormCalories(e.target.value)} />
+              <Input inputMode="decimal" pattern="[0-9]*" value={formCalories} onChange={(e) => setFormCalories(e.target.value.replace(/[^0-9.]/g, ''))} />
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Proteína (g)</label>
-              <Input type="number" value={formProtein} onChange={(e) => setFormProtein(e.target.value)} />
+              <Input inputMode="decimal" pattern="[0-9]*" value={formProtein} onChange={(e) => setFormProtein(e.target.value.replace(/[^0-9.]/g, ''))} />
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Carboidratos (g)</label>
-              <Input type="number" value={formCarbs} onChange={(e) => setFormCarbs(e.target.value)} />
+              <Input inputMode="decimal" pattern="[0-9]*" value={formCarbs} onChange={(e) => setFormCarbs(e.target.value.replace(/[^0-9.]/g, ''))} />
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Gorduras (g)</label>
-              <Input type="number" value={formFat} onChange={(e) => setFormFat(e.target.value)} />
+              <Input inputMode="decimal" pattern="[0-9]*" value={formFat} onChange={(e) => setFormFat(e.target.value.replace(/[^0-9.]/g, ''))} />
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Fibras (g)</label>
-              <Input type="number" value={formFiber} onChange={(e) => setFormFiber(e.target.value)} />
+              <Input inputMode="decimal" pattern="[0-9]*" value={formFiber} onChange={(e) => setFormFiber(e.target.value.replace(/[^0-9.]/g, ''))} />
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Sódio (mg)</label>
-              <Input type="number" value={formSodium} onChange={(e) => setFormSodium(e.target.value)} />
+              <Input inputMode="decimal" pattern="[0-9]*" value={formSodium} onChange={(e) => setFormSodium(e.target.value.replace(/[^0-9.]/g, ''))} />
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">G. Saturada (g)</label>
-              <Input type="number" value={formSaturatedFat} onChange={(e) => setFormSaturatedFat(e.target.value)} />
+              <Input inputMode="decimal" pattern="[0-9]*" value={formSaturatedFat} onChange={(e) => setFormSaturatedFat(e.target.value.replace(/[^0-9.]/g, ''))} />
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">G. Trans (g)</label>
-              <Input type="number" value={formTransFat} onChange={(e) => setFormTransFat(e.target.value)} />
+              <Input inputMode="decimal" pattern="[0-9]*" value={formTransFat} onChange={(e) => setFormTransFat(e.target.value.replace(/[^0-9.]/g, ''))} />
             </div>
           </div>
         </div>
@@ -1023,7 +1027,10 @@ export function ProductsPage() {
 
       {/* Dialog para adicionar */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          className="max-w-sm max-h-[90vh] overflow-y-auto"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5 text-primary" />
@@ -1036,7 +1043,10 @@ export function ProductsPage() {
 
       {/* Dialog para editar */}
       <Dialog open={!!editingProduct} onOpenChange={(open) => !open && setEditingProduct(null)}>
-        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          className="max-w-sm max-h-[90vh] overflow-y-auto"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5 text-primary" />
@@ -1078,7 +1088,10 @@ export function ProductsPage() {
 
       {/* Dialog para adicionar alimento natural */}
       <Dialog open={showAddNaturalDialog} onOpenChange={setShowAddNaturalDialog}>
-        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          className="max-w-sm max-h-[90vh] overflow-y-auto"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Leaf className="h-5 w-5 text-emerald-500" />
@@ -1129,27 +1142,27 @@ export function ProductsPage() {
               <div className="grid grid-cols-2 gap-3 mt-3">
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Calorias *</label>
-                  <Input type="number" value={formCalories} onChange={(e) => setFormCalories(e.target.value)} placeholder="0" />
+                  <Input inputMode="decimal" pattern="[0-9]*" value={formCalories} onChange={(e) => setFormCalories(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Proteína (g)</label>
-                  <Input type="number" value={formProtein} onChange={(e) => setFormProtein(e.target.value)} placeholder="0" />
+                  <Input inputMode="decimal" pattern="[0-9]*" value={formProtein} onChange={(e) => setFormProtein(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Carboidratos (g)</label>
-                  <Input type="number" value={formCarbs} onChange={(e) => setFormCarbs(e.target.value)} placeholder="0" />
+                  <Input inputMode="decimal" pattern="[0-9]*" value={formCarbs} onChange={(e) => setFormCarbs(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Gorduras (g)</label>
-                  <Input type="number" value={formFat} onChange={(e) => setFormFat(e.target.value)} placeholder="0" />
+                  <Input inputMode="decimal" pattern="[0-9]*" value={formFat} onChange={(e) => setFormFat(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Fibras (g)</label>
-                  <Input type="number" value={formFiber} onChange={(e) => setFormFiber(e.target.value)} placeholder="0" />
+                  <Input inputMode="decimal" pattern="[0-9]*" value={formFiber} onChange={(e) => setFormFiber(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Sódio (mg)</label>
-                  <Input type="number" value={formSodium} onChange={(e) => setFormSodium(e.target.value)} placeholder="0" />
+                  <Input inputMode="decimal" pattern="[0-9]*" value={formSodium} onChange={(e) => setFormSodium(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0" />
                 </div>
               </div>
             </div>
