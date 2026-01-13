@@ -55,18 +55,22 @@ export function TypedFoodDialog({
   const [items, setItems] = useState<FoodItem[]>([{ id: '1', food: '', quantity: '' }]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [customName, setCustomName] = useState('');
+  const [originalItemsState, setOriginalItemsState] = useState<FoodItem[]>([]);
 
   // Atualizar estado quando abrir para edição
   useEffect(() => {
     if (open) {
       if (initialItems && initialItems.length > 0) {
-        setItems(initialItems.map((item, i) => ({
+        const loadedItems = initialItems.map((item, i) => ({
           id: `${i}`,
           food: item.name,
           quantity: item.quantity,
-        })));
+        }));
+        setItems(loadedItems);
+        setOriginalItemsState(loadedItems);
       } else {
         setItems([{ id: '1', food: '', quantity: '' }]);
+        setOriginalItemsState([]);
       }
       setCustomName(initialName || '');
     }
@@ -88,11 +92,69 @@ export function TypedFoodDialog({
     ));
   };
 
+  // Check if items have changed from original
+  const hasItemsChanged = () => {
+    if (!isEditing || !initialItems) return true;
+    
+    const validItems = items.filter(item => item.food.trim() && item.quantity.trim());
+    
+    // Different number of items
+    if (validItems.length !== originalItemsState.length) return true;
+    
+    // Check each item
+    for (let i = 0; i < validItems.length; i++) {
+      const current = validItems[i];
+      const original = originalItemsState[i];
+      if (!original) return true;
+      if (current.food.trim() !== original.food.trim() || 
+          current.quantity.trim() !== original.quantity.trim()) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
   const handleAnalyze = async () => {
     const validItems = items.filter(item => item.food.trim() && item.quantity.trim());
     
     if (validItems.length === 0) {
       toast.error('Adicione pelo menos um alimento com quantidade');
+      return;
+    }
+
+    // If editing and nothing changed, just close without re-analyzing
+    if (isEditing && !hasItemsChanged() && customName.trim() === (initialName || '')) {
+      onOpenChange(false);
+      return;
+    }
+
+    // If editing and only the name changed, keep original nutrition values
+    if (isEditing && !hasItemsChanged() && initialItems && initialItems.length > 0) {
+      const entryName = customName.trim() || 'Alimentos digitados';
+      
+      // Calculate totals from initial items (original values)
+      const total = initialItems.reduce((acc, item) => ({
+        calories: acc.calories + item.calories,
+        protein: acc.protein + item.protein,
+        carbs: acc.carbs + item.carbs,
+        fat: acc.fat + item.fat,
+        saturatedFat: 0,
+        transFat: 0,
+        fiber: 0,
+        sodium: 0,
+      }), { calories: 0, protein: 0, carbs: 0, fat: 0, saturatedFat: 0, transFat: 0, fiber: 0, sodium: 0 });
+
+      onSave({
+        name: entryName,
+        items: initialItems,
+        total,
+      });
+
+      setItems([{ id: '1', food: '', quantity: '' }]);
+      setCustomName('');
+      onOpenChange(false);
+      toast.success('Registro atualizado!');
       return;
     }
 
