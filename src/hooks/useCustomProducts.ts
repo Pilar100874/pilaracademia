@@ -146,8 +146,21 @@ export function useCustomProducts() {
   const updateProduct = async (id: string, updates: Partial<CustomProduct>): Promise<CustomProduct> => {
     if (!user) throw new Error('Usuário não autenticado');
 
-    // Get the existing product to check for nutrition changes
+    // Get the existing product BEFORE update to compare nutrition values
     const existingProduct = products.find(p => p.id === id);
+    
+    // Store original nutrition values for comparison (convert to numbers for safe comparison)
+    const originalNutrition = existingProduct ? {
+      calories: Number(existingProduct.calories) || 0,
+      protein: Number(existingProduct.protein) || 0,
+      carbs: Number(existingProduct.carbs) || 0,
+      fat: Number(existingProduct.fat) || 0,
+      fiber: Number(existingProduct.fiber) || 0,
+      sodium: Number(existingProduct.sodium) || 0,
+      saturated_fat: Number(existingProduct.saturated_fat) || 0,
+      trans_fat: Number(existingProduct.trans_fat) || 0,
+      reference_quantity: Number(existingProduct.reference_quantity) || 100,
+    } : null;
     
     const { data, error } = await supabase
       .from('custom_products')
@@ -161,18 +174,33 @@ export function useCustomProducts() {
     
     const updatedProduct = data as CustomProduct;
     
+    // Compare nutrition values as numbers to avoid type coercion issues
+    const newNutrition = {
+      calories: Number(updatedProduct.calories) || 0,
+      protein: Number(updatedProduct.protein) || 0,
+      carbs: Number(updatedProduct.carbs) || 0,
+      fat: Number(updatedProduct.fat) || 0,
+      fiber: Number(updatedProduct.fiber) || 0,
+      sodium: Number(updatedProduct.sodium) || 0,
+      saturated_fat: Number(updatedProduct.saturated_fat) || 0,
+      trans_fat: Number(updatedProduct.trans_fat) || 0,
+      reference_quantity: Number(updatedProduct.reference_quantity) || 100,
+    };
+    
     // Only reprocess if nutrition values actually changed
-    const nutritionChanged = existingProduct && (
-      existingProduct.calories !== updatedProduct.calories ||
-      existingProduct.protein !== updatedProduct.protein ||
-      existingProduct.carbs !== updatedProduct.carbs ||
-      existingProduct.fat !== updatedProduct.fat ||
-      existingProduct.fiber !== updatedProduct.fiber ||
-      existingProduct.sodium !== updatedProduct.sodium ||
-      existingProduct.saturated_fat !== updatedProduct.saturated_fat ||
-      existingProduct.trans_fat !== updatedProduct.trans_fat ||
-      existingProduct.reference_quantity !== updatedProduct.reference_quantity
+    const nutritionChanged = originalNutrition && (
+      originalNutrition.calories !== newNutrition.calories ||
+      originalNutrition.protein !== newNutrition.protein ||
+      originalNutrition.carbs !== newNutrition.carbs ||
+      originalNutrition.fat !== newNutrition.fat ||
+      originalNutrition.fiber !== newNutrition.fiber ||
+      originalNutrition.sodium !== newNutrition.sodium ||
+      originalNutrition.saturated_fat !== newNutrition.saturated_fat ||
+      originalNutrition.trans_fat !== newNutrition.trans_fat ||
+      originalNutrition.reference_quantity !== newNutrition.reference_quantity
     );
+    
+    console.log('Nutrition comparison:', { originalNutrition, newNutrition, nutritionChanged });
     
     if (nutritionChanged) {
       const reprocessedCount = await reprocessEntriesForProduct(updatedProduct);
