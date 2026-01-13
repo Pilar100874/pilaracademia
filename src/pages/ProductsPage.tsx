@@ -1,5 +1,5 @@
-import { useState, useRef, useMemo } from 'react';
-import { Package, Search, Pencil, Trash2, ChevronLeft, Barcode, Plus, Droplets, Apple, Image, Filter, Upload, Loader2, ScanLine, UtensilsCrossed, Leaf } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { Package, Search, Pencil, Trash2, ChevronLeft, Barcode, Plus, Droplets, Apple, Filter, Loader2, ScanLine, UtensilsCrossed, Leaf } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -11,13 +11,13 @@ import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { useNavigate } from 'react-router-dom';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
-import { WATER_IMAGE_URL } from '@/components/DefaultLiquidImage';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ZxingScanner } from '@/components/ZxingScanner';
 import { fetchProductByBarcode, isLiquidProduct } from '@/lib/openFoodFacts';
 import { toast } from 'sonner';
 import { NATURAL_PRODUCTS, NATURAL_PRODUCT_CATEGORIES, getCategoryInfo, NaturalProduct } from '@/data/naturalProducts';
+import { ProductForm } from '@/components/ProductForm';
 
 type FilterType = 'all' | 'solid' | 'liquid';
 type ActiveTab = 'custom' | 'natural';
@@ -35,7 +35,6 @@ export function ProductsPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [isSearchingBarcode, setIsSearchingBarcode] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('custom');
   const [selectedNaturalCategory, setSelectedNaturalCategory] = useState<string | null>(null);
   
@@ -498,241 +497,15 @@ export function ProductsPage() {
     );
   };
 
-  const ProductForm = ({ isEdit }: { isEdit: boolean }) => {
-    const displayImageUrl = imagePreview || formImageUrl;
-    
-    return (
-      <div className="space-y-4 pt-2">
-        {/* Image upload */}
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => displayImageUrl && setZoomImage(displayImageUrl)}
-            className="flex h-16 w-16 items-center justify-center rounded-xl bg-secondary overflow-hidden flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all relative"
-          >
-            {isUploading ? (
-              <Loader2 className="h-6 w-6 text-primary animate-spin" />
-            ) : displayImageUrl ? (
-              <img src={displayImageUrl} alt="Preview" className="h-full w-full object-cover" />
-            ) : formIsLiquid ? (
-              <Droplets className="h-6 w-6 text-sky-500" />
-            ) : (
-              <UtensilsCrossed className="h-6 w-6 text-primary" />
-            )}
-          </button>
-          <div className="flex-1">
-            <label className="text-sm text-muted-foreground mb-1 block">Imagem do produto</label>
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  {formImageUrl || imagePreview ? 'Trocar imagem' : 'Selecionar imagem'}
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
+  const handleCancelAdd = useCallback(() => {
+    setShowAddDialog(false);
+    resetForm();
+  }, []);
 
-        {isEdit && editingProduct && (
-          <div className="p-2 rounded-lg bg-secondary/50 text-center">
-            <p className="text-xs text-muted-foreground">Código de barras</p>
-            <p className="font-mono text-sm">{editingProduct.barcode}</p>
-          </div>
-        )}
-
-        {!isEdit && (
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground block">Código de barras</label>
-            <div className="flex gap-2">
-              <Input 
-                value={formBarcode} 
-                onChange={(e) => setFormBarcode(e.target.value)} 
-                placeholder="Deixe em branco para gerar"
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setShowBarcodeScanner(true)}
-                disabled={isSearchingBarcode}
-              >
-                {isSearchingBarcode ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ScanLine className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Escaneie para preencher automaticamente
-            </p>
-          </div>
-        )}
-
-        <div>
-          <label className="text-sm text-muted-foreground mb-1 block">Nome *</label>
-          <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Nome do produto" />
-        </div>
-
-        <div>
-          <label className="text-sm text-muted-foreground mb-1 block">Marca</label>
-          <Input value={formBrand} onChange={(e) => setFormBrand(e.target.value)} placeholder="Opcional" />
-        </div>
-
-        <div className="flex items-center justify-between p-3 rounded-lg bg-sky-500/10">
-          <div className="flex items-center gap-2">
-            <Droplets className="h-4 w-4 text-sky-500" />
-            <Label htmlFor="is-liquid" className="text-sm">Produto líquido</Label>
-          </div>
-          <Switch 
-            id="is-liquid" 
-            checked={formIsLiquid} 
-            onCheckedChange={(checked) => {
-              setFormIsLiquid(checked);
-              if (checked) setFormRefUnit('ml');
-              else setFormRefUnit('g');
-            }} 
-          />
-        </div>
-
-        {/* Package info section */}
-        <div className="border-t pt-4">
-          <p className="text-sm font-medium mb-3 flex items-center gap-2">
-            <Package className="h-4 w-4 text-primary" />
-            Informações da Embalagem
-          </p>
-          <p className="text-xs text-muted-foreground mb-3">
-            Preencha para calcular consumo por porção ou unidade
-          </p>
-          
-          {formIsLiquid ? (
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Volume total (ml)</label>
-              <Input 
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={formPackageVolume} 
-                onChange={(e) => setFormPackageVolume(e.target.value.replace(/[^0-9]/g, ''))} 
-                placeholder="Ex: 350"
-              />
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Peso total (g)</label>
-                <Input 
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={formPackageWeight} 
-                  onChange={(e) => setFormPackageWeight(e.target.value.replace(/[^0-9]/g, ''))} 
-                  placeholder="Ex: 500"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Unidades</label>
-                <Input 
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={formPackageUnits} 
-                  onChange={(e) => setFormPackageUnits(e.target.value.replace(/[^0-9]/g, ''))} 
-                  placeholder="Ex: 10"
-                />
-              </div>
-              {formPackageWeight && formPackageUnits && Number(formPackageUnits) > 0 && (
-                <div className="col-span-2 text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
-                  Cada unidade: <strong>{(Number(formPackageWeight) / Number(formPackageUnits)).toFixed(0)}g</strong>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="border-t pt-4">
-          <p className="text-sm font-medium mb-1">Informações Nutricionais</p>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs text-muted-foreground">Por</span>
-            <Input 
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={formRefQuantity} 
-              onChange={(e) => setFormRefQuantity(e.target.value.replace(/[^0-9]/g, ''))} 
-              className="w-20 h-8 text-sm"
-            />
-            <span className="text-xs text-muted-foreground">{formIsLiquid ? 'ml' : 'g'}</span>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Calorias</label>
-              <Input inputMode="decimal" pattern="[0-9]*" value={formCalories} onChange={(e) => setFormCalories(e.target.value.replace(/[^0-9.]/g, ''))} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Proteína (g)</label>
-              <Input inputMode="decimal" pattern="[0-9]*" value={formProtein} onChange={(e) => setFormProtein(e.target.value.replace(/[^0-9.]/g, ''))} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Carboidratos (g)</label>
-              <Input inputMode="decimal" pattern="[0-9]*" value={formCarbs} onChange={(e) => setFormCarbs(e.target.value.replace(/[^0-9.]/g, ''))} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Gorduras (g)</label>
-              <Input inputMode="decimal" pattern="[0-9]*" value={formFat} onChange={(e) => setFormFat(e.target.value.replace(/[^0-9.]/g, ''))} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Fibras (g)</label>
-              <Input inputMode="decimal" pattern="[0-9]*" value={formFiber} onChange={(e) => setFormFiber(e.target.value.replace(/[^0-9.]/g, ''))} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Sódio (mg)</label>
-              <Input inputMode="decimal" pattern="[0-9]*" value={formSodium} onChange={(e) => setFormSodium(e.target.value.replace(/[^0-9.]/g, ''))} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">G. Saturada (g)</label>
-              <Input inputMode="decimal" pattern="[0-9]*" value={formSaturatedFat} onChange={(e) => setFormSaturatedFat(e.target.value.replace(/[^0-9.]/g, ''))} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">G. Trans (g)</label>
-              <Input inputMode="decimal" pattern="[0-9]*" value={formTransFat} onChange={(e) => setFormTransFat(e.target.value.replace(/[^0-9.]/g, ''))} />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-2 pt-2">
-          <Button variant="outline" className="flex-1" onClick={() => {
-            if (isEdit) setEditingProduct(null);
-            else setShowAddDialog(false);
-            resetForm();
-          }}>
-            Cancelar
-          </Button>
-          <Button className="flex-1" onClick={isEdit ? handleSaveEdit : handleSaveAdd}>
-            Salvar
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
+  const handleCancelEdit = useCallback(() => {
+    setEditingProduct(null);
+    resetForm();
+  }, []);
   return (
     <div className="min-h-screen gradient-hero pb-20">
       <header className="sticky top-0 z-30 glass border-b border-border/50 px-4 py-3">
@@ -1037,7 +810,53 @@ export function ProductsPage() {
               Novo Produto
             </DialogTitle>
           </DialogHeader>
-          <ProductForm isEdit={false} />
+          <ProductForm 
+            isEdit={false}
+            editingProduct={null}
+            formName={formName}
+            setFormName={setFormName}
+            formBrand={formBrand}
+            setFormBrand={setFormBrand}
+            formBarcode={formBarcode}
+            setFormBarcode={setFormBarcode}
+            formCalories={formCalories}
+            setFormCalories={setFormCalories}
+            formProtein={formProtein}
+            setFormProtein={setFormProtein}
+            formCarbs={formCarbs}
+            setFormCarbs={setFormCarbs}
+            formFat={formFat}
+            setFormFat={setFormFat}
+            formFiber={formFiber}
+            setFormFiber={setFormFiber}
+            formSodium={formSodium}
+            setFormSodium={setFormSodium}
+            formSaturatedFat={formSaturatedFat}
+            setFormSaturatedFat={setFormSaturatedFat}
+            formTransFat={formTransFat}
+            setFormTransFat={setFormTransFat}
+            formRefQuantity={formRefQuantity}
+            setFormRefQuantity={setFormRefQuantity}
+            formRefUnit={formRefUnit}
+            setFormRefUnit={setFormRefUnit}
+            formIsLiquid={formIsLiquid}
+            setFormIsLiquid={setFormIsLiquid}
+            formImageUrl={formImageUrl}
+            formPackageWeight={formPackageWeight}
+            setFormPackageWeight={setFormPackageWeight}
+            formPackageUnits={formPackageUnits}
+            setFormPackageUnits={setFormPackageUnits}
+            formPackageVolume={formPackageVolume}
+            setFormPackageVolume={setFormPackageVolume}
+            imagePreview={imagePreview}
+            isUploading={isUploading}
+            isSearchingBarcode={isSearchingBarcode}
+            onFileChange={handleFileChange}
+            onOpenBarcodeScanner={() => setShowBarcodeScanner(true)}
+            onZoomImage={(url) => setZoomImage(url)}
+            onCancel={handleCancelAdd}
+            onSave={handleSaveAdd}
+          />
         </DialogContent>
       </Dialog>
 
@@ -1053,7 +872,53 @@ export function ProductsPage() {
               Editar Produto
             </DialogTitle>
           </DialogHeader>
-          <ProductForm isEdit={true} />
+          <ProductForm 
+            isEdit={true}
+            editingProduct={editingProduct}
+            formName={formName}
+            setFormName={setFormName}
+            formBrand={formBrand}
+            setFormBrand={setFormBrand}
+            formBarcode={formBarcode}
+            setFormBarcode={setFormBarcode}
+            formCalories={formCalories}
+            setFormCalories={setFormCalories}
+            formProtein={formProtein}
+            setFormProtein={setFormProtein}
+            formCarbs={formCarbs}
+            setFormCarbs={setFormCarbs}
+            formFat={formFat}
+            setFormFat={setFormFat}
+            formFiber={formFiber}
+            setFormFiber={setFormFiber}
+            formSodium={formSodium}
+            setFormSodium={setFormSodium}
+            formSaturatedFat={formSaturatedFat}
+            setFormSaturatedFat={setFormSaturatedFat}
+            formTransFat={formTransFat}
+            setFormTransFat={setFormTransFat}
+            formRefQuantity={formRefQuantity}
+            setFormRefQuantity={setFormRefQuantity}
+            formRefUnit={formRefUnit}
+            setFormRefUnit={setFormRefUnit}
+            formIsLiquid={formIsLiquid}
+            setFormIsLiquid={setFormIsLiquid}
+            formImageUrl={formImageUrl}
+            formPackageWeight={formPackageWeight}
+            setFormPackageWeight={setFormPackageWeight}
+            formPackageUnits={formPackageUnits}
+            setFormPackageUnits={setFormPackageUnits}
+            formPackageVolume={formPackageVolume}
+            setFormPackageVolume={setFormPackageVolume}
+            imagePreview={imagePreview}
+            isUploading={isUploading}
+            isSearchingBarcode={isSearchingBarcode}
+            onFileChange={handleFileChange}
+            onOpenBarcodeScanner={() => setShowBarcodeScanner(true)}
+            onZoomImage={(url) => setZoomImage(url)}
+            onCancel={handleCancelEdit}
+            onSave={handleSaveEdit}
+          />
         </DialogContent>
       </Dialog>
 
