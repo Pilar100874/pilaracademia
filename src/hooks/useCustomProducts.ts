@@ -146,6 +146,9 @@ export function useCustomProducts() {
   const updateProduct = async (id: string, updates: Partial<CustomProduct>): Promise<CustomProduct> => {
     if (!user) throw new Error('Usuário não autenticado');
 
+    // Get the existing product to check for nutrition changes
+    const existingProduct = products.find(p => p.id === id);
+    
     const { data, error } = await supabase
       .from('custom_products')
       .update(updates)
@@ -158,13 +161,27 @@ export function useCustomProducts() {
     
     const updatedProduct = data as CustomProduct;
     
-    // Reprocess all food entries that used this product
-    const reprocessedCount = await reprocessEntriesForProduct(updatedProduct);
+    // Only reprocess if nutrition values actually changed
+    const nutritionChanged = existingProduct && (
+      existingProduct.calories !== updatedProduct.calories ||
+      existingProduct.protein !== updatedProduct.protein ||
+      existingProduct.carbs !== updatedProduct.carbs ||
+      existingProduct.fat !== updatedProduct.fat ||
+      existingProduct.fiber !== updatedProduct.fiber ||
+      existingProduct.sodium !== updatedProduct.sodium ||
+      existingProduct.saturated_fat !== updatedProduct.saturated_fat ||
+      existingProduct.trans_fat !== updatedProduct.trans_fat ||
+      existingProduct.reference_quantity !== updatedProduct.reference_quantity
+    );
     
-    if (reprocessedCount > 0) {
-      toast.success(`${reprocessedCount} consumo(s) atualizado(s)`, {
-        description: `Os registros de "${updatedProduct.name}" foram recalculados`,
-      });
+    if (nutritionChanged) {
+      const reprocessedCount = await reprocessEntriesForProduct(updatedProduct);
+      
+      if (reprocessedCount > 0) {
+        toast.success(`${reprocessedCount} consumo(s) atualizado(s)`, {
+          description: `Os registros de "${updatedProduct.name}" foram recalculados`,
+        });
+      }
     }
     
     setProducts((prev) => prev.map((p) => (p.id === id ? updatedProduct : p)));
