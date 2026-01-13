@@ -488,7 +488,6 @@ export function Dashboard() {
         onOpenSearch={() => setActiveModal('search')} 
         onOpenLiquid={() => setActiveModal('liquid')}
         onOpenTyped={() => setActiveModal('typed')}
-        onOpenVoice={() => setActiveModal('voice')}
       />
       {activeModal === 'photo' && <PhotoCapture onFoodAnalyzed={handlePhotoAnalyzed} onClose={() => setActiveModal(null)} />}
       {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => { setActiveModal(null); refetchFood(); }} />}

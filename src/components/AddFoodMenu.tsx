@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Camera, Barcode, X, Search, Droplets, Keyboard, Mic } from 'lucide-react';
+import { Plus, Camera, Barcode, X, Search, Droplets, Keyboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddFoodMenuProps {
@@ -9,10 +9,9 @@ interface AddFoodMenuProps {
   onOpenSearch: () => void;
   onOpenLiquid: () => void;
   onOpenTyped: () => void;
-  onOpenVoice: () => void;
 }
 
-export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenSearch, onOpenLiquid, onOpenTyped, onOpenVoice }: AddFoodMenuProps) {
+export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenSearch, onOpenLiquid, onOpenTyped }: AddFoodMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleAction = (action: () => void) => {
@@ -21,7 +20,6 @@ export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenSearch, onOpenLi
   };
 
   const actions = [
-    { icon: Mic, label: 'Falar', color: 'bg-rose-500', action: onOpenVoice },
     { icon: Keyboard, label: 'Digitar', color: 'bg-blue-500', action: onOpenTyped },
     { icon: Search, label: 'Buscar', color: 'bg-violet-500', action: onOpenSearch },
     { icon: Camera, label: 'Foto', color: 'bg-emerald-500', action: onOpenPhoto },
@@ -40,7 +38,7 @@ export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenSearch, onOpenLi
         isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
       )}>
         <div className="bg-card rounded-2xl shadow-floating p-3 mx-auto max-w-sm">
-          <div className="grid grid-cols-6 gap-1">
+          <div className="grid grid-cols-5 gap-1">
             {actions.map((item, i) => (
               <button
                 key={item.label}
