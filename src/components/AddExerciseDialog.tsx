@@ -19,7 +19,7 @@ interface AddExerciseDialogProps {
     name: string;
     sets: number;
     reps: number;
-    imageFile?: File;
+    imageFiles?: File[];
   }) => Promise<void>;
   editingExercise: WorkoutExercise | null;
 }
@@ -33,8 +33,8 @@ export function AddExerciseDialog({
   const [name, setName] = useState('');
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState(12);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -46,14 +46,20 @@ export function AddExerciseDialog({
       setName(editingExercise.name);
       setSets(editingExercise.sets);
       setReps(editingExercise.reps);
-      setImagePreview(editingExercise.image_url);
-      setImageFile(null);
+      // Use image_urls if available, otherwise fallback to image_url
+      const urls = editingExercise.image_urls?.length 
+        ? editingExercise.image_urls 
+        : editingExercise.image_url 
+          ? [editingExercise.image_url] 
+          : [];
+      setImagePreviews(urls);
+      setImageFiles([]);
     } else {
       setName('');
       setSets(3);
       setReps(12);
-      setImagePreview(null);
-      setImageFile(null);
+      setImagePreviews([]);
+      setImageFiles([]);
     }
   }, [editingExercise, open]);
 
@@ -71,18 +77,18 @@ export function AddExerciseDialog({
   };
 
   const handleCropComplete = (croppedFile: File) => {
-    setImageFile(croppedFile);
+    setImageFiles(prev => [...prev, croppedFile]);
     const reader = new FileReader();
     reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
+      setImagePreviews(prev => [...prev, e.target?.result as string]);
     };
     reader.readAsDataURL(croppedFile);
     setImageToCrop(null);
   };
 
-  const handleRemoveImage = () => {
-    setImagePreview(null);
-    setImageFile(null);
+  const handleRemoveImage = (index: number) => {
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
     if (cameraInputRef.current) {
       cameraInputRef.current.value = '';
     }
@@ -91,10 +97,13 @@ export function AddExerciseDialog({
     }
   };
 
-  const handleRecrop = () => {
-    if (imagePreview) {
-      setImageToCrop(imagePreview);
+  const handleRecrop = (index: number) => {
+    if (imagePreviews[index]) {
+      setImageToCrop(imagePreviews[index]);
       setCropDialogOpen(true);
+      // Remove the image being recropped
+      setImagePreviews(prev => prev.filter((_, i) => i !== index));
+      setImageFiles(prev => prev.filter((_, i) => i !== index));
     }
   };
 
@@ -107,7 +116,7 @@ export function AddExerciseDialog({
         name: name.trim(),
         sets,
         reps,
-        imageFile: imageFile || undefined,
+        imageFiles: imageFiles.length > 0 ? imageFiles : undefined,
       });
     } finally {
       setIsSaving(false);
@@ -127,81 +136,95 @@ export function AddExerciseDialog({
           <div className="space-y-4">
             {/* Image upload */}
             <div className="space-y-2">
-              <Label>Foto do Exercício</Label>
-              <div className="relative">
-                {imagePreview ? (
-                  <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-2 right-2 flex gap-1">
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="h-8 w-8"
-                        onClick={handleRecrop}
-                        title="Recortar novamente"
-                      >
-                        <Crop className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        className="h-8 w-8"
-                        onClick={handleRemoveImage}
-                        title="Remover imagem"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+              <Label>Fotos do Exercício ({imagePreviews.length}/5)</Label>
+              
+              {/* Image previews grid */}
+              {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                      <img
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-1 right-1 flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          className="h-6 w-6"
+                          onClick={() => handleRecrop(index)}
+                          title="Recortar"
+                        >
+                          <Crop className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          className="h-6 w-6"
+                          onClick={() => handleRemoveImage(index)}
+                          title="Remover"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <div className="absolute bottom-1 left-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded">
+                        {index + 1}
+                      </div>
                     </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Add more photos button */}
+              {imagePreviews.length < 5 && (
+                <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 flex flex-col items-center justify-center gap-3 p-4">
+                  {imagePreviews.length === 0 && (
+                    <>
+                      <Dumbbell className="h-10 w-10 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground text-center">
+                        Adicione fotos do exercício
+                      </p>
+                    </>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => cameraInputRef.current?.click()}
+                    >
+                      <Camera className="h-4 w-4 mr-1" />
+                      Câmera
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => galleryInputRef.current?.click()}
+                    >
+                      <ImageIcon className="h-4 w-4 mr-1" />
+                      Galeria
+                    </Button>
                   </div>
-                ) : (
-                  <div className="aspect-video rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 flex flex-col items-center justify-center gap-3 p-4">
-                    <Dumbbell className="h-10 w-10 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground text-center">
-                      Adicione uma foto do exercício
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => cameraInputRef.current?.click()}
-                      >
-                        <Camera className="h-4 w-4 mr-1" />
-                        Câmera
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => galleryInputRef.current?.click()}
-                      >
-                        <ImageIcon className="h-4 w-4 mr-1" />
-                        Galeria
-                      </Button>
-                    </div>
-                    {/* Hidden inputs */}
-                    <input
-                      ref={cameraInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="sr-only"
-                      onChange={handleImageChange}
-                    />
-                    <input
-                      ref={galleryInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="sr-only"
-                      onChange={handleImageChange}
-                    />
-                  </div>
-                )}
-              </div>
+                  {/* Hidden inputs */}
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="sr-only"
+                    onChange={handleImageChange}
+                  />
+                  <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={handleImageChange}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

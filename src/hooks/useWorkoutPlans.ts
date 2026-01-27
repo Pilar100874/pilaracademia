@@ -8,6 +8,7 @@ export interface WorkoutExercise {
   workout_plan_id: string;
   name: string;
   image_url: string | null;
+  image_urls: string[];
   sets: number;
   reps: number;
   order_index: number;
@@ -131,14 +132,17 @@ export function useWorkoutPlans() {
     mutationFn: async (data: {
       workout_plan_id: string;
       name: string;
-      image_url?: string;
+      image_urls?: string[];
       sets: number;
       reps: number;
       order_index: number;
     }) => {
       const { data: exercise, error } = await supabase
         .from('workout_exercises')
-        .insert(data)
+        .insert({
+          ...data,
+          image_url: data.image_urls?.[0] || null, // Keep backward compatibility
+        })
         .select()
         .single();
 
@@ -158,12 +162,19 @@ export function useWorkoutPlans() {
     mutationFn: async (data: {
       id: string;
       name?: string;
-      image_url?: string;
+      image_urls?: string[];
       sets?: number;
       reps?: number;
       order_index?: number;
     }) => {
-      const { id, ...updateData } = data;
+      const { id, image_urls, ...rest } = data;
+      const updateData: Record<string, unknown> = { ...rest };
+      
+      if (image_urls !== undefined) {
+        updateData.image_urls = image_urls;
+        updateData.image_url = image_urls[0] || null; // Keep backward compatibility
+      }
+      
       const { error } = await supabase
         .from('workout_exercises')
         .update(updateData)
