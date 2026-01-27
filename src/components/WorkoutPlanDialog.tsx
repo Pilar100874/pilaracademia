@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +39,7 @@ export function WorkoutPlanDialog({
   editingPlan,
 }: WorkoutPlanDialogProps) {
   const {
+    workoutPlans,
     createPlan,
     updatePlan,
     deletePlan,
@@ -50,11 +51,20 @@ export function WorkoutPlanDialog({
 
   const [name, setName] = useState('');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
-  const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
+  const [localExercises, setLocalExercises] = useState<WorkoutExercise[]>([]);
   const [selectExerciseOpen, setSelectExerciseOpen] = useState(false);
   const [createExerciseOpen, setCreateExerciseOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  // Get the current plan from workoutPlans (this updates when query is invalidated)
+  const currentPlan = useMemo(() => {
+    if (!editingPlan) return null;
+    return workoutPlans.find(p => p.id === editingPlan.id) || editingPlan;
+  }, [workoutPlans, editingPlan]);
+
+  // Sync exercises from the current plan (updates in real-time)
+  const exercises = currentPlan?.exercises || [];
 
   // Sync name and days only when the dialog opens or editingPlan changes
   useEffect(() => {
@@ -67,10 +77,10 @@ export function WorkoutPlanDialog({
     }
   }, [editingPlan?.id, open]);
 
-  // Always sync exercises from editingPlan (this updates after mutations)
+  // Sync local exercises for drag-and-drop
   useEffect(() => {
-    setExercises(editingPlan?.exercises || []);
-  }, [editingPlan?.exercises]);
+    setLocalExercises(exercises);
+  }, [exercises]);
 
   const handleDayToggle = (day: number) => {
     setSelectedDays((prev) =>
@@ -134,18 +144,18 @@ export function WorkoutPlanDialog({
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
 
-    const newExercises = [...exercises];
+    const newExercises = [...localExercises];
     const draggedItem = newExercises[draggedIndex];
     newExercises.splice(draggedIndex, 1);
     newExercises.splice(index, 0, draggedItem);
 
-    setExercises(newExercises);
+    setLocalExercises(newExercises);
     setDraggedIndex(index);
   };
 
   const handleDragEnd = async () => {
     if (draggedIndex !== null) {
-      const reorderedExercises = exercises.map((ex, idx) => ({
+      const reorderedExercises = localExercises.map((ex, idx) => ({
         id: ex.id,
         order_index: idx,
       }));
@@ -236,7 +246,7 @@ export function WorkoutPlanDialog({
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {exercises.map((exercise, index) => (
+                    {localExercises.map((exercise, index) => (
                       <div
                         key={exercise.id}
                         draggable
