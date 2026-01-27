@@ -1,0 +1,141 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+import { toast } from 'sonner';
+
+export interface LibraryExercise {
+  id: string;
+  user_id: string;
+  name: string;
+  image_urls: string[];
+  default_sets: number;
+  default_reps: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useExerciseLibrary() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: exercises = [], isLoading } = useQuery({
+    queryKey: ['exercise-library', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('exercise_library')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return data as LibraryExercise[];
+    },
+    enabled: !!user,
+  });
+
+  const createExercise = useMutation({
+    mutationFn: async (data: {
+      name: string;
+      image_urls?: string[];
+      default_sets?: number;
+      default_reps?: number;
+    }) => {
+      if (!user) throw new Error('User not authenticated');
+
+      const { data: exercise, error } = await supabase
+        .from('exercise_library')
+        .insert({
+          user_id: user.id,
+          name: data.name,
+          image_urls: data.image_urls || [],
+          default_sets: data.default_sets || 3,
+          default_reps: data.default_reps || 12,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return exercise as LibraryExercise;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+      toast.success('Exercício criado!');
+    },
+    onError: () => {
+      toast.error('Erro ao criar exercício');
+    },
+  });
+
+  const updateExercise = useMutation({
+    mutationFn: async (data: {
+      id: string;
+      name?: string;
+      image_urls?: string[];
+      default_sets?: number;
+      default_reps?: number;
+    }) => {
+      const { id, ...updateData } = data;
+      const { error } = await supabase
+        .from('exercise_library')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+      toast.success('Exercício atualizado!');
+    },
+    onError: () => {
+      toast.error('Erro ao atualizar exercício');
+    },
+  });
+
+  const deleteExercise = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('exercise_library')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+      toast.success('Exercício excluído!');
+    },
+    onError: () => {
+      toast.error('Erro ao excluir exercício');
+    },
+  });
+
+  const uploadExerciseImage = async (file: File): Promise<string> => {
+    if (!user) throw new Error('User not authenticated');
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('workout-images')
+      .upload(fileName, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from('workout-images')
+      .getPublicUrl(fileName);
+
+    return data.publicUrl;
+  };
+
+  return {
+    exercises,
+    isLoading,
+    createExercise,
+    updateExercise,
+    deleteExercise,
+    uploadExerciseImage,
+  };
+}

@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWorkoutPlans, WorkoutPlan } from '@/hooks/useWorkoutPlans';
-import { Plus, Dumbbell, Loader2 } from 'lucide-react';
+import { Plus, Dumbbell, Loader2, Library } from 'lucide-react';
 import { WorkoutPlanDialog } from '@/components/WorkoutPlanDialog';
 import { WorkoutPlanCard } from '@/components/WorkoutPlanCard';
 import { WorkoutViewerDialog } from '@/components/WorkoutViewerDialog';
@@ -11,6 +12,7 @@ import { WorkoutViewerDialog } from '@/components/WorkoutViewerDialog';
 const DAYS_OF_WEEK = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 export function WorkoutsPage() {
+  const navigate = useNavigate();
   const { workoutPlans, isLoading } = useWorkoutPlans();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<WorkoutPlan | null>(null);
@@ -49,10 +51,16 @@ export function WorkoutsPage() {
             <Dumbbell className="h-6 w-6 text-primary" />
             <h1 className="text-xl font-bold">Meus Treinos</h1>
           </div>
-          <Button size="sm" onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" />
-            Novo Treino
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => navigate('/exercises')}>
+              <Library className="h-4 w-4 mr-1" />
+              Biblioteca
+            </Button>
+            <Button size="sm" onClick={() => setDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Novo
+            </Button>
+          </div>
         </div>
       </header>
 
