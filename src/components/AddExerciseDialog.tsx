@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlans';
-import { X, Dumbbell, Save, Crop } from 'lucide-react';
+import { X, Dumbbell, Save, Crop, Camera, ImageIcon } from 'lucide-react';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 
 interface AddExerciseDialogProps {
@@ -38,7 +38,8 @@ export function AddExerciseDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (editingExercise) {
@@ -82,8 +83,11 @@ export function AddExerciseDialog({
   const handleRemoveImage = () => {
     setImagePreview(null);
     setImageFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
+    }
+    if (galleryInputRef.current) {
+      galleryInputRef.current.value = '';
     }
   };
 
@@ -147,26 +151,55 @@ export function AddExerciseDialog({
                         variant="destructive"
                         className="h-8 w-8"
                         onClick={handleRemoveImage}
+                        title="Remover imagem"
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center aspect-video rounded-lg border-2 border-dashed border-muted-foreground/25 cursor-pointer hover:border-primary/50 transition-colors bg-muted/50">
-                    <Dumbbell className="h-10 w-10 text-muted-foreground mb-2" />
-                    <span className="text-sm text-muted-foreground">
-                      Clique para adicionar foto
-                    </span>
+                  <div className="aspect-video rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 flex flex-col items-center justify-center gap-3 p-4">
+                    <Dumbbell className="h-10 w-10 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground text-center">
+                      Adicione uma foto do exercício
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => cameraInputRef.current?.click()}
+                      >
+                        <Camera className="h-4 w-4 mr-1" />
+                        Câmera
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => galleryInputRef.current?.click()}
+                      >
+                        <ImageIcon className="h-4 w-4 mr-1" />
+                        Galeria
+                      </Button>
+                    </div>
+                    {/* Hidden inputs */}
                     <input
-                      ref={fileInputRef}
+                      ref={cameraInputRef}
                       type="file"
                       accept="image/*"
                       capture="environment"
                       className="sr-only"
                       onChange={handleImageChange}
                     />
-                  </label>
+                    <input
+                      ref={galleryInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={handleImageChange}
+                    />
+                  </div>
                 )}
               </div>
             </div>
