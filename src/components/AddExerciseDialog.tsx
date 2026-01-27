@@ -258,7 +258,7 @@ export function AddExerciseDialog({
           }}
           imageSrc={imageToCrop}
           onCropComplete={handleCropComplete}
-          aspectRatio={16 / 9}
+          freeform={true}
         />
       )}
     </>

@@ -55,17 +55,21 @@ export function WorkoutPlanDialog({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
+  // Sync name and days only when the dialog opens or editingPlan changes
   useEffect(() => {
-    if (editingPlan) {
+    if (open && editingPlan) {
       setName(editingPlan.name);
       setSelectedDays(editingPlan.days_of_week);
-      setExercises(editingPlan.exercises || []);
-    } else {
+    } else if (!open) {
       setName('');
       setSelectedDays([]);
-      setExercises([]);
     }
-  }, [editingPlan, open]);
+  }, [editingPlan?.id, open]);
+
+  // Always sync exercises from editingPlan (this updates after mutations)
+  useEffect(() => {
+    setExercises(editingPlan?.exercises || []);
+  }, [editingPlan?.exercises]);
 
   const handleDayToggle = (day: number) => {
     setSelectedDays((prev) =>
