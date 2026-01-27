@@ -87,7 +87,7 @@ export function ExerciseListItem({
       </div>
 
       <ImageZoomDialog
-        imageUrl={firstImage || null}
+        images={images}
         alt={exercise.name}
         open={zoomOpen}
         onOpenChange={setZoomOpen}

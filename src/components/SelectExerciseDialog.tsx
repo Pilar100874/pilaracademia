@@ -31,7 +31,7 @@ export function SelectExerciseDialog({
   const [selectedExercise, setSelectedExercise] = useState<LibraryExercise | null>(null);
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState(12);
-  const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [zoomImages, setZoomImages] = useState<string[]>([]);
 
   const filteredExercises = exercises.filter((ex) =>
     ex.name.toLowerCase().includes(search.toLowerCase())
@@ -116,9 +116,9 @@ export function SelectExerciseDialog({
                       <div 
                         className={`relative w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0 ${firstImage ? 'hover:ring-2 hover:ring-primary transition-all' : ''}`}
                         onClick={(e) => {
-                          if (firstImage) {
+                          if (exercise.image_urls?.length) {
                             e.stopPropagation();
-                            setZoomImage(firstImage);
+                            setZoomImages(exercise.image_urls);
                           }
                         }}
                       >
@@ -207,9 +207,9 @@ export function SelectExerciseDialog({
         </div>
 
         <ImageZoomDialog
-          imageUrl={zoomImage}
-          open={!!zoomImage}
-          onOpenChange={(open) => !open && setZoomImage(null)}
+          images={zoomImages}
+          open={zoomImages.length > 0}
+          onOpenChange={(open) => !open && setZoomImages([])}
         />
       </DialogContent>
     </Dialog>
