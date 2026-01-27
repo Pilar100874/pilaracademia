@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,6 +16,7 @@ export default function ExerciseLibraryPage() {
   const [editingExercise, setEditingExercise] = useState<LibraryExercise | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState<LibraryExercise | null>(null);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
 
   const filteredExercises = exercises.filter((ex) =>
     ex.name.toLowerCase().includes(search.toLowerCase())
@@ -115,7 +117,10 @@ export default function ExerciseLibraryPage() {
                   key={exercise.id}
                   className="flex items-center gap-3 p-3 rounded-xl border bg-card"
                 >
-                  <div className="relative w-16 h-16 rounded-lg bg-muted overflow-hidden shrink-0">
+                  <div 
+                    className={`relative w-16 h-16 rounded-lg bg-muted overflow-hidden shrink-0 ${firstImage ? 'cursor-pointer hover:ring-2 hover:ring-primary transition-all' : ''}`}
+                    onClick={() => firstImage && setZoomImage(firstImage)}
+                  >
                     {firstImage ? (
                       <>
                         <img
@@ -184,6 +189,12 @@ export default function ExerciseLibraryPage() {
         onConfirm={confirmDelete}
         title="Excluir exercício?"
         description={`O exercício "${exerciseToDelete?.name}" será removido da biblioteca. Os treinos que usam este exercício não serão afetados.`}
+      />
+
+      <ImageZoomDialog
+        imageUrl={zoomImage}
+        open={!!zoomImage}
+        onOpenChange={(open) => !open && setZoomImage(null)}
       />
     </div>
   );
