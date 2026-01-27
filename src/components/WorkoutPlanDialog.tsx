@@ -108,13 +108,15 @@ export function WorkoutPlanDialog({
     name: string;
     sets: number;
     reps: number;
-    imageFile?: File;
+    imageFiles?: File[];
   }) => {
     if (!editingPlan) return;
 
-    let image_url: string | undefined;
-    if (data.imageFile) {
-      image_url = await uploadExerciseImage(data.imageFile);
+    let image_urls: string[] = [];
+    if (data.imageFiles && data.imageFiles.length > 0) {
+      image_urls = await Promise.all(
+        data.imageFiles.map(file => uploadExerciseImage(file))
+      );
     }
 
     await addExercise.mutateAsync({
@@ -122,7 +124,7 @@ export function WorkoutPlanDialog({
       name: data.name,
       sets: data.sets,
       reps: data.reps,
-      image_url,
+      image_urls: image_urls.length > 0 ? image_urls : undefined,
       order_index: exercises.length,
     });
 
@@ -133,13 +135,15 @@ export function WorkoutPlanDialog({
     name: string;
     sets: number;
     reps: number;
-    imageFile?: File;
+    imageFiles?: File[];
   }) => {
     if (!editingExercise) return;
 
-    let image_url: string | undefined;
-    if (data.imageFile) {
-      image_url = await uploadExerciseImage(data.imageFile);
+    let image_urls: string[] | undefined;
+    if (data.imageFiles && data.imageFiles.length > 0) {
+      image_urls = await Promise.all(
+        data.imageFiles.map(file => uploadExerciseImage(file))
+      );
     }
 
     await updateExercise.mutateAsync({
@@ -147,7 +151,7 @@ export function WorkoutPlanDialog({
       name: data.name,
       sets: data.sets,
       reps: data.reps,
-      ...(image_url && { image_url }),
+      ...(image_urls && { image_urls }),
     });
 
     setEditingExercise(null);

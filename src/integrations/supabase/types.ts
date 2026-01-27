@@ -408,6 +408,7 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          image_urls: string[] | null
           name: string
           order_index: number
           reps: number
@@ -418,6 +419,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          image_urls?: string[] | null
           name: string
           order_index?: number
           reps?: number
@@ -428,6 +430,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          image_urls?: string[] | null
           name?: string
           order_index?: number
           reps?: number
