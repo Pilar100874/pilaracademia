@@ -14,9 +14,10 @@ import { analyzeFood, fileToBase64, FoodAnalysisResult } from '@/lib/analyzeFood
 interface PhotoCaptureProps {
   onFoodAnalyzed: (name: string, nutrition: NutritionData, imageUrl: string, isLiquid?: boolean, liquidMl?: number, grams?: number) => void;
   onClose: () => void;
+  selectedDate?: Date;
 }
 
-export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
+export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCaptureProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -299,6 +300,7 @@ export function PhotoCapture({ onFoodAnalyzed, onClose }: PhotoCaptureProps) {
                   setSavedProduct(null);
                   setShowProductForm(true);
                 }}
+                selectedDate={selectedDate}
               />
             )}
 

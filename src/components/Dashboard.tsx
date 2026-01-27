@@ -489,9 +489,9 @@ export function Dashboard() {
         onOpenLiquid={() => setActiveModal('liquid')}
         onOpenTyped={() => setActiveModal('typed')}
       />
-      {activeModal === 'photo' && <PhotoCapture onFoodAnalyzed={handlePhotoAnalyzed} onClose={() => setActiveModal(null)} />}
-      {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => { setActiveModal(null); refetchFood(); }} />}
-      <ProductSearch isOpen={activeModal === 'search'} onClose={() => { setActiveModal(null); refetchFood(); }} />
+      {activeModal === 'photo' && <PhotoCapture onFoodAnalyzed={handlePhotoAnalyzed} onClose={() => setActiveModal(null)} selectedDate={selectedDate} />}
+      {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => { setActiveModal(null); refetchFood(); }} selectedDate={selectedDate} />}
+      <ProductSearch isOpen={activeModal === 'search'} onClose={() => { setActiveModal(null); refetchFood(); }} selectedDate={selectedDate} />
       <AddLiquidDialog open={activeModal === 'liquid'} onOpenChange={(open) => !open && setActiveModal(null)} onAddLiquid={handleAddLiquid} />
       
       {/* Voice Food Dialog - Add new or Edit existing */}
