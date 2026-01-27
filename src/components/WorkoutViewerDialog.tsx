@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
-import { ChevronLeft, ChevronRight, X, Dumbbell, ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface WorkoutViewerDialogProps {
   open: boolean;
@@ -95,18 +95,9 @@ export function WorkoutViewerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black/95"
+        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black/95 [&>button]:text-white [&>button]:hover:bg-white/20 [&>button]:top-4 [&>button]:right-4"
         onKeyDown={handleKeyDown}
       >
-        {/* Close button */}
-        <Button
-          size="icon"
-          variant="ghost"
-          className="absolute top-4 right-4 z-50 text-white hover:bg-white/20 h-10 w-10"
-          onClick={() => onOpenChange(false)}
-        >
-          <X className="h-6 w-6" />
-        </Button>
 
         {/* Header overlay */}
         <div className="absolute top-4 left-4 z-40">
