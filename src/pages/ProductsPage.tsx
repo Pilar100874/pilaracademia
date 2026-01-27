@@ -924,7 +924,7 @@ export function ProductsPage() {
 
       {/* Dialog de zoom */}
       <ImageZoomDialog 
-        imageUrl={zoomImage} 
+        images={zoomImage ? [zoomImage] : []} 
         open={!!zoomImage} 
         onOpenChange={(open) => !open && setZoomImage(null)} 
       />

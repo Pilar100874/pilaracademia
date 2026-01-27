@@ -16,7 +16,7 @@ export default function ExerciseLibraryPage() {
   const [editingExercise, setEditingExercise] = useState<LibraryExercise | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState<LibraryExercise | null>(null);
-  const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [zoomImages, setZoomImages] = useState<string[]>([]);
 
   const filteredExercises = exercises.filter((ex) =>
     ex.name.toLowerCase().includes(search.toLowerCase())
@@ -119,7 +119,7 @@ export default function ExerciseLibraryPage() {
                 >
                   <div 
                     className={`relative w-16 h-16 rounded-lg bg-muted overflow-hidden shrink-0 ${firstImage ? 'cursor-pointer hover:ring-2 hover:ring-primary transition-all' : ''}`}
-                    onClick={() => firstImage && setZoomImage(firstImage)}
+                    onClick={() => exercise.image_urls?.length && setZoomImages(exercise.image_urls)}
                   >
                     {firstImage ? (
                       <>
@@ -192,9 +192,9 @@ export default function ExerciseLibraryPage() {
       />
 
       <ImageZoomDialog
-        imageUrl={zoomImage}
-        open={!!zoomImage}
-        onOpenChange={(open) => !open && setZoomImage(null)}
+        images={zoomImages}
+        open={zoomImages.length > 0}
+        onOpenChange={(open) => !open && setZoomImages([])}
       />
     </div>
   );

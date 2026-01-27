@@ -827,7 +827,7 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped, onEdit
 
       {/* Image Zoom Dialog */}
       <ImageZoomDialog 
-        imageUrl={zoomImage} 
+        images={zoomImage ? [zoomImage] : []} 
         alt={entry.name}
         open={!!zoomImage} 
         onOpenChange={(open) => !open && setZoomImage(null)} 
