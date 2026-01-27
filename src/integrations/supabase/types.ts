@@ -125,6 +125,39 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_library: {
+        Row: {
+          created_at: string
+          default_reps: number
+          default_sets: number
+          id: string
+          image_urls: string[] | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_reps?: number
+          default_sets?: number
+          id?: string
+          image_urls?: string[] | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_reps?: number
+          default_sets?: number
+          id?: string
+          image_urls?: string[] | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       food_entries: {
         Row: {
           calories: number
@@ -406,6 +439,7 @@ export type Database = {
       workout_exercises: {
         Row: {
           created_at: string
+          exercise_library_id: string | null
           id: string
           image_url: string | null
           image_urls: string[] | null
@@ -417,6 +451,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          exercise_library_id?: string | null
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
@@ -428,6 +463,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          exercise_library_id?: string | null
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
@@ -438,6 +474,13 @@ export type Database = {
           workout_plan_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "workout_exercises_exercise_library_id_fkey"
+            columns: ["exercise_library_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_library"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "workout_exercises_workout_plan_id_fkey"
             columns: ["workout_plan_id"]

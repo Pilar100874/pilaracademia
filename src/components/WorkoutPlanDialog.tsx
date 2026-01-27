@@ -10,9 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useWorkoutPlans, WorkoutPlan, WorkoutExercise } from '@/hooks/useWorkoutPlans';
+import { LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { ExerciseListItem } from '@/components/ExerciseListItem';
-import { AddExerciseDialog } from '@/components/AddExerciseDialog';
-import { Plus, Trash2, Save, GripVertical } from 'lucide-react';
+import { SelectExerciseDialog } from '@/components/SelectExerciseDialog';
+import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
+import { Plus, Trash2, Save } from 'lucide-react';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 
 const DAYS_OF_WEEK = [
@@ -44,14 +46,13 @@ export function WorkoutPlanDialog({
     updateExercise,
     deleteExercise,
     reorderExercises,
-    uploadExerciseImage,
   } = useWorkoutPlans();
 
   const [name, setName] = useState('');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
-  const [addExerciseOpen, setAddExerciseOpen] = useState(false);
-  const [editingExercise, setEditingExercise] = useState<WorkoutExercise | null>(null);
+  const [selectExerciseOpen, setSelectExerciseOpen] = useState(false);
+  const [createExerciseOpen, setCreateExerciseOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -104,58 +105,21 @@ export function WorkoutPlanDialog({
     }
   };
 
-  const handleAddExercise = async (data: {
-    name: string;
-    sets: number;
-    reps: number;
-    imageFiles?: File[];
-  }) => {
+  const handleSelectFromLibrary = async (
+    libraryExercise: LibraryExercise,
+    sets: number,
+    reps: number
+  ) => {
     if (!editingPlan) return;
-
-    let image_urls: string[] = [];
-    if (data.imageFiles && data.imageFiles.length > 0) {
-      image_urls = await Promise.all(
-        data.imageFiles.map(file => uploadExerciseImage(file))
-      );
-    }
 
     await addExercise.mutateAsync({
       workout_plan_id: editingPlan.id,
-      name: data.name,
-      sets: data.sets,
-      reps: data.reps,
-      image_urls: image_urls.length > 0 ? image_urls : undefined,
+      name: libraryExercise.name,
+      sets,
+      reps,
+      image_urls: libraryExercise.image_urls || [],
       order_index: exercises.length,
     });
-
-    setAddExerciseOpen(false);
-  };
-
-  const handleUpdateExercise = async (data: {
-    name: string;
-    sets: number;
-    reps: number;
-    imageFiles?: File[];
-  }) => {
-    if (!editingExercise) return;
-
-    let image_urls: string[] | undefined;
-    if (data.imageFiles && data.imageFiles.length > 0) {
-      image_urls = await Promise.all(
-        data.imageFiles.map(file => uploadExerciseImage(file))
-      );
-    }
-
-    await updateExercise.mutateAsync({
-      id: editingExercise.id,
-      name: data.name,
-      sets: data.sets,
-      reps: data.reps,
-      ...(image_urls && { image_urls }),
-    });
-
-    setEditingExercise(null);
-    setAddExerciseOpen(false);
   };
 
   const handleDeleteExercise = async (id: string) => {
@@ -190,9 +154,12 @@ export function WorkoutPlanDialog({
     setDraggedIndex(null);
   };
 
-  const handleEditExercise = (exercise: WorkoutExercise) => {
-    setEditingExercise(exercise);
-    setAddExerciseOpen(true);
+  const handleUpdateExerciseSetsReps = async (exercise: WorkoutExercise, sets: number, reps: number) => {
+    await updateExercise.mutateAsync({
+      id: exercise.id,
+      sets,
+      reps,
+    });
   };
 
   return (
@@ -242,14 +209,11 @@ export function WorkoutPlanDialog({
             {editingPlan && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Exercícios</Label>
+                  <Label>Exercícios (arraste para reordenar)</Label>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => {
-                      setEditingExercise(null);
-                      setAddExerciseOpen(true);
-                    }}
+                    onClick={() => setSelectExerciseOpen(true)}
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Adicionar
@@ -257,9 +221,19 @@ export function WorkoutPlanDialog({
                 </div>
 
                 {exercises.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Nenhum exercício adicionado
-                  </p>
+                  <div className="text-center py-6 border-2 border-dashed rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Nenhum exercício adicionado
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectExerciseOpen(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Adicionar da Biblioteca
+                    </Button>
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     {exercises.map((exercise, index) => (
@@ -276,7 +250,7 @@ export function WorkoutPlanDialog({
                         <ExerciseListItem
                           exercise={exercise}
                           index={index}
-                          onEdit={() => handleEditExercise(exercise)}
+                          onEdit={() => {}}
                           onDelete={() => handleDeleteExercise(exercise.id)}
                         />
                       </div>
@@ -310,14 +284,26 @@ export function WorkoutPlanDialog({
         </DialogContent>
       </Dialog>
 
-      <AddExerciseDialog
-        open={addExerciseOpen}
-        onOpenChange={(open) => {
-          setAddExerciseOpen(open);
-          if (!open) setEditingExercise(null);
+      <SelectExerciseDialog
+        open={selectExerciseOpen}
+        onOpenChange={setSelectExerciseOpen}
+        onSelect={handleSelectFromLibrary}
+        onCreateNew={() => {
+          setSelectExerciseOpen(false);
+          setCreateExerciseOpen(true);
         }}
-        onSave={editingExercise ? handleUpdateExercise : handleAddExercise}
-        editingExercise={editingExercise}
+      />
+
+      <ExerciseLibraryDialog
+        open={createExerciseOpen}
+        onOpenChange={(open) => {
+          setCreateExerciseOpen(open);
+          if (!open) {
+            // Reopen select dialog after creating
+            setSelectExerciseOpen(true);
+          }
+        }}
+        editingExercise={null}
       />
 
       <ConfirmDeleteDialog
