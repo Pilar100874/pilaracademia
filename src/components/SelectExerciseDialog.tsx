@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary';
+import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { Dumbbell, Search, Plus, Check, ImageIcon } from 'lucide-react';
 
 interface SelectExerciseDialogProps {
@@ -30,6 +31,7 @@ export function SelectExerciseDialog({
   const [selectedExercise, setSelectedExercise] = useState<LibraryExercise | null>(null);
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState(12);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
 
   const filteredExercises = exercises.filter((ex) =>
     ex.name.toLowerCase().includes(search.toLowerCase())
@@ -111,7 +113,15 @@ export function SelectExerciseDialog({
                           : 'border-border hover:bg-muted/50'
                       }`}
                     >
-                      <div className="relative w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0">
+                      <div 
+                        className={`relative w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0 ${firstImage ? 'hover:ring-2 hover:ring-primary transition-all' : ''}`}
+                        onClick={(e) => {
+                          if (firstImage) {
+                            e.stopPropagation();
+                            setZoomImage(firstImage);
+                          }
+                        }}
+                      >
                         {firstImage ? (
                           <>
                             <img
@@ -195,6 +205,12 @@ export function SelectExerciseDialog({
             </Button>
           )}
         </div>
+
+        <ImageZoomDialog
+          imageUrl={zoomImage}
+          open={!!zoomImage}
+          onOpenChange={(open) => !open && setZoomImage(null)}
+        />
       </DialogContent>
     </Dialog>
   );
