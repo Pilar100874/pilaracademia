@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlans';
-import { Camera, Upload, X, Dumbbell, Save } from 'lucide-react';
+import { X, Dumbbell, Save, Crop } from 'lucide-react';
+import { ImageCropDialog } from '@/components/ImageCropDialog';
 
 interface AddExerciseDialogProps {
   open: boolean;
@@ -35,6 +36,8 @@ export function AddExerciseDialog({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -56,13 +59,24 @@ export function AddExerciseDialog({
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
+        const dataUrl = e.target?.result as string;
+        setImageToCrop(dataUrl);
+        setCropDialogOpen(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (croppedFile: File) => {
+    setImageFile(croppedFile);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(croppedFile);
+    setImageToCrop(null);
   };
 
   const handleRemoveImage = () => {
@@ -70,6 +84,13 @@ export function AddExerciseDialog({
     setImageFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRecrop = () => {
+    if (imagePreview) {
+      setImageToCrop(imagePreview);
+      setCropDialogOpen(true);
     }
   };
 
@@ -90,97 +111,123 @@ export function AddExerciseDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>
-            {editingExercise ? 'Editar Exercício' : 'Adicionar Exercício'}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {editingExercise ? 'Editar Exercício' : 'Adicionar Exercício'}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Image upload */}
-          <div className="space-y-2">
-            <Label>Foto do Exercício</Label>
-            <div className="relative">
-              {imagePreview ? (
-                <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                  <Button
-                    size="icon"
-                    variant="destructive"
-                    className="absolute top-2 right-2 h-8 w-8"
-                    onClick={handleRemoveImage}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center aspect-video rounded-lg border-2 border-dashed border-muted-foreground/25 cursor-pointer hover:border-primary/50 transition-colors bg-muted/50">
-                  <Dumbbell className="h-10 w-10 text-muted-foreground mb-2" />
-                  <span className="text-sm text-muted-foreground">
-                    Clique para adicionar foto
-                  </span>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="sr-only"
-                    onChange={handleImageChange}
-                  />
-                </label>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="exercise-name">Nome do Exercício</Label>
-            <Input
-              id="exercise-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Supino Reto"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4">
+            {/* Image upload */}
             <div className="space-y-2">
-              <Label htmlFor="sets">Séries</Label>
+              <Label>Foto do Exercício</Label>
+              <div className="relative">
+                {imagePreview ? (
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="h-8 w-8"
+                        onClick={handleRecrop}
+                        title="Recortar novamente"
+                      >
+                        <Crop className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="h-8 w-8"
+                        onClick={handleRemoveImage}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center aspect-video rounded-lg border-2 border-dashed border-muted-foreground/25 cursor-pointer hover:border-primary/50 transition-colors bg-muted/50">
+                    <Dumbbell className="h-10 w-10 text-muted-foreground mb-2" />
+                    <span className="text-sm text-muted-foreground">
+                      Clique para adicionar foto
+                    </span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="sr-only"
+                      onChange={handleImageChange}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="exercise-name">Nome do Exercício</Label>
               <Input
-                id="sets"
-                type="number"
-                min={1}
-                value={sets}
-                onChange={(e) => setSets(Number(e.target.value))}
+                id="exercise-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: Supino Reto"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="reps">Repetições</Label>
-              <Input
-                id="reps"
-                type="number"
-                min={1}
-                value={reps}
-                onChange={(e) => setReps(Number(e.target.value))}
-              />
-            </div>
-          </div>
 
-          <Button
-            onClick={handleSave}
-            disabled={!name.trim() || isSaving}
-            className="w-full"
-          >
-            <Save className="h-4 w-4 mr-1" />
-            {isSaving ? 'Salvando...' : 'Salvar'}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="sets">Séries</Label>
+                <Input
+                  id="sets"
+                  type="number"
+                  min={1}
+                  value={sets}
+                  onChange={(e) => setSets(Number(e.target.value))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reps">Repetições</Label>
+                <Input
+                  id="reps"
+                  type="number"
+                  min={1}
+                  value={reps}
+                  onChange={(e) => setReps(Number(e.target.value))}
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleSave}
+              disabled={!name.trim() || isSaving}
+              className="w-full"
+            >
+              <Save className="h-4 w-4 mr-1" />
+              {isSaving ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {imageToCrop && (
+        <ImageCropDialog
+          open={cropDialogOpen}
+          onOpenChange={(open) => {
+            setCropDialogOpen(open);
+            if (!open) setImageToCrop(null);
+          }}
+          imageSrc={imageToCrop}
+          onCropComplete={handleCropComplete}
+          aspectRatio={16 / 9}
+        />
+      )}
+    </>
   );
 }

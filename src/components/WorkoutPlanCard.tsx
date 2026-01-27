@@ -2,23 +2,24 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
-import { Edit, ChevronRight, Dumbbell } from 'lucide-react';
+import { Edit, ChevronRight, Dumbbell, Play } from 'lucide-react';
 
 const DAYS_SHORT = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
 interface WorkoutPlanCardProps {
   plan: WorkoutPlan;
   onEdit: () => void;
+  onStart?: () => void;
   compact?: boolean;
 }
 
-export function WorkoutPlanCard({ plan, onEdit, compact }: WorkoutPlanCardProps) {
+export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanCardProps) {
   const exerciseCount = plan.exercises?.length || 0;
 
   if (compact) {
     return (
       <div
-        onClick={onEdit}
+        onClick={onStart || onEdit}
         className="flex items-center justify-between p-3 rounded-lg bg-card border cursor-pointer hover:bg-accent/50 transition-colors"
       >
         <div className="flex items-center gap-3">
@@ -32,7 +33,14 @@ export function WorkoutPlanCard({ plan, onEdit, compact }: WorkoutPlanCardProps)
             </p>
           </div>
         </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          {exerciseCount > 0 && (
+            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+              <Play className="h-4 w-4 text-primary-foreground ml-0.5" />
+            </div>
+          )}
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </div>
       </div>
     );
   }
@@ -97,9 +105,16 @@ export function WorkoutPlanCard({ plan, onEdit, compact }: WorkoutPlanCardProps)
             )}
           </div>
 
-          <Button size="icon" variant="ghost" onClick={onEdit}>
-            <Edit className="h-4 w-4" />
-          </Button>
+          <div className="flex flex-col gap-1">
+            {exerciseCount > 0 && onStart && (
+              <Button size="icon" variant="default" onClick={onStart} title="Iniciar treino">
+                <Play className="h-4 w-4 ml-0.5" />
+              </Button>
+            )}
+            <Button size="icon" variant="ghost" onClick={onEdit} title="Editar">
+              <Edit className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

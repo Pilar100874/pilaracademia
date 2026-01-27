@@ -6,6 +6,7 @@ import { useWorkoutPlans, WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { Plus, Dumbbell, Loader2 } from 'lucide-react';
 import { WorkoutPlanDialog } from '@/components/WorkoutPlanDialog';
 import { WorkoutPlanCard } from '@/components/WorkoutPlanCard';
+import { WorkoutViewerDialog } from '@/components/WorkoutViewerDialog';
 
 const DAYS_OF_WEEK = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -13,10 +14,17 @@ export function WorkoutsPage() {
   const { workoutPlans, isLoading } = useWorkoutPlans();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<WorkoutPlan | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewingPlan, setViewingPlan] = useState<WorkoutPlan | null>(null);
 
   const handleEdit = (plan: WorkoutPlan) => {
     setEditingPlan(plan);
     setDialogOpen(true);
+  };
+
+  const handleStart = (plan: WorkoutPlan) => {
+    setViewingPlan(plan);
+    setViewerOpen(true);
   };
 
   const handleCloseDialog = () => {
@@ -84,6 +92,7 @@ export function WorkoutsPage() {
                       key={plan.id}
                       plan={plan}
                       onEdit={() => handleEdit(plan)}
+                      onStart={() => handleStart(plan)}
                       compact
                     />
                   ))}
@@ -101,6 +110,7 @@ export function WorkoutsPage() {
                   key={plan.id}
                   plan={plan}
                   onEdit={() => handleEdit(plan)}
+                  onStart={() => handleStart(plan)}
                 />
               ))}
             </div>
@@ -113,6 +123,14 @@ export function WorkoutsPage() {
         onOpenChange={handleCloseDialog}
         editingPlan={editingPlan}
       />
+
+      {viewingPlan && (
+        <WorkoutViewerDialog
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+          plan={viewingPlan}
+        />
+      )}
 
       <BottomNav />
     </div>
