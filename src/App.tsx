@@ -8,6 +8,7 @@ import { HistoryPage } from "@/pages/HistoryPage";
 import { ProjectionsPage } from "@/pages/ProjectionsPage";
 import { ProductsPage } from "@/pages/ProductsPage";
 import { HealthPage } from "@/pages/HealthPage";
+import { WorkoutsPage } from "@/pages/WorkoutsPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import NotFound from "./pages/NotFound";
@@ -91,6 +92,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProductsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/workouts"
+        element={
+          <ProtectedRoute>
+            <WorkoutsPage />
           </ProtectedRoute>
         }
       />
