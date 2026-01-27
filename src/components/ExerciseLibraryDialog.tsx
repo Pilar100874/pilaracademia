@@ -28,8 +28,8 @@ export function ExerciseLibraryDialog({
   const [name, setName] = useState('');
   const [defaultSets, setDefaultSets] = useState(3);
   const [defaultReps, setDefaultReps] = useState(12);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  // Track images with their type (existing URL or new file)
+  const [images, setImages] = useState<Array<{ type: 'url' | 'file'; value: string; file?: File }>>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -43,14 +43,17 @@ export function ExerciseLibraryDialog({
         setName(editingExercise.name);
         setDefaultSets(editingExercise.default_sets);
         setDefaultReps(editingExercise.default_reps);
-        setImagePreviews(editingExercise.image_urls || []);
-        setImageFiles([]);
+        // Convert existing URLs to our unified format
+        const existingImages = (editingExercise.image_urls || []).map(url => ({
+          type: 'url' as const,
+          value: url,
+        }));
+        setImages(existingImages);
       } else {
         setName('');
         setDefaultSets(3);
         setDefaultReps(12);
-        setImagePreviews([]);
-        setImageFiles([]);
+        setImages([]);
       }
     }
   }, [editingExercise?.id, open]);
@@ -71,26 +74,25 @@ export function ExerciseLibraryDialog({
   };
 
   const handleCropComplete = (croppedFile: File) => {
-    setImageFiles((prev) => [...prev, croppedFile]);
     const reader = new FileReader();
     reader.onload = (e) => {
-      setImagePreviews((prev) => [...prev, e.target?.result as string]);
+      const dataUrl = e.target?.result as string;
+      setImages((prev) => [...prev, { type: 'file', value: dataUrl, file: croppedFile }]);
     };
     reader.readAsDataURL(croppedFile);
     setImageToCrop(null);
   };
 
   const handleRemoveImage = (index: number) => {
-    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
-    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleRecrop = (index: number) => {
-    if (imagePreviews[index]) {
-      setImageToCrop(imagePreviews[index]);
+    const imageToRecrop = images[index];
+    if (imageToRecrop) {
+      setImageToCrop(imageToRecrop.value);
       setCropDialogOpen(true);
-      setImagePreviews((prev) => prev.filter((_, i) => i !== index));
-      setImageFiles((prev) => prev.filter((_, i) => i !== index));
+      setImages((prev) => prev.filter((_, i) => i !== index));
     }
   };
 
@@ -99,19 +101,32 @@ export function ExerciseLibraryDialog({
 
     setIsSaving(true);
     try {
+      // Separate existing URLs from new files
+      const existingUrls = images
+        .filter((img) => img.type === 'url')
+        .map((img) => img.value);
+      
+      const newFiles = images
+        .filter((img) => img.type === 'file' && img.file)
+        .map((img) => img.file!);
+
       // Upload new images
       let newImageUrls: string[] = [];
-      if (imageFiles.length > 0) {
+      if (newFiles.length > 0) {
         newImageUrls = await Promise.all(
-          imageFiles.map((file) => uploadExerciseImage(file))
+          newFiles.map((file) => uploadExerciseImage(file))
         );
       }
 
-      // Combine existing URLs (from editing) with new ones
-      const existingUrls = editingExercise
-        ? imagePreviews.filter((url) => url.startsWith('http'))
-        : [];
-      const allImageUrls = [...existingUrls, ...newImageUrls];
+      // Preserve order: iterate through images array and replace files with uploaded URLs
+      let fileIndex = 0;
+      const allImageUrls = images.map((img) => {
+        if (img.type === 'url') {
+          return img.value;
+        } else {
+          return newImageUrls[fileIndex++];
+        }
+      });
 
       if (editingExercise) {
         await updateExercise.mutateAsync({
@@ -149,17 +164,17 @@ export function ExerciseLibraryDialog({
           <div className="space-y-4">
             {/* Image upload */}
             <div className="space-y-2">
-              <Label>Fotos ({imagePreviews.length}/5)</Label>
+              <Label>Fotos ({images.length}/5)</Label>
 
-              {imagePreviews.length > 0 && (
+              {images.length > 0 && (
                 <div className="grid grid-cols-3 gap-2">
-                  {imagePreviews.map((preview, index) => (
+                  {images.map((image, index) => (
                     <div
                       key={index}
                       className="relative aspect-square rounded-lg overflow-hidden bg-muted"
                     >
                       <img
-                        src={preview}
+                        src={image.value}
                         alt={`Preview ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
@@ -191,9 +206,9 @@ export function ExerciseLibraryDialog({
                 </div>
               )}
 
-              {imagePreviews.length < 5 && (
+              {images.length < 5 && (
                 <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 flex flex-col items-center justify-center gap-3 p-4">
-                  {imagePreviews.length === 0 && (
+                  {images.length === 0 && (
                     <>
                       <Dumbbell className="h-10 w-10 text-muted-foreground" />
                       <p className="text-sm text-muted-foreground text-center">
