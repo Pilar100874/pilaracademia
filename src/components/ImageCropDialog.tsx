@@ -16,6 +16,7 @@ interface ImageCropDialogProps {
   imageSrc: string;
   onCropComplete: (croppedFile: File) => void;
   aspectRatio?: number;
+  freeform?: boolean;
 }
 
 function centerAspectCrop(
@@ -44,6 +45,7 @@ export function ImageCropDialog({
   imageSrc,
   onCropComplete,
   aspectRatio = 16 / 9,
+  freeform = false,
 }: ImageCropDialogProps) {
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
@@ -52,15 +54,36 @@ export function ImageCropDialog({
   const onImageLoad = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
       const { width, height } = e.currentTarget;
-      setCrop(centerAspectCrop(width, height, aspectRatio));
+      if (freeform) {
+        // Set a centered 80% crop without aspect ratio lock
+        setCrop({
+          unit: '%',
+          x: 10,
+          y: 10,
+          width: 80,
+          height: 80,
+        });
+      } else {
+        setCrop(centerAspectCrop(width, height, aspectRatio));
+      }
     },
-    [aspectRatio]
+    [aspectRatio, freeform]
   );
 
   const handleResetCrop = () => {
     if (imgRef.current) {
       const { width, height } = imgRef.current;
-      setCrop(centerAspectCrop(width, height, aspectRatio));
+      if (freeform) {
+        setCrop({
+          unit: '%',
+          x: 10,
+          y: 10,
+          width: 80,
+          height: 80,
+        });
+      } else {
+        setCrop(centerAspectCrop(width, height, aspectRatio));
+      }
     }
   };
 
@@ -129,7 +152,7 @@ export function ImageCropDialog({
               crop={crop}
               onChange={(_, percentCrop) => setCrop(percentCrop)}
               onComplete={(c) => setCompletedCrop(c)}
-              aspect={aspectRatio}
+              aspect={freeform ? undefined : aspectRatio}
               className="max-h-[50vh]"
             >
               <img
