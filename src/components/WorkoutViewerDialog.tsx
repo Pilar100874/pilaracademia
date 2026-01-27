@@ -125,11 +125,11 @@ export function WorkoutViewerDialog({
 
         {/* Photo navigation (left/right) - only show if multiple photos */}
         {hasMultiplePhotos && (
-          <>
+          <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-40 flex justify-between px-4">
             <Button
               size="icon"
               variant="ghost"
-              className={`absolute left-4 top-1/2 -translate-y-1/2 z-40 h-12 w-12 rounded-full bg-black/50 text-white hover:bg-black/70 ${
+              className={`h-12 w-12 rounded-full bg-orange-500 text-white hover:bg-orange-600 ${
                 currentPhotoIndex === 0 ? 'opacity-30 cursor-not-allowed' : ''
               }`}
               onClick={handlePreviousPhoto}
@@ -137,10 +137,16 @@ export function WorkoutViewerDialog({
             >
               <ChevronLeft className="h-8 w-8" />
             </Button>
+            
+            {/* Photo counter - centered */}
+            <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium self-center">
+              Foto {currentPhotoIndex + 1} de {currentImages.length}
+            </div>
+            
             <Button
               size="icon"
               variant="ghost"
-              className={`absolute right-4 top-1/2 -translate-y-1/2 z-40 h-12 w-12 rounded-full bg-black/50 text-white hover:bg-black/70 ${
+              className={`h-12 w-12 rounded-full bg-orange-500 text-white hover:bg-orange-600 ${
                 currentPhotoIndex === currentImages.length - 1 ? 'opacity-30 cursor-not-allowed' : ''
               }`}
               onClick={handleNextPhoto}
@@ -148,12 +154,7 @@ export function WorkoutViewerDialog({
             >
               <ChevronRight className="h-8 w-8" />
             </Button>
-
-            {/* Photo counter */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-              Foto {currentPhotoIndex + 1} de {currentImages.length}
-            </div>
-          </>
+          </div>
         )}
 
         {/* Exercise info overlay - bottom */}
