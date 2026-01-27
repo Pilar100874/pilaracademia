@@ -14,6 +14,7 @@ import { LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { ExerciseListItem } from '@/components/ExerciseListItem';
 import { SelectExerciseDialog } from '@/components/SelectExerciseDialog';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
+import { EditWorkoutExerciseDialog } from '@/components/EditWorkoutExerciseDialog';
 import { Plus, Trash2, Save } from 'lucide-react';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 
@@ -55,6 +56,7 @@ export function WorkoutPlanDialog({
   const [selectExerciseOpen, setSelectExerciseOpen] = useState(false);
   const [createExerciseOpen, setCreateExerciseOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingExercise, setEditingExercise] = useState<WorkoutExercise | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   // Get the current plan from workoutPlans (this updates when query is invalidated)
@@ -164,12 +166,18 @@ export function WorkoutPlanDialog({
     setDraggedIndex(null);
   };
 
-  const handleUpdateExerciseSetsReps = async (exercise: WorkoutExercise, sets: number, reps: number) => {
+  const handleEditExercise = (exercise: WorkoutExercise) => {
+    setEditingExercise(exercise);
+  };
+
+  const handleSaveExercise = async (sets: number, reps: number) => {
+    if (!editingExercise) return;
     await updateExercise.mutateAsync({
-      id: exercise.id,
+      id: editingExercise.id,
       sets,
       reps,
     });
+    setEditingExercise(null);
   };
 
   return (
@@ -260,7 +268,7 @@ export function WorkoutPlanDialog({
                         <ExerciseListItem
                           exercise={exercise}
                           index={index}
-                          onEdit={() => {}}
+                          onEdit={() => handleEditExercise(exercise)}
                           onDelete={() => handleDeleteExercise(exercise.id)}
                         />
                       </div>
@@ -322,6 +330,13 @@ export function WorkoutPlanDialog({
         onConfirm={handleDelete}
         title="Excluir treino?"
         description="Esta ação não pode ser desfeita. Todos os exercícios deste treino serão removidos."
+      />
+
+      <EditWorkoutExerciseDialog
+        open={!!editingExercise}
+        onOpenChange={(open) => !open && setEditingExercise(null)}
+        exercise={editingExercise}
+        onSave={handleSaveExercise}
       />
     </>
   );
