@@ -36,33 +36,38 @@ export function ExerciseLibraryDialog({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  // Reset form when dialog opens/closes or editing exercise changes
   useEffect(() => {
-    if (editingExercise) {
-      setName(editingExercise.name);
-      setDefaultSets(editingExercise.default_sets);
-      setDefaultReps(editingExercise.default_reps);
-      setImagePreviews(editingExercise.image_urls || []);
-      setImageFiles([]);
-    } else {
-      setName('');
-      setDefaultSets(3);
-      setDefaultReps(12);
-      setImagePreviews([]);
-      setImageFiles([]);
+    if (open) {
+      if (editingExercise) {
+        setName(editingExercise.name);
+        setDefaultSets(editingExercise.default_sets);
+        setDefaultReps(editingExercise.default_reps);
+        setImagePreviews(editingExercise.image_urls || []);
+        setImageFiles([]);
+      } else {
+        setName('');
+        setDefaultSets(3);
+        setDefaultReps(12);
+        setImagePreviews([]);
+        setImageFiles([]);
+      }
     }
-  }, [editingExercise, open]);
+  }, [editingExercise?.id, open]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
         setImageToCrop(dataUrl);
         setCropDialogOpen(true);
       };
       reader.readAsDataURL(file);
     }
+    // Reset the input so the same file can be selected again
+    e.target.value = '';
   };
 
   const handleCropComplete = (croppedFile: File) => {
