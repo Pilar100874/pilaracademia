@@ -15,9 +15,10 @@ import { toast } from 'sonner';
 interface ProductSearchProps {
   isOpen: boolean;
   onClose: () => void;
+  selectedDate?: Date;
 }
 
-export function ProductSearch({ isOpen, onClose }: ProductSearchProps) {
+export function ProductSearch({ isOpen, onClose, selectedDate }: ProductSearchProps) {
   const { products, isLoading } = useCustomProducts();
   const { kits, isLoading: isLoadingKits, launchKit, deleteKit, refetch: refetchKits } = useFoodKits();
   const [search, setSearch] = useState('');
@@ -411,6 +412,7 @@ export function ProductSearch({ isOpen, onClose }: ProductSearchProps) {
         open={showConsumption}
         onOpenChange={handleConsumptionClose}
         onSuccess={handleConsumptionSuccess}
+        selectedDate={selectedDate}
       />
 
       <KitFormDialog

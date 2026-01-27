@@ -13,9 +13,10 @@ import { toast } from 'sonner';
 interface BarcodeScannerProps {
   onProductFound: (product: BarcodeProduct, portionGrams: number, isLiquid?: boolean, liquidMl?: number) => void;
   onClose: () => void;
+  selectedDate?: Date;
 }
 
-export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps) {
+export function BarcodeScanner({ onProductFound, onClose, selectedDate }: BarcodeScannerProps) {
   const { getProductByBarcode, saveProduct, products } = useCustomProducts();
   const [barcode, setBarcode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -246,6 +247,7 @@ export function BarcodeScanner({ onProductFound, onClose }: BarcodeScannerProps)
           setFoundProduct(null);
           setShowProductForm(true);
         }}
+        selectedDate={selectedDate}
       />
     );
   }

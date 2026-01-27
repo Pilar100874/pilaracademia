@@ -6,9 +6,10 @@ import { CustomProduct } from '@/hooks/useCustomProducts';
 interface ManualEntryFormProps {
   onSubmit: (name: string, nutrition: any, quantity: number, unit: string) => void;
   onClose: () => void;
+  selectedDate?: Date;
 }
 
-export function ManualEntryForm({ onSubmit, onClose }: ManualEntryFormProps) {
+export function ManualEntryForm({ onSubmit, onClose, selectedDate }: ManualEntryFormProps) {
   const [savedProduct, setSavedProduct] = useState<CustomProduct | null>(null);
   const [showConsumptionDialog, setShowConsumptionDialog] = useState(false);
 
@@ -37,6 +38,7 @@ export function ManualEntryForm({ onSubmit, onClose }: ManualEntryFormProps) {
           }
         }}
         onSuccess={handleConsumptionSuccess}
+        selectedDate={selectedDate}
       />
     );
   }

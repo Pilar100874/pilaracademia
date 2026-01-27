@@ -14,6 +14,7 @@ interface ProductConsumptionDialogProps {
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
   onBack?: () => void;
+  selectedDate?: Date;
 }
 
 // Glass size in ml (standard glass)
@@ -39,9 +40,10 @@ export function ProductConsumptionDialog({
   open, 
   onOpenChange,
   onSuccess,
-  onBack
+  onBack,
+  selectedDate
 }: ProductConsumptionDialogProps) {
-  const { addEntry } = useFoodEntries();
+  const { addEntry } = useFoodEntries(selectedDate);
   const [selectedMl, setSelectedMl] = useState<number | null>(null);
   const [customMl, setCustomMl] = useState('');
   const [isCustom, setIsCustom] = useState(false);
