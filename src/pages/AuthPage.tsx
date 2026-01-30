@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
-
 import { Loader2 } from 'lucide-react';
 
 export function AuthPage() {
@@ -31,26 +30,48 @@ export function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen gradient-hero flex items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8 animate-slide-up">
           <img 
             src="/pwa-512x512.png" 
             alt="Pilar Calorias Logo" 
-            className="h-24 w-24 mx-auto mb-4 rounded-2xl"
+            className="h-24 w-24 mx-auto mb-4 rounded-3xl shadow-lg"
           />
-          <h1 className="text-3xl font-bold">Pilar Calorias</h1>
+          <h1 className="text-3xl font-extrabold text-foreground">Pilar Calorias</h1>
           <p className="text-muted-foreground mt-2">
             Controle Calórico Inteligente
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="rounded-3xl bg-card p-6 shadow-elevated animate-scale-in">
-          <h2 className="text-xl font-semibold text-center mb-6">
-            {isLogin ? 'Entrar' : 'Criar conta'}
-          </h2>
+        <div className="rounded-3xl bg-card p-6 shadow-card animate-scale-in">
+          {/* Toggle */}
+          <div className="flex rounded-2xl bg-muted p-1 mb-6">
+            <button
+              type="button"
+              onClick={() => setIsLogin(true)}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-xl transition-all ${
+                isLogin 
+                  ? 'bg-card shadow-soft text-foreground' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Entrar
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsLogin(false)}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-xl transition-all ${
+                !isLogin 
+                  ? 'bg-card shadow-soft text-foreground' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Cadastrar
+            </button>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
@@ -62,6 +83,7 @@ export function AuthPage() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Seu nome"
                   required={!isLogin}
+                  className="h-12 rounded-xl"
                 />
               </div>
             )}
@@ -74,6 +96,7 @@ export function AuthPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
                 required
+                className="h-12 rounded-xl"
               />
             </div>
 
@@ -86,14 +109,14 @@ export function AuthPage() {
                 placeholder="••••••••"
                 minLength={6}
                 required
+                className="h-12 rounded-xl"
               />
             </div>
 
             <Button
               type="submit"
-              variant="gradient"
               size="lg"
-              className="w-full mt-6"
+              className="w-full h-12 mt-6 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -105,18 +128,6 @@ export function AuthPage() {
               )}
             </Button>
           </form>
-
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-primary hover:underline"
-            >
-              {isLogin
-                ? 'Não tem conta? Criar agora'
-                : 'Já tem conta? Entrar'}
-            </button>
-          </div>
         </div>
       </div>
     </div>

@@ -57,11 +57,21 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Semantic colors for macros
+        calories: "hsl(var(--calories))",
+        protein: "hsl(var(--protein))",
+        carbs: "hsl(var(--carbs))",
+        fat: "hsl(var(--fat))",
+        fiber: "hsl(var(--fiber))",
+        water: "hsl(var(--water))",
+        exercise: "hsl(var(--exercise))",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        "2xl": "1.25rem",
+        "3xl": "1.5rem",
       },
       keyframes: {
         "accordion-down": {
@@ -80,10 +90,15 @@ export default {
             height: "0",
           },
         },
+        "pulse-soft": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-soft": "pulse-soft 2s ease-in-out infinite",
       },
     },
   },
