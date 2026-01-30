@@ -14,9 +14,9 @@ interface BMICategory {
 }
 
 const bmiCategories: BMICategory[] = [
-  { min: 0, max: 18.5, label: 'Abaixo do peso', color: 'text-blue-600', bgColor: 'bg-blue-500', description: 'Pode indicar desnutrição ou problemas de saúde.' },
-  { min: 18.5, max: 25, label: 'Peso normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500', description: 'Faixa ideal para a maioria das pessoas.' },
-  { min: 25, max: 30, label: 'Sobrepeso', color: 'text-yellow-600', bgColor: 'bg-yellow-500', description: 'Risco moderado para problemas de saúde.' },
+  { min: 0, max: 18.5, label: 'Abaixo do peso', color: 'text-sky-600', bgColor: 'bg-sky-500', description: 'Pode indicar desnutrição ou problemas de saúde.' },
+  { min: 18.5, max: 25, label: 'Peso normal', color: 'text-green-600', bgColor: 'bg-green-500', description: 'Faixa ideal para a maioria das pessoas.' },
+  { min: 25, max: 30, label: 'Sobrepeso', color: 'text-amber-600', bgColor: 'bg-amber-500', description: 'Risco moderado para problemas de saúde.' },
   { min: 30, max: 35, label: 'Obesidade Grau I', color: 'text-orange-600', bgColor: 'bg-orange-500', description: 'Risco aumentado para doenças crônicas.' },
   { min: 35, max: 40, label: 'Obesidade Grau II', color: 'text-red-500', bgColor: 'bg-red-500', description: 'Risco alto para problemas de saúde.' },
   { min: 40, max: 100, label: 'Obesidade Grau III', color: 'text-red-700', bgColor: 'bg-red-700', description: 'Risco muito alto. Busque orientação médica.' },
@@ -63,7 +63,6 @@ export function HealthPage() {
     return { type: 'ideal', amount: 0 };
   }, [weight, idealWeightRange]);
 
-  // Cálculo da taxa metabólica basal (TMB) - Fórmula de Mifflin-St Jeor
   const bmr = useMemo(() => {
     if (weight <= 0 || heightCm <= 0 || !age) return null;
     if (gender === 'male') {
@@ -71,13 +70,11 @@ export function HealthPage() {
     } else if (gender === 'female') {
       return 10 * weight + 6.25 * heightCm - 5 * age - 161;
     }
-    // Default para quando não tem gênero
     return 10 * weight + 6.25 * heightCm - 5 * age - 78;
   }, [weight, heightCm, age, gender]);
 
   const bmiPercentage = useMemo(() => {
     if (!bmi) return 0;
-    // Escala de 15 a 40 para o indicador visual
     const minBmi = 15;
     const maxBmi = 40;
     const percentage = ((bmi - minBmi) / (maxBmi - minBmi)) * 100;
@@ -88,8 +85,8 @@ export function HealthPage() {
 
   if (!hasCompleteProfile) {
     return (
-      <div className="min-h-screen gradient-hero pb-20">
-        <header className="sticky top-0 z-30 glass border-b border-border/50 px-4 py-3">
+      <div className="min-h-screen bg-background pb-24">
+        <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl border-b border-border/50 px-4 py-4">
           <h1 className="text-lg font-bold flex items-center gap-2">
             <Heart className="h-5 w-5 text-primary" />
             Saúde
@@ -112,8 +109,8 @@ export function HealthPage() {
   }
 
   return (
-    <div className="min-h-screen gradient-hero pb-20">
-      <header className="sticky top-0 z-30 glass border-b border-border/50 px-4 py-3">
+    <div className="min-h-screen bg-background pb-24">
+      <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl border-b border-border/50 px-4 py-4">
         <h1 className="text-lg font-bold flex items-center gap-2">
           <Heart className="h-5 w-5 text-primary" />
           Saúde
@@ -126,11 +123,11 @@ export function HealthPage() {
         <div className="card-feature">
           <div className="flex items-center gap-2 mb-4">
             <Scale className="h-5 w-5 text-primary" />
-            <span className="font-semibold">Índice de Massa Corporal (IMC)</span>
+            <span className="font-semibold">Índice de Massa Corporal</span>
           </div>
 
           <div className="text-center mb-4">
-            <p className={`text-5xl font-bold ${bmiCategory?.color}`}>
+            <p className={`text-5xl font-extrabold ${bmiCategory?.color}`}>
               {bmi?.toFixed(1)}
             </p>
             <p className={`text-lg font-medium mt-1 ${bmiCategory?.color}`}>
@@ -139,10 +136,10 @@ export function HealthPage() {
           </div>
 
           {/* Barra de IMC */}
-          <div className="relative h-3 rounded-full bg-gradient-to-r from-blue-500 via-emerald-500 via-yellow-500 via-orange-500 to-red-600 mb-2">
+          <div className="relative h-3 rounded-full bg-gradient-to-r from-sky-500 via-green-500 via-amber-500 via-orange-500 to-red-600 mb-2">
             <div 
-              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-foreground shadow-lg"
-              style={{ left: `calc(${bmiPercentage}% - 8px)` }}
+              className="absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-card border-2 border-foreground shadow-lg transition-all"
+              style={{ left: `calc(${bmiPercentage}% - 10px)` }}
             />
           </div>
           <div className="flex justify-between text-[10px] text-muted-foreground">
@@ -162,16 +159,16 @@ export function HealthPage() {
         {/* Status do peso */}
         <div className={`card-compact ${
           weightDifference?.type === 'ideal' 
-            ? 'bg-emerald-500/10 border-emerald-500/20' 
+            ? 'bg-green-500/10' 
             : weightDifference?.type === 'below'
-              ? 'bg-blue-500/10 border-blue-500/20'
-              : 'bg-orange-500/10 border-orange-500/20'
+              ? 'bg-sky-500/10'
+              : 'bg-orange-500/10'
         }`}>
           <div className="flex items-center gap-3">
             {weightDifference?.type === 'ideal' ? (
-              <CheckCircle className="h-8 w-8 text-emerald-500 flex-shrink-0" />
+              <CheckCircle className="h-8 w-8 text-green-500 flex-shrink-0" />
             ) : weightDifference?.type === 'below' ? (
-              <TrendingUp className="h-8 w-8 text-blue-500 flex-shrink-0" />
+              <TrendingUp className="h-8 w-8 text-sky-500 flex-shrink-0" />
             ) : (
               <TrendingDown className="h-8 w-8 text-orange-500 flex-shrink-0" />
             )}
@@ -198,12 +195,12 @@ export function HealthPage() {
           <div className="card-compact text-center">
             <Scale className="h-5 w-5 text-primary mx-auto mb-2" />
             <p className="text-xs text-muted-foreground">Peso atual</p>
-            <p className="text-xl font-bold">{weight} kg</p>
+            <p className="text-2xl font-bold">{weight} kg</p>
           </div>
           <div className="card-compact text-center">
             <Ruler className="h-5 w-5 text-primary mx-auto mb-2" />
             <p className="text-xs text-muted-foreground">Altura</p>
-            <p className="text-xl font-bold">{heightCm} cm</p>
+            <p className="text-2xl font-bold">{heightCm} cm</p>
           </div>
         </div>
 
@@ -211,11 +208,11 @@ export function HealthPage() {
         {idealWeightRange && (
           <div className="card-compact">
             <div className="flex items-center gap-2 mb-3">
-              <CheckCircle className="h-4 w-4 text-emerald-500" />
+              <CheckCircle className="h-4 w-4 text-green-500" />
               <span className="text-sm font-semibold">Faixa de peso ideal</span>
             </div>
             <div className="flex items-center justify-center gap-2">
-              <span className="text-2xl font-bold text-emerald-600">
+              <span className="text-2xl font-bold text-green-600">
                 {idealWeightRange.min.toFixed(1)} - {idealWeightRange.max.toFixed(1)} kg
               </span>
             </div>
@@ -229,7 +226,7 @@ export function HealthPage() {
         {bmr && (
           <div className="card-compact">
             <div className="flex items-center gap-2 mb-3">
-              <Heart className="h-4 w-4 text-red-500" />
+              <Heart className="h-4 w-4 text-rose-500" />
               <span className="text-sm font-semibold">Taxa Metabólica Basal</span>
             </div>
             <p className="text-3xl font-bold text-center">{Math.round(bmr)} kcal/dia</p>
@@ -249,7 +246,7 @@ export function HealthPage() {
             {bmiCategories.map((cat) => (
               <div 
                 key={cat.label} 
-                className={`flex items-center justify-between p-2 rounded-lg ${
+                className={`flex items-center justify-between p-2 rounded-xl ${
                   bmiCategory?.label === cat.label ? 'bg-primary/10 ring-1 ring-primary' : 'bg-muted/30'
                 }`}
               >
@@ -266,9 +263,9 @@ export function HealthPage() {
         </div>
 
         {/* Aviso */}
-        <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+        <div className="p-4 rounded-2xl bg-amber-500/10">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground">
               O IMC é uma estimativa e não considera fatores como massa muscular, idade ou distribuição de gordura. 
               Consulte um profissional de saúde para uma avaliação completa.

@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Flame, Plus, Dumbbell, Trash2, ChevronDown, Pencil, Check, Clock } from 'lucide-react';
 import { useExerciseEntries, EXERCISE_TYPES, calculateCaloriesBurned, ExerciseEntry } from '@/hooks/useExerciseEntries';
 import { useProfile } from '@/hooks/useProfile';
-
 import { format } from 'date-fns';
 
 export function ExerciseTracker() {
@@ -19,7 +18,6 @@ export function ExerciseTracker() {
   const [duration, setDuration] = useState('30');
   const [manualCalories, setManualCalories] = useState('');
   
-  // Edit state
   const [editingEntry, setEditingEntry] = useState<ExerciseEntry | null>(null);
   const [editCalories, setEditCalories] = useState('');
   const [editName, setEditName] = useState('');
@@ -78,25 +76,24 @@ export function ExerciseTracker() {
   return (
     <>
       <div className="space-y-2">
-        {/* Header colapsável */}
         <button 
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-between p-3 rounded-xl bg-card shadow-card hover:shadow-soft transition-all"
+          className="w-full flex items-center justify-between p-4 rounded-2xl bg-card shadow-soft hover:shadow-card transition-all"
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-exercise">
-              <Dumbbell className="h-5 w-5 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10">
+              <Dumbbell className="h-5 w-5 text-rose-500" />
             </div>
             <div className="text-left">
               <p className="text-sm font-medium">Exercícios</p>
               <div className="flex items-center gap-2">
                 <span className="text-lg font-bold num-display text-rose-500">-{totalBurned}</span>
-                <span className="text-xs text-muted-foreground">kcal queimadas</span>
+                <span className="text-xs text-muted-foreground">kcal</span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{entries.length} registro(s)</span>
+            <span className="text-xs text-muted-foreground">{entries.length}</span>
             <Button 
               size="sm" 
               variant="ghost" 
@@ -109,7 +106,6 @@ export function ExerciseTracker() {
           </div>
         </button>
 
-        {/* Lista de entradas */}
         {isExpanded && (
           <div className="space-y-2 animate-fade-in pl-2">
             {entries.length === 0 ? (
@@ -120,7 +116,7 @@ export function ExerciseTracker() {
               entries.map((entry) => {
                 const exerciseInfo = EXERCISE_TYPES[entry.exercise_type as keyof typeof EXERCISE_TYPES];
                 return (
-                  <div key={entry.id} className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card">
+                  <div key={entry.id} className="entry-card">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10">
                       <span className="text-lg">{exerciseInfo?.icon || '🏋️'}</span>
                     </div>
@@ -160,9 +156,8 @@ export function ExerciseTracker() {
         )}
       </div>
 
-      {/* Dialog para adicionar */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm rounded-3xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Dumbbell className="h-5 w-5 text-rose-500" />
@@ -173,13 +168,13 @@ export function ExerciseTracker() {
           <div className="space-y-4 pt-2">
             <div className="flex gap-2">
               <button 
-                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${mode === 'manual' ? 'bg-primary text-white' : 'bg-secondary hover:bg-secondary/80'}`} 
+                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${mode === 'manual' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`} 
                 onClick={() => setMode('manual')}
               >
                 🏋️ Equipamento
               </button>
               <button 
-                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${mode === 'auto' ? 'bg-primary text-white' : 'bg-secondary hover:bg-secondary/80'}`} 
+                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${mode === 'auto' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`} 
                 onClick={() => setMode('auto')}
               >
                 🧮 Calcular
@@ -194,10 +189,10 @@ export function ExerciseTracker() {
                   value={manualCalories} 
                   onChange={(e) => setManualCalories(e.target.value)} 
                   placeholder="Calorias queimadas" 
-                  className="h-12 text-lg"
+                  className="h-12 text-lg rounded-xl"
                   autoFocus
                 />
-                <Button className="w-full h-12" onClick={handleSubmit}>
+                <Button className="w-full h-12 rounded-xl" onClick={handleSubmit}>
                   <Flame className="h-4 w-4 mr-2" />
                   Adicionar
                 </Button>
@@ -205,7 +200,7 @@ export function ExerciseTracker() {
             ) : (
               <div className="space-y-3">
                 <Select value={exerciseType} onValueChange={(v) => setExerciseType(v as keyof typeof EXERCISE_TYPES)}>
-                  <SelectTrigger className="h-12">
+                  <SelectTrigger className="h-12 rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -222,16 +217,16 @@ export function ExerciseTracker() {
                     value={duration} 
                     onChange={(e) => setDuration(e.target.value)} 
                     placeholder="30" 
-                    className="h-12 text-lg"
+                    className="h-12 text-lg rounded-xl"
                   />
                 </div>
 
-                <div className="p-3 rounded-lg bg-rose-500/10 text-center">
+                <div className="p-3 rounded-xl bg-rose-500/10 text-center">
                   <p className="text-sm text-muted-foreground">Calorias estimadas</p>
                   <p className="text-2xl font-bold text-rose-500">-{calculatedCalories} kcal</p>
                 </div>
 
-                <Button className="w-full h-12" onClick={handleSubmit}>
+                <Button className="w-full h-12 rounded-xl" onClick={handleSubmit}>
                   <Flame className="h-4 w-4 mr-2" />
                   Adicionar Exercício
                 </Button>
@@ -241,9 +236,8 @@ export function ExerciseTracker() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para editar */}
       <Dialog open={!!editingEntry} onOpenChange={(open) => !open && setEditingEntry(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm rounded-3xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5 text-primary" />
@@ -258,7 +252,7 @@ export function ExerciseTracker() {
                 value={editName} 
                 onChange={(e) => setEditName(e.target.value)} 
                 placeholder="Nome do exercício" 
-                className="h-12"
+                className="h-12 rounded-xl"
               />
             </div>
             <div>
@@ -268,14 +262,14 @@ export function ExerciseTracker() {
                 value={editCalories} 
                 onChange={(e) => setEditCalories(e.target.value)} 
                 placeholder="kcal" 
-                className="h-12 text-lg"
+                className="h-12 text-lg rounded-xl"
               />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => setEditingEntry(null)}>
+              <Button variant="outline" className="flex-1 h-11 rounded-xl" onClick={() => setEditingEntry(null)}>
                 Cancelar
               </Button>
-              <Button className="flex-1" onClick={handleSaveEdit}>
+              <Button className="flex-1 h-11 rounded-xl" onClick={handleSaveEdit}>
                 <Check className="h-4 w-4 mr-2" />
                 Salvar
               </Button>

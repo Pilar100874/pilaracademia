@@ -19,7 +19,6 @@ export function WeightTracker({ dailyCalorieDeficit = 0 }: WeightTrackerProps) {
   const [weight, setWeight] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Peso atual sempre vem do último registro do histórico
   const currentWeight = entries.length > 0 ? entries[entries.length - 1]?.weight_kg : (profile?.weight_kg || 0);
   const previousWeight = entries.length >= 2 ? entries[entries.length - 2]?.weight_kg : currentWeight;
   const weightDiff = entries.length >= 2 ? currentWeight - previousWeight : 0;
@@ -41,7 +40,7 @@ export function WeightTracker({ dailyCalorieDeficit = 0 }: WeightTrackerProps) {
 
   const getTrendIcon = () => {
     if (Math.abs(weightDiff) < 0.3) return <Minus className="h-3 w-3 text-muted-foreground" />;
-    if (weightDiff < 0) return <TrendingDown className="h-3 w-3 text-emerald-500" />;
+    if (weightDiff < 0) return <TrendingDown className="h-3 w-3 text-green-500" />;
     return <TrendingUp className="h-3 w-3 text-amber-500" />;
   };
 
@@ -56,7 +55,7 @@ export function WeightTracker({ dailyCalorieDeficit = 0 }: WeightTrackerProps) {
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground">Peso atual</p>
               <div className="flex items-center gap-1.5">
-                <span className="text-xl num-display">{currentWeight}</span>
+                <span className="text-xl font-bold num-display">{currentWeight}</span>
                 <span className="text-sm text-muted-foreground">kg</span>
                 {entries.length >= 2 && (
                   <span className="flex items-center text-xs gap-0.5">
@@ -64,7 +63,6 @@ export function WeightTracker({ dailyCalorieDeficit = 0 }: WeightTrackerProps) {
                     {weightDiff > 0 ? '+' : ''}{weightDiff.toFixed(1)}
                   </span>
                 )}
-                {/* Botão de projeção sempre visível ao lado do peso */}
                 <Button 
                   size="sm" 
                   variant="ghost" 
@@ -78,7 +76,6 @@ export function WeightTracker({ dailyCalorieDeficit = 0 }: WeightTrackerProps) {
             </div>
           </div>
 
-          {/* Mini chart */}
           {chartData.length >= 2 && (
             <button 
               onClick={() => setShowProjection(true)}
@@ -93,7 +90,7 @@ export function WeightTracker({ dailyCalorieDeficit = 0 }: WeightTrackerProps) {
             </button>
           )}
 
-          <Button size="sm" variant="outline" className="h-8 text-xs shrink-0" onClick={() => setShowInput(!showInput)}>
+          <Button size="sm" variant="outline" className="h-8 text-xs shrink-0 rounded-xl" onClick={() => setShowInput(!showInput)}>
             {showInput ? '✕' : 'Atualizar'}
           </Button>
         </div>
@@ -106,10 +103,10 @@ export function WeightTracker({ dailyCalorieDeficit = 0 }: WeightTrackerProps) {
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="Novo peso (kg)"
-              className="flex-1 h-12 text-base"
+              className="flex-1 h-11 text-base rounded-xl"
               step={0.1}
             />
-            <Button onClick={handleSubmit} disabled={isSubmitting} className="h-12 px-6">
+            <Button onClick={handleSubmit} disabled={isSubmitting} className="h-11 px-6 rounded-xl">
               {isSubmitting ? '...' : 'Salvar'}
             </Button>
           </div>

@@ -4,9 +4,9 @@ import { Input } from '@/components/ui/input';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { activityLabels, goalLabels, calculateAge, calculateBMR, calculateTDEE, calculateDailyCalories, calculateAllNutrients } from '@/types/profile';
-
 import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { BottomNav } from '@/components/BottomNav';
 
 export function ProfilePage() {
   const navigate = useNavigate();
@@ -88,24 +88,24 @@ export function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen gradient-hero flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen gradient-hero pb-24">
-      <header className="px-5 pt-6 pb-4 flex items-center gap-4">
+    <div className="min-h-screen bg-background pb-24">
+      <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl px-4 py-4 flex items-center gap-4 shadow-soft">
         <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-bold">Meu Perfil</h1>
+        <h1 className="text-lg font-bold">Meu Perfil</h1>
       </header>
 
-      <div className="px-5 space-y-6 animate-slide-up">
+      <div className="px-4 py-4 space-y-4 animate-slide-up">
         {/* Personal Info */}
-        <div className="rounded-2xl bg-card p-4 shadow-card space-y-4">
+        <div className="card-compact space-y-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
               <User className="h-5 w-5 text-primary" />
@@ -116,7 +116,7 @@ export function ProfilePage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Nome</label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" />
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" className="h-12 rounded-xl" />
             </div>
 
             <div className="space-y-2">
@@ -124,7 +124,7 @@ export function ProfilePage() {
                 <Calendar className="h-4 w-4" />
                 Data de nascimento
               </label>
-              <Input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+              <Input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} className="h-12 rounded-xl" />
             </div>
 
             <div className="space-y-2">
@@ -133,8 +133,8 @@ export function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setGender('male')}
-                  className={`rounded-xl p-3 text-center transition-all ${
-                    gender === 'male' ? 'bg-primary text-primary-foreground shadow-soft' : 'bg-secondary hover:bg-secondary/80'
+                  className={`rounded-xl p-3 text-center font-medium transition-all ${
+                    gender === 'male' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted hover:bg-muted/80'
                   }`}
                 >
                   Masculino
@@ -142,8 +142,8 @@ export function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setGender('female')}
-                  className={`rounded-xl p-3 text-center transition-all ${
-                    gender === 'female' ? 'bg-primary text-primary-foreground shadow-soft' : 'bg-secondary hover:bg-secondary/80'
+                  className={`rounded-xl p-3 text-center font-medium transition-all ${
+                    gender === 'female' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted hover:bg-muted/80'
                   }`}
                 >
                   Feminino
@@ -154,10 +154,10 @@ export function ProfilePage() {
         </div>
 
         {/* Body Measurements */}
-        <div className="rounded-2xl bg-card p-4 shadow-card space-y-4">
+        <div className="card-compact space-y-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
-              <Scale className="h-5 w-5 text-accent" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
+              <Scale className="h-5 w-5 text-violet-500" />
             </div>
             <h2 className="font-semibold">Medidas Corporais</h2>
           </div>
@@ -168,23 +168,23 @@ export function ProfilePage() {
                 <Ruler className="h-4 w-4" />
                 Altura (cm)
               </label>
-              <Input type="number" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} placeholder="170" min={100} max={250} />
+              <Input type="number" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} placeholder="170" min={100} max={250} className="h-12 rounded-xl" />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-2">
                 <Scale className="h-4 w-4" />
                 Peso (kg)
               </label>
-              <Input type="number" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="70" min={30} max={300} step={0.1} />
+              <Input type="number" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="70" min={30} max={300} step={0.1} className="h-12 rounded-xl" />
             </div>
           </div>
         </div>
 
         {/* Activity Level */}
-        <div className="rounded-2xl bg-card p-4 shadow-card space-y-4">
+        <div className="card-compact space-y-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
-              <Activity className="h-5 w-5 text-blue-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10">
+              <Activity className="h-5 w-5 text-sky-500" />
             </div>
             <h2 className="font-semibold">Nível de Atividade</h2>
           </div>
@@ -194,8 +194,8 @@ export function ProfilePage() {
                 key={key}
                 type="button"
                 onClick={() => setActivityLevel(key)}
-                className={`w-full rounded-xl p-3 text-left text-sm transition-all ${
-                  activityLevel === key ? 'bg-primary text-primary-foreground shadow-soft' : 'bg-secondary hover:bg-secondary/80'
+                className={`w-full rounded-xl p-3 text-left text-sm font-medium transition-all ${
+                  activityLevel === key ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
                 {label}
@@ -205,10 +205,10 @@ export function ProfilePage() {
         </div>
 
         {/* Goal */}
-        <div className="rounded-2xl bg-card p-4 shadow-card space-y-4">
+        <div className="card-compact space-y-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-500/10">
-              <Target className="h-5 w-5 text-pink-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10">
+              <Target className="h-5 w-5 text-rose-500" />
             </div>
             <h2 className="font-semibold">Objetivo</h2>
           </div>
@@ -218,8 +218,8 @@ export function ProfilePage() {
                 key={key}
                 type="button"
                 onClick={() => setGoal(key)}
-                className={`w-full rounded-xl p-3 text-left text-sm transition-all ${
-                  goal === key ? 'bg-primary text-primary-foreground shadow-soft' : 'bg-secondary hover:bg-secondary/80'
+                className={`w-full rounded-xl p-3 text-left text-sm font-medium transition-all ${
+                  goal === key ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
                 {label}
@@ -230,7 +230,7 @@ export function ProfilePage() {
 
         {/* Preview Calculations */}
         {previewNutrients && (
-          <div className="rounded-2xl gradient-card p-4 shadow-card space-y-4 animate-scale-in">
+          <div className="card-compact space-y-4 animate-scale-in bg-primary/5">
             <div className="flex items-center gap-3">
               <CheckCircle className="h-5 w-5 text-primary" />
               <h2 className="font-semibold">Suas Metas Diárias</h2>
@@ -238,39 +238,20 @@ export function ProfilePage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl bg-primary/10 p-3 text-center">
-                <p className="text-xl font-bold text-primary">{previewNutrients.calories}</p>
+                <p className="text-2xl font-bold text-primary">{previewNutrients.calories}</p>
                 <p className="text-xs text-muted-foreground">kcal</p>
               </div>
-              <div className="rounded-xl bg-accent/10 p-3 text-center">
-                <p className="text-xl font-bold text-accent">{previewNutrients.protein}g</p>
+              <div className="rounded-xl bg-orange-500/10 p-3 text-center">
+                <p className="text-2xl font-bold text-orange-500">{previewNutrients.protein}g</p>
                 <p className="text-xs text-muted-foreground">proteína</p>
               </div>
-              <div className="rounded-xl bg-blue-500/10 p-3 text-center">
-                <p className="text-xl font-bold text-blue-600">{previewNutrients.carbs}g</p>
+              <div className="rounded-xl bg-sky-500/10 p-3 text-center">
+                <p className="text-2xl font-bold text-sky-500">{previewNutrients.carbs}g</p>
                 <p className="text-xs text-muted-foreground">carboidratos</p>
               </div>
-              <div className="rounded-xl bg-pink-500/10 p-3 text-center">
-                <p className="text-xl font-bold text-pink-600">{previewNutrients.fat}g</p>
+              <div className="rounded-xl bg-violet-500/10 p-3 text-center">
+                <p className="text-2xl font-bold text-violet-500">{previewNutrients.fat}g</p>
                 <p className="text-xs text-muted-foreground">gordura total</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-4 gap-2">
-              <div className="rounded-lg bg-orange-500/10 p-2 text-center">
-                <p className="text-sm font-bold text-orange-600">{previewNutrients.saturatedFat}g</p>
-                <p className="text-[10px] text-muted-foreground">G. Sat.</p>
-              </div>
-              <div className="rounded-lg bg-red-500/10 p-2 text-center">
-                <p className="text-sm font-bold text-red-600">{previewNutrients.transFat}g</p>
-                <p className="text-[10px] text-muted-foreground">G. Trans</p>
-              </div>
-              <div className="rounded-lg bg-green-500/10 p-2 text-center">
-                <p className="text-sm font-bold text-green-600">{previewNutrients.fiber}g</p>
-                <p className="text-[10px] text-muted-foreground">Fibra</p>
-              </div>
-              <div className="rounded-lg bg-purple-500/10 p-2 text-center">
-                <p className="text-sm font-bold text-purple-600">{previewNutrients.sodium}mg</p>
-                <p className="text-[10px] text-muted-foreground">Sódio</p>
               </div>
             </div>
 
@@ -280,14 +261,21 @@ export function ProfilePage() {
           </div>
         )}
 
-        <Button variant="gradient" size="xl" className="w-full" onClick={handleSave} disabled={isSaving}>
+        <Button 
+          size="lg" 
+          className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold" 
+          onClick={handleSave} 
+          disabled={isSaving}
+        >
           {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Salvar Perfil'}
         </Button>
 
-        <Button variant="outline" size="lg" className="w-full" onClick={handleSignOut}>
+        <Button variant="outline" size="lg" className="w-full h-12 rounded-xl" onClick={handleSignOut}>
           Sair da conta
         </Button>
       </div>
+
+      <BottomNav />
     </div>
   );
 }

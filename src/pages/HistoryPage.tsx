@@ -102,9 +102,9 @@ export function HistoryPage() {
   const netCalories = (summary?.calories || 0) - (summary?.exerciseCalories || 0);
 
   return (
-    <div className="min-h-screen gradient-hero pb-20">
-      {/* Header com navegação de data */}
-      <header className="sticky top-0 z-30 glass border-b border-border/50 px-4 py-3">
+    <div className="min-h-screen bg-background pb-24">
+      {/* Header */}
+      <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl border-b border-border/50 px-4 py-4">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="icon" onClick={goToPreviousDay}>
             <ChevronLeft className="h-5 w-5" />
@@ -134,10 +134,10 @@ export function HistoryPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="card-compact">
                 <div className="flex items-center gap-2 mb-1">
-                  <Flame className="h-4 w-4 text-orange-500" />
+                  <Flame className="h-4 w-4 text-primary" />
                   <span className="text-xs text-muted-foreground">Balanço</span>
                 </div>
-                <p className="text-xl font-bold num-display">{netCalories} <span className="text-sm font-normal">kcal</span></p>
+                <p className="text-2xl font-bold num-display">{netCalories}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   🍽️ {summary.calories} - 🏃 {summary.exerciseCalories}
                 </p>
@@ -148,41 +148,41 @@ export function HistoryPage() {
                   <Droplets className="h-4 w-4 text-sky-500" />
                   <span className="text-xs text-muted-foreground">Líquidos</span>
                 </div>
-                <p className="text-xl font-bold num-display text-sky-500">{(summary.liquidMl / 1000).toFixed(1)}L</p>
+                <p className="text-2xl font-bold num-display text-sky-500">{(summary.liquidMl / 1000).toFixed(1)}L</p>
                 <p className="text-xs text-muted-foreground mt-1">{summary.liquidEntries.length} registro(s)</p>
               </div>
 
               {summary.weight && (
                 <div className="card-compact col-span-2">
                   <div className="flex items-center gap-2 mb-1">
-                    <Scale className="h-4 w-4 text-purple-500" />
+                    <Scale className="h-4 w-4 text-violet-500" />
                     <span className="text-xs text-muted-foreground">Peso registrado</span>
                   </div>
-                  <p className="text-xl font-bold num-display text-purple-500">{summary.weight} kg</p>
+                  <p className="text-2xl font-bold num-display text-violet-500">{summary.weight} kg</p>
                 </div>
               )}
             </div>
 
             {/* Macros */}
             <div className="card-compact">
-              <p className="text-sm font-semibold mb-2">Macros</p>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="p-2 rounded-lg bg-red-500/10">
-                  <p className="text-lg font-bold text-red-500">{Math.round(summary.protein)}g</p>
+              <p className="text-sm font-semibold mb-3">Macros</p>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="p-3 rounded-2xl bg-orange-500/10">
+                  <p className="text-xl font-bold text-orange-500">{Math.round(summary.protein)}g</p>
                   <p className="text-xs text-muted-foreground">Proteína</p>
                 </div>
-                <div className="p-2 rounded-lg bg-amber-500/10">
-                  <p className="text-lg font-bold text-amber-500">{Math.round(summary.carbs)}g</p>
+                <div className="p-3 rounded-2xl bg-sky-500/10">
+                  <p className="text-xl font-bold text-sky-500">{Math.round(summary.carbs)}g</p>
                   <p className="text-xs text-muted-foreground">Carbos</p>
                 </div>
-                <div className="p-2 rounded-lg bg-blue-500/10">
-                  <p className="text-lg font-bold text-blue-500">{Math.round(summary.fat)}g</p>
+                <div className="p-3 rounded-2xl bg-violet-500/10">
+                  <p className="text-xl font-bold text-violet-500">{Math.round(summary.fat)}g</p>
                   <p className="text-xs text-muted-foreground">Gorduras</p>
                 </div>
               </div>
             </div>
 
-            {/* Refeições do dia (apenas não-líquidos) */}
+            {/* Refeições do dia */}
             {summary.foodEntries.filter(e => !e.is_liquid).length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
@@ -191,21 +191,21 @@ export function HistoryPage() {
                 </h3>
                 <div className="space-y-2">
                   {summary.foodEntries.filter(e => !e.is_liquid).map((entry) => (
-                    <div key={entry.id} className="card-compact flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-sm">{entry.name}</p>
+                    <div key={entry.id} className="entry-card">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{entry.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(entry.consumed_at), 'HH:mm')}
                         </p>
                       </div>
-                      <p className="font-semibold text-sm">{entry.calories} kcal</p>
+                      <p className="font-semibold text-sm text-primary">{entry.calories} kcal</p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Líquidos do dia (liquid_entries + food_entries com is_liquid) */}
+            {/* Líquidos do dia */}
             {(summary.liquidEntries.length > 0 || summary.foodEntries.filter(e => e.is_liquid).length > 0) && (
               <div>
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
@@ -213,10 +213,9 @@ export function HistoryPage() {
                   Líquidos ({summary.liquidEntries.length + summary.foodEntries.filter(e => e.is_liquid).length})
                 </h3>
                 <div className="space-y-2">
-                  {/* Líquidos simples (liquid_entries) */}
                   {summary.liquidEntries.map((entry) => (
-                    <div key={`liquid-${entry.id}`} className="card-compact flex items-center justify-between">
-                      <div>
+                    <div key={`liquid-${entry.id}`} className="entry-card">
+                      <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm capitalize">{entry.type}</p>
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(entry.consumed_at), 'HH:mm')}
@@ -225,10 +224,9 @@ export function HistoryPage() {
                       <p className="font-semibold text-sm text-sky-500">{entry.amount_ml}ml</p>
                     </div>
                   ))}
-                  {/* Bebidas com calorias (food_entries com is_liquid) */}
                   {summary.foodEntries.filter(e => e.is_liquid).map((entry) => (
-                    <div key={entry.id} className="card-compact flex items-center justify-between">
-                      <div>
+                    <div key={entry.id} className="entry-card">
+                      <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm">{entry.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(entry.consumed_at), 'HH:mm')}
@@ -250,8 +248,8 @@ export function HistoryPage() {
                 </h3>
                 <div className="space-y-2">
                   {summary.exerciseEntries.map((entry) => (
-                    <div key={entry.id} className="card-compact flex items-center justify-between">
-                      <div>
+                    <div key={entry.id} className="entry-card">
+                      <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm">{entry.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(entry.performed_at), 'HH:mm')}

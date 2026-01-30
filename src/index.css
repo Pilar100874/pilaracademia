@@ -6,56 +6,69 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 30% 10%;
+    /* Clean, modern palette inspired by reference designs */
+    --background: 40 20% 98%;
+    --foreground: 220 20% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 10%;
+    --card-foreground: 220 20% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 10%;
+    --popover-foreground: 220 20% 15%;
 
-    --primary: 160 84% 39%;
+    /* Primary orange like reference */
+    --primary: 24 95% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 30% 30%;
+    --secondary: 220 10% 96%;
+    --secondary-foreground: 220 20% 40%;
 
-    --muted: 220 14% 96%;
+    --muted: 220 10% 96%;
     --muted-foreground: 220 10% 50%;
 
-    --accent: 32 98% 50%;
+    /* Accent green for success/health */
+    --accent: 142 70% 45%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 160 84% 39%;
+    --success: 142 70% 45%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 32 98% 50%;
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 160 84% 39%;
+    --border: 220 10% 92%;
+    --input: 220 10% 92%;
+    --ring: 24 95% 53%;
 
-    --radius: 1rem;
+    --radius: 1.25rem;
 
-    /* Enhanced tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(170 80% 35%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(160 30% 97%) 0%, hsl(220 20% 97%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(220 20% 99%) 100%);
-    --gradient-calories: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(180 70% 40%) 100%);
-    --gradient-protein: linear-gradient(135deg, hsl(32 98% 50%) 0%, hsl(40 95% 55%) 100%);
-    --gradient-water: linear-gradient(135deg, hsl(200 90% 50%) 0%, hsl(210 95% 55%) 100%);
+    /* Semantic color tokens for macros */
+    --calories: 24 95% 53%;
+    --protein: 24 95% 53%;
+    --carbs: 199 89% 48%;
+    --fat: 280 65% 60%;
+    --fiber: 142 70% 45%;
+    --water: 199 89% 48%;
+    --exercise: 350 80% 55%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(24 95% 53%) 0%, hsl(32 95% 55%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(30 30% 98%) 0%, hsl(40 20% 97%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(30 15% 99%) 100%);
+    --gradient-calories: linear-gradient(135deg, hsl(24 95% 53%) 0%, hsl(32 95% 55%) 100%);
+    --gradient-protein: linear-gradient(135deg, hsl(24 95% 53%) 0%, hsl(38 95% 58%) 100%);
+    --gradient-water: linear-gradient(135deg, hsl(199 89% 48%) 0%, hsl(210 95% 55%) 100%);
     --gradient-exercise: linear-gradient(135deg, hsl(350 80% 55%) 0%, hsl(20 90% 55%) 100%);
     
-    --shadow-xs: 0 1px 2px hsl(220 30% 10% / 0.04);
-    --shadow-sm: 0 2px 8px -2px hsl(220 30% 10% / 0.08);
-    --shadow-md: 0 4px 16px -4px hsl(220 30% 10% / 0.1);
-    --shadow-lg: 0 8px 24px -6px hsl(220 30% 10% / 0.12);
-    --shadow-xl: 0 12px 40px -8px hsl(220 30% 10% / 0.15);
+    /* Soft shadows for cards */
+    --shadow-xs: 0 1px 2px hsl(220 20% 15% / 0.03);
+    --shadow-sm: 0 2px 8px -2px hsl(220 20% 15% / 0.06);
+    --shadow-md: 0 4px 16px -4px hsl(220 20% 15% / 0.08);
+    --shadow-lg: 0 8px 24px -6px hsl(220 20% 15% / 0.1);
+    --shadow-xl: 0 16px 48px -12px hsl(220 20% 15% / 0.12);
     
     --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
 
@@ -70,43 +83,43 @@
   }
 
   .dark {
-    --background: 220 25% 8%;
+    --background: 220 20% 8%;
     --foreground: 220 10% 95%;
 
-    --card: 220 25% 12%;
+    --card: 220 20% 12%;
     --card-foreground: 220 10% 95%;
 
-    --popover: 220 25% 12%;
+    --popover: 220 20% 12%;
     --popover-foreground: 220 10% 95%;
 
-    --primary: 160 70% 45%;
+    --primary: 24 90% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 20% 18%;
+    --secondary: 220 15% 18%;
     --secondary-foreground: 220 10% 90%;
 
-    --muted: 220 15% 18%;
+    --muted: 220 12% 18%;
     --muted-foreground: 220 10% 55%;
 
-    --accent: 32 85% 55%;
+    --accent: 142 60% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 160 70% 45%;
+    --border: 220 12% 22%;
+    --input: 220 12% 22%;
+    --ring: 24 90% 55%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(160 70% 45%) 0%, hsl(170 65% 40%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(220 25% 10%) 0%, hsl(220 25% 8%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(220 25% 14%) 0%, hsl(220 25% 10%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(24 90% 55%) 0%, hsl(32 90% 58%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(220 20% 10%) 0%, hsl(220 20% 8%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(220 20% 14%) 0%, hsl(220 20% 10%) 100%);
     
-    --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.15);
-    --shadow-sm: 0 2px 8px -2px hsl(0 0% 0% / 0.25);
-    --shadow-md: 0 4px 16px -4px hsl(0 0% 0% / 0.3);
-    --shadow-lg: 0 8px 24px -6px hsl(0 0% 0% / 0.35);
-    --shadow-xl: 0 12px 40px -8px hsl(0 0% 0% / 0.4);
+    --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.2);
+    --shadow-sm: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 16px -4px hsl(0 0% 0% / 0.35);
+    --shadow-lg: 0 8px 24px -6px hsl(0 0% 0% / 0.4);
+    --shadow-xl: 0 16px 48px -12px hsl(0 0% 0% / 0.45);
   }
 }
 
@@ -143,7 +156,7 @@
   .shadow-floating { box-shadow: var(--shadow-xl); }
 
   .glass {
-    @apply backdrop-blur-xl bg-card/90;
+    @apply backdrop-blur-xl bg-card/95;
   }
 
   .progress-ring {
@@ -183,23 +196,22 @@
   .touch-action-none { touch-action: none; }
   .touch-action-pan-y { touch-action: pan-y; }
   
-  /* Quick action buttons */
-  .quick-btn {
-    @apply flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium 
-           transition-all duration-200 active:scale-95 select-none;
-  }
-
-  /* Card styles */
+  /* Modern card styles */
   .card-compact {
-    @apply rounded-2xl bg-card p-3 shadow-soft border border-border/50;
+    @apply rounded-2xl bg-card p-4 shadow-soft;
   }
 
   .card-feature {
-    @apply rounded-3xl p-4 shadow-card;
+    @apply rounded-3xl p-5 shadow-card bg-card;
+  }
+
+  /* Clean entry card */
+  .entry-card {
+    @apply flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft transition-all duration-200;
   }
 
   /* Status colors */
-  .status-success { @apply text-emerald-500; }
+  .status-success { @apply text-green-500; }
   .status-warning { @apply text-amber-500; }
   .status-danger { @apply text-rose-500; }
   .status-info { @apply text-sky-500; }
@@ -208,4 +220,20 @@
   .num-display {
     @apply tabular-nums font-bold tracking-tight;
   }
+
+  /* Macro badge colors */
+  .badge-calories { @apply bg-orange-500/10 text-orange-600; }
+  .badge-protein { @apply bg-orange-500/10 text-orange-600; }
+  .badge-carbs { @apply bg-sky-500/10 text-sky-600; }
+  .badge-fat { @apply bg-violet-500/10 text-violet-600; }
+  .badge-fiber { @apply bg-green-500/10 text-green-600; }
+  .badge-water { @apply bg-sky-500/10 text-sky-600; }
+
+  /* Macro colors for progress */
+  .text-macro-protein { color: hsl(var(--protein)); }
+  .text-macro-carbs { color: hsl(var(--carbs)); }
+  .text-macro-fat { color: hsl(var(--fat)); }
+  .bg-macro-protein { background-color: hsl(var(--protein)); }
+  .bg-macro-carbs { background-color: hsl(var(--carbs)); }
+  .bg-macro-fat { background-color: hsl(var(--fat)); }
 }
