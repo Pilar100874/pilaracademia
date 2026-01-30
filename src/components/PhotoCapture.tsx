@@ -1,13 +1,14 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Camera, Upload, Loader2, Sparkles, AlertCircle, Package } from 'lucide-react';
+import { X, Camera, Upload, Loader2, Sparkles, AlertCircle, Package, HelpCircle, Flame, Droplets } from 'lucide-react';
 import { NutritionData } from '@/types/nutrition';
 import { NutritionDisplay } from '@/components/NutritionDisplay';
 import { LiquidConsumptionDialog } from '@/components/LiquidConsumptionDialog';
 import { ProductFormDialog } from '@/components/ProductFormDialog';
 import { ProductConsumptionDialog } from '@/components/ProductConsumptionDialog';
 import { CustomProduct } from '@/hooks/useCustomProducts';
+import { cn } from '@/lib/utils';
 
 import { analyzeFood, fileToBase64, FoodAnalysisResult } from '@/lib/analyzeFood';
 
@@ -15,6 +16,78 @@ interface PhotoCaptureProps {
   onFoodAnalyzed: (name: string, nutrition: NutritionData, imageUrl: string, isLiquid?: boolean, liquidMl?: number, grams?: number) => void;
   onClose: () => void;
   selectedDate?: Date;
+}
+
+// Floating macro badge component
+function MacroBadge({ 
+  label, 
+  value, 
+  unit, 
+  color, 
+  position 
+}: { 
+  label: string; 
+  value: number; 
+  unit: string; 
+  color: 'orange' | 'green' | 'red' | 'violet';
+  position: 'top' | 'left' | 'right' | 'bottom';
+}) {
+  const colorStyles = {
+    orange: 'from-orange-500 to-orange-600 shadow-orange-500/30',
+    green: 'from-emerald-500 to-emerald-600 shadow-emerald-500/30',
+    red: 'from-rose-500 to-rose-600 shadow-rose-500/30',
+    violet: 'from-violet-500 to-violet-600 shadow-violet-500/30',
+  };
+
+  const positionStyles = {
+    top: 'top-4 left-1/2 -translate-x-1/2',
+    left: 'left-4 top-1/2 -translate-y-1/2',
+    right: 'right-4 top-1/2 -translate-y-1/2',
+    bottom: 'bottom-4 left-1/2 -translate-x-1/2',
+  };
+
+  const iconMap = {
+    orange: <Flame className="h-3.5 w-3.5" />,
+    green: <Droplets className="h-3.5 w-3.5" />,
+    red: <span className="text-xs">🥩</span>,
+    violet: <span className="text-xs">🍞</span>,
+  };
+
+  return (
+    <div className={cn(
+      "absolute z-20 animate-fade-in",
+      positionStyles[position]
+    )}>
+      <div className={cn(
+        "flex items-center gap-2 rounded-full bg-white/95 backdrop-blur-sm px-3 py-2 shadow-lg",
+        "border border-white/50"
+      )}>
+        <div className={cn(
+          "flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br text-white shadow-md",
+          colorStyles[color]
+        )}>
+          {iconMap[color]}
+        </div>
+        <div className="flex flex-col items-start leading-none">
+          <span className="text-base font-bold text-gray-900">{value}<span className="text-xs font-medium text-gray-500">{unit}</span></span>
+          <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">{label}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Scanning frame overlay
+function ScanFrame() {
+  return (
+    <div className="absolute inset-8 pointer-events-none z-10">
+      {/* Corner brackets */}
+      <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-primary rounded-tl-xl" />
+      <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-primary rounded-tr-xl" />
+      <div className="absolute bottom-0 left-0 w-8 h-8 border-l-2 border-b-2 border-primary rounded-bl-xl" />
+      <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-primary rounded-br-xl" />
+    </div>
+  );
 }
 
 export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCaptureProps) {
@@ -32,10 +105,28 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  const adjustedNutrition = useMemo(() => {
+    if (!analysisResult) return null;
+    const originalGrams = analysisResult.estimatedGrams || 300;
+    const adjustedGrams = parseFloat(editedGrams) || originalGrams;
+    const multiplier = adjustedGrams / originalGrams;
+    return {
+      calories: Math.round(analysisResult.nutrition.calories * multiplier),
+      protein: Math.round(analysisResult.nutrition.protein * multiplier * 10) / 10,
+      carbs: Math.round(analysisResult.nutrition.carbs * multiplier * 10) / 10,
+      fat: Math.round(analysisResult.nutrition.fat * multiplier * 10) / 10,
+      saturatedFat: Math.round((analysisResult.nutrition.saturatedFat || 0) * multiplier * 10) / 10,
+      transFat: Math.round((analysisResult.nutrition.transFat || 0) * multiplier * 10) / 10,
+      fiber: Math.round((analysisResult.nutrition.fiber || 0) * multiplier * 10) / 10,
+      sodium: Math.round((analysisResult.nutrition.sodium || 0) * multiplier),
+    };
+  }, [analysisResult, editedGrams]);
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    e.target.value = '';
     setError(null);
     const base64 = await fileToBase64(file);
     setImageUrl(base64);
@@ -46,12 +137,9 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
       setAnalysisResult(result);
       setEditedName(result.name);
       setEditedGrams(String(result.estimatedGrams || 300));
-      // Se for produto industrializado, mostrar formulário de cadastro completo
       if (result.isIndustrialized) {
         setShowProductForm(true);
-      }
-      // Se for líquido (mas não industrializado), mostrar diálogo de consumo
-      else if (result.isLiquid) {
+      } else if (result.isLiquid) {
         setShowLiquidDialog(true);
       }
     } catch (err) {
@@ -63,26 +151,9 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
   };
 
   const handleConfirm = async () => {
-    if (!analysisResult || !imageUrl || isConfirming) return;
+    if (!analysisResult || !imageUrl || isConfirming || !adjustedNutrition) return;
     
     setIsConfirming(true);
-    
-    // Calculate nutrition based on adjusted grams
-    const originalGrams = analysisResult.estimatedGrams || 300;
-    const adjustedGrams = parseFloat(editedGrams) || originalGrams;
-    const multiplier = adjustedGrams / originalGrams;
-    
-    const adjustedNutrition = {
-      calories: Math.round(analysisResult.nutrition.calories * multiplier),
-      protein: Math.round(analysisResult.nutrition.protein * multiplier * 10) / 10,
-      carbs: Math.round(analysisResult.nutrition.carbs * multiplier * 10) / 10,
-      fat: Math.round(analysisResult.nutrition.fat * multiplier * 10) / 10,
-      saturatedFat: Math.round((analysisResult.nutrition.saturatedFat || 0) * multiplier * 10) / 10,
-      transFat: Math.round((analysisResult.nutrition.transFat || 0) * multiplier * 10) / 10,
-      fiber: Math.round((analysisResult.nutrition.fiber || 0) * multiplier * 10) / 10,
-      sodium: Math.round((analysisResult.nutrition.sodium || 0) * multiplier),
-    };
-    
     const grams = parseFloat(editedGrams) || 300;
     
     try {
@@ -126,123 +197,173 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
     onClose();
   };
 
-  const confidenceColors = {
-    alta: 'text-primary bg-primary/10',
-    média: 'text-accent bg-accent/10',
-    baixa: 'text-muted-foreground bg-muted',
-  };
+  const showResultOverlay = analysisResult && !isAnalyzing && !showLiquidDialog && !showProductForm && !showConsumptionDialog;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/80 backdrop-blur-sm animate-scale-in">
-      <div className="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-card p-6 shadow-elevated animate-slide-up max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold">Analisar Prato com IA</h2>
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+    <div className="fixed inset-0 z-50 bg-neutral-100 flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-white/80 backdrop-blur-sm border-b border-neutral-200/50">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onClose}
+          className="rounded-full bg-neutral-200/80 hover:bg-neutral-300/80 h-10 w-10"
+        >
+          <X className="h-5 w-5 text-neutral-700" />
+        </Button>
+        <h2 className="text-base font-semibold text-neutral-800">Escanear refeição</h2>
+        <Button 
+          variant="ghost" 
+          size="icon"
+          className="rounded-full bg-neutral-200/80 hover:bg-neutral-300/80 h-10 w-10"
+        >
+          <HelpCircle className="h-5 w-5 text-neutral-700" />
+        </Button>
+      </div>
 
-        {/* Input para câmera */}
-        <input
-          ref={cameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-        {/* Input para galeria (sem capture) */}
-        <input
-          ref={galleryInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
+      {/* Hidden inputs */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
 
+      {/* Main content */}
+      <div className="flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto">
         {!imageUrl ? (
-          <div className="space-y-4">
-            <Button variant="gradient" size="xl" className="w-full" onClick={() => cameraInputRef.current?.click()}>
-              <Camera className="mr-2 h-5 w-5" />
-              Tirar Foto
-            </Button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
+          <div className="w-full max-w-sm space-y-6">
+            {/* Camera preview placeholder */}
+            <div className="relative aspect-square rounded-[2rem] bg-gradient-to-br from-neutral-200 to-neutral-300 overflow-hidden shadow-xl">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6">
+                <div className="w-24 h-24 rounded-full bg-white/80 flex items-center justify-center shadow-lg">
+                  <Camera className="h-12 w-12 text-primary" />
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-neutral-700">Fotografe seu prato</p>
+                  <p className="text-sm text-neutral-500 mt-1">A IA irá analisar os nutrientes</p>
+                </div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">ou</span>
-              </div>
+              <ScanFrame />
             </div>
 
-            <Button variant="outline" size="lg" className="w-full" onClick={() => galleryInputRef.current?.click()}>
-              <Upload className="mr-2 h-5 w-5" />
-              Escolher da Galeria
-            </Button>
+            {/* Action buttons */}
+            <div className="space-y-3">
+              <Button 
+                onClick={() => cameraInputRef.current?.click()}
+                className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white font-semibold text-base shadow-lg shadow-primary/30"
+              >
+                <Camera className="mr-2 h-5 w-5" />
+                Tirar Foto
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => galleryInputRef.current?.click()}
+                className="w-full h-12 rounded-2xl border-2 border-neutral-300 text-neutral-700 font-medium hover:bg-neutral-100"
+              >
+                <Upload className="mr-2 h-5 w-5" />
+                Escolher da Galeria
+              </Button>
+            </div>
 
-            <div className="rounded-2xl bg-secondary/50 p-4 text-center">
-              <Sparkles className="mx-auto h-8 w-8 text-primary mb-2" />
-              <p className="text-sm text-muted-foreground">
-                A IA irá analisar: <strong>calorias, proteínas, carboidratos, gorduras (total, saturada, trans), fibra e sódio</strong>
-              </p>
+            {/* Info card */}
+            <div className="rounded-2xl bg-white p-4 shadow-sm border border-neutral-200/50">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-neutral-800 text-sm">Análise inteligente</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Detecta calorias, proteínas, carboidratos, gorduras, fibra e sódio automaticamente
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="relative overflow-hidden rounded-2xl">
-              <img src={imageUrl} alt="Prato capturado" className="w-full aspect-square object-cover" />
+          <div className="w-full max-w-sm space-y-4">
+            {/* Image with floating badges */}
+            <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-2xl bg-neutral-200">
+              <img 
+                src={imageUrl} 
+                alt="Prato capturado" 
+                className="w-full h-full object-cover"
+              />
+              
+              {/* Scanning frame */}
+              <ScanFrame />
+              
+              {/* Loading overlay */}
               {isAnalyzing && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-30">
                   <div className="text-center p-6">
-                    <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-                    <p className="mt-4 text-base font-semibold">Aguarde, analisando...</p>
-                    <p className="mt-1 text-sm text-muted-foreground">A IA está identificando os alimentos</p>
+                    <div className="relative">
+                      <div className="w-20 h-20 rounded-full border-4 border-white/20 border-t-primary animate-spin" />
+                      <Sparkles className="absolute inset-0 m-auto h-8 w-8 text-white" />
+                    </div>
+                    <p className="mt-4 text-lg font-semibold text-white">Analisando...</p>
+                    <p className="text-sm text-white/70">Identificando nutrientes</p>
                   </div>
                 </div>
               )}
-              {/* Calories overlay on photo */}
-              {analysisResult && !isAnalyzing && (
-                <div className="absolute bottom-3 left-3 right-3">
-                  <div className="bg-black/70 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">🔥</span>
-                      <div>
-                        <p className="text-white text-2xl font-bold leading-none">
-                          {(() => {
-                            const originalGrams = analysisResult.estimatedGrams || 300;
-                            const adjustedGrams = parseFloat(editedGrams) || originalGrams;
-                            const multiplier = adjustedGrams / originalGrams;
-                            return Math.round(analysisResult.nutrition.calories * multiplier);
-                          })()}
-                        </p>
-                        <p className="text-white/70 text-xs">calorias</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-white/90 text-sm font-medium truncate max-w-[150px]">
-                        {editedName || analysisResult.name}
-                      </p>
-                      <p className="text-white/60 text-xs">{editedGrams || analysisResult.estimatedGrams || 300}g</p>
-                    </div>
-                  </div>
-                </div>
+
+              {/* Floating macro badges */}
+              {showResultOverlay && adjustedNutrition && (
+                <>
+                  <MacroBadge 
+                    label="Calorias" 
+                    value={adjustedNutrition.calories} 
+                    unit="Kcal" 
+                    color="orange" 
+                    position="top" 
+                  />
+                  <MacroBadge 
+                    label="Gordura" 
+                    value={adjustedNutrition.fat} 
+                    unit="g" 
+                    color="green" 
+                    position="left" 
+                  />
+                  <MacroBadge 
+                    label="Proteína" 
+                    value={adjustedNutrition.protein} 
+                    unit="g" 
+                    color="red" 
+                    position="right" 
+                  />
+                  <MacroBadge 
+                    label="Carbos" 
+                    value={adjustedNutrition.carbs} 
+                    unit="g" 
+                    color="violet" 
+                    position="bottom" 
+                  />
+                </>
               )}
             </div>
 
+            {/* Error state */}
             {error && !isAnalyzing && (
-              <div className="rounded-xl bg-destructive/10 p-4 flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="rounded-2xl bg-red-50 border border-red-200 p-4 flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-destructive">Erro na análise</p>
-                  <p className="text-sm text-muted-foreground mt-1">{error}</p>
+                  <p className="font-medium text-red-700">Erro na análise</p>
+                  <p className="text-sm text-red-600/80 mt-1">{error}</p>
                 </div>
               </div>
             )}
 
+            {/* Dialogs */}
             {analysisResult && !isAnalyzing && showLiquidDialog && (
               <LiquidConsumptionDialog
                 productName={editedName || analysisResult.name}
@@ -252,14 +373,11 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
               />
             )}
 
-            {/* Product Form Dialog for industrialized products */}
             {analysisResult && !isAnalyzing && showProductForm && (
               <ProductFormDialog
                 open={showProductForm}
                 onOpenChange={(open) => {
-                  if (!open) {
-                    setShowProductForm(false);
-                  }
+                  if (!open) setShowProductForm(false);
                 }}
                 initialBarcode={`PHOTO_${Date.now()}`}
                 initialData={{
@@ -283,7 +401,6 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
               />
             )}
 
-            {/* Product Consumption Dialog */}
             {showConsumptionDialog && savedProduct && (
               <ProductConsumptionDialog
                 product={savedProduct}
@@ -304,119 +421,101 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
               />
             )}
 
-            {analysisResult && !isAnalyzing && !showLiquidDialog && !showProductForm && !showConsumptionDialog && (
-              <>
+            {/* Result form */}
+            {showResultOverlay && (
+              <div className="space-y-4 bg-white rounded-2xl p-4 shadow-sm border border-neutral-200/50">
                 {/* Industrialized product indicator */}
                 {analysisResult.isIndustrialized && (
-                  <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 flex items-start gap-2">
+                  <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 flex items-start gap-2">
                     <Package className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-amber-600">Produto industrializado detectado</p>
-                      <p className="text-xs text-muted-foreground">Cadastre as informações da embalagem para cálculos precisos</p>
+                      <p className="text-sm font-medium text-amber-700">Produto industrializado</p>
+                      <p className="text-xs text-amber-600/80">Cadastre os dados da embalagem</p>
                     </div>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between">
-                  <span className={`inline-flex items-center rounded-lg px-3 py-1 text-xs font-medium ${confidenceColors[analysisResult.confidence]}`}>
-                    Confiança: {analysisResult.confidence}
-                  </span>
-                  {analysisResult.items.length > 0 && (
-                    <span className="text-xs text-muted-foreground">
-                      {analysisResult.items.slice(0, 3).join(', ')}
-                    </span>
-                  )}
-                </div>
-
+                {/* Editable fields */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Nome do prato</label>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-neutral-500">Nome</label>
                     <Input 
                       value={editedName} 
                       onChange={(e) => setEditedName(e.target.value)} 
                       placeholder="Nome do prato" 
-                      className="h-11 text-base"
+                      className="h-11 rounded-xl border-neutral-300 text-base"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Peso estimado (g)</label>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-neutral-500">Peso (g)</label>
                     <Input 
                       type="number"
                       inputMode="numeric"
                       value={editedGrams} 
                       onChange={(e) => setEditedGrams(e.target.value)} 
                       placeholder="300"
-                      className="h-11 text-base"
+                      className="h-11 rounded-xl border-neutral-300 text-base"
                     />
                   </div>
                 </div>
 
-                <NutritionDisplay 
-                  nutrition={(() => {
-                    const originalGrams = analysisResult.estimatedGrams || 300;
-                    const adjustedGrams = parseFloat(editedGrams) || originalGrams;
-                    const multiplier = adjustedGrams / originalGrams;
-                    return {
-                      calories: Math.round(analysisResult.nutrition.calories * multiplier),
-                      protein: Math.round(analysisResult.nutrition.protein * multiplier * 10) / 10,
-                      carbs: Math.round(analysisResult.nutrition.carbs * multiplier * 10) / 10,
-                      fat: Math.round(analysisResult.nutrition.fat * multiplier * 10) / 10,
-                      saturatedFat: Math.round((analysisResult.nutrition.saturatedFat || 0) * multiplier * 10) / 10,
-                      transFat: Math.round((analysisResult.nutrition.transFat || 0) * multiplier * 10) / 10,
-                      fiber: Math.round((analysisResult.nutrition.fiber || 0) * multiplier * 10) / 10,
-                      sodium: Math.round((analysisResult.nutrition.sodium || 0) * multiplier),
-                    };
-                  })()}
-                  showAll 
-                />
+                {/* Detailed nutrition display */}
+                <NutritionDisplay nutrition={adjustedNutrition} showAll />
 
-                {analysisResult.isIndustrialized && (
-                  <Button
-                    variant="default"
-                    className="w-full"
-                    onClick={() => setShowProductForm(true)}
-                  >
-                    <Package className="mr-2 h-4 w-4" />
-                    Cadastrar com dados da embalagem
-                  </Button>
-                )}
-
-                {analysisResult.isLiquid && !analysisResult.isIndustrialized && (
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setShowLiquidDialog(true)}
-                  >
-                    🥤 É uma bebida - Informar quantidade consumida
-                  </Button>
-                )}
-
-                <p className="text-center text-xs text-muted-foreground">
-                  * Valores estimados pela IA. Podem variar conforme porções reais.
-                </p>
-
-                <div className="flex gap-3 pt-2">
-                  <Button variant="outline" className="flex-1" onClick={resetCapture} disabled={isConfirming}>
-                    Nova Foto
-                  </Button>
-                  {!analysisResult.isIndustrialized && (
-                    <Button variant="gradient" className="flex-1" onClick={handleConfirm} disabled={isConfirming}>
-                      {isConfirming && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      {isConfirming ? 'Salvando...' : 'Confirmar'}
+                {/* Action buttons */}
+                <div className="space-y-2 pt-2">
+                  {analysisResult.isIndustrialized && (
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 rounded-xl"
+                      onClick={() => setShowProductForm(true)}
+                    >
+                      <Package className="mr-2 h-4 w-4" />
+                      Cadastrar com dados da embalagem
                     </Button>
                   )}
-                </div>
-              </>
-            )}
 
-            {error && !isAnalyzing && (
-              <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={resetCapture}>
-                  Nova Foto
-                </Button>
-                <Button variant="gradient" className="flex-1" onClick={() => cameraInputRef.current?.click()}>
-                  Tentar Novamente
-                </Button>
+                  {analysisResult.isLiquid && !analysisResult.isIndustrialized && (
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 rounded-xl"
+                      onClick={() => setShowLiquidDialog(true)}
+                    >
+                      🥤 É uma bebida - Informar quantidade
+                    </Button>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1 h-11 rounded-xl" 
+                      onClick={resetCapture} 
+                      disabled={isConfirming}
+                    >
+                      Nova Foto
+                    </Button>
+                    {!analysisResult.isIndustrialized && (
+                      <Button 
+                        onClick={handleConfirm}
+                        disabled={isConfirming}
+                        className="flex-1 h-11 rounded-xl bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white font-semibold shadow-lg shadow-primary/20"
+                      >
+                        {isConfirming ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Salvando...
+                          </>
+                        ) : (
+                          'Confirmar'
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <p className="text-center text-[11px] text-neutral-400">
+                  * Valores estimados pela IA. Podem variar conforme porções reais.
+                </p>
               </div>
             )}
           </div>
