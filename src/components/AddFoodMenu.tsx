@@ -65,21 +65,21 @@ export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenSearch, onOpenLi
         </div>
       </div>
 
-      {/* FAB */}
-      <div className="fixed bottom-20 right-4 z-50">
+      {/* FAB - posicionado acima da navegação */}
+      <div className="fixed bottom-[5.5rem] left-1/2 -translate-x-1/2 z-50">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
             "flex h-14 w-14 items-center justify-center rounded-full shadow-floating transition-all duration-300 active:scale-95",
             isOpen 
               ? "bg-card rotate-45 shadow-lg" 
-              : "bg-primary shadow-lg shadow-primary/30"
+              : "bg-gradient-to-br from-primary to-orange-500 shadow-lg shadow-primary/30"
           )}
         >
           {isOpen ? (
             <X className="h-6 w-6 text-foreground" />
           ) : (
-            <Plus className="h-6 w-6 text-primary-foreground" />
+            <Plus className="h-6 w-6 text-white" />
           )}
         </button>
       </div>
