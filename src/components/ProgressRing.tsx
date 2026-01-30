@@ -25,17 +25,26 @@ export function ProgressRing({
     primary: 'stroke-primary',
     accent: 'stroke-accent',
     destructive: 'stroke-destructive',
-    blue: 'stroke-blue-500',
-    green: 'stroke-green-500',
+    blue: 'stroke-sky-500',
+    green: 'stroke-emerald-500',
     pink: 'stroke-pink-500',
+  };
+
+  const bgClasses = {
+    primary: 'stroke-white/20',
+    accent: 'stroke-white/20',
+    destructive: 'stroke-white/20',
+    blue: 'stroke-sky-100',
+    green: 'stroke-emerald-100',
+    pink: 'stroke-pink-100',
   };
 
   return (
     <div className={cn("relative inline-flex items-center justify-center", className)}>
-      <svg width={size} height={size} className="progress-ring">
+      <svg width={size} height={size} className="progress-ring drop-shadow-sm">
         {/* Background circle */}
         <circle
-          className="stroke-muted"
+          className={bgClasses[color]}
           strokeWidth={strokeWidth}
           fill="none"
           r={radius}

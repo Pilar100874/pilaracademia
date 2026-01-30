@@ -49,67 +49,69 @@ export function WeightTracker({ dailyCalorieDeficit = 0 }: WeightTrackerProps) {
     <>
       <div className="card-compact">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10">
-              <Scale className="h-5 w-5 text-violet-500" />
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-100">
+              <Scale className="h-6 w-6 text-violet-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Peso atual</p>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xl num-display">{currentWeight}</span>
+              <p className="text-sm text-muted-foreground">Peso atual</p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl num-display font-bold">{currentWeight}</span>
                 <span className="text-sm text-muted-foreground">kg</span>
                 {entries.length >= 2 && (
-                  <span className="flex items-center text-xs gap-0.5">
+                  <span className="flex items-center text-xs gap-0.5 bg-muted px-2 py-0.5 rounded-lg">
                     {getTrendIcon()}
                     {weightDiff > 0 ? '+' : ''}{weightDiff.toFixed(1)}
                   </span>
                 )}
-                {/* Botão de projeção sempre visível ao lado do peso */}
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  className="h-6 w-6 p-0 ml-1" 
-                  onClick={() => setShowProjection(true)}
-                  title="Ver projeções"
-                >
-                  <ChartLine className="h-4 w-4 text-primary" />
-                </Button>
               </div>
             </div>
           </div>
 
-          {/* Mini chart */}
-          {chartData.length >= 2 && (
-            <button 
+          {/* Mini chart + botões */}
+          <div className="flex items-center gap-2">
+            {chartData.length >= 2 && (
+              <button 
+                onClick={() => setShowProjection(true)}
+                className="w-16 h-10 hover:opacity-70 transition-opacity cursor-pointer shrink-0 bg-muted/50 rounded-xl p-1"
+                title="Ver projeções"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <Line type="monotone" dataKey="peso" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </button>
+            )}
+
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-9 w-9 p-0 rounded-xl" 
               onClick={() => setShowProjection(true)}
-              className="w-16 h-8 hover:opacity-70 transition-opacity cursor-pointer shrink-0"
               title="Ver projeções"
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <Line type="monotone" dataKey="peso" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </button>
-          )}
+              <ChartLine className="h-5 w-5 text-primary" />
+            </Button>
 
-          <Button size="sm" variant="outline" className="h-8 text-xs shrink-0" onClick={() => setShowInput(!showInput)}>
-            {showInput ? '✕' : 'Atualizar'}
-          </Button>
+            <Button size="sm" variant="outline" className="h-9 text-xs rounded-xl shrink-0" onClick={() => setShowInput(!showInput)}>
+              {showInput ? '✕' : 'Atualizar'}
+            </Button>
+          </div>
         </div>
 
         {showInput && (
-          <div className="flex gap-2 mt-3 pt-3 border-t border-border/50 animate-fade-in">
+          <div className="flex gap-2 mt-4 pt-4 border-t border-border/50 animate-fade-in">
             <Input
               type="number"
               inputMode="decimal"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="Novo peso (kg)"
-              className="flex-1 h-12 text-base"
+              className="flex-1 h-14 text-base rounded-2xl"
               step={0.1}
             />
-            <Button onClick={handleSubmit} disabled={isSubmitting} className="h-12 px-6">
+            <Button onClick={handleSubmit} disabled={isSubmitting} className="h-14 px-6 rounded-2xl">
               {isSubmitting ? '...' : 'Salvar'}
             </Button>
           </div>
