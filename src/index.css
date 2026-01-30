@@ -6,56 +6,57 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 30% 10%;
+    --background: 170 40% 97%;
+    --foreground: 170 50% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 10%;
+    --card-foreground: 170 50% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 10%;
+    --popover-foreground: 170 50% 10%;
 
-    --primary: 160 84% 39%;
+    --primary: 168 76% 36%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 30% 30%;
+    --secondary: 170 20% 95%;
+    --secondary-foreground: 170 30% 30%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 170 15% 94%;
+    --muted-foreground: 170 10% 45%;
 
-    --accent: 32 98% 50%;
+    --accent: 168 76% 42%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 160 84% 39%;
+    --success: 168 76% 36%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 32 98% 50%;
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 160 84% 39%;
+    --border: 170 15% 90%;
+    --input: 170 15% 90%;
+    --ring: 168 76% 36%;
 
-    --radius: 1rem;
+    --radius: 1.25rem;
 
-    /* Enhanced tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(170 80% 35%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(160 30% 97%) 0%, hsl(220 20% 97%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(220 20% 99%) 100%);
-    --gradient-calories: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(180 70% 40%) 100%);
-    --gradient-protein: linear-gradient(135deg, hsl(32 98% 50%) 0%, hsl(40 95% 55%) 100%);
-    --gradient-water: linear-gradient(135deg, hsl(200 90% 50%) 0%, hsl(210 95% 55%) 100%);
-    --gradient-exercise: linear-gradient(135deg, hsl(350 80% 55%) 0%, hsl(20 90% 55%) 100%);
+    /* Enhanced tokens - Teal theme */
+    --gradient-primary: linear-gradient(135deg, hsl(168 76% 36%) 0%, hsl(175 70% 32%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(168 50% 20%) 0%, hsl(175 55% 15%) 100%);
+    --gradient-header: linear-gradient(135deg, hsl(168 45% 22%) 0%, hsl(175 50% 18%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(170 20% 98%) 100%);
+    --gradient-calories: linear-gradient(135deg, hsl(168 76% 36%) 0%, hsl(175 65% 30%) 100%);
+    --gradient-protein: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(45 90% 55%) 100%);
+    --gradient-water: linear-gradient(135deg, hsl(200 85% 50%) 0%, hsl(210 90% 55%) 100%);
+    --gradient-exercise: linear-gradient(135deg, hsl(350 75% 55%) 0%, hsl(15 85% 55%) 100%);
     
-    --shadow-xs: 0 1px 2px hsl(220 30% 10% / 0.04);
-    --shadow-sm: 0 2px 8px -2px hsl(220 30% 10% / 0.08);
-    --shadow-md: 0 4px 16px -4px hsl(220 30% 10% / 0.1);
-    --shadow-lg: 0 8px 24px -6px hsl(220 30% 10% / 0.12);
-    --shadow-xl: 0 12px 40px -8px hsl(220 30% 10% / 0.15);
+    --shadow-xs: 0 1px 2px hsl(170 30% 10% / 0.03);
+    --shadow-sm: 0 2px 8px -2px hsl(170 30% 10% / 0.06);
+    --shadow-md: 0 4px 16px -4px hsl(170 30% 10% / 0.08);
+    --shadow-lg: 0 8px 24px -6px hsl(170 30% 10% / 0.1);
+    --shadow-xl: 0 16px 48px -12px hsl(170 30% 10% / 0.12);
     
     --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
 
@@ -66,41 +67,42 @@
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 168 76% 36%;
   }
 
   .dark {
-    --background: 220 25% 8%;
-    --foreground: 220 10% 95%;
+    --background: 170 50% 6%;
+    --foreground: 170 10% 95%;
 
-    --card: 220 25% 12%;
-    --card-foreground: 220 10% 95%;
+    --card: 170 45% 10%;
+    --card-foreground: 170 10% 95%;
 
-    --popover: 220 25% 12%;
-    --popover-foreground: 220 10% 95%;
+    --popover: 170 45% 10%;
+    --popover-foreground: 170 10% 95%;
 
-    --primary: 160 70% 45%;
+    --primary: 168 65% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 20% 18%;
-    --secondary-foreground: 220 10% 90%;
+    --secondary: 170 30% 14%;
+    --secondary-foreground: 170 10% 90%;
 
-    --muted: 220 15% 18%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 170 25% 14%;
+    --muted-foreground: 170 10% 55%;
 
-    --accent: 32 85% 55%;
+    --accent: 168 65% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 160 70% 45%;
+    --border: 170 25% 18%;
+    --input: 170 25% 18%;
+    --ring: 168 65% 45%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(160 70% 45%) 0%, hsl(170 65% 40%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(220 25% 10%) 0%, hsl(220 25% 8%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(220 25% 14%) 0%, hsl(220 25% 10%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(168 65% 45%) 0%, hsl(175 60% 38%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(170 50% 8%) 0%, hsl(170 50% 6%) 100%);
+    --gradient-header: linear-gradient(135deg, hsl(170 45% 12%) 0%, hsl(175 50% 10%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(170 45% 12%) 0%, hsl(170 45% 10%) 100%);
     
     --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.15);
     --shadow-sm: 0 2px 8px -2px hsl(0 0% 0% / 0.25);
@@ -130,6 +132,7 @@
 @layer utilities {
   .gradient-primary { background: var(--gradient-primary); }
   .gradient-hero { background: var(--gradient-hero); }
+  .gradient-header { background: var(--gradient-header); }
   .gradient-card { background: var(--gradient-card); }
   .gradient-calories { background: var(--gradient-calories); }
   .gradient-protein { background: var(--gradient-protein); }
@@ -143,7 +146,11 @@
   .shadow-floating { box-shadow: var(--shadow-xl); }
 
   .glass {
-    @apply backdrop-blur-xl bg-card/90;
+    @apply backdrop-blur-xl bg-card/95 border-white/10;
+  }
+  
+  .glass-dark {
+    @apply backdrop-blur-xl bg-black/20;
   }
 
   .progress-ring {
@@ -185,17 +192,21 @@
   
   /* Quick action buttons */
   .quick-btn {
-    @apply flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium 
-           transition-all duration-200 active:scale-95 select-none;
+    @apply flex items-center justify-center gap-1.5 rounded-2xl px-4 py-3 text-sm font-medium 
+           transition-all duration-200 active:scale-95 select-none shadow-soft;
   }
 
-  /* Card styles */
+  /* Card styles - more rounded like reference */
   .card-compact {
-    @apply rounded-2xl bg-card p-3 shadow-soft border border-border/50;
+    @apply rounded-3xl bg-card p-4 shadow-card border border-border/30;
   }
 
   .card-feature {
-    @apply rounded-3xl p-4 shadow-card;
+    @apply rounded-3xl p-5 shadow-elevated;
+  }
+  
+  .card-glass {
+    @apply rounded-3xl p-4 glass-dark border border-white/10;
   }
 
   /* Status colors */
@@ -207,5 +218,11 @@
   /* Compact number display */
   .num-display {
     @apply tabular-nums font-bold tracking-tight;
+  }
+  
+  /* Premium button style */
+  .btn-premium {
+    @apply rounded-2xl bg-white text-primary font-semibold px-6 py-3 shadow-md 
+           transition-all duration-200 active:scale-95 hover:shadow-lg;
   }
 }
