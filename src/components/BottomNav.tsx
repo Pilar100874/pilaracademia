@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Calendar, Dumbbell, Heart, Package, User } from 'lucide-react';
+import { Home, Calendar, Dumbbell, Heart, TrendingUp, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -7,7 +7,7 @@ const navItems = [
   { to: '/history', icon: Calendar, label: 'Histórico' },
   { to: '/workouts', icon: Dumbbell, label: 'Treinos' },
   { to: '/health', icon: Heart, label: 'Saúde' },
-  { to: '/products', icon: Package, label: 'Produtos' },
+  { to: '/projections', icon: TrendingUp, label: 'Projeções' },
   { to: '/profile', icon: User, label: 'Perfil' },
 ];
 
