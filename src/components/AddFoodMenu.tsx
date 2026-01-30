@@ -66,7 +66,7 @@ export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenSearch, onOpenLi
       </div>
 
       {/* FAB - canto inferior direito, acima da navegação */}
-      <div className="fixed bottom-24 right-4 z-50">
+      <div className="fixed bottom-20 right-4 z-50">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
