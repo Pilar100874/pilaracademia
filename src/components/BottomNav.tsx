@@ -12,32 +12,24 @@ const navItems = [
 
 export function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-safe">
-      <div className="mx-auto max-w-md bg-card/95 backdrop-blur-xl rounded-t-3xl border border-border/30 border-b-0 shadow-floating px-2 py-2">
-        <div className="flex items-center justify-around">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-2xl transition-all duration-200 ${
-                  isActive 
-                    ? 'text-primary' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <div className={`p-2 rounded-xl transition-all duration-200 ${isActive ? 'gradient-primary shadow-sm' : 'hover:bg-muted/50'}`}>
-                    <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : ''}`} />
-                  </div>
-                  <span className={`text-[10px] font-semibold ${isActive ? 'text-primary' : ''}`}>{item.label}</span>
-                </>
-              )}
-            </NavLink>
-          ))}
-        </div>
+    <nav className="fixed bottom-0 left-0 right-0 z-40 glass border-t border-border/50 px-1 pb-safe">
+      <div className="flex items-center justify-around h-14">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg transition-colors ${
+                isActive 
+                  ? 'text-primary bg-primary/10' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              }`
+            }
+          >
+            <item.icon className="h-5 w-5" />
+            <span className="text-[9px] font-medium">{item.label}</span>
+          </NavLink>
+        ))}
       </div>
     </nav>
   );

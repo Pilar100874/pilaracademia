@@ -81,29 +81,29 @@ export function ExerciseTracker() {
         {/* Header colapsável */}
         <button 
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full card-compact flex items-center justify-between"
+          className="w-full flex items-center justify-between p-3 rounded-xl bg-card shadow-card hover:shadow-soft transition-all"
         >
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl gradient-exercise shadow-md">
-              <Dumbbell className="h-6 w-6 text-white" />
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-exercise">
+              <Dumbbell className="h-5 w-5 text-white" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-medium text-muted-foreground">Exercícios</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold num-display text-rose-500">-{totalBurned}</span>
-                <span className="text-sm text-muted-foreground">kcal</span>
+              <p className="text-sm font-medium">Exercícios</p>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold num-display text-rose-500">-{totalBurned}</span>
+                <span className="text-xs text-muted-foreground">kcal queimadas</span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-lg">{entries.length}</span>
+            <span className="text-xs text-muted-foreground">{entries.length} registro(s)</span>
             <Button 
               size="sm" 
               variant="ghost" 
-              className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10"
+              className="h-8 w-8 p-0"
               onClick={(e) => { e.stopPropagation(); setShowForm(true); }}
             >
-              <Plus className="h-5 w-5 text-primary" />
+              <Plus className="h-4 w-4" />
             </Button>
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
           </div>
@@ -113,15 +113,15 @@ export function ExerciseTracker() {
         {isExpanded && (
           <div className="space-y-2 animate-fade-in pl-2">
             {entries.length === 0 ? (
-              <div className="text-center py-6 text-sm text-muted-foreground">
+              <div className="text-center py-4 text-sm text-muted-foreground">
                 Nenhum exercício hoje
               </div>
             ) : (
               entries.map((entry) => {
                 const exerciseInfo = EXERCISE_TYPES[entry.exercise_type as keyof typeof EXERCISE_TYPES];
                 return (
-                  <div key={entry.id} className="card-compact flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100">
+                  <div key={entry.id} className="flex items-center gap-3 p-3 rounded-xl bg-card shadow-card">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10">
                       <span className="text-lg">{exerciseInfo?.icon || '🏋️'}</span>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -138,7 +138,7 @@ export function ExerciseTracker() {
                       <Button 
                         size="sm" 
                         variant="ghost" 
-                        className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-primary"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
                         onClick={() => handleEdit(entry)}
                       >
                         <Pencil className="h-4 w-4" />
@@ -146,7 +146,7 @@ export function ExerciseTracker() {
                       <Button 
                         size="sm" 
                         variant="ghost" 
-                        className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-destructive"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                         onClick={() => handleDelete(entry.id)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -165,9 +165,7 @@ export function ExerciseTracker() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-xl gradient-exercise flex items-center justify-center">
-                <Dumbbell className="h-4 w-4 text-white" />
-              </div>
+              <Dumbbell className="h-5 w-5 text-rose-500" />
               Adicionar Exercício
             </DialogTitle>
           </DialogHeader>
@@ -175,13 +173,13 @@ export function ExerciseTracker() {
           <div className="space-y-4 pt-2">
             <div className="flex gap-2">
               <button 
-                className={`flex-1 py-3 px-4 rounded-2xl font-medium transition-all ${mode === 'manual' ? 'gradient-primary text-white shadow-md' : 'bg-secondary hover:bg-secondary/80'}`} 
+                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${mode === 'manual' ? 'bg-primary text-white' : 'bg-secondary hover:bg-secondary/80'}`} 
                 onClick={() => setMode('manual')}
               >
                 🏋️ Equipamento
               </button>
               <button 
-                className={`flex-1 py-3 px-4 rounded-2xl font-medium transition-all ${mode === 'auto' ? 'gradient-primary text-white shadow-md' : 'bg-secondary hover:bg-secondary/80'}`} 
+                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${mode === 'auto' ? 'bg-primary text-white' : 'bg-secondary hover:bg-secondary/80'}`} 
                 onClick={() => setMode('auto')}
               >
                 🧮 Calcular
@@ -196,10 +194,10 @@ export function ExerciseTracker() {
                   value={manualCalories} 
                   onChange={(e) => setManualCalories(e.target.value)} 
                   placeholder="Calorias queimadas" 
-                  className="h-14 text-lg rounded-2xl"
+                  className="h-12 text-lg"
                   autoFocus
                 />
-                <Button className="w-full h-12 rounded-2xl" onClick={handleSubmit}>
+                <Button className="w-full h-12" onClick={handleSubmit}>
                   <Flame className="h-4 w-4 mr-2" />
                   Adicionar
                 </Button>
@@ -207,7 +205,7 @@ export function ExerciseTracker() {
             ) : (
               <div className="space-y-3">
                 <Select value={exerciseType} onValueChange={(v) => setExerciseType(v as keyof typeof EXERCISE_TYPES)}>
-                  <SelectTrigger className="h-14 rounded-2xl">
+                  <SelectTrigger className="h-12">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -224,16 +222,16 @@ export function ExerciseTracker() {
                     value={duration} 
                     onChange={(e) => setDuration(e.target.value)} 
                     placeholder="30" 
-                    className="h-14 text-lg rounded-2xl"
+                    className="h-12 text-lg"
                   />
                 </div>
 
-                <div className="p-4 rounded-2xl bg-rose-50 text-center">
+                <div className="p-3 rounded-lg bg-rose-500/10 text-center">
                   <p className="text-sm text-muted-foreground">Calorias estimadas</p>
-                  <p className="text-3xl font-bold text-rose-500">-{calculatedCalories} kcal</p>
+                  <p className="text-2xl font-bold text-rose-500">-{calculatedCalories} kcal</p>
                 </div>
 
-                <Button className="w-full h-12 rounded-2xl" onClick={handleSubmit}>
+                <Button className="w-full h-12" onClick={handleSubmit}>
                   <Flame className="h-4 w-4 mr-2" />
                   Adicionar Exercício
                 </Button>
@@ -260,7 +258,7 @@ export function ExerciseTracker() {
                 value={editName} 
                 onChange={(e) => setEditName(e.target.value)} 
                 placeholder="Nome do exercício" 
-                className="h-14 rounded-2xl"
+                className="h-12"
               />
             </div>
             <div>
@@ -270,14 +268,14 @@ export function ExerciseTracker() {
                 value={editCalories} 
                 onChange={(e) => setEditCalories(e.target.value)} 
                 placeholder="kcal" 
-                className="h-14 text-lg rounded-2xl"
+                className="h-12 text-lg"
               />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 h-12 rounded-2xl" onClick={() => setEditingEntry(null)}>
+              <Button variant="outline" className="flex-1" onClick={() => setEditingEntry(null)}>
                 Cancelar
               </Button>
-              <Button className="flex-1 h-12 rounded-2xl" onClick={handleSaveEdit}>
+              <Button className="flex-1" onClick={handleSaveEdit}>
                 <Check className="h-4 w-4 mr-2" />
                 Salvar
               </Button>

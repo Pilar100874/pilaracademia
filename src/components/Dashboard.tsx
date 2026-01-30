@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Apple, Loader2, TrendingDown, TrendingUp, Droplets, Clock, Layers, Trash2, Pencil, ChevronLeft, ChevronRight, Calendar, Utensils, Sparkles, Target, Zap } from 'lucide-react';
+import { Flame, Apple, Loader2, TrendingDown, TrendingUp, Droplets, ArrowDownUp, Clock, Layers, Trash2, Pencil, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProgressRing } from '@/components/ProgressRing';
 import { FoodEntryItemDB } from '@/components/FoodEntryItemDB';
@@ -25,7 +25,7 @@ import { useExerciseEntries } from '@/hooks/useExerciseEntries';
 import { useProfile } from '@/hooks/useProfile';
 import { BarcodeProduct, NutritionData } from '@/types/nutrition';
 import { FoodEntryDB } from '@/types/profile';
-import { format, addDays, subDays, isToday } from 'date-fns';
+import { format, addDays, subDays, isToday, isSameDay, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -64,7 +64,8 @@ export function Dashboard() {
   const { consumed } = getTodaySummary();
   const caloriesBurned = getTodayTotalBurned();
   
-  const liquidFromEntries = getTodayTotal();
+  // Calcular total de líquidos: liquid_entries + food_entries com is_liquid=true
+  const liquidFromEntries = getTodayTotal(); // from liquid_entries
   const liquidFromFood = entries
     .filter(e => e.is_liquid === true && e.liquid_ml)
     .reduce((sum, e) => sum + (e.liquid_ml || 0), 0);
@@ -74,7 +75,7 @@ export function Dashboard() {
   const netCalories = consumed.calories - caloriesBurned;
   const calorieProgress = (netCalories / goals.calories) * 100;
   const remainingCalories = Math.max(0, goals.calories - netCalories);
-  const dailyCalorieDeficit = goals.calories - netCalories;
+  const dailyCalorieDeficit = goals.calories - netCalories; // positive = deficit, negative = surplus
   const dailyWeightChange = ((netCalories - goals.calories) / 7700 * 1000);
   const isDeficit = dailyWeightChange < 0;
 
@@ -83,6 +84,7 @@ export function Dashboard() {
   const goToPreviousDay = () => setSelectedDate(prev => subDays(prev, 1));
   const goToNextDay = () => {
     const nextDay = addDays(selectedDate, 1);
+    // Don't allow going to future
     if (!isToday(selectedDate)) {
       setSelectedDate(nextDay);
     }
@@ -91,6 +93,7 @@ export function Dashboard() {
 
   const handlePhotoAnalyzed = async (name: string, nutrition: NutritionData, imageUrl: string, isLiquid?: boolean, liquidMl?: number, grams?: number) => {
     try {
+      // Add food entry - save grams in quantity field
       await addEntry({ 
         name, 
         nutrition, 
@@ -107,6 +110,7 @@ export function Dashboard() {
 
   const handleBarcodeProduct = async (product: BarcodeProduct, portionGrams: number, isLiquid?: boolean, liquidMl?: number) => {
     try {
+      // Add food entry only - liquid tracking comes from is_liquid + liquid_ml fields
       await addEntry({ 
         name: product.name, 
         nutrition: product.nutrition, 
@@ -117,6 +121,7 @@ export function Dashboard() {
         isLiquid: isLiquid || false, 
         liquidMl: liquidMl || 0 
       });
+      // Note: Don't add separate liquid_entry - it's already tracked via food_entries.is_liquid
     } catch { /* silently fail */ }
     setActiveModal(null);
   };
@@ -142,6 +147,7 @@ export function Dashboard() {
 
   const handleAddLiquid = async (ml: number, type: string) => {
     try {
+      // Add only to liquid_entries for daily tracking (single source of truth)
       await addLiquidEntry(ml, type);
       refetchLiquids();
     } catch (err) { 
@@ -149,288 +155,209 @@ export function Dashboard() {
     }
   };
 
+  // Separar entries em refeições (food_entries não são líquidos)
   const mealEntries = entries.filter(e => e.is_liquid !== true);
+  
+  // food_entries que são líquidos
   const liquidFoodEntries = entries.filter(e => e.is_liquid === true);
+  
+  // Total de itens líquidos (liquid_entries + food_entries líquidos)
   const totalLiquidItems = liquidEntriesData.length + liquidFoodEntries.length;
+  
+  // All entries sorted by time (for 'time' sort mode) - combining food and liquid entries
   const allEntriesByTime = [...entries].sort((a, b) => 
     new Date(b.consumed_at).getTime() - new Date(a.consumed_at).getTime()
   );
 
-  const getLiquidTypeInfo = (type: string) => {
-    const labels: Record<string, { label: string; icon: string }> = {
-      water: { label: 'Água', icon: '💧' },
-      juice: { label: 'Suco', icon: '🧃' },
-      coffee: { label: 'Café', icon: '☕' },
-      tea: { label: 'Chá', icon: '🍵' },
-      soda: { label: 'Refrigerante', icon: '🥤' },
-      milk: { label: 'Leite', icon: '🥛' },
-      other: { label: 'Outro', icon: '🍶' },
-    };
-    return labels[type] || labels.other;
-  };
-
-  // Liquid progress
-  const remainingLiquid = Math.max(0, dailyLiquidGoal - todayLiquid);
-  const liquidProgressPercent = Math.min((todayLiquid / dailyLiquidGoal) * 100, 100);
-  const isLiquidComplete = todayLiquid >= dailyLiquidGoal;
-  
-  const formatLiquid = (ml: number) => {
-    if (ml >= 1000) return `${(ml / 1000).toFixed(1)}L`;
-    return `${Math.round(ml)}ml`;
-  };
-
   if (isLoading) {
-    return (
-      <div className="min-h-screen gradient-hero flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 animate-fade-in">
-          <div className="relative">
-            <div className="h-16 w-16 rounded-full gradient-primary flex items-center justify-center shadow-lg">
-              <Loader2 className="h-8 w-8 animate-spin text-white" />
-            </div>
-            <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-white/30 animate-pulse" />
-          </div>
-          <p className="text-white/90 font-medium">Carregando...</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen gradient-hero flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 pb-32">
-      {/* Header Hero Premium */}
-      <header className="relative overflow-hidden">
-        {/* Background com gradiente */}
-        <div className="absolute inset-0 gradient-header" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
-        
-        <div className="relative px-5 pt-8 pb-6">
-          {/* Top bar com saudação */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="animate-fade-in">
-              <p className="text-white/60 text-sm font-medium">Olá,</p>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                {profile?.name?.split(' ')[0] || 'Usuário'}
-                <span className="text-2xl">👋</span>
-              </h1>
-            </div>
-            <button 
-              onClick={() => navigate('/profile')}
-              className="h-12 w-12 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/20 hover:bg-white/25 transition-all active:scale-95"
-            >
-              <Sparkles className="h-5 w-5 text-white" />
-            </button>
-          </div>
-          
-          {/* Navegação de data elegante */}
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-10 w-10 text-white/80 hover:text-white hover:bg-white/15 rounded-xl" 
-              onClick={goToPreviousDay}
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  className="h-10 px-5 text-white font-semibold bg-white/10 hover:bg-white/20 rounded-2xl border border-white/20 gap-2"
-                >
-                  <Calendar className="h-4 w-4" />
-                  {isViewingToday ? 'Hoje' : formattedDate}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="center">
-                <CalendarComponent
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => {
-                    if (date) {
-                      setSelectedDate(date);
-                      setCalendarOpen(false);
-                    }
-                  }}
-                  disabled={(date) => date > new Date()}
-                  initialFocus
-                />
-                {!isViewingToday && (
-                  <div className="p-2 border-t">
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => { goToToday(); setCalendarOpen(false); }}>
-                      Voltar para hoje
-                    </Button>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
-            
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-10 w-10 text-white/80 hover:text-white hover:bg-white/15 rounded-xl" 
-              onClick={goToNextDay}
-              disabled={isViewingToday}
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
-
-          {/* Card Principal de Calorias - Hero Style */}
-          <div className="relative bg-white/10 backdrop-blur-md rounded-[2rem] p-6 border border-white/20 shadow-2xl animate-scale-in overflow-hidden">
-            {/* Decoração de fundo */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-            
-            <div className="relative flex items-start justify-between">
-              <div className="flex-1 space-y-4">
-                {/* Label */}
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/10">
-                  <Flame className="h-4 w-4 text-amber-300" />
-                  <span className="text-xs font-semibold text-white/90">Balanço calórico</span>
-                </div>
-                
-                {/* Números principais */}
-                <div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-bold text-white tracking-tight">{Math.round(netCalories)}</span>
-                    <span className="text-lg text-white/50 font-medium">/ {goals.calories}</span>
-                  </div>
-                  <p className="text-white/60 text-sm mt-1">calorias consumidas</p>
-                </div>
-                
-                {/* Stats rápidos */}
-                <div className="flex flex-wrap gap-3">
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/20 border border-emerald-400/20">
-                    <span className="text-lg">🍽️</span>
-                    <span className="text-sm font-semibold text-white">{Math.round(consumed.calories)}</span>
-                  </div>
-                  {caloriesBurned > 0 && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-rose-500/20 border border-rose-400/20">
-                      <Zap className="h-4 w-4 text-rose-300" />
-                      <span className="text-sm font-semibold text-white">-{caloriesBurned}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Progress Ring Grande */}
-              <div className="relative">
-                <ProgressRing 
-                  progress={calorieProgress} 
-                  size={110} 
-                  strokeWidth={10} 
-                  color={calorieProgress > 100 ? 'destructive' : 'primary'}
-                >
-                  <div className="text-center">
-                    <span className="text-2xl font-bold text-white">{Math.round(calorieProgress)}%</span>
-                  </div>
-                </ProgressRing>
-              </div>
-            </div>
-            
-            {/* Footer do card */}
-            <div className="relative mt-5 pt-4 border-t border-white/10">
-              <div className="flex items-center justify-between">
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl ${isDeficit ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}>
-                  {isDeficit ? <TrendingDown className="h-4 w-4 text-emerald-300" /> : <TrendingUp className="h-4 w-4 text-amber-300" />}
-                  <span className="text-sm font-semibold text-white">
-                    {isDeficit ? '-' : '+'}{Math.abs(dailyWeightChange).toFixed(0)}g hoje
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2 text-white">
-                  <Target className="h-4 w-4 text-white/60" />
-                  <span className="text-sm font-semibold">
-                    {remainingCalories > 0 ? `${Math.round(remainingCalories)} restantes` : '🎉 Meta!'}
-                  </span>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen gradient-hero pb-28">
+      {/* Header com navegação de data */}
+      <header className="sticky top-0 z-30 glass border-b border-border/50 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold">Olá, {profile?.name?.split(' ')[0] || 'Usuário'} 👋</h1>
           </div>
         </div>
-      </header>
-
-      <div className="px-5 space-y-4 -mt-2">
-        {/* Alerta perfil incompleto */}
-        {!isProfileComplete() && isViewingToday && (
-          <button 
-            onClick={() => navigate('/profile')} 
-            className="w-full rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 p-4 text-left animate-fade-in shadow-sm hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-amber-800">Complete seu perfil</p>
-                <p className="text-xs text-amber-600">Receba metas personalizadas</p>
-              </div>
-            </div>
-          </button>
-        )}
         
-        {/* Aviso data passada */}
+        {/* Date navigation */}
+        <div className="flex items-center justify-between mt-2">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousDay}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" className="text-sm font-medium capitalize gap-1.5 h-8 px-2">
+                <Calendar className="h-3.5 w-3.5" />
+                {isViewingToday ? 'Hoje' : formattedDate}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  if (date) {
+                    setSelectedDate(date);
+                    setCalendarOpen(false);
+                  }
+                }}
+                disabled={(date) => date > new Date()}
+                initialFocus
+              />
+              {!isViewingToday && (
+                <div className="p-2 border-t">
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => { goToToday(); setCalendarOpen(false); }}>
+                    Voltar para hoje
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8" 
+            onClick={goToNextDay}
+            disabled={isViewingToday}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        
         {!isViewingToday && (
-          <div className="rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/50 p-4 text-center animate-fade-in">
-            <p className="text-sm font-semibold text-blue-800">
-              📅 Visualizando {format(selectedDate, "d 'de' MMMM", { locale: ptBR })}
-            </p>
+          <div className="mt-2 flex items-center justify-center">
             <Button 
               variant="outline" 
               size="sm" 
-              className="mt-2 text-xs h-8 gap-1.5 border-blue-300 text-blue-700 hover:bg-blue-100 rounded-xl"
+              className="text-xs h-7 gap-1"
               onClick={goToToday}
             >
-              <Calendar className="h-3.5 w-3.5" />
+              <Calendar className="h-3 w-3" />
               Voltar para hoje
             </Button>
           </div>
         )}
+      </header>
 
-        {/* Quick Stats Row - Líquidos e Exercícios em cards menores */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Card Líquidos Compacto */}
-          <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-cyan-50 border border-sky-200/50 p-4 shadow-sm">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-10 w-10 rounded-xl gradient-water flex items-center justify-center shadow-sm">
-                <Droplets className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-sky-600">Líquidos</p>
-                <p className="text-lg font-bold text-sky-800">{formatLiquid(todayLiquid)}</p>
-              </div>
-            </div>
-            <div className="h-2 rounded-full bg-sky-200/50 overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-500 transition-all" style={{ width: `${liquidProgressPercent}%` }} />
-            </div>
-            <p className={`text-xs font-medium mt-2 ${isLiquidComplete ? 'text-emerald-600' : 'text-sky-600'}`}>
-              {isLiquidComplete ? '🎉 Meta atingida!' : `Faltam ${formatLiquid(remainingLiquid)}`}
+      <div className="px-4 space-y-3 pt-4">
+        {/* Alerta perfil incompleto */}
+        {!isProfileComplete() && isViewingToday && (
+          <button onClick={() => navigate('/profile')} className="w-full rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-left animate-fade-in">
+            <p className="text-sm font-medium text-amber-600">⚠️ Complete seu perfil</p>
+          </button>
+        )}
+        
+        {/* Aviso de data passada */}
+        {!isViewingToday && (
+          <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-center">
+            <p className="text-sm font-medium text-amber-600">
+              📅 Visualizando {format(selectedDate, "d 'de' MMMM", { locale: ptBR })}
             </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Você pode adicionar ou editar entradas para este dia
+            </p>
+          </div>
+        )}
+
+        {/* Card Principal - Calorias */}
+        <div className="card-feature gradient-calories text-white">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-1.5 opacity-90">
+                <Flame className="h-4 w-4" />
+                <span className="text-xs font-medium">
+                  Balanço {isViewingToday ? 'do dia' : 'deste dia'}
+                </span>
+              </div>
+              <div className="mt-1 flex items-baseline gap-1">
+                <span className="text-3xl num-display">{Math.round(netCalories)}</span>
+                <span className="text-sm opacity-80">/ {goals.calories} kcal</span>
+              </div>
+              
+              {/* Info rápida */}
+              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs opacity-90">
+                <span>🍽️ {Math.round(consumed.calories)}</span>
+                {caloriesBurned > 0 && <span>🏃 -{caloriesBurned}</span>}
+              </div>
+
+              {/* Projeção de peso */}
+              <div className={`mt-2 p-2 rounded-lg ${isDeficit ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}>
+                <p className="text-xs font-medium flex items-center gap-1">
+                  {isDeficit ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+                  {isDeficit ? 'Perda estimada hoje:' : 'Ganho estimado hoje:'}
+                  <span className="font-bold">{Math.abs(dailyWeightChange).toFixed(0)}g</span>
+                </p>
+                <p className="text-[10px] opacity-80 mt-0.5">
+                  {isDeficit 
+                    ? `Déficit de ${Math.abs(Math.round(netCalories - goals.calories))} kcal`
+                    : `Excesso de ${Math.round(netCalories - goals.calories)} kcal`
+                  }
+                </p>
+              </div>
+
+              <p className="mt-2 text-sm font-semibold">
+                {remainingCalories > 0 ? `Restam ${Math.round(remainingCalories)} kcal` : '🎉 Meta atingida!'}
+              </p>
+            </div>
+            <ProgressRing progress={calorieProgress} size={80} strokeWidth={6} color={calorieProgress > 100 ? 'destructive' : 'primary'}>
+              <span className="text-lg font-bold text-white">{Math.round(calorieProgress)}%</span>
+            </ProgressRing>
           </div>
           
-          {/* Card Exercícios Compacto - apenas visual */}
-          <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-orange-50 border border-rose-200/50 p-4 shadow-sm">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-10 w-10 rounded-xl gradient-exercise flex items-center justify-center shadow-sm">
-                <Zap className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-rose-600">Queimadas</p>
-                <p className="text-lg font-bold text-rose-800">-{caloriesBurned} kcal</p>
-              </div>
-            </div>
-            <div className="h-2 rounded-full bg-rose-200/50 overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-rose-400 to-orange-500 transition-all" style={{ width: `${Math.min((caloriesBurned / 500) * 100, 100)}%` }} />
-            </div>
-            <p className="text-xs font-medium mt-2 text-rose-600">
-              {caloriesBurned > 0 ? 'Continue assim! 💪' : 'Movimente-se!'}
-            </p>
-          </div>
+          <WeightProjection 
+            consumedCalories={consumed.calories}
+            burnedCalories={caloriesBurned}
+            goalCalories={goals.calories}
+            currentWeight={profile?.weight_kg || 70}
+          />
         </div>
 
-        {/* Exercícios Expandível */}
+        {/* Exercícios */}
         <ExerciseTracker />
+
+        {/* Info Líquidos no Balanço */}
+        {(() => {
+          const remainingLiquid = Math.max(0, dailyLiquidGoal - todayLiquid);
+          const progressPercent = Math.min((todayLiquid / dailyLiquidGoal) * 100, 100);
+          const isComplete = todayLiquid >= dailyLiquidGoal;
+          
+          // Formatar líquidos: ml se < 1000, L se >= 1000
+          const formatLiquid = (ml: number) => {
+            if (ml >= 1000) {
+              return `${(ml / 1000).toFixed(1)}L`;
+            }
+            return `${Math.round(ml)}ml`;
+          };
+          
+          return (
+            <div className="card-compact flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-water">
+                  <Droplets className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Líquidos</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold num-display text-sky-500">{formatLiquid(todayLiquid)}</span>
+                    <span className="text-xs text-muted-foreground">/ {formatLiquid(dailyLiquidGoal)}</span>
+                  </div>
+                  <p className={`text-xs font-medium ${isComplete ? 'text-emerald-500' : 'text-sky-500'}`}>
+                    {isComplete ? '🎉 Meta atingida!' : `Faltam ${formatLiquid(remainingLiquid)}`}
+                  </p>
+                </div>
+              </div>
+              <div className="w-16 h-2 rounded-full bg-secondary overflow-hidden">
+                <div className="h-full rounded-full bg-sky-500 transition-all" style={{ width: `${progressPercent}%` }} />
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Peso */}
         <WeightTracker dailyCalorieDeficit={dailyCalorieDeficit} />
@@ -438,254 +365,328 @@ export function Dashboard() {
         {/* Nutrientes */}
         <NutritionProgressGrid consumed={consumed} goals={goals} />
 
-        {/* Consumo do dia */}
-        <div className="pt-2">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl gradient-primary flex items-center justify-center shadow-sm">
-                <Apple className="h-4 w-4 text-white" />
-              </div>
-              {isViewingToday ? 'Consumo do dia' : 'Consumo deste dia'}
-            </h2>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 px-4 text-xs rounded-xl border-border/50"
-              onClick={() => setSortType(sortType === 'type' ? 'time' : 'type')}
-            >
-              {sortType === 'type' ? (
-                <>
-                  <Layers className="h-3.5 w-3.5 mr-1.5" />
-                  Tipo
-                </>
-              ) : (
-                <>
-                  <Clock className="h-3.5 w-3.5 mr-1.5" />
-                  Horário
-                </>
-              )}
-            </Button>
-          </div>
-
-          {entries.length === 0 ? (
-            <div className="rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/30 text-center py-10 px-6">
-              <div className="h-16 w-16 mx-auto rounded-2xl bg-muted flex items-center justify-center mb-4">
-                <Utensils className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <p className="text-base font-medium text-muted-foreground">
-                {isViewingToday ? 'Nenhum registro hoje' : 'Nenhum registro neste dia'}
-              </p>
-              <p className="text-sm text-muted-foreground/70 mt-1">Toque no + para adicionar sua primeira refeição</p>
-            </div>
-          ) : sortType === 'type' ? (
-            <div className="space-y-5">
-              {mealEntries.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-3 flex items-center gap-2 uppercase tracking-wider">
-                    <Apple className="h-3.5 w-3.5" />
-                    Refeições ({mealEntries.length})
-                  </p>
-                  <div className="space-y-2">
-                    {mealEntries.map((entry) => (
-                      <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} onEditVoice={setEditingVoiceEntry} />
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {totalLiquidItems > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-3 flex items-center gap-2 uppercase tracking-wider">
-                    <Droplets className="h-3.5 w-3.5" />
-                    Líquidos ({totalLiquidItems})
-                  </p>
-                  <div className="space-y-2">
-                    {liquidFoodEntries.map((entry) => (
-                      <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} onEditVoice={setEditingVoiceEntry} />
-                    ))}
-                    {liquidEntriesData.map((entry) => {
-                      const typeInfo = getLiquidTypeInfo(entry.type);
-                      return (
-                        <div key={entry.id} className="rounded-2xl bg-card border border-border/30 p-4 flex items-center justify-between shadow-sm">
-                          <div className="flex items-center gap-3">
-                            <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-sky-100 to-cyan-100 flex items-center justify-center text-xl">
-                              {typeInfo.icon}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-sm">{typeInfo.label}</p>
-                              <p className="text-xs text-muted-foreground">{entry.amount_ml}ml</p>
-                            </div>
-                          </div>
-                          <div className="flex gap-1">
-                            <Button size="sm" variant="ghost" className="h-9 w-9 p-0 rounded-xl" onClick={() => setEditingLiquid(entry)}>
-                              <Pencil className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="h-9 w-9 p-0 rounded-xl" onClick={() => setDeletingLiquid(entry)}>
-                              <Trash2 className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {allEntriesByTime.map((entry) => (
-                <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} onEditVoice={setEditingVoiceEntry} />
-              ))}
-            </div>
-          )}
+        {/* Consumo do dia - Header com toggle de ordenação */}
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            <Apple className="h-4 w-4 text-primary" />
+            {isViewingToday ? 'Consumo do dia' : 'Consumo deste dia'}
+          </h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setSortType(sortType === 'type' ? 'time' : 'type')}
+          >
+            {sortType === 'type' ? (
+              <>
+                <Layers className="h-3 w-3 mr-1" />
+                Por tipo
+              </>
+            ) : (
+              <>
+                <Clock className="h-3 w-3 mr-1" />
+                Por horário
+              </>
+            )}
+          </Button>
         </div>
-        
-        <WeightProjection 
-          consumedCalories={consumed.calories}
-          burnedCalories={caloriesBurned}
-          goalCalories={goals.calories}
-          currentWeight={profile?.weight_kg || 70}
-        />
+
+        {entries.length === 0 ? (
+          <div className="card-compact text-center py-6">
+            <p className="text-sm text-muted-foreground">
+              {isViewingToday ? 'Nenhum registro hoje' : 'Nenhum registro neste dia'}
+            </p>
+          </div>
+        ) : sortType === 'type' ? (
+          <div className="space-y-4">
+            {/* Refeições */}
+            {mealEntries.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                  <Apple className="h-3 w-3" />
+                  Refeições ({mealEntries.length})
+                </p>
+                <div className="space-y-2">
+                  {mealEntries.map((entry) => (
+                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} onEditVoice={setEditingVoiceEntry} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Líquidos - from liquid_entries + food_entries com is_liquid */}
+            {totalLiquidItems > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                  <Droplets className="h-3 w-3 text-sky-500" />
+                  Líquidos ({totalLiquidItems})
+                </p>
+                <div className="space-y-2">
+                  {/* Liquid entries from liquid_entries table */}
+                  {liquidEntriesData.map((entry) => (
+                    <div key={`liquid-${entry.id}`} className="group flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card transition-all duration-200 hover:shadow-soft animate-scale-in overflow-hidden">
+                      <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-sky-500/10">
+                        <Droplets className="h-6 w-6 text-sky-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium truncate text-sm">{liquidTypes[entry.type as keyof typeof liquidTypes] || entry.type}</h4>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(entry.consumed_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às {new Date(entry.consumed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          <span className="inline-flex items-center rounded-md bg-sky-500/10 px-1.5 py-0.5 text-xs font-medium text-sky-600">
+                            <Droplets className="h-3 w-3 mr-0.5" />
+                            {entry.amount_ml}ml
+                          </span>
+                          <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
+                            0 kcal
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          onClick={() => setEditingLiquid(entry)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          onClick={() => setDeletingLiquid(entry)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Liquid entries from food_entries with is_liquid=true - show full nutrition */}
+                  {liquidFoodEntries.map((entry) => (
+                    <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} onEditVoice={setEditingVoiceEntry} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {allEntriesByTime.map((entry) => (
+              <FoodEntryItemDB key={entry.id} entry={entry} onUpdate={handleUpdateEntry} onDelete={handleDeleteEntry} onEditTyped={setEditingTypedEntry} onEditVoice={setEditingVoiceEntry} />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Modals */}
-      {activeModal === 'photo' && (
-        <PhotoCapture 
-          onFoodAnalyzed={handlePhotoAnalyzed}
-          onClose={() => setActiveModal(null)} 
-          selectedDate={selectedDate}
-        />
-      )}
-      
-      {activeModal === 'barcode' && (
-        <BarcodeScanner 
-          onProductFound={handleBarcodeProduct}
-          onClose={() => setActiveModal(null)} 
-          selectedDate={selectedDate}
-        />
-      )}
-      
-      {activeModal === 'manual' && (
-        <ManualEntryForm 
-          onSubmit={handleManualEntry}
-          onClose={() => setActiveModal(null)} 
-          selectedDate={selectedDate}
-        />
-      )}
-      
-      {activeModal === 'search' && (
-        <ProductSearch 
-          isOpen={true}
-          onClose={() => setActiveModal(null)} 
-          selectedDate={selectedDate}
-        />
-      )}
-      
-      <AddLiquidDialog 
-        open={activeModal === 'liquid'}
-        onOpenChange={(open) => !open && setActiveModal(null)}
-        onAddLiquid={handleAddLiquid}
-      />
-      
-      <TypedFoodDialog 
-        open={activeModal === 'typed'}
-        onOpenChange={(open) => !open && setActiveModal(null)}
-        onSave={(data) => {
-          addEntry({ 
-            name: data.name, 
-            nutrition: data.total, 
-            quantity: 1, 
-            unit: 'porção', 
-            source: 'manual' 
-          });
-          setActiveModal(null);
-        }}
-      />
-      
-      <VoiceFoodDialog 
-        open={activeModal === 'voice'}
-        onOpenChange={(open) => !open && setActiveModal(null)}
-        onSave={(data) => {
-          addEntry({ 
-            name: data.name, 
-            nutrition: data.total, 
-            quantity: 1, 
-            unit: 'porção', 
-            source: 'voice' 
-          });
-          setActiveModal(null);
-        }}
-      />
-      
-      {editingTypedEntry && (
-        <TypedFoodDialog 
-          open={!!editingTypedEntry}
-          onOpenChange={(open) => !open && setEditingTypedEntry(null)}
-          onSave={(data) => {
-            updateEntry(editingTypedEntry.id, { 
-              name: data.name, 
-              calories: data.total.calories,
-              protein: data.total.protein,
-              carbs: data.total.carbs,
-              fat: data.total.fat,
-            });
-            setEditingTypedEntry(null);
-          }}
-          isEditing
-        />
-      )}
-      
-      {editingVoiceEntry && (
-        <VoiceFoodDialog 
-          open={!!editingVoiceEntry}
-          onOpenChange={(open) => !open && setEditingVoiceEntry(null)}
-          onSave={(data) => {
-            updateEntry(editingVoiceEntry.id, { 
-              name: data.name, 
-              calories: data.total.calories,
-              protein: data.total.protein,
-              carbs: data.total.carbs,
-              fat: data.total.fat,
-            });
-            setEditingVoiceEntry(null);
-          }}
-          isEditing
-        />
-      )}
-      
-      <EditLiquidDialog 
-        open={!!editingLiquid}
-        onOpenChange={(open) => !open && setEditingLiquid(null)}
-        entry={editingLiquid}
-        liquidTypes={liquidTypes}
-        onSave={async (id, ml) => { 
-          await updateLiquidEntry(id, ml); 
-          setEditingLiquid(null); 
-        }}
-      />
-      
-      <ConfirmDeleteDialog 
-        open={!!deletingLiquid}
-        onOpenChange={(open) => !open && setDeletingLiquid(null)}
-        onConfirm={() => {
-          if (deletingLiquid) {
-            deleteLiquidEntry(deletingLiquid.id);
-            setDeletingLiquid(null);
-          }
-        }}
-        title="Remover líquido?"
-        description="Esta ação não pode ser desfeita."
-      />
-      
-      <WeightReminderPopup />
-      
       <AddFoodMenu 
-        onOpenPhoto={() => setActiveModal('photo')}
-        onOpenBarcode={() => setActiveModal('barcode')}
-        onOpenSearch={() => setActiveModal('search')}
+        onOpenPhoto={() => setActiveModal('photo')} 
+        onOpenBarcode={() => setActiveModal('barcode')} 
+        onOpenSearch={() => setActiveModal('search')} 
         onOpenLiquid={() => setActiveModal('liquid')}
         onOpenTyped={() => setActiveModal('typed')}
       />
+      {activeModal === 'photo' && <PhotoCapture onFoodAnalyzed={handlePhotoAnalyzed} onClose={() => setActiveModal(null)} selectedDate={selectedDate} />}
+      {activeModal === 'barcode' && <BarcodeScanner onProductFound={handleBarcodeProduct} onClose={() => { setActiveModal(null); refetchFood(); }} selectedDate={selectedDate} />}
+      <ProductSearch isOpen={activeModal === 'search'} onClose={() => { setActiveModal(null); refetchFood(); }} selectedDate={selectedDate} />
+      <AddLiquidDialog open={activeModal === 'liquid'} onOpenChange={(open) => !open && setActiveModal(null)} onAddLiquid={handleAddLiquid} />
+      
+      {/* Voice Food Dialog - Add new or Edit existing */}
+      <VoiceFoodDialog
+        open={activeModal === 'voice' || !!editingVoiceEntry}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveModal(null);
+            setEditingVoiceEntry(null);
+          }
+        }}
+        isEditing={!!editingVoiceEntry}
+        initialName={editingVoiceEntry?.name || ''}
+        initialItems={
+          editingVoiceEntry?.original_items && editingVoiceEntry.original_items.length > 0
+            ? editingVoiceEntry.original_items.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                quantityGrams: 0,
+                calories: item.calories,
+                protein: item.protein,
+                carbs: item.carbs,
+                fat: item.fat,
+              }))
+            : editingVoiceEntry 
+              ? [{
+                  name: editingVoiceEntry.name,
+                  quantity: editingVoiceEntry.unit === 'porção' ? '' : `${editingVoiceEntry.quantity}${editingVoiceEntry.unit}`,
+                  quantityGrams: editingVoiceEntry.quantity,
+                  calories: editingVoiceEntry.calories,
+                  protein: editingVoiceEntry.protein,
+                  carbs: editingVoiceEntry.carbs,
+                  fat: editingVoiceEntry.fat,
+                }]
+              : undefined
+        }
+        onSave={async (data) => {
+          const originalItems = data.items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            calories: item.calories,
+            protein: item.protein,
+            carbs: item.carbs,
+            fat: item.fat,
+          }));
+
+          if (editingVoiceEntry) {
+            // Editing existing entry
+            await updateEntry(editingVoiceEntry.id, {
+              name: data.name,
+              calories: Math.round(data.total.calories),
+              protein: Math.round(data.total.protein * 10) / 10,
+              carbs: Math.round(data.total.carbs * 10) / 10,
+              fat: Math.round(data.total.fat * 10) / 10,
+              saturated_fat: Math.round((data.total.saturatedFat || 0) * 10) / 10,
+              trans_fat: Math.round((data.total.transFat || 0) * 10) / 10,
+              fiber: Math.round((data.total.fiber || 0) * 10) / 10,
+              sodium: Math.round(data.total.sodium || 0),
+              original_items: originalItems,
+            });
+            setEditingVoiceEntry(null);
+          } else {
+            // Adding new entry
+            await addEntry({
+              name: data.name,
+              nutrition: {
+                calories: Math.round(data.total.calories),
+                protein: Math.round(data.total.protein * 10) / 10,
+                carbs: Math.round(data.total.carbs * 10) / 10,
+                fat: Math.round(data.total.fat * 10) / 10,
+                saturatedFat: Math.round((data.total.saturatedFat || 0) * 10) / 10,
+                transFat: Math.round((data.total.transFat || 0) * 10) / 10,
+                fiber: Math.round((data.total.fiber || 0) * 10) / 10,
+                sodium: Math.round(data.total.sodium || 0),
+              },
+              quantity: 1,
+              unit: 'porção',
+              source: 'voice',
+              originalItems: originalItems,
+            });
+            setActiveModal(null);
+          }
+          refetchFood();
+        }}
+      />
+
+      {/* Dialog para adicionar OU editar alimento digitado */}
+      <TypedFoodDialog 
+        open={activeModal === 'typed' || !!editingTypedEntry} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveModal(null);
+            setEditingTypedEntry(null);
+          }
+        }}
+        isEditing={!!editingTypedEntry}
+        initialName={editingTypedEntry?.name || ''}
+        initialItems={
+          // Se tiver original_items salvos, usar eles
+          editingTypedEntry?.original_items && editingTypedEntry.original_items.length > 0
+            ? editingTypedEntry.original_items.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                quantityGrams: 0,
+                calories: item.calories,
+                protein: item.protein,
+                carbs: item.carbs,
+                fat: item.fat,
+              }))
+            // Senão, usar fallback com o nome da entrada
+            : editingTypedEntry 
+              ? [{
+                  name: editingTypedEntry.name,
+                  quantity: editingTypedEntry.unit === 'porção' ? '' : `${editingTypedEntry.quantity}${editingTypedEntry.unit}`,
+                  quantityGrams: editingTypedEntry.quantity,
+                  calories: editingTypedEntry.calories,
+                  protein: editingTypedEntry.protein,
+                  carbs: editingTypedEntry.carbs,
+                  fat: editingTypedEntry.fat,
+                }]
+              : undefined
+        }
+        onSave={async (data) => {
+          // Preparar os itens originais para salvar
+          const originalItems = data.items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            calories: item.calories,
+            protein: item.protein,
+            carbs: item.carbs,
+            fat: item.fat,
+          }));
+
+          if (editingTypedEntry) {
+            // Editando entrada existente
+            await updateEntry(editingTypedEntry.id, {
+              name: data.name,
+              calories: Math.round(data.total.calories),
+              protein: Math.round(data.total.protein * 10) / 10,
+              carbs: Math.round(data.total.carbs * 10) / 10,
+              fat: Math.round(data.total.fat * 10) / 10,
+              saturated_fat: Math.round((data.total.saturatedFat || 0) * 10) / 10,
+              trans_fat: Math.round((data.total.transFat || 0) * 10) / 10,
+              fiber: Math.round((data.total.fiber || 0) * 10) / 10,
+              sodium: Math.round(data.total.sodium || 0),
+              original_items: originalItems,
+            });
+            setEditingTypedEntry(null);
+          } else {
+            // Adicionando nova entrada
+            await addEntry({
+              name: data.name,
+              nutrition: {
+                calories: Math.round(data.total.calories),
+                protein: Math.round(data.total.protein * 10) / 10,
+                carbs: Math.round(data.total.carbs * 10) / 10,
+                fat: Math.round(data.total.fat * 10) / 10,
+                saturatedFat: Math.round((data.total.saturatedFat || 0) * 10) / 10,
+                transFat: Math.round((data.total.transFat || 0) * 10) / 10,
+                fiber: Math.round((data.total.fiber || 0) * 10) / 10,
+                sodium: Math.round(data.total.sodium || 0),
+              },
+              quantity: 1,
+              unit: 'porção',
+              source: 'manual',
+              originalItems: originalItems,
+            });
+            setActiveModal(null);
+          }
+          refetchFood();
+        }}
+      />
+      <EditLiquidDialog 
+        entry={editingLiquid}
+        liquidTypes={liquidTypes}
+        open={!!editingLiquid}
+        onOpenChange={(open) => !open && setEditingLiquid(null)}
+        onSave={async (id, amountMl) => {
+          await updateLiquidEntry(id, amountMl);
+          refetchLiquids();
+        }}
+      />
+      <ConfirmDeleteDialog
+        open={!!deletingLiquid}
+        onOpenChange={(open) => !open && setDeletingLiquid(null)}
+        itemName={deletingLiquid ? `${deletingLiquid.amount_ml}ml de ${liquidTypes[deletingLiquid.type as keyof typeof liquidTypes] || deletingLiquid.type}` : ''}
+        onConfirm={async () => {
+          if (deletingLiquid) {
+            await deleteLiquidEntry(deletingLiquid.id);
+            refetchLiquids();
+            setDeletingLiquid(null);
+          }
+        }}
+      />
+      <WeightReminderPopup />
       <BottomNav />
     </div>
   );
