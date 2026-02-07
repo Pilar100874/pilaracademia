@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Loader2, Droplets, Dumbbell, Scale, TrendingDown, TrendingUp, ChevronDown, Minus } from 'lucide-react';
+import { Flame, Loader2, Droplets, Dumbbell, Scale, TrendingDown, TrendingUp, ChevronDown, Minus, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DaySelector } from '@/components/DaySelector';
 import { CalorieRing } from '@/components/CalorieRing';
@@ -16,11 +16,15 @@ import { VoiceFoodDialog } from '@/components/VoiceFoodDialog';
 import { BottomNav } from '@/components/BottomNav';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { WeightReminderPopup } from '@/components/WeightReminderPopup';
+import { WeightTracker } from '@/components/WeightTracker';
+import { ExerciseTracker } from '@/components/ExerciseTracker';
+import { GlycemiaTracker } from '@/components/GlycemiaTracker';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
 import { useExerciseEntries } from '@/hooks/useExerciseEntries';
 import { useProfile } from '@/hooks/useProfile';
 import { useWeightHistory } from '@/hooks/useWeightHistory';
+import { useGlycemiaEntries, getGlycemiaStatus } from '@/hooks/useGlycemiaEntries';
 import { BarcodeProduct, NutritionData } from '@/types/nutrition';
 import { FoodEntryDB } from '@/types/profile';
 import { format, isToday } from 'date-fns';
@@ -47,6 +51,7 @@ export function Dashboard() {
   const { profile, getGoals, isProfileComplete } = useProfile();
   const { getTodayTotalBurned } = useExerciseEntries(selectedDate);
   const { entries: weightEntries } = useWeightHistory();
+  const { getLatestReading } = useGlycemiaEntries(selectedDate);
   
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [editingLiquid, setEditingLiquid] = useState<LiquidEntryData | null>(null);
@@ -210,19 +215,19 @@ export function Dashboard() {
         </div>
 
         {/* Quick Stats Row */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-2">
           {/* Exercise */}
           <button 
             onClick={() => navigate('/workouts')}
             className="card-compact flex flex-col items-center gap-1 py-3"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10">
-              <Dumbbell className="h-5 w-5 text-rose-500" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10">
+              <Dumbbell className="h-4 w-4 text-rose-500" />
             </div>
-            <span className="text-lg font-bold num-display text-rose-500">
+            <span className="text-base font-bold num-display text-rose-500">
               {caloriesBurned > 0 ? `-${caloriesBurned}` : '0'}
             </span>
-            <span className="text-[10px] text-muted-foreground">kcal queimadas</span>
+            <span className="text-[9px] text-muted-foreground">kcal</span>
           </button>
 
           {/* Liquids */}
@@ -230,13 +235,13 @@ export function Dashboard() {
             onClick={() => setActiveModal('liquid')}
             className="card-compact flex flex-col items-center gap-1 py-3"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10">
-              <Droplets className="h-5 w-5 text-sky-500" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10">
+              <Droplets className="h-4 w-4 text-sky-500" />
             </div>
-            <span className="text-lg font-bold num-display text-sky-500">
+            <span className="text-base font-bold num-display text-sky-500">
               {formatLiquid(todayLiquid)}
             </span>
-            <span className="text-[10px] text-muted-foreground">de {formatLiquid(dailyLiquidGoal)}</span>
+            <span className="text-[9px] text-muted-foreground">{formatLiquid(dailyLiquidGoal)}</span>
           </button>
 
           {/* Weight */}
@@ -244,11 +249,11 @@ export function Dashboard() {
             onClick={() => navigate('/health')}
             className="card-compact flex flex-col items-center gap-1 py-3"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
-              <Scale className="h-5 w-5 text-violet-500" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10">
+              <Scale className="h-4 w-4 text-violet-500" />
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-lg font-bold num-display">
+            <div className="flex items-center gap-0.5">
+              <span className="text-base font-bold num-display">
                 {currentWeight}
               </span>
               {weightEntries.length >= 2 && (
@@ -257,9 +262,48 @@ export function Dashboard() {
                 </span>
               )}
             </div>
-            <span className="text-[10px] text-muted-foreground">kg atual</span>
+            <span className="text-[9px] text-muted-foreground">kg</span>
+          </button>
+
+          {/* Glycemia */}
+          <button 
+            onClick={() => {}}
+            className="card-compact flex flex-col items-center gap-1 py-3"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10">
+              <Activity className="h-4 w-4 text-emerald-500" />
+            </div>
+            {(() => {
+              const latestReading = getLatestReading();
+              if (latestReading) {
+                const status = getGlycemiaStatus(latestReading.glucose_mg_dl, latestReading.measurement_type);
+                return (
+                  <>
+                    <span className={`text-base font-bold num-display ${status.color}`}>
+                      {latestReading.glucose_mg_dl}
+                    </span>
+                    <span className="text-[9px] text-muted-foreground">mg/dL</span>
+                  </>
+                );
+              }
+              return (
+                <>
+                  <span className="text-base font-bold num-display text-muted-foreground">--</span>
+                  <span className="text-[9px] text-muted-foreground">glicemia</span>
+                </>
+              );
+            })()}
           </button>
         </div>
+
+        {/* Weight Tracker */}
+        <WeightTracker dailyCalorieDeficit={goals.calories - netCalories} />
+
+        {/* Exercise Tracker */}
+        <ExerciseTracker />
+
+        {/* Glycemia Tracker */}
+        <GlycemiaTracker selectedDate={selectedDate} />
 
         {/* Recently Logged Section */}
         <div>

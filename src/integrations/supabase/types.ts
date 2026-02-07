@@ -313,6 +313,36 @@ export type Database = {
         }
         Relationships: []
       }
+      glycemia_entries: {
+        Row: {
+          created_at: string
+          glucose_mg_dl: number
+          id: string
+          measured_at: string
+          measurement_type: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          glucose_mg_dl: number
+          id?: string
+          measured_at?: string
+          measurement_type?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          glucose_mg_dl?: number
+          id?: string
+          measured_at?: string
+          measurement_type?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       liquid_entries: {
         Row: {
           amount_ml: number
