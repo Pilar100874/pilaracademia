@@ -3,11 +3,13 @@ import { FoodEntryDB } from '@/types/profile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Camera, Barcode, Edit3, Trash2, Pencil, Check, Clock, Minus, Plus, Droplets, Apple, GlassWater, Calculator, UtensilsCrossed, Mic } from 'lucide-react';
+import { Camera, Barcode, Edit3, Trash2, Pencil, Check, Clock, Minus, Plus, Droplets, Apple, GlassWater, Calculator, UtensilsCrossed, Mic, AlertTriangle, TrendingUp } from 'lucide-react';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { WATER_IMAGE_URL } from '@/components/DefaultLiquidImage';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { calculateGlycemicImpact, shouldShowGlycemicWarning } from '@/lib/glycemicImpact';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface FoodEntryItemDBProps {
   entry: FoodEntryDB;
@@ -358,6 +360,26 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped, onEdit
 
           {/* Nutrition badges */}
           <div className="mt-1 flex flex-wrap gap-1">
+            {/* Glycemic impact warning badge */}
+            {shouldShowGlycemicWarning(entry.carbs, entry.fiber || 0) && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium ${calculateGlycemicImpact(entry.carbs, entry.fiber || 0).bgColor} ${calculateGlycemicImpact(entry.carbs, entry.fiber || 0).color}`}>
+                      <TrendingUp className="h-3 w-3 mr-0.5" />
+                      {calculateGlycemicImpact(entry.carbs, entry.fiber || 0).label}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">
+                      Impacto glicêmico: {calculateGlycemicImpact(entry.carbs, entry.fiber || 0).estimatedSpike}
+                      <br />
+                      Carboidratos líquidos: {calculateGlycemicImpact(entry.carbs, entry.fiber || 0).carbsNet}g
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             {/* Show grams for photo entries (non-liquid) */}
             {entry.source === 'photo' && !entry.is_liquid && entry.unit === 'g' && (
               <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
