@@ -13,6 +13,7 @@ import { AddLiquidDialog } from '@/components/AddLiquidDialog';
 import { EditLiquidDialog } from '@/components/EditLiquidDialog';
 import { TypedFoodDialog } from '@/components/TypedFoodDialog';
 import { VoiceFoodDialog } from '@/components/VoiceFoodDialog';
+import { FoodEntryItemDB } from '@/components/FoodEntryItemDB';
 import { BottomNav } from '@/components/BottomNav';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { WeightReminderPopup } from '@/components/WeightReminderPopup';
@@ -58,6 +59,7 @@ export function Dashboard() {
   const [deletingLiquid, setDeletingLiquid] = useState<LiquidEntryData | null>(null);
   const [editingTypedEntry, setEditingTypedEntry] = useState<FoodEntryDB | null>(null);
   const [editingVoiceEntry, setEditingVoiceEntry] = useState<FoodEntryDB | null>(null);
+  const [editingPhotoEntry, setEditingPhotoEntry] = useState<FoodEntryDB | null>(null);
 
   const goals = getGoals();
   const { consumed } = getTodaySummary();
@@ -318,8 +320,38 @@ export function Dashboard() {
             onDelete={handleDeleteEntry}
             onEditTyped={setEditingTypedEntry}
             onEditVoice={setEditingVoiceEntry}
+            onEditPhotoBarcode={setEditingPhotoEntry}
           />
         </div>
+
+        {/* Edit dialog for photo/barcode entries */}
+        {editingPhotoEntry && (
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-end justify-center animate-fade-in">
+            <div className="bg-card w-full max-w-lg rounded-t-3xl p-4 pb-8 max-h-[90vh] overflow-y-auto animate-slide-up">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold">Editar registro</h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setEditingPhotoEntry(null)}
+                >
+                  Fechar
+                </Button>
+              </div>
+              <FoodEntryItemDB
+                entry={editingPhotoEntry}
+                onUpdate={(id, updates) => {
+                  handleUpdateEntry(id, updates);
+                  setEditingPhotoEntry(null);
+                }}
+                onDelete={(id) => {
+                  handleDeleteEntry(id);
+                  setEditingPhotoEntry(null);
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modals */}

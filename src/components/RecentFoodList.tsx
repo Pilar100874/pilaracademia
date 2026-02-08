@@ -11,6 +11,7 @@ interface RecentFoodListProps {
   onDelete?: (id: string) => void;
   onEditTyped?: (entry: FoodEntryDB) => void;
   onEditVoice?: (entry: FoodEntryDB) => void;
+  onEditPhotoBarcode?: (entry: FoodEntryDB) => void;
 }
 
 const sourceIcons: Record<string, any> = {
@@ -20,7 +21,7 @@ const sourceIcons: Record<string, any> = {
   voice: Mic,
 };
 
-export function RecentFoodList({ entries, onUpdate, onDelete, onEditTyped, onEditVoice }: RecentFoodListProps) {
+export function RecentFoodList({ entries, onUpdate, onDelete, onEditTyped, onEditVoice, onEditPhotoBarcode }: RecentFoodListProps) {
   const [zoomImage, setZoomImage] = useState<string | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<FoodEntryDB | null>(null);
 
@@ -41,7 +42,16 @@ export function RecentFoodList({ entries, onUpdate, onDelete, onEditTyped, onEdi
       onEditVoice(entry);
     } else if (entry.source === 'manual' && onEditTyped) {
       onEditTyped(entry);
+    } else if ((entry.source === 'photo' || entry.source === 'barcode') && onEditPhotoBarcode) {
+      onEditPhotoBarcode(entry);
     }
+  };
+
+  const canEdit = (entry: FoodEntryDB) => {
+    if (entry.source === 'voice') return !!onEditVoice;
+    if (entry.source === 'manual') return !!onEditTyped;
+    if (entry.source === 'photo' || entry.source === 'barcode') return !!onEditPhotoBarcode;
+    return false;
   };
 
   return (
@@ -113,7 +123,7 @@ export function RecentFoodList({ entries, onUpdate, onDelete, onEditTyped, onEdi
                   {time}
                 </span>
                 <div className="flex gap-0.5">
-                  {(entry.source === 'manual' || entry.source === 'voice') && (
+                  {canEdit(entry) && (
                     <Button
                       variant="ghost"
                       size="icon"
