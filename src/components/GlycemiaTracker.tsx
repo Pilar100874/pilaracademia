@@ -3,8 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Activity, Plus, Trash2, ChevronDown, Pencil, Check, Clock } from 'lucide-react';
+import { Activity, Plus, Trash2, ChevronDown, Pencil, Check, Clock, TrendingUp, UtensilsCrossed, AlertTriangle } from 'lucide-react';
 import { useGlycemiaEntries, MEASUREMENT_TYPES, getGlycemiaStatus, GlycemiaEntry } from '@/hooks/useGlycemiaEntries';
+import { useFoodEntries } from '@/hooks/useFoodEntries';
+import { calculateGlycemicImpact } from '@/lib/glycemicImpact';
 import { format } from 'date-fns';
 
 interface GlycemiaTrackerProps {
@@ -21,6 +23,8 @@ export function GlycemiaTracker({ selectedDate }: GlycemiaTrackerProps) {
     getAverageToday 
   } = useGlycemiaEntries(selectedDate);
   
+  const { entries: foodEntries } = useFoodEntries(selectedDate);
+  
   const [isExpanded, setIsExpanded] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [glucose, setGlucose] = useState('');
@@ -33,6 +37,14 @@ export function GlycemiaTracker({ selectedDate }: GlycemiaTrackerProps) {
 
   const latestReading = getLatestReading();
   const averageToday = getAverageToday();
+  
+  // Calculate total carbs and fiber from food entries for glycemic prediction
+  const carbsSummary = foodEntries.reduce((acc, entry) => ({
+    carbs: acc.carbs + (entry.carbs || 0),
+    fiber: acc.fiber + (entry.fiber || 0),
+  }), { carbs: 0, fiber: 0 });
+  
+  const dailyGlycemicImpact = calculateGlycemicImpact(carbsSummary.carbs, carbsSummary.fiber);
 
   const handleSubmit = async () => {
     const glucoseValue = parseInt(glucose);
@@ -125,6 +137,45 @@ export function GlycemiaTracker({ selectedDate }: GlycemiaTrackerProps) {
 
         {isExpanded && (
           <div className="space-y-2 animate-fade-in pl-2">
+            {/* Daily carbs and glycemic impact prediction */}
+            {foodEntries.length > 0 && (
+              <div className={`p-3 rounded-xl ${dailyGlycemicImpact.bgColor} mb-3`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Previsão do dia</span>
+                  </div>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${dailyGlycemicImpact.bgColor} ${dailyGlycemicImpact.color}`}>
+                    {dailyGlycemicImpact.label}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-lg font-bold">{Math.round(carbsSummary.carbs)}g</p>
+                    <p className="text-xs text-muted-foreground">Carboidratos</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">{Math.round(carbsSummary.fiber)}g</p>
+                    <p className="text-xs text-muted-foreground">Fibras</p>
+                  </div>
+                  <div>
+                    <p className={`text-lg font-bold ${dailyGlycemicImpact.color}`}>{dailyGlycemicImpact.carbsNet}g</p>
+                    <p className="text-xs text-muted-foreground">Carbs líq.</p>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                  <TrendingUp className="h-3 w-3" />
+                  <span>Impacto estimado: {dailyGlycemicImpact.estimatedSpike}</span>
+                </div>
+                {(dailyGlycemicImpact.level === 'high' || dailyGlycemicImpact.level === 'very_high') && (
+                  <div className="mt-2 flex items-center justify-center gap-1 text-xs text-amber-600">
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>Atenção: consumo elevado de carboidratos</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
             {entries.length === 0 ? (
               <div className="text-center py-4 text-sm text-muted-foreground">
                 Nenhuma medição hoje
