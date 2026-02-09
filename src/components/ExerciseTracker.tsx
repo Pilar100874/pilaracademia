@@ -8,8 +8,13 @@ import { useExerciseEntries, EXERCISE_TYPES, calculateCaloriesBurned, ExerciseEn
 import { useProfile } from '@/hooks/useProfile';
 import { format } from 'date-fns';
 
-export function ExerciseTracker() {
-  const { entries, addExerciseEntry, updateExerciseEntry, deleteExerciseEntry, getTodayTotalBurned } = useExerciseEntries();
+interface ExerciseTrackerProps {
+  selectedDate?: Date;
+  onDataChange?: () => void;
+}
+
+export function ExerciseTracker({ selectedDate, onDataChange }: ExerciseTrackerProps) {
+  const { entries, addExerciseEntry, updateExerciseEntry, deleteExerciseEntry, getTodayTotalBurned } = useExerciseEntries(selectedDate);
   const { profile } = useProfile();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showForm, setShowForm] = useState(false);

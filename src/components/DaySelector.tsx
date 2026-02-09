@@ -2,6 +2,7 @@ import { format, addDays, subDays, startOfWeek, isSameDay, isToday } from 'date-
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useDayIndicators } from '@/hooks/useDayIndicators';
 
 interface DaySelectorProps {
   selectedDate: Date;
@@ -11,6 +12,7 @@ interface DaySelectorProps {
 export function DaySelector({ selectedDate, onSelectDate }: DaySelectorProps) {
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const { hasData } = useDayIndicators(selectedDate);
 
   const getDayLabel = (date: Date) => {
     return format(date, 'EEE', { locale: ptBR }).charAt(0).toUpperCase() + 
@@ -43,6 +45,7 @@ export function DaySelector({ selectedDate, onSelectDate }: DaySelectorProps) {
           const isSelected = isSameDay(day, selectedDate);
           const isTodayDate = isToday(day);
           const isFuture = day > new Date();
+          const dayHasData = hasData(day);
           
           return (
             <button
@@ -50,7 +53,7 @@ export function DaySelector({ selectedDate, onSelectDate }: DaySelectorProps) {
               onClick={() => !isFuture && onSelectDate(day)}
               disabled={isFuture}
               className={cn(
-                "flex flex-col items-center gap-0.5 py-2 px-2 rounded-2xl transition-all min-w-[36px]",
+                "flex flex-col items-center gap-0.5 py-2 px-2 rounded-2xl transition-all min-w-[36px] relative",
                 isSelected 
                   ? "bg-primary text-primary-foreground shadow-md" 
                   : isTodayDate
@@ -66,6 +69,12 @@ export function DaySelector({ selectedDate, onSelectDate }: DaySelectorProps) {
               )}>
                 {format(day, 'd')}
               </span>
+              {dayHasData && !isFuture && (
+                <span className={cn(
+                  "w-1.5 h-1.5 rounded-full",
+                  isSelected ? "bg-primary-foreground/70" : "bg-primary"
+                )} />
+              )}
             </button>
           );
         })}
