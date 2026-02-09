@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Scale, TrendingUp, TrendingDown, Minus, ChartLine } from 'lucide-react';
@@ -9,12 +9,24 @@ import { WeightProjectionDialog } from './WeightProjectionDialog';
 
 interface WeightTrackerProps {
   dailyCalorieDeficit?: number;
+  showInputInitially?: boolean;
+  onInputToggled?: (show: boolean) => void;
 }
 
-export function WeightTracker({ dailyCalorieDeficit = 0 }: WeightTrackerProps) {
+export function WeightTracker({ dailyCalorieDeficit = 0, showInputInitially = false, onInputToggled }: WeightTrackerProps) {
   const { entries, addWeightEntry } = useWeightHistory();
   const { profile, updateProfile } = useProfile();
-  const [showInput, setShowInput] = useState(false);
+  const [showInput, setShowInput] = useState(showInputInitially);
+
+  useEffect(() => {
+    setShowInput(showInputInitially);
+  }, [showInputInitially]);
+
+  // Sync with external control
+  const handleToggle = (val: boolean) => {
+    setShowInput(val);
+    onInputToggled?.(val);
+  };
   const [showProjection, setShowProjection] = useState(false);
   const [weight, setWeight] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,7 +45,7 @@ export function WeightTracker({ dailyCalorieDeficit = 0 }: WeightTrackerProps) {
       await addWeightEntry(w);
       await updateProfile({ weight_kg: w });
       setWeight('');
-      setShowInput(false);
+      handleToggle(false);
     } catch { /* silently fail */ }
     finally { setIsSubmitting(false); }
   };
@@ -90,7 +102,7 @@ export function WeightTracker({ dailyCalorieDeficit = 0 }: WeightTrackerProps) {
             </button>
           )}
 
-          <Button size="sm" variant="outline" className="h-8 text-xs shrink-0 rounded-xl" onClick={() => setShowInput(!showInput)}>
+          <Button size="sm" variant="outline" className="h-8 text-xs shrink-0 rounded-xl" onClick={() => handleToggle(!showInput)}>
             {showInput ? '✕' : 'Atualizar'}
           </Button>
         </div>
