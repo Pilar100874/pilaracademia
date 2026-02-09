@@ -19,6 +19,7 @@ import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { WeightReminderPopup } from '@/components/WeightReminderPopup';
 import { WeightTracker } from '@/components/WeightTracker';
 import { ExerciseTracker } from '@/components/ExerciseTracker';
+import { LiquidTracker } from '@/components/LiquidTracker';
 import { GlycemiaTracker } from '@/components/GlycemiaTracker';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
@@ -60,6 +61,7 @@ export function Dashboard() {
   const [editingTypedEntry, setEditingTypedEntry] = useState<FoodEntryDB | null>(null);
   const [editingVoiceEntry, setEditingVoiceEntry] = useState<FoodEntryDB | null>(null);
   const [editingPhotoEntry, setEditingPhotoEntry] = useState<FoodEntryDB | null>(null);
+  const [showWeightInput, setShowWeightInput] = useState(false);
 
   const goals = getGoals();
   const { consumed } = getTodaySummary();
@@ -220,7 +222,7 @@ export function Dashboard() {
         <div className="grid grid-cols-4 gap-2">
           {/* Exercise */}
           <button 
-            onClick={() => navigate('/workouts')}
+            onClick={() => navigate('/exercises')}
             className="card-compact flex flex-col items-center gap-1 py-3"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10">
@@ -248,7 +250,7 @@ export function Dashboard() {
 
           {/* Weight */}
           <button 
-            onClick={() => navigate('/health')}
+            onClick={() => setShowWeightInput(true)}
             className="card-compact flex flex-col items-center gap-1 py-3"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10">
@@ -298,8 +300,11 @@ export function Dashboard() {
           </button>
         </div>
 
+        {/* Liquid Tracker */}
+        <LiquidTracker />
+
         {/* Weight Tracker */}
-        <WeightTracker dailyCalorieDeficit={goals.calories - netCalories} />
+        <WeightTracker dailyCalorieDeficit={goals.calories - netCalories} showInputInitially={showWeightInput} onInputToggled={setShowWeightInput} />
 
         {/* Exercise Tracker */}
         <ExerciseTracker />
