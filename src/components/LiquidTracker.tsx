@@ -15,8 +15,13 @@ const QUICK_OPTIONS = [
   { label: '💧 1L', ml: 1000 },
 ];
 
-export function LiquidTracker() {
-  const { entries, addLiquidEntry, updateLiquidEntry, deleteLiquidEntry, getTodayTotal } = useLiquidEntries();
+interface LiquidTrackerProps {
+  selectedDate?: Date;
+  onDataChange?: () => void;
+}
+
+export function LiquidTracker({ selectedDate, onDataChange }: LiquidTrackerProps) {
+  const { entries, addLiquidEntry, updateLiquidEntry, deleteLiquidEntry, getTodayTotal } = useLiquidEntries(selectedDate);
   const { profile } = useProfile();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -32,6 +37,7 @@ export function LiquidTracker() {
   const handleQuickAdd = async (ml: number) => {
     try {
       await addLiquidEntry(ml, 'water');
+      onDataChange?.();
       setShowAddDialog(false);
     } catch { /* silently fail */ }
   };
@@ -54,6 +60,7 @@ export function LiquidTracker() {
     if (amount <= 0) return;
     try {
       await updateLiquidEntry(editingEntry.id, amount);
+      onDataChange?.();
       setEditingEntry(null);
     } catch { /* silently fail */ }
   };
@@ -61,6 +68,7 @@ export function LiquidTracker() {
   const handleDelete = async (id: string) => {
     try {
       await deleteLiquidEntry(id);
+      onDataChange?.();
     } catch { /* silently fail */ }
   };
 

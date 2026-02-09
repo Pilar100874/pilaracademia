@@ -301,13 +301,13 @@ export function Dashboard() {
         </div>
 
         {/* Liquid Tracker */}
-        <LiquidTracker />
+        <LiquidTracker selectedDate={selectedDate} onDataChange={refetchLiquids} />
 
         {/* Weight Tracker */}
         <WeightTracker dailyCalorieDeficit={goals.calories - netCalories} showInputInitially={showWeightInput} onInputToggled={setShowWeightInput} />
 
         {/* Exercise Tracker */}
-        <ExerciseTracker />
+        <ExerciseTracker selectedDate={selectedDate} onDataChange={() => {}} />
 
         {/* Glycemia Tracker */}
         <GlycemiaTracker selectedDate={selectedDate} />
