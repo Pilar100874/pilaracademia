@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { format, addDays, subDays, startOfWeek, isSameDay, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { useDayIndicators } from '@/hooks/useDayIndicators';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 interface DaySelectorProps {
   selectedDate: Date;
@@ -10,6 +13,7 @@ interface DaySelectorProps {
 }
 
 export function DaySelector({ selectedDate, onSelectDate }: DaySelectorProps) {
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const { hasData } = useDayIndicators(selectedDate);
@@ -32,8 +36,34 @@ export function DaySelector({ selectedDate, onSelectDate }: DaySelectorProps) {
 
   const canGoNext = addDays(weekStart, 7) <= new Date();
 
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (date && date <= new Date()) {
+      onSelectDate(date);
+      setCalendarOpen(false);
+    }
+  };
+
   return (
     <div className="flex items-center gap-1">
+      {/* Calendar picker button */}
+      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+        <PopoverTrigger asChild>
+          <button className="p-1.5 rounded-xl text-muted-foreground hover:bg-muted transition-colors">
+            <CalendarDays className="h-4 w-4" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleCalendarSelect}
+            disabled={(date) => date > new Date()}
+            locale={ptBR}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+
       <button
         onClick={goToPreviousWeek}
         className="p-1.5 rounded-xl text-muted-foreground hover:bg-muted transition-colors"

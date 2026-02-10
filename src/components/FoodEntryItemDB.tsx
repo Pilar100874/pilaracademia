@@ -351,6 +351,7 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped, onEdit
               src={getEntryImageUrl()!}
               alt={entry.name}
               className="h-full w-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
           ) : isLiquid ? (
             <Droplets className="h-5 w-5 text-sky-500" />
