@@ -42,7 +42,7 @@ export function RecentFoodList({ entries, onUpdate, onDelete, onEditTyped, onEdi
       onEditVoice(entry);
     } else if (entry.source === 'manual' && onEditTyped) {
       onEditTyped(entry);
-    } else if ((entry.source === 'photo' || entry.source === 'barcode') && onEditPhotoBarcode) {
+    } else if (onEditPhotoBarcode) {
       onEditPhotoBarcode(entry);
     }
   };
@@ -50,8 +50,8 @@ export function RecentFoodList({ entries, onUpdate, onDelete, onEditTyped, onEdi
   const canEdit = (entry: FoodEntryDB) => {
     if (entry.source === 'voice') return !!onEditVoice;
     if (entry.source === 'manual') return !!onEditTyped;
-    if (entry.source === 'photo' || entry.source === 'barcode') return !!onEditPhotoBarcode;
-    return false;
+    // All other sources (photo, barcode, search, etc.) use the photo/barcode editor
+    return !!onEditPhotoBarcode;
   };
 
   return (
@@ -80,6 +80,7 @@ export function RecentFoodList({ entries, onUpdate, onDelete, onEditTyped, onEdi
                     src={entry.image_url}
                     alt={entry.name}
                     className="h-full w-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
                 ) : isLiquid ? (
                   <Droplets className="h-6 w-6 text-sky-500" />
