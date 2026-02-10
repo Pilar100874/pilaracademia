@@ -18,6 +18,9 @@ export function useFoodEntries(selectedDate?: Date) {
       return;
     }
 
+    setIsLoading(true);
+    setEntries([]);
+
     const targetDate = selectedDate || new Date();
     const dayStart = startOfDay(targetDate);
     const dayEnd = endOfDay(targetDate);
