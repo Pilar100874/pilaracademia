@@ -17,6 +17,7 @@ interface FoodEntryItemDBProps {
   onDelete?: (id: string) => void;
   onEditTyped?: (entry: FoodEntryDB) => void;
   onEditVoice?: (entry: FoodEntryDB) => void;
+  initialEditing?: boolean;
 }
 
 const sourceIcons: Record<string, any> = {
@@ -41,7 +42,7 @@ const QUICK_ML_OPTIONS = [
   { label: '500ml', value: 500 },
 ];
 
-export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped, onEditVoice }: FoodEntryItemDBProps) {
+export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped, onEditVoice, initialEditing }: FoodEntryItemDBProps) {
   const { products } = useCustomProducts();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(entry.name);
@@ -56,7 +57,15 @@ export function FoodEntryItemDB({ entry, onUpdate, onDelete, onEditTyped, onEdit
   const [selectedFraction, setSelectedFraction] = useState<number | null>(1); // Default to "Tudo"
   const [customValue, setCustomValue] = useState('');
   const [unitsCount, setUnitsCount] = useState(1);
-  
+
+  // Auto-open edit mode when initialEditing is true
+  useEffect(() => {
+    if (initialEditing) {
+      handleOpenEdit();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialEditing]);
+
   // Get image URL for entry (returns null if no image, let UI show icon)
   const getEntryImageUrl = () => {
     return entry.image_url || null;

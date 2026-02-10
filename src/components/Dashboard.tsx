@@ -345,6 +345,7 @@ export function Dashboard() {
               </div>
               <FoodEntryItemDB
                 entry={editingPhotoEntry}
+                initialEditing
                 onUpdate={(id, updates) => {
                   handleUpdateEntry(id, updates);
                   setEditingPhotoEntry(null);
