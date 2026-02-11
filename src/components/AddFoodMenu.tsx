@@ -65,25 +65,23 @@ export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenSearch, onOpenLi
         </div>
       </div>
 
-      {/* FAB - centralizado na barra inferior */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-safe pointer-events-none">
-        <div className="h-16 flex items-center justify-center pointer-events-auto" style={{ width: '30%' }}>
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className={cn(
-              "flex h-14 w-14 items-center justify-center rounded-full shadow-floating transition-all duration-300 active:scale-95 -mt-24",
-              isOpen 
-                ? "bg-card rotate-45 shadow-lg" 
-                : "bg-gradient-to-br from-primary to-orange-500 shadow-lg shadow-primary/30"
-            )}
-          >
-            {isOpen ? (
-              <X className="h-6 w-6 text-foreground" />
-            ) : (
-              <Plus className="h-6 w-6 text-white" />
-            )}
-          </button>
-        </div>
+      {/* FAB - centralizado acima da barra inferior */}
+      <div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 pb-safe">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={cn(
+            "flex h-14 w-14 items-center justify-center rounded-full shadow-floating transition-all duration-300 active:scale-95",
+            isOpen 
+              ? "bg-card rotate-45 shadow-lg" 
+              : "bg-gradient-to-br from-primary to-orange-500 shadow-lg shadow-primary/30"
+          )}
+        >
+          {isOpen ? (
+            <X className="h-6 w-6 text-foreground" />
+          ) : (
+            <Plus className="h-6 w-6 text-white" />
+          )}
+        </button>
       </div>
     </>
   );
