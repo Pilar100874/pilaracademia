@@ -71,7 +71,7 @@ export function AddFoodMenu({ onOpenPhoto, onOpenBarcode, onOpenSearch, onOpenLi
           <button
             onClick={() => setIsOpen(!isOpen)}
             className={cn(
-              "flex h-14 w-14 items-center justify-center rounded-full shadow-floating transition-all duration-300 active:scale-95 -mt-5",
+              "flex h-14 w-14 items-center justify-center rounded-full shadow-floating transition-all duration-300 active:scale-95 -mt-14",
               isOpen 
                 ? "bg-card rotate-45 shadow-lg" 
                 : "bg-gradient-to-br from-primary to-orange-500 shadow-lg shadow-primary/30"
