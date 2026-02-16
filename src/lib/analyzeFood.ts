@@ -16,9 +16,13 @@ export interface FoodAnalysisResult {
 }
 
 export async function analyzeFood(imageBase64: string): Promise<FoodAnalysisResult> {
+  console.log('analyzeFood: Starting analysis, image length:', imageBase64.length);
+  
   const { data, error } = await supabase.functions.invoke('analyze-food', {
     body: { imageBase64 },
   });
+
+  console.log('analyzeFood: Response received', { data, error });
 
   if (error) {
     console.error('Error calling analyze-food:', error);
