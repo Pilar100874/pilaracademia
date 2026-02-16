@@ -55,10 +55,14 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
   // On mount, check for pending barcode photo from before page unload
   useEffect(() => {
     const pendingFile = sessionStorage.getItem('pendingBarcodeImage');
-    console.log('BarcodeScanner: mounted, pendingFile exists:', !!pendingFile);
+    console.log('BarcodeScanner: mounted, pendingFile exists:', !!pendingFile, 'length:', pendingFile?.length);
     if (pendingFile) {
+      console.log('BarcodeScanner: Found pending image, starting AI barcode reading...');
       sessionStorage.removeItem('pendingBarcodeImage');
-      processBarcodeImage(pendingFile);
+      // Small delay to ensure component is fully rendered
+      setTimeout(() => {
+        processBarcodeImage(pendingFile);
+      }, 200);
     }
   }, []);
 
