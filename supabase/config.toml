@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.analyze-food-text]
 verify_jwt = false
+
+[functions.read-barcode]
+verify_jwt = false
