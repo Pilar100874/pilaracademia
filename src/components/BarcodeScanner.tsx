@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Camera, Loader2, Keyboard, ImagePlus } from 'lucide-react';
+import { X, Camera, Loader2, Keyboard, ImagePlus, Upload } from 'lucide-react';
 import { BarcodeProduct } from '@/types/nutrition';
 import { fetchProductByBarcode, isLiquidProduct, getLiquidVolumeMl } from '@/lib/openFoodFacts';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
@@ -26,7 +26,10 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
   const [scanMode, setScanMode] = useState<'photo' | 'manual'>('photo');
   const [scanError, setScanError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const processingRef = useRef(false);
   
   // Flow states
   const [showProductForm, setShowProductForm] = useState(false);
@@ -52,57 +55,69 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     referenceQuantity?: number;
   } | null>(null);
 
+  // Process a file from any input
+  const processFile = useCallback(async (file: File) => {
+    if (processingRef.current) {
+      console.log('BarcodeScanner: already processing, skipping');
+      return;
+    }
+    processingRef.current = true;
+    console.log('BarcodeScanner: processFile called, file:', file.name, file.size);
+
+    try {
+      const reader = new FileReader();
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+      console.log('BarcodeScanner: base64 generated, length:', base64Data.length);
+
+      // Save to sessionStorage as backup
+      try {
+        sessionStorage.setItem('pendingBarcodeImage', base64Data);
+      } catch (e) {
+        console.warn('BarcodeScanner: Could not save to sessionStorage');
+      }
+
+      await processBarcodeImage(base64Data);
+      sessionStorage.removeItem('pendingBarcodeImage');
+    } catch (err) {
+      sessionStorage.removeItem('pendingBarcodeImage');
+      console.error('BarcodeScanner: processFile error:', err);
+      setIsLoading(false);
+      setScanError('Erro ao processar a foto. Tente novamente.');
+      toast.error('Erro ao processar foto', { description: 'Tente novamente ou use o modo manual.' });
+    } finally {
+      processingRef.current = false;
+      // Clear all inputs
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
+    }
+  }, []);
+
   // On mount, check for pending barcode photo from before page unload
   useEffect(() => {
     const pendingFile = sessionStorage.getItem('pendingBarcodeImage');
-    console.log('BarcodeScanner: mounted, pendingFile exists:', !!pendingFile, 'length:', pendingFile?.length);
+    const wasPendingCamera = sessionStorage.getItem('pendingBarcodeCamera');
+    console.log('BarcodeScanner: mounted, pendingFile:', !!pendingFile, 'wasPendingCamera:', !!wasPendingCamera);
+    
     if (pendingFile) {
-      console.log('BarcodeScanner: Found pending image, starting AI barcode reading...');
+      console.log('BarcodeScanner: Found pending image, processing...');
       sessionStorage.removeItem('pendingBarcodeImage');
-      setTimeout(() => {
-        processBarcodeImage(pendingFile);
-      }, 200);
+      sessionStorage.removeItem('pendingBarcodeCamera');
+      setTimeout(() => processBarcodeImage(pendingFile), 200);
       return;
     }
 
-    // Detect return from camera on mobile - file input may have a file
-    const checkFileInput = () => {
-      const input = fileInputRef.current;
-      if (input?.files?.length) {
-        console.log('BarcodeScanner: detected file in input after visibility change');
-        const event = { target: input } as unknown as React.ChangeEvent<HTMLInputElement>;
-        handlePhotoScan(event);
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        console.log('BarcodeScanner: visibility changed to visible, checking file input...');
-        setTimeout(checkFileInput, 300);
-      }
-    };
-
-    const handlePageShow = (e: PageTransitionEvent) => {
-      if (e.persisted) {
-        console.log('BarcodeScanner: pageshow (bfcache), checking file input...');
-        setTimeout(checkFileInput, 300);
-      }
-    };
-
-    const handleFocus = () => {
-      console.log('BarcodeScanner: window focus, checking file input...');
-      setTimeout(checkFileInput, 500);
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pageshow', handlePageShow);
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('pageshow', handlePageShow);
-      window.removeEventListener('focus', handleFocus);
-    };
+    if (wasPendingCamera) {
+      sessionStorage.removeItem('pendingBarcodeCamera');
+      console.log('BarcodeScanner: Camera was pending but no image recovered - camera capture lost on reload');
+      toast.info('A câmera foi fechada', { 
+        description: 'No celular, use "Galeria" para melhor compatibilidade, ou tente "Câmera" novamente.',
+        duration: 5000
+      });
+    }
   }, []);
 
   const processBarcodeImage = async (base64Data: string) => {
@@ -145,53 +160,25 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     }
   };
 
-  // Handle photo file scan
-  const handlePhotoScan = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    // Prevent double processing
-    if (isLoading) {
-      console.log('BarcodeScanner: already loading, skipping');
-      return;
-    }
-
+  // Handle file from camera or gallery
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    console.log('BarcodeScanner: handlePhotoScan called, file:', file?.name, file?.size);
     if (!file) {
       console.log('BarcodeScanner: No file selected');
       return;
     }
+    await processFile(file);
+  };
 
-    try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve) => {
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-      const base64Data = await base64Promise;
-      console.log('BarcodeScanner: base64 generated, length:', base64Data.length);
-      
-      // Clear input AFTER reading the file
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      
-      // Save to sessionStorage in case page unloads during camera capture
-      try {
-        sessionStorage.setItem('pendingBarcodeImage', base64Data);
-      } catch (e) {
-        console.warn('BarcodeScanner: Could not save to sessionStorage (image too large)');
-      }
+  // Open camera with pending flag
+  const openCamera = () => {
+    sessionStorage.setItem('pendingBarcodeCamera', 'true');
+    cameraInputRef.current?.click();
+  };
 
-      await processBarcodeImage(base64Data);
-      sessionStorage.removeItem('pendingBarcodeImage');
-    } catch (err) {
-      sessionStorage.removeItem('pendingBarcodeImage');
-      console.error('BarcodeScanner: handlePhotoScan error:', err);
-      setIsLoading(false);
-      setScanError('Erro ao processar a foto. Tente novamente.');
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
+  // Open gallery (no pending flag needed - no page reload)
+  const openGallery = () => {
+    galleryInputRef.current?.click();
   };
 
   useEffect(() => {
@@ -383,13 +370,20 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
             </Button>
           </div>
 
-          {/* Hidden file input for photo mode */}
+          {/* Hidden file inputs - camera and gallery separate */}
           <input
-            ref={fileInputRef}
+            ref={cameraInputRef}
             type="file"
             accept="image/*"
             capture="environment"
-            onChange={handlePhotoScan}
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
             className="hidden"
           />
 
@@ -408,14 +402,29 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
                     </div>
                   )}
                   
-                  <div 
-                    className="rounded-2xl border-2 border-dashed border-primary/50 p-8 text-center cursor-pointer hover:bg-primary/5 transition-colors"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Camera className="mx-auto h-12 w-12 text-primary" />
-                    <p className="mt-3 text-sm font-medium">
-                      Toque para tirar foto do código de barras
-                    </p>
+                  <div className="space-y-3">
+                    <div 
+                      className="rounded-2xl border-2 border-dashed border-primary/50 p-6 text-center cursor-pointer hover:bg-primary/5 transition-colors"
+                      onClick={openCamera}
+                    >
+                      <Camera className="mx-auto h-10 w-10 text-primary" />
+                      <p className="mt-2 text-sm font-medium">
+                        Tirar Foto
+                      </p>
+                    </div>
+                    
+                    <div 
+                      className="rounded-2xl border-2 border-dashed border-muted-foreground/30 p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={openGallery}
+                    >
+                      <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                      <p className="mt-2 text-sm font-medium text-muted-foreground">
+                        Escolher da Galeria
+                      </p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">
+                        Mais confiável no celular
+                      </p>
+                    </div>
                   </div>
                 </>
               )}
