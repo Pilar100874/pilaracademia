@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Camera, Loader2, Keyboard, ImagePlus, Video } from 'lucide-react';
+import { X, Camera, Loader2, Keyboard, ImagePlus } from 'lucide-react';
 import { BarcodeProduct } from '@/types/nutrition';
 import { fetchProductByBarcode, isLiquidProduct, getLiquidVolumeMl } from '@/lib/openFoodFacts';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { supabase } from '@/integrations/supabase/client';
 import { ProductFormDialog } from './ProductFormDialog';
 import { ProductConsumptionDialog } from './ProductConsumptionDialog';
-import { ZxingScanner } from './ZxingScanner';
 import { toast } from 'sonner';
 
 interface BarcodeScannerProps {
@@ -23,8 +22,8 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Aguarde...');
   
-  // Scanner mode - default to live camera
-  const [scanMode, setScanMode] = useState<'live' | 'photo' | 'manual'>('live');
+  // Scanner mode - default to photo
+  const [scanMode, setScanMode] = useState<'photo' | 'manual'>('photo');
   const [scanError, setScanError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -56,7 +55,7 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
   // On mount, check for pending barcode photo from before page unload
   useEffect(() => {
     const pendingFile = sessionStorage.getItem('pendingBarcodeImage');
-    console.log('BarcodeScanner: mounted, pendingFile exists:', !!pendingFile, 'length:', pendingFile?.length);
+    console.log('BarcodeScanner: mounted, pendingFile exists:', !!pendingFile);
     if (pendingFile) {
       sessionStorage.removeItem('pendingBarcodeImage');
       processBarcodeImage(pendingFile);
@@ -65,47 +64,36 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
 
   const processBarcodeImage = async (base64Data: string) => {
     setIsLoading(true);
-    setLoadingMessage('Processando foto...');
+    setLoadingMessage('Lendo código de barras...');
     setScanError(null);
 
     try {
-      // Convert base64 to File for html5-qrcode
-      const response = await fetch(base64Data);
-      const blob = await response.blob();
-      const file = new File([blob], 'barcode.jpg', { type: blob.type });
+      console.log('BarcodeScanner: sending image to AI for barcode reading');
+      
+      const { data, error } = await supabase.functions.invoke('read-barcode', {
+        body: { imageBase64: base64Data },
+      });
 
-      // Create a temporary DOM element programmatically to avoid timing issues
-      const tempContainerId = 'photo-scanner-temp-' + Date.now();
-      let tempDiv = document.createElement('div');
-      tempDiv.id = tempContainerId;
-      tempDiv.style.display = 'none';
-      document.body.appendChild(tempDiv);
-
-      try {
-        const html5QrCode = new Html5Qrcode(tempContainerId, {
-          formatsToSupport: [
-            Html5QrcodeSupportedFormats.EAN_13,
-            Html5QrcodeSupportedFormats.EAN_8,
-            Html5QrcodeSupportedFormats.UPC_A,
-            Html5QrcodeSupportedFormats.UPC_E,
-          ],
-          verbose: false,
-        });
-
-        setLoadingMessage('Lendo código de barras...');
-        const decodedText = await html5QrCode.scanFile(file, true);
-        console.log('BarcodeScanner: decoded barcode:', decodedText);
-        setBarcode(decodedText);
-        setLoadingMessage('Buscando produto...');
-        handleSearchWithBarcode(decodedText);
-      } finally {
-        // Clean up temp element
-        tempDiv.remove();
+      if (error) {
+        console.error('BarcodeScanner: edge function error:', error);
+        throw new Error(error.message || 'Erro ao ler código de barras');
       }
+
+      if (!data.success || !data.data?.found || !data.data?.barcode) {
+        setIsLoading(false);
+        setScanError('Não foi possível identificar um código de barras na foto. Tente novamente ou digite manualmente.');
+        return;
+      }
+
+      const decodedBarcode = data.data.barcode;
+      console.log('BarcodeScanner: AI decoded barcode:', decodedBarcode);
+      setBarcode(decodedBarcode);
+      setLoadingMessage('Buscando produto...');
+      handleSearchWithBarcode(decodedBarcode);
     } catch (err) {
       console.error('BarcodeScanner: processBarcodeImage error:', err);
       setIsLoading(false);
-      setScanError('Não foi possível ler o código de barras na foto.');
+      setScanError('Erro ao ler o código de barras. Tente novamente ou digite manualmente.');
     }
   };
 
@@ -115,7 +103,6 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     if (!file) return;
 
     try {
-      // Read file as base64 and save to sessionStorage for recovery
       const reader = new FileReader();
       const base64Promise = new Promise<string>((resolve) => {
         reader.onloadend = () => resolve(reader.result as string);
@@ -138,7 +125,7 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     } catch (err) {
       sessionStorage.removeItem('pendingBarcodeImage');
       setIsLoading(false);
-      setScanError('Não foi possível ler o código de barras na foto.');
+      setScanError('Erro ao processar a foto. Tente novamente.');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -151,7 +138,6 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     }
   }, [scanMode]);
 
-  // Reset error when changing mode
   useEffect(() => {
     setScanError(null);
   }, [scanMode]);
@@ -164,11 +150,9 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     setScannedBarcode(barcodeValue.trim());
     
     try {
-      // First check local database
       const customProduct = await getProductByBarcode(barcodeValue.trim());
       
       if (customProduct) {
-        // Product found in local DB - show product form for review/edit before consumption
         setFoundProduct(customProduct);
         setPendingProductData({
           name: customProduct.name,
@@ -190,11 +174,9 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
         return;
       }
       
-      // Not found locally, try OpenFoodFacts
       const result = await fetchProductByBarcode(barcodeValue.trim());
       
       if (result) {
-        // Found in OpenFoodFacts - show product form for user to review/edit
         const isLiquid = isLiquidProduct(result);
         const volumeMl = isLiquid ? getLiquidVolumeMl(result) : null;
         
@@ -219,7 +201,6 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
         return;
       }
       
-      // Product not found anywhere - show registration form
       toast.info('Produto não encontrado', { description: 'Cadastre as informações do produto' });
       setPendingProductData(null);
       setShowProductForm(true);
@@ -248,7 +229,6 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     onClose();
   };
 
-  // If showing product form
   if (showProductForm) {
     return (
       <ProductFormDialog
@@ -267,7 +247,6 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     );
   }
 
-  // If showing consumption dialog
   if (showConsumptionDialog && foundProduct) {
     return (
       <ProductConsumptionDialog
@@ -281,7 +260,6 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
         }}
         onSuccess={handleConsumptionSuccess}
         onBack={() => {
-          // Preserve current product data when going back
           setPendingProductData({
             name: foundProduct.name,
             brand: foundProduct.brand || undefined,
@@ -324,15 +302,6 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
           {/* Mode toggle */}
           <div className="flex gap-2">
             <Button
-              variant={scanMode === 'live' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1"
-              onClick={() => setScanMode('live')}
-            >
-              <Video className="h-4 w-4 mr-1" />
-              Câmera
-            </Button>
-            <Button
               variant={scanMode === 'photo' ? 'default' : 'outline'}
               size="sm"
               className="flex-1"
@@ -362,39 +331,7 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
             className="hidden"
           />
 
-          {scanMode === 'live' ? (
-            <div className="space-y-4">
-              {isLoading ? (
-                <div className="rounded-xl bg-primary/10 p-8 text-center">
-                  <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                  <p className="mt-4 text-sm font-medium">{loadingMessage}</p>
-                </div>
-              ) : (
-                <>
-                  {scanError && (
-                    <div className="rounded-xl bg-destructive/10 p-4 text-center">
-                      <p className="text-sm text-destructive">{scanError}</p>
-                    </div>
-                  )}
-                  <ZxingScanner
-                    onResult={(code) => {
-                      setBarcode(code);
-                      setLoadingMessage('Buscando produto...');
-                      handleSearchWithBarcode(code);
-                    }}
-                    onError={(error) => {
-                      setScanError(error);
-                      // Fallback to photo mode if camera fails
-                      setScanMode('photo');
-                    }}
-                  />
-                  <p className="text-xs text-center text-muted-foreground">
-                    Aponte a câmera para o código de barras
-                  </p>
-                </>
-              )}
-            </div>
-          ) : scanMode === 'photo' ? (
+          {scanMode === 'photo' ? (
             <div className="space-y-4">
               {isLoading ? (
                 <div className="rounded-xl bg-primary/10 p-8 text-center">
