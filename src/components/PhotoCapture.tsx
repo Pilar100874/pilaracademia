@@ -237,7 +237,6 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
         ref={cameraInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={handleFileSelect}
         className="hidden"
       />
