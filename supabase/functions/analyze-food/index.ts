@@ -31,6 +31,21 @@ serve(async (req) => {
 
     console.log("Analyzing food image with Gemini...");
 
+    // Extract pure base64 data and mime type from data URL
+    let mimeType = "image/jpeg";
+    let base64Data = imageBase64;
+    
+    if (imageBase64.startsWith("data:")) {
+      const match = imageBase64.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        mimeType = match[1];
+        base64Data = match[2];
+      } else {
+        // Fallback: just strip the prefix
+        base64Data = imageBase64.replace(/^data:[^;]+;base64,/, "");
+      }
+    }
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -38,7 +53,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           {
             role: "system",
@@ -86,7 +101,7 @@ Faça uma estimativa realista baseada no tamanho aparente da porção.`
               {
                 type: "image_url",
                 image_url: {
-                  url: imageBase64.startsWith("data:") ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
+                  url: `data:${mimeType};base64,${base64Data}`
                 }
               }
             ]
