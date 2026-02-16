@@ -55,7 +55,26 @@ export function Dashboard() {
   const { entries: weightEntries } = useWeightHistory();
   const { getLatestReading } = useGlycemiaEntries(selectedDate);
   
-  const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [activeModal, setActiveModal] = useState<ModalType>(() => {
+    const saved = sessionStorage.getItem('activeModal');
+    if (saved && ['photo', 'barcode'].includes(saved)) {
+      sessionStorage.removeItem('activeModal');
+      return saved as ModalType;
+    }
+    return null;
+  });
+  
+  // Persist modal state for camera/barcode so it survives page unload on mobile
+  const openModal = (modal: ModalType) => {
+    if (modal === 'photo' || modal === 'barcode') {
+      sessionStorage.setItem('activeModal', modal);
+    }
+    setActiveModal(modal);
+  };
+  const closeModal = () => {
+    sessionStorage.removeItem('activeModal');
+    setActiveModal(null);
+  };
   const [editingLiquid, setEditingLiquid] = useState<LiquidEntryData | null>(null);
   const [deletingLiquid, setDeletingLiquid] = useState<LiquidEntryData | null>(null);
   const [editingTypedEntry, setEditingTypedEntry] = useState<FoodEntryDB | null>(null);
@@ -106,7 +125,7 @@ export function Dashboard() {
         liquidMl: liquidMl || 0 
       });
     } catch { /* silently fail */ }
-    setActiveModal(null);
+    closeModal();
   };
 
   const handleBarcodeProduct = async (product: BarcodeProduct, portionGrams: number, isLiquid?: boolean, liquidMl?: number) => {
@@ -122,7 +141,7 @@ export function Dashboard() {
         liquidMl: liquidMl || 0 
       });
     } catch { /* silently fail */ }
-    setActiveModal(null);
+    closeModal();
   };
 
   const handleUpdateEntry = async (id: string, updates: Partial<FoodEntryDB>) => {
@@ -236,7 +255,7 @@ export function Dashboard() {
 
           {/* Liquids */}
           <button 
-            onClick={() => setActiveModal('liquid')}
+            onClick={() => openModal('liquid')}
             className="card-compact flex flex-col items-center gap-1 py-3"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10">
@@ -362,17 +381,17 @@ export function Dashboard() {
 
       {/* Modals */}
       <AddFoodMenu 
-        onOpenPhoto={() => setActiveModal('photo')} 
-        onOpenBarcode={() => setActiveModal('barcode')} 
-        onOpenSearch={() => setActiveModal('search')} 
-        onOpenLiquid={() => setActiveModal('liquid')}
-        onOpenTyped={() => setActiveModal('typed')}
+        onOpenPhoto={() => openModal('photo')} 
+        onOpenBarcode={() => openModal('barcode')} 
+        onOpenSearch={() => openModal('search')} 
+        onOpenLiquid={() => openModal('liquid')}
+        onOpenTyped={() => openModal('typed')}
       />
       
       {activeModal === 'photo' && (
         <PhotoCapture 
           onFoodAnalyzed={handlePhotoAnalyzed} 
-          onClose={() => setActiveModal(null)} 
+          onClose={closeModal} 
           selectedDate={selectedDate} 
         />
       )}
@@ -380,20 +399,20 @@ export function Dashboard() {
       {activeModal === 'barcode' && (
         <BarcodeScanner 
           onProductFound={handleBarcodeProduct} 
-          onClose={() => { setActiveModal(null); refetchFood(); }} 
+          onClose={() => { closeModal(); refetchFood(); }} 
           selectedDate={selectedDate} 
         />
       )}
       
       <ProductSearch 
         isOpen={activeModal === 'search'} 
-        onClose={() => { setActiveModal(null); refetchFood(); }} 
+        onClose={() => { closeModal(); refetchFood(); }} 
         selectedDate={selectedDate} 
       />
       
       <AddLiquidDialog 
         open={activeModal === 'liquid'} 
-        onOpenChange={(open) => !open && setActiveModal(null)} 
+        onOpenChange={(open) => !open && closeModal()} 
         onAddLiquid={handleAddLiquid} 
       />
       
@@ -401,7 +420,7 @@ export function Dashboard() {
         open={activeModal === 'voice' || !!editingVoiceEntry}
         onOpenChange={(open) => {
           if (!open) {
-            setActiveModal(null);
+            closeModal();
             setEditingVoiceEntry(null);
           }
         }}
@@ -472,7 +491,7 @@ export function Dashboard() {
               source: 'voice',
               originalItems: originalItems,
             });
-            setActiveModal(null);
+            closeModal();
           }
           refetchFood();
         }}
@@ -482,7 +501,7 @@ export function Dashboard() {
         open={activeModal === 'typed' || !!editingTypedEntry} 
         onOpenChange={(open) => {
           if (!open) {
-            setActiveModal(null);
+            closeModal();
             setEditingTypedEntry(null);
           }
         }}
@@ -553,7 +572,7 @@ export function Dashboard() {
               source: 'manual',
               originalItems: originalItems,
             });
-            setActiveModal(null);
+            closeModal();
           }
           refetchFood();
         }}
