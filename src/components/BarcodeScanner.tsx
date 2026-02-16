@@ -72,18 +72,21 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     setScanError(null);
 
     try {
-      console.log('BarcodeScanner: sending image to AI for barcode reading');
+      console.log('BarcodeScanner: sending image to AI, length:', base64Data.length);
       
+      // Strip data URL prefix for cleaner payload - the edge function handles both formats
       const { data, error } = await supabase.functions.invoke('read-barcode', {
         body: { imageBase64: base64Data },
       });
+
+      console.log('BarcodeScanner: response:', JSON.stringify({ success: data?.success, found: data?.data?.found, barcode: data?.data?.barcode, error: error?.message }));
 
       if (error) {
         console.error('BarcodeScanner: edge function error:', error);
         throw new Error(error.message || 'Erro ao ler código de barras');
       }
 
-      if (!data.success || !data.data?.found || !data.data?.barcode) {
+      if (!data?.success || !data?.data?.found || !data?.data?.barcode) {
         setIsLoading(false);
         setScanError('Não foi possível identificar um código de barras na foto. Tente novamente ou digite manualmente.');
         return;
@@ -104,7 +107,11 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
   // Handle photo file scan
   const handlePhotoScan = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    console.log('BarcodeScanner: handlePhotoScan called, file:', file?.name, file?.size);
+    if (!file) {
+      console.log('BarcodeScanner: No file selected');
+      return;
+    }
 
     try {
       const reader = new FileReader();
@@ -113,21 +120,25 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
         reader.readAsDataURL(file);
       });
       const base64Data = await base64Promise;
+      console.log('BarcodeScanner: base64 generated, length:', base64Data.length);
       
+      // Clear input AFTER reading the file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
+      // Save to sessionStorage in case page unloads during camera capture
       try {
         sessionStorage.setItem('pendingBarcodeImage', base64Data);
       } catch (e) {
-        console.warn('BarcodeScanner: Could not save to sessionStorage');
-      }
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        console.warn('BarcodeScanner: Could not save to sessionStorage (image too large)');
       }
 
       await processBarcodeImage(base64Data);
       sessionStorage.removeItem('pendingBarcodeImage');
     } catch (err) {
       sessionStorage.removeItem('pendingBarcodeImage');
+      console.error('BarcodeScanner: handlePhotoScan error:', err);
       setIsLoading(false);
       setScanError('Erro ao processar a foto. Tente novamente.');
       if (fileInputRef.current) {
