@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Camera, Loader2, Keyboard, ImagePlus, Upload } from 'lucide-react';
+import { X, Camera, Loader2, Keyboard } from 'lucide-react';
 import { BarcodeProduct } from '@/types/nutrition';
 import { fetchProductByBarcode, isLiquidProduct, getLiquidVolumeMl } from '@/lib/openFoodFacts';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
@@ -26,8 +26,6 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
   const [scanMode, setScanMode] = useState<'photo' | 'manual'>('photo');
   const [scanError, setScanError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const processingRef = useRef(false);
   
@@ -90,33 +88,17 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
       toast.error('Erro ao processar foto', { description: 'Tente novamente ou use o modo manual.' });
     } finally {
       processingRef.current = false;
-      // Clear all inputs
-      if (cameraInputRef.current) cameraInputRef.current.value = '';
-      if (galleryInputRef.current) galleryInputRef.current.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }, []);
 
   // On mount, check for pending barcode photo from before page unload
   useEffect(() => {
     const pendingFile = sessionStorage.getItem('pendingBarcodeImage');
-    const wasPendingCamera = sessionStorage.getItem('pendingBarcodeCamera');
-    console.log('BarcodeScanner: mounted, pendingFile:', !!pendingFile, 'wasPendingCamera:', !!wasPendingCamera);
-    
     if (pendingFile) {
       console.log('BarcodeScanner: Found pending image, processing...');
       sessionStorage.removeItem('pendingBarcodeImage');
-      sessionStorage.removeItem('pendingBarcodeCamera');
       setTimeout(() => processBarcodeImage(pendingFile), 200);
-      return;
-    }
-
-    if (wasPendingCamera) {
-      sessionStorage.removeItem('pendingBarcodeCamera');
-      console.log('BarcodeScanner: Camera was pending but no image recovered - camera capture lost on reload');
-      toast.info('A câmera foi fechada', { 
-        description: 'No celular, use "Galeria" para melhor compatibilidade, ou tente "Câmera" novamente.',
-        duration: 5000
-      });
     }
   }, []);
 
@@ -170,15 +152,9 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     await processFile(file);
   };
 
-  // Open camera with pending flag
-  const openCamera = () => {
-    sessionStorage.setItem('pendingBarcodeCamera', 'true');
-    cameraInputRef.current?.click();
-  };
-
-  // Open gallery (no pending flag needed - no page reload)
-  const openGallery = () => {
-    galleryInputRef.current?.click();
+  // Open file picker - no capture attribute so OS shows camera+gallery options
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
   };
 
   useEffect(() => {
@@ -356,7 +332,7 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
               className="flex-1"
               onClick={() => setScanMode('photo')}
             >
-              <ImagePlus className="h-4 w-4 mr-1" />
+              <Camera className="h-4 w-4 mr-1" />
               Foto
             </Button>
             <Button
@@ -370,17 +346,9 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
             </Button>
           </div>
 
-          {/* Hidden file inputs - camera and gallery separate */}
+          {/* Single file input - no capture attribute so OS offers camera+gallery */}
           <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-          <input
-            ref={galleryInputRef}
+            ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={handleFileChange}
@@ -402,29 +370,17 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
                     </div>
                   )}
                   
-                  <div className="space-y-3">
-                    <div 
-                      className="rounded-2xl border-2 border-dashed border-primary/50 p-6 text-center cursor-pointer hover:bg-primary/5 transition-colors"
-                      onClick={openCamera}
-                    >
-                      <Camera className="mx-auto h-10 w-10 text-primary" />
-                      <p className="mt-2 text-sm font-medium">
-                        Tirar Foto
-                      </p>
-                    </div>
-                    
-                    <div 
-                      className="rounded-2xl border-2 border-dashed border-muted-foreground/30 p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={openGallery}
-                    >
-                      <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                      <p className="mt-2 text-sm font-medium text-muted-foreground">
-                        Escolher da Galeria
-                      </p>
-                      <p className="text-xs text-muted-foreground/70 mt-1">
-                        Mais confiável no celular
-                      </p>
-                    </div>
+                  <div 
+                    className="rounded-2xl border-2 border-dashed border-primary/50 p-8 text-center cursor-pointer hover:bg-primary/5 transition-colors"
+                    onClick={openFilePicker}
+                  >
+                    <Camera className="mx-auto h-10 w-10 text-primary" />
+                    <p className="mt-2 text-sm font-medium">
+                      Tirar Foto ou Escolher da Galeria
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      O celular vai oferecer as opções
+                    </p>
                   </div>
                 </>
               )}
