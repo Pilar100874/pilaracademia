@@ -59,11 +59,50 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     if (pendingFile) {
       console.log('BarcodeScanner: Found pending image, starting AI barcode reading...');
       sessionStorage.removeItem('pendingBarcodeImage');
-      // Small delay to ensure component is fully rendered
       setTimeout(() => {
         processBarcodeImage(pendingFile);
       }, 200);
+      return;
     }
+
+    // Detect return from camera on mobile - file input may have a file
+    const checkFileInput = () => {
+      const input = fileInputRef.current;
+      if (input?.files?.length) {
+        console.log('BarcodeScanner: detected file in input after visibility change');
+        const event = { target: input } as unknown as React.ChangeEvent<HTMLInputElement>;
+        handlePhotoScan(event);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('BarcodeScanner: visibility changed to visible, checking file input...');
+        setTimeout(checkFileInput, 300);
+      }
+    };
+
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        console.log('BarcodeScanner: pageshow (bfcache), checking file input...');
+        setTimeout(checkFileInput, 300);
+      }
+    };
+
+    const handleFocus = () => {
+      console.log('BarcodeScanner: window focus, checking file input...');
+      setTimeout(checkFileInput, 500);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const processBarcodeImage = async (base64Data: string) => {
@@ -108,6 +147,12 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
 
   // Handle photo file scan
   const handlePhotoScan = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Prevent double processing
+    if (isLoading) {
+      console.log('BarcodeScanner: already loading, skipping');
+      return;
+    }
+
     const file = event.target.files?.[0];
     console.log('BarcodeScanner: handlePhotoScan called, file:', file?.name, file?.size);
     if (!file) {
