@@ -124,16 +124,26 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    console.log('PhotoCapture: handleFileSelect called, file:', file?.name, file?.size);
+    if (!file) {
+      console.log('PhotoCapture: No file selected');
+      return;
+    }
 
-    e.target.value = '';
     setError(null);
-    const base64 = await fileToBase64(file);
-    setImageUrl(base64);
-    setIsAnalyzing(true);
-
+    
     try {
+      const base64 = await fileToBase64(file);
+      console.log('PhotoCapture: base64 generated, length:', base64.length);
+      
+      // Clear input AFTER reading the file
+      e.target.value = '';
+      
+      setImageUrl(base64);
+      setIsAnalyzing(true);
+
       const result = await analyzeFood(base64);
+      console.log('PhotoCapture: analysis result:', result.name);
       setAnalysisResult(result);
       setEditedName(result.name);
       setEditedGrams(String(result.estimatedGrams || 300));
@@ -143,6 +153,7 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
         setShowLiquidDialog(true);
       }
     } catch (err) {
+      console.error('PhotoCapture: Error:', err);
       const message = err instanceof Error ? err.message : 'Erro ao analisar imagem';
       setError(message);
     } finally {
