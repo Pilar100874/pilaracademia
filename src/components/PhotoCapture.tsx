@@ -9,7 +9,7 @@ import { ProductFormDialog } from '@/components/ProductFormDialog';
 import { ProductConsumptionDialog } from '@/components/ProductConsumptionDialog';
 import { CustomProduct } from '@/hooks/useCustomProducts';
 import { cn } from '@/lib/utils';
-
+import { toast } from 'sonner';
 import { analyzeFood, fileToBase64, FoodAnalysisResult } from '@/lib/analyzeFood';
 
 interface PhotoCaptureProps {
@@ -116,6 +116,12 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
       analyzeFood(pendingImage)
         .then((result) => {
           console.log('PhotoCapture: Recovered image analysis result:', result.name);
+          if (result.confidence === 'baixa' || result.name === 'Prato não identificado' || result.nutrition.calories === 0) {
+            toast.warning('Não foi possível reconhecer o alimento', {
+              description: 'Tente tirar outra foto com melhor iluminação ou mais próxima do prato.',
+              duration: 5000,
+            });
+          }
           setAnalysisResult(result);
           setEditedName(result.name);
           setEditedGrams(String(result.estimatedGrams || 300));
@@ -128,6 +134,10 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
         .catch((err) => {
           console.error('PhotoCapture: Recovered image error:', err);
           setError(err instanceof Error ? err.message : 'Erro ao analisar imagem');
+          toast.error('Erro ao analisar foto', {
+            description: 'Não foi possível identificar o alimento. Tente novamente ou registre manualmente.',
+            duration: 5000,
+          });
         })
         .finally(() => setIsAnalyzing(false));
     }
@@ -180,6 +190,15 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
       const result = await analyzeFood(base64);
       sessionStorage.removeItem('pendingFoodImage');
       console.log('PhotoCapture: analysis result:', result.name);
+
+      // Check if food was not recognized
+      if (result.confidence === 'baixa' || result.name === 'Prato não identificado' || result.nutrition.calories === 0) {
+        toast.warning('Não foi possível reconhecer o alimento', {
+          description: 'Tente tirar outra foto com melhor iluminação ou mais próxima do prato.',
+          duration: 5000,
+        });
+      }
+
       setAnalysisResult(result);
       setEditedName(result.name);
       setEditedGrams(String(result.estimatedGrams || 300));
@@ -193,6 +212,10 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
       console.error('PhotoCapture: Error:', err);
       const message = err instanceof Error ? err.message : 'Erro ao analisar imagem';
       setError(message);
+      toast.error('Erro ao analisar foto', {
+        description: 'Não foi possível identificar o alimento. Tente novamente ou registre manualmente.',
+        duration: 5000,
+      });
     } finally {
       setIsAnalyzing(false);
     }
