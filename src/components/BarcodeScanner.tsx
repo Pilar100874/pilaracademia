@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Camera, Loader2, Keyboard } from 'lucide-react';
+import { X, Camera, Loader2, Keyboard, Upload, CircleDot } from 'lucide-react';
 import { BarcodeProduct } from '@/types/nutrition';
 import { fetchProductByBarcode, isLiquidProduct, getLiquidVolumeMl } from '@/lib/openFoodFacts';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
@@ -22,12 +22,15 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Aguarde...');
   
-  // Scanner mode - default to photo
   const [scanMode, setScanMode] = useState<'photo' | 'manual'>('photo');
   const [scanError, setScanError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const processingRef = useRef(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
   
   // Flow states
   const [showProductForm, setShowProductForm] = useState(false);
@@ -53,14 +56,10 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     referenceQuantity?: number;
   } | null>(null);
 
-  // Process a file from any input
+  // Process a file from gallery
   const processFile = useCallback(async (file: File) => {
-    if (processingRef.current) {
-      console.log('BarcodeScanner: already processing, skipping');
-      return;
-    }
+    if (processingRef.current) return;
     processingRef.current = true;
-    console.log('BarcodeScanner: processFile called, file:', file.name, file.size);
 
     try {
       const reader = new FileReader();
@@ -69,19 +68,9 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
         reader.onerror = () => reject(new Error('Failed to read file'));
         reader.readAsDataURL(file);
       });
-      console.log('BarcodeScanner: base64 generated, length:', base64Data.length);
-
-      // Save to sessionStorage as backup
-      try {
-        sessionStorage.setItem('pendingBarcodeImage', base64Data);
-      } catch (e) {
-        console.warn('BarcodeScanner: Could not save to sessionStorage');
-      }
 
       await processBarcodeImage(base64Data);
-      sessionStorage.removeItem('pendingBarcodeImage');
     } catch (err) {
-      sessionStorage.removeItem('pendingBarcodeImage');
       console.error('BarcodeScanner: processFile error:', err);
       setIsLoading(false);
       setScanError('Erro ao processar a foto. Tente novamente.');
@@ -92,33 +81,17 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     }
   }, []);
 
-  // On mount, check for pending barcode photo from before page unload
-  useEffect(() => {
-    const pendingFile = sessionStorage.getItem('pendingBarcodeImage');
-    if (pendingFile) {
-      console.log('BarcodeScanner: Found pending image, processing...');
-      sessionStorage.removeItem('pendingBarcodeImage');
-      setTimeout(() => processBarcodeImage(pendingFile), 200);
-    }
-  }, []);
-
   const processBarcodeImage = async (base64Data: string) => {
     setIsLoading(true);
     setLoadingMessage('Lendo código de barras...');
     setScanError(null);
 
     try {
-      console.log('BarcodeScanner: sending image to AI, length:', base64Data.length);
-      
-      // Strip data URL prefix for cleaner payload - the edge function handles both formats
       const { data, error } = await supabase.functions.invoke('read-barcode', {
         body: { imageBase64: base64Data },
       });
 
-      console.log('BarcodeScanner: response:', JSON.stringify({ success: data?.success, found: data?.data?.found, barcode: data?.data?.barcode, error: error?.message }));
-
       if (error) {
-        console.error('BarcodeScanner: edge function error:', error);
         throw new Error(error.message || 'Erro ao ler código de barras');
       }
 
@@ -130,7 +103,6 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
       }
 
       const decodedBarcode = data.data.barcode;
-      console.log('BarcodeScanner: AI decoded barcode:', decodedBarcode);
       setBarcode(decodedBarcode);
       setLoadingMessage('Buscando produto...');
       handleSearchWithBarcode(decodedBarcode);
@@ -142,20 +114,68 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     }
   };
 
-  // Handle file from camera or gallery
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) {
-      console.log('BarcodeScanner: No file selected');
-      return;
-    }
+    if (!file) return;
     await processFile(file);
   };
 
-  // Open file picker - no capture attribute so OS shows camera+gallery options
-  const openFilePicker = () => {
+  const openGallery = () => {
     fileInputRef.current?.click();
   };
+
+  // In-browser camera using getUserMedia
+  const openCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      streamRef.current = stream;
+      setShowCamera(true);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play();
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Camera access error:', err);
+      toast.error('Não foi possível acessar a câmera', {
+        description: 'Verifique as permissões ou use a opção Galeria.'
+      });
+    }
+  };
+
+  const capturePhoto = async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0);
+    const base64Data = canvas.toDataURL('image/jpeg', 0.8);
+    stopCamera();
+    await processBarcodeImage(base64Data);
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    setShowCamera(false);
+  };
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (scanMode === 'manual') {
@@ -318,19 +338,18 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
       <div className="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-card p-6 shadow-elevated animate-slide-up max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Escanear Código de Barras</h2>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={() => { stopCamera(); onClose(); }}>
             <X className="h-5 w-5" />
           </Button>
         </div>
 
         <div className="space-y-4">
-          {/* Mode toggle */}
           <div className="flex gap-2">
             <Button
               variant={scanMode === 'photo' ? 'default' : 'outline'}
               size="sm"
               className="flex-1"
-              onClick={() => setScanMode('photo')}
+              onClick={() => { stopCamera(); setScanMode('photo'); }}
             >
               <Camera className="h-4 w-4 mr-1" />
               Foto
@@ -339,14 +358,13 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
               variant={scanMode === 'manual' ? 'default' : 'outline'}
               size="sm"
               className="flex-1"
-              onClick={() => setScanMode('manual')}
+              onClick={() => { stopCamera(); setScanMode('manual'); }}
             >
               <Keyboard className="h-4 w-4 mr-1" />
               Manual
             </Button>
           </div>
 
-          {/* Single file input - no capture attribute so OS offers camera+gallery */}
           <input
             ref={fileInputRef}
             type="file"
@@ -370,18 +388,37 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
                     </div>
                   )}
                   
-                  <div 
-                    className="rounded-2xl border-2 border-dashed border-primary/50 p-8 text-center cursor-pointer hover:bg-primary/5 transition-colors"
-                    onClick={openFilePicker}
-                  >
-                    <Camera className="mx-auto h-10 w-10 text-primary" />
-                    <p className="mt-2 text-sm font-medium">
-                      Tirar Foto ou Escolher da Galeria
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      O celular vai oferecer as opções
-                    </p>
-                  </div>
+                  {showCamera ? (
+                    <div className="relative rounded-2xl overflow-hidden bg-black">
+                      <video ref={videoRef} autoPlay playsInline muted className="w-full rounded-2xl" />
+                      <canvas ref={canvasRef} className="hidden" />
+                      <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
+                        <Button size="lg" variant="secondary" onClick={stopCamera} className="rounded-full">
+                          <X className="h-5 w-5" />
+                        </Button>
+                        <Button size="lg" onClick={capturePhoto} className="rounded-full h-16 w-16">
+                          <CircleDot className="h-8 w-8" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div 
+                        className="rounded-2xl border-2 border-dashed border-primary/50 p-6 text-center cursor-pointer hover:bg-primary/5 transition-colors"
+                        onClick={openCamera}
+                      >
+                        <Camera className="mx-auto h-10 w-10 text-primary" />
+                        <p className="mt-2 text-sm font-medium">Abrir Câmera</p>
+                      </div>
+                      <div 
+                        className="rounded-2xl border-2 border-dashed border-muted-foreground/30 p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={openGallery}
+                      >
+                        <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                        <p className="mt-2 text-sm font-medium text-muted-foreground">Escolher da Galeria</p>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -425,3 +462,4 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     </div>
   );
 }
+
