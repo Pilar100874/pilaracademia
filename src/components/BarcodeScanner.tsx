@@ -52,16 +52,27 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     referenceQuantity?: number;
   } | null>(null);
 
-  // Handle photo file scan
-  const handlePhotoScan = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // On mount, check for pending barcode photo from before page unload
+  useEffect(() => {
+    const pendingFile = sessionStorage.getItem('pendingBarcodeImage');
+    if (pendingFile) {
+      sessionStorage.removeItem('pendingBarcodeImage');
+      console.log('BarcodeScanner: Recovered pending barcode image');
+      processBarcodeImage(pendingFile);
+    }
+  }, []);
 
+  const processBarcodeImage = async (base64Data: string) => {
     setIsLoading(true);
     setLoadingMessage('Processando foto...');
     setScanError(null);
 
     try {
+      // Convert base64 to File for html5-qrcode
+      const response = await fetch(base64Data);
+      const blob = await response.blob();
+      const file = new File([blob], 'barcode.jpg', { type: blob.type });
+
       const html5QrCode = new Html5Qrcode('photo-scanner-temp', {
         formatsToSupport: [
           Html5QrcodeSupportedFormats.EAN_13,
@@ -80,7 +91,39 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
     } catch (err) {
       setIsLoading(false);
       setScanError('Não foi possível ler o código de barras na foto.');
-    } finally {
+    }
+  };
+
+  // Handle photo file scan
+  const handlePhotoScan = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      // Read file as base64 and save to sessionStorage for recovery
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+      const base64Data = await base64Promise;
+      
+      try {
+        sessionStorage.setItem('pendingBarcodeImage', base64Data);
+      } catch (e) {
+        console.warn('BarcodeScanner: Could not save to sessionStorage');
+      }
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+      await processBarcodeImage(base64Data);
+      sessionStorage.removeItem('pendingBarcodeImage');
+    } catch (err) {
+      sessionStorage.removeItem('pendingBarcodeImage');
+      setIsLoading(false);
+      setScanError('Não foi possível ler o código de barras na foto.');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
