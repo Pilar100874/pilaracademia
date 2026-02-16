@@ -89,6 +89,7 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
       if (!data?.success || !data?.data?.found || !data?.data?.barcode) {
         setIsLoading(false);
         setScanError('Não foi possível identificar um código de barras na foto. Tente novamente ou digite manualmente.');
+        toast.warning('Código não reconhecido', { description: 'Tente tirar a foto mais próxima do código de barras ou digite manualmente.' });
         return;
       }
 
@@ -101,6 +102,7 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
       console.error('BarcodeScanner: processBarcodeImage error:', err);
       setIsLoading(false);
       setScanError('Erro ao ler o código de barras. Tente novamente ou digite manualmente.');
+      toast.error('Erro na leitura', { description: 'Não foi possível processar a imagem. Tente novamente.' });
     }
   };
 
