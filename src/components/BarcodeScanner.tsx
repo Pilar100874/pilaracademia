@@ -55,14 +55,10 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
   // On mount, check for pending barcode photo from before page unload
   useEffect(() => {
     const pendingFile = sessionStorage.getItem('pendingBarcodeImage');
-    console.log('BarcodeScanner: mounted, pendingFile exists:', !!pendingFile);
+    console.log('BarcodeScanner: mounted, pendingFile exists:', !!pendingFile, 'length:', pendingFile?.length);
     if (pendingFile) {
       sessionStorage.removeItem('pendingBarcodeImage');
-      console.log('BarcodeScanner: Recovered pending barcode image, length:', pendingFile.length);
-      // Small delay to ensure DOM element exists
-      setTimeout(() => {
-        processBarcodeImage(pendingFile);
-      }, 100);
+      processBarcodeImage(pendingFile);
     }
   }, []);
 
@@ -77,22 +73,36 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
       const blob = await response.blob();
       const file = new File([blob], 'barcode.jpg', { type: blob.type });
 
-      const html5QrCode = new Html5Qrcode('photo-scanner-temp', {
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-        ],
-        verbose: false,
-      });
+      // Create a temporary DOM element programmatically to avoid timing issues
+      const tempContainerId = 'photo-scanner-temp-' + Date.now();
+      let tempDiv = document.createElement('div');
+      tempDiv.id = tempContainerId;
+      tempDiv.style.display = 'none';
+      document.body.appendChild(tempDiv);
 
-      setLoadingMessage('Lendo código de barras...');
-      const decodedText = await html5QrCode.scanFile(file, true);
-      setBarcode(decodedText);
-      setLoadingMessage('Buscando produto...');
-      handleSearchWithBarcode(decodedText);
+      try {
+        const html5QrCode = new Html5Qrcode(tempContainerId, {
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+          ],
+          verbose: false,
+        });
+
+        setLoadingMessage('Lendo código de barras...');
+        const decodedText = await html5QrCode.scanFile(file, true);
+        console.log('BarcodeScanner: decoded barcode:', decodedText);
+        setBarcode(decodedText);
+        setLoadingMessage('Buscando produto...');
+        handleSearchWithBarcode(decodedText);
+      } finally {
+        // Clean up temp element
+        tempDiv.remove();
+      }
     } catch (err) {
+      console.error('BarcodeScanner: processBarcodeImage error:', err);
       setIsLoading(false);
       setScanError('Não foi possível ler o código de barras na foto.');
     }
@@ -332,8 +342,7 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
             </Button>
           </div>
 
-          {/* Hidden temp div for photo scanning */}
-          <div id="photo-scanner-temp" className="hidden" />
+          {/* Temp div created programmatically in processBarcodeImage */}
           
           {/* Hidden file input */}
           <input
