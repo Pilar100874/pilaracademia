@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X, Camera, Upload, Loader2, Sparkles, AlertCircle, Package, HelpCircle, Flame, Droplets } from 'lucide-react';
@@ -105,6 +105,34 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  // On mount, check if there's a pending camera image from before page unload
+  useEffect(() => {
+    const pendingImage = sessionStorage.getItem('pendingFoodImage');
+    if (pendingImage) {
+      sessionStorage.removeItem('pendingFoodImage');
+      console.log('PhotoCapture: Recovered pending image from sessionStorage');
+      setImageUrl(pendingImage);
+      setIsAnalyzing(true);
+      analyzeFood(pendingImage)
+        .then((result) => {
+          console.log('PhotoCapture: Recovered image analysis result:', result.name);
+          setAnalysisResult(result);
+          setEditedName(result.name);
+          setEditedGrams(String(result.estimatedGrams || 300));
+          if (result.isIndustrialized) {
+            setShowProductForm(true);
+          } else if (result.isLiquid) {
+            setShowLiquidDialog(true);
+          }
+        })
+        .catch((err) => {
+          console.error('PhotoCapture: Recovered image error:', err);
+          setError(err instanceof Error ? err.message : 'Erro ao analisar imagem');
+        })
+        .finally(() => setIsAnalyzing(false));
+    }
+  }, []);
+
   const adjustedNutrition = useMemo(() => {
     if (!analysisResult) return null;
     const originalGrams = analysisResult.estimatedGrams || 300;
@@ -139,10 +167,18 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
       // Clear input AFTER reading the file
       e.target.value = '';
       
+      // Save to sessionStorage in case page unloads during camera capture
+      try {
+        sessionStorage.setItem('pendingFoodImage', base64);
+      } catch (storageErr) {
+        console.warn('PhotoCapture: Could not save to sessionStorage (image too large)');
+      }
+      
       setImageUrl(base64);
       setIsAnalyzing(true);
 
       const result = await analyzeFood(base64);
+      sessionStorage.removeItem('pendingFoodImage');
       console.log('PhotoCapture: analysis result:', result.name);
       setAnalysisResult(result);
       setEditedName(result.name);
@@ -153,6 +189,7 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
         setShowLiquidDialog(true);
       }
     } catch (err) {
+      sessionStorage.removeItem('pendingFoodImage');
       console.error('PhotoCapture: Error:', err);
       const message = err instanceof Error ? err.message : 'Erro ao analisar imagem';
       setError(message);
@@ -237,6 +274,7 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
         ref={cameraInputRef}
         type="file"
         accept="image/*"
+        capture="environment"
         onChange={handleFileSelect}
         className="hidden"
       />
