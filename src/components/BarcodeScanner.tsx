@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Camera, Loader2, Keyboard, ImagePlus } from 'lucide-react';
+import { X, Camera, Loader2, Keyboard, ImagePlus, Video } from 'lucide-react';
 import { BarcodeProduct } from '@/types/nutrition';
 import { fetchProductByBarcode, isLiquidProduct, getLiquidVolumeMl } from '@/lib/openFoodFacts';
 import { useCustomProducts, CustomProduct } from '@/hooks/useCustomProducts';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { ProductFormDialog } from './ProductFormDialog';
 import { ProductConsumptionDialog } from './ProductConsumptionDialog';
+import { ZxingScanner } from './ZxingScanner';
 import { toast } from 'sonner';
 
 interface BarcodeScannerProps {
@@ -22,8 +23,8 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Aguarde...');
   
-  // Scanner mode
-  const [scanMode, setScanMode] = useState<'photo' | 'manual'>('photo');
+  // Scanner mode - default to live camera
+  const [scanMode, setScanMode] = useState<'live' | 'photo' | 'manual'>('live');
   const [scanError, setScanError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -323,6 +324,15 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
           {/* Mode toggle */}
           <div className="flex gap-2">
             <Button
+              variant={scanMode === 'live' ? 'default' : 'outline'}
+              size="sm"
+              className="flex-1"
+              onClick={() => setScanMode('live')}
+            >
+              <Video className="h-4 w-4 mr-1" />
+              Câmera
+            </Button>
+            <Button
               variant={scanMode === 'photo' ? 'default' : 'outline'}
               size="sm"
               className="flex-1"
@@ -342,9 +352,7 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
             </Button>
           </div>
 
-          {/* Temp div created programmatically in processBarcodeImage */}
-          
-          {/* Hidden file input */}
+          {/* Hidden file input for photo mode */}
           <input
             ref={fileInputRef}
             type="file"
@@ -354,7 +362,39 @@ export function BarcodeScanner({ onProductFound, onClose, selectedDate }: Barcod
             className="hidden"
           />
 
-          {scanMode === 'photo' ? (
+          {scanMode === 'live' ? (
+            <div className="space-y-4">
+              {isLoading ? (
+                <div className="rounded-xl bg-primary/10 p-8 text-center">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+                  <p className="mt-4 text-sm font-medium">{loadingMessage}</p>
+                </div>
+              ) : (
+                <>
+                  {scanError && (
+                    <div className="rounded-xl bg-destructive/10 p-4 text-center">
+                      <p className="text-sm text-destructive">{scanError}</p>
+                    </div>
+                  )}
+                  <ZxingScanner
+                    onResult={(code) => {
+                      setBarcode(code);
+                      setLoadingMessage('Buscando produto...');
+                      handleSearchWithBarcode(code);
+                    }}
+                    onError={(error) => {
+                      setScanError(error);
+                      // Fallback to photo mode if camera fails
+                      setScanMode('photo');
+                    }}
+                  />
+                  <p className="text-xs text-center text-muted-foreground">
+                    Aponte a câmera para o código de barras
+                  </p>
+                </>
+              )}
+            </div>
+          ) : scanMode === 'photo' ? (
             <div className="space-y-4">
               {isLoading ? (
                 <div className="rounded-xl bg-primary/10 p-8 text-center">
