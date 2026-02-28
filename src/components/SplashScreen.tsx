@@ -23,7 +23,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-primary via-primary/90 to-primary/70"
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background"
         >
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
@@ -36,7 +36,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
               initial={{ y: 20 }}
               animate={{ y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="w-24 h-24 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl"
+              className="w-24 h-24 rounded-3xl bg-primary/10 backdrop-blur-sm flex items-center justify-center shadow-2xl"
             >
               <img src="/pwa-192x192.png" alt="Pilar Calorias" className="w-16 h-16" />
             </motion.div>
@@ -46,7 +46,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.5 }}
-              className="text-4xl font-bold text-primary-foreground tracking-tight"
+              className="text-4xl font-bold text-foreground tracking-tight"
             >
               Pilar Caloria
             </motion.h1>
@@ -56,7 +56,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
               initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.7, duration: 0.5 }}
-              className="text-primary-foreground/70 text-lg"
+              className="text-muted-foreground text-lg"
             >
               Sua saúde em primeiro lugar
             </motion.p>
@@ -72,7 +72,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
             {[0, 1, 2].map((i) => (
               <motion.div
                 key={i}
-                className="w-2.5 h-2.5 rounded-full bg-primary-foreground/50"
+                className="w-2.5 h-2.5 rounded-full bg-primary/50"
                 animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
                 transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
               />
