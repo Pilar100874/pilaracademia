@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -12,6 +13,7 @@ import { WorkoutsPage } from "@/pages/WorkoutsPage";
 import ExerciseLibraryPage from "@/pages/ExerciseLibraryPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { SplashScreen } from "@/components/SplashScreen";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -133,17 +135,24 @@ function AppRoutes() {
   );
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-          <InstallPrompt />
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [showSplash, setShowSplash] = useState(true);
+  const handleSplashFinish = useCallback(() => setShowSplash(false), []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+        <BrowserRouter>
+          <AuthProvider>
+            <AppRoutes />
+            <InstallPrompt />
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
+
 
 export default App;
