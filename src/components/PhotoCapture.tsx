@@ -40,10 +40,10 @@ function MacroBadge({
   };
 
   const positionStyles = {
-    top: 'top-4 left-1/2 -translate-x-1/2',
-    left: 'left-4 top-1/2 -translate-y-1/2',
-    right: 'right-4 top-1/2 -translate-y-1/2',
-    bottom: 'bottom-4 left-1/2 -translate-x-1/2',
+    top: '-top-5 left-1/2 -translate-x-1/2',
+    left: '-left-2 top-1/2 -translate-y-1/2',
+    right: '-right-2 top-1/2 -translate-y-1/2',
+    bottom: '-bottom-5 left-1/2 -translate-x-1/2',
   };
 
   const iconMap = {
@@ -364,31 +364,33 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
         ) : (
           <div className="w-full max-w-sm space-y-4">
             {/* Image with floating badges */}
-            <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-2xl bg-neutral-200">
-              <img 
-                src={imageUrl} 
-                alt="Prato capturado" 
-                className="w-full h-full object-cover"
-              />
-              
-              {/* Scanning frame */}
-              <ScanFrame />
-              
-              {/* Loading overlay */}
-              {isAnalyzing && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-30">
-                  <div className="text-center p-6">
-                    <div className="relative">
-                      <div className="w-20 h-20 rounded-full border-4 border-white/20 border-t-primary animate-spin" />
-                      <Sparkles className="absolute inset-0 m-auto h-8 w-8 text-white" />
+            <div className="relative">
+              <div className="aspect-square rounded-[2rem] overflow-hidden shadow-2xl bg-neutral-200">
+                <img 
+                  src={imageUrl} 
+                  alt="Prato capturado" 
+                  className="w-full h-full object-cover"
+                />
+                
+                {/* Scanning frame */}
+                <ScanFrame />
+                
+                {/* Loading overlay */}
+                {isAnalyzing && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-30 rounded-[2rem]">
+                    <div className="text-center p-6">
+                      <div className="relative">
+                        <div className="w-20 h-20 rounded-full border-4 border-white/20 border-t-primary animate-spin" />
+                        <Sparkles className="absolute inset-0 m-auto h-8 w-8 text-white" />
+                      </div>
+                      <p className="mt-4 text-lg font-semibold text-white">Analisando...</p>
+                      <p className="text-sm text-white/70">Identificando nutrientes</p>
                     </div>
-                    <p className="mt-4 text-lg font-semibold text-white">Analisando...</p>
-                    <p className="text-sm text-white/70">Identificando nutrientes</p>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
-              {/* Floating macro badges */}
+              {/* Floating macro badges - outside overflow-hidden */}
               {showResultOverlay && adjustedNutrition && (
                 <>
                   <MacroBadge 
