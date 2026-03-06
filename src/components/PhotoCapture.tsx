@@ -40,10 +40,10 @@ function MacroBadge({
   };
 
   const positionStyles = {
-    top: '-top-5 left-1/2 -translate-x-1/2',
-    left: '-left-2 top-1/2 -translate-y-1/2',
-    right: '-right-2 top-1/2 -translate-y-1/2',
-    bottom: '-bottom-5 left-1/2 -translate-x-1/2',
+    top: 'top-2 left-1/2 -translate-x-1/2 sm:-top-5 sm:top-auto',
+    left: 'left-2 top-1/2 -translate-y-1/2 sm:-left-2',
+    right: 'right-2 top-1/2 -translate-y-1/2 sm:-right-2',
+    bottom: 'bottom-2 left-1/2 -translate-x-1/2 sm:-bottom-5',
   };
 
   const iconMap = {
