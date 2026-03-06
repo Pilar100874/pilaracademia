@@ -59,18 +59,18 @@ function MacroBadge({
       positionStyles[position]
     )}>
       <div className={cn(
-        "flex items-center gap-2 rounded-full bg-white/95 backdrop-blur-sm px-3 py-2 shadow-lg",
+        "flex items-center gap-1.5 rounded-full bg-white/95 backdrop-blur-sm px-2.5 py-1.5 shadow-lg sm:gap-2 sm:px-3 sm:py-2",
         "border border-white/50"
       )}>
         <div className={cn(
-          "flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br text-white shadow-md",
+          "flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br text-white shadow-md sm:w-7 sm:h-7",
           colorStyles[color]
         )}>
           {iconMap[color]}
         </div>
-        <div className="flex flex-col items-start leading-none">
-          <span className="text-base font-bold text-gray-900">{value}<span className="text-xs font-medium text-gray-500">{unit}</span></span>
-          <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">{label}</span>
+        <div className="flex flex-col items-start leading-tight">
+          <span className="text-sm font-bold text-gray-900 sm:text-base whitespace-nowrap">{value}<span className="text-[10px] font-medium text-gray-500 sm:text-xs">{unit}</span></span>
+          <span className="text-[9px] font-medium text-gray-500 uppercase tracking-wide sm:text-[10px] whitespace-nowrap">{label}</span>
         </div>
       </div>
     </div>
