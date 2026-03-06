@@ -602,7 +602,7 @@ export function Dashboard() {
         }}
       />
       
-      <WeightReminderPopup />
+      
       <BottomNav />
     </div>
   );
