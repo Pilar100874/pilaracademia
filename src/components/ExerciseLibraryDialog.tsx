@@ -349,52 +349,24 @@ export function ExerciseLibraryDialog({
             {/* Category */}
             <div className="space-y-2">
               <Label>Categoria</Label>
-              {showNewCategory ? (
-                <div className="flex gap-2">
-                  <Input
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="Ex: Peito"
-                    autoFocus
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleCreateNewCategory}
-                    disabled={!newCategoryName.trim() || createCategory.isPending}
-                  >
-                    Criar
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setShowNewCategory(false);
-                      setNewCategoryName('');
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <Select value={selectValue} onValueChange={handleCategoryChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecionar categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value={NEW_CATEGORY}>
-                      + Criar nova categoria
+              <Select value={selectValue} onValueChange={handleCategoryChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                  {orderedCategories.map(({ cat, depth }) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      <span style={{ paddingLeft: depth * 12 }}>
+                        {depth > 0 ? '↳ ' : ''}{cat.name}
+                      </span>
                     </SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Para criar categorias, use a tela da Biblioteca de Exercícios.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
