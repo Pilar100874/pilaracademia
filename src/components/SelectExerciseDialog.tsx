@@ -7,7 +7,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
@@ -25,7 +24,7 @@ import { Dumbbell, Search, Plus, Check, ImageIcon, Tag } from 'lucide-react';
 interface SelectExerciseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (exercise: LibraryExercise, sets: number, reps: number) => void;
+  onSelect: (exercise: LibraryExercise, sets: number, reps: number) => void | Promise<void>;
   onCreateNew: () => void;
 }
 
@@ -42,16 +41,22 @@ export function SelectExerciseDialog({
   const { categories } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
-  const [selectedExercise, setSelectedExercise] = useState<LibraryExercise | null>(null);
-  const [sets, setSets] = useState(3);
-  const [reps, setReps] = useState(12);
+  // Ordered list of selected exercise ids — defines insertion order
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [zoomImages, setZoomImages] = useState<string[]>([]);
+  const [isAdding, setIsAdding] = useState(false);
 
   const categoryNameMap = useMemo(() => {
     const m = new Map<string, string>();
     categories.forEach((c) => m.set(c.id, c.name));
     return m;
   }, [categories]);
+
+  const exerciseMap = useMemo(() => {
+    const m = new Map<string, LibraryExercise>();
+    exercises.forEach((ex) => m.set(ex.id, ex));
+    return m;
+  }, [exercises]);
 
   const filteredExercises = exercises.filter((ex) => {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
@@ -64,25 +69,34 @@ export function SelectExerciseDialog({
     return matchesSearch && matchesCategory;
   });
 
-  const handleSelectExercise = (exercise: LibraryExercise) => {
-    setSelectedExercise(exercise);
-    setSets(exercise.default_sets);
-    setReps(exercise.default_reps);
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   };
 
-  const handleConfirm = () => {
-    if (selectedExercise) {
-      onSelect(selectedExercise, sets, reps);
+  const handleConfirm = async () => {
+    if (!selectedIds.length || isAdding) return;
+    setIsAdding(true);
+    try {
+      // Add in the order they were selected
+      for (const id of selectedIds) {
+        const ex = exerciseMap.get(id);
+        if (!ex) continue;
+        await onSelect(ex, ex.default_sets, ex.default_reps);
+      }
       onOpenChange(false);
-      setSelectedExercise(null);
+      setSelectedIds([]);
       setSearch('');
       setFilterCategory(ALL_CATEGORIES);
+    } finally {
+      setIsAdding(false);
     }
   };
 
   const handleClose = (isOpen: boolean) => {
     if (!isOpen) {
-      setSelectedExercise(null);
+      setSelectedIds([]);
       setSearch('');
       setFilterCategory(ALL_CATEGORIES);
     }
@@ -91,9 +105,9 @@ export function SelectExerciseDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Adicionar Exercício ao Treino</DialogTitle>
+          <DialogTitle>Adicionar Exercícios ao Treino</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 flex flex-col min-h-0 space-y-4">
@@ -127,7 +141,13 @@ export function SelectExerciseDialog({
             </Select>
           </div>
 
-          {/* Exercise list */}
+          {selectedIds.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {selectedIds.length} selecionado(s) — serão adicionados na ordem em que você clicou
+            </p>
+          )}
+
+          {/* Exercise grid */}
           <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
             {isLoading ? (
               <div className="py-8 text-center text-muted-foreground">
@@ -147,9 +167,10 @@ export function SelectExerciseDialog({
                 </Button>
               </div>
             ) : (
-              <div className="space-y-2 pb-2">
+              <div className="grid grid-cols-2 gap-3 pb-2">
                 {filteredExercises.map((exercise) => {
-                  const isSelected = selectedExercise?.id === exercise.id;
+                  const selectionIdx = selectedIds.indexOf(exercise.id);
+                  const isSelected = selectionIdx !== -1;
                   const firstImage = exercise.image_urls?.[0];
                   const imageCount = exercise.image_urls?.length || 0;
                   const hasVideo = !!exercise.video_url && !!exercise.video_type;
@@ -160,17 +181,16 @@ export function SelectExerciseDialog({
                   return (
                     <button
                       key={exercise.id}
-                      onClick={() => handleSelectExercise(exercise)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors text-left ${
+                      onClick={() => toggleSelect(exercise.id)}
+                      className={`group relative flex flex-col rounded-xl border overflow-hidden text-left transition-all ${
                         isSelected
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:bg-muted/50'
+                          ? 'border-primary ring-2 ring-primary/40 bg-primary/5'
+                          : 'border-border hover:border-primary/50 hover:bg-muted/30'
                       }`}
                     >
+                      {/* Large media area */}
                       <div
-                        className={`relative w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0 ${
-                          firstImage ? 'hover:ring-2 hover:ring-primary transition-all' : ''
-                        }`}
+                        className="relative w-full aspect-video bg-muted overflow-hidden"
                         onClick={(e) => {
                           if (exercise.image_urls?.length) {
                             e.stopPropagation();
@@ -186,8 +206,8 @@ export function SelectExerciseDialog({
                               className="w-full h-full object-cover"
                             />
                             {imageCount > 1 && (
-                              <div className="absolute bottom-0 right-0 bg-black/60 text-white text-[10px] px-1 rounded-tl flex items-center gap-0.5">
-                                <ImageIcon className="h-2.5 w-2.5" />
+                              <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
+                                <ImageIcon className="h-3 w-3" />
                                 {imageCount}
                               </div>
                             )}
@@ -197,35 +217,39 @@ export function SelectExerciseDialog({
                             videoType={exercise.video_type}
                             videoUrl={exercise.video_url}
                             startSeconds={exercise.video_start_seconds}
+                            endSeconds={exercise.video_end_seconds}
+                            autoplayPreview
                             className="w-full h-full"
-                            iconSize="sm"
+                            iconSize="md"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <Dumbbell className="h-5 w-5 text-muted-foreground" />
+                            <Dumbbell className="h-10 w-10 text-muted-foreground" />
+                          </div>
+                        )}
+
+                        {/* Selection badge with order number */}
+                        {isSelected && (
+                          <div className="absolute top-1.5 left-1.5 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-lg text-xs font-bold">
+                            {selectionIdx + 1}
                           </div>
                         )}
                       </div>
 
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{exercise.name}</p>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm text-muted-foreground">
-                            {exercise.default_sets} séries × {exercise.default_reps} reps
+                      {/* Info */}
+                      <div className="p-2.5 space-y-1">
+                        <p className="font-medium text-sm leading-tight line-clamp-2">{exercise.name}</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs text-muted-foreground">
+                            {exercise.default_sets}×{exercise.default_reps}
                           </p>
                           {categoryName && (
-                            <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                            <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary truncate max-w-[60%]">
                               {categoryName}
                             </span>
                           )}
                         </div>
                       </div>
-
-                      {isSelected && (
-                        <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-                          <Check className="h-4 w-4" />
-                        </div>
-                      )}
                     </button>
                   );
                 })}
@@ -233,48 +257,25 @@ export function SelectExerciseDialog({
             )}
           </ScrollArea>
 
-          {/* Selected exercise config */}
-          {selectedExercise && (
-            <div className="border-t pt-4 space-y-4">
-              <p className="font-medium text-sm">
-                Configurar: {selectedExercise.name}
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sets">Séries</Label>
-                  <Input
-                    id="sets"
-                    type="number"
-                    min={1}
-                    value={sets}
-                    onChange={(e) => setSets(Number(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reps">Repetições</Label>
-                  <Input
-                    id="reps"
-                    type="number"
-                    min={1}
-                    value={reps}
-                    onChange={(e) => setReps(Number(e.target.value))}
-                  />
-                </div>
-              </div>
-              <Button onClick={handleConfirm} className="w-full">
-                <Plus className="h-4 w-4 mr-1" />
-                Adicionar ao Treino
-              </Button>
-            </div>
-          )}
-
-          {/* Create new button */}
-          {!selectedExercise && filteredExercises.length > 0 && (
+          {/* Action buttons */}
+          <div className="border-t pt-4 flex flex-col gap-2">
+            <Button
+              onClick={handleConfirm}
+              className="w-full"
+              disabled={selectedIds.length === 0 || isAdding}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              {isAdding
+                ? 'Adicionando...'
+                : selectedIds.length > 1
+                ? `Adicionar ${selectedIds.length} ao Treino`
+                : 'Adicionar ao Treino'}
+            </Button>
             <Button variant="outline" onClick={onCreateNew} className="w-full">
               <Plus className="h-4 w-4 mr-1" />
               Criar Novo Exercício
             </Button>
-          )}
+          </div>
         </div>
 
         <ImageZoomDialog
