@@ -429,16 +429,34 @@ export default function ExerciseLibraryPage() {
                 ? categoryNameMap.get(exercise.category_id)
                 : null;
 
+              const isSelected = selectedIds.has(exercise.id);
               return (
                 <div
                   key={exercise.id}
-                  className="flex items-center gap-3 p-3 rounded-xl border bg-card"
+                  onClick={selectionMode ? () => toggleSelected(exercise.id) : undefined}
+                  className={`flex items-center gap-3 p-3 rounded-xl border bg-card transition-colors ${
+                    selectionMode ? 'cursor-pointer' : ''
+                  } ${isSelected ? 'border-primary ring-2 ring-primary/40' : ''}`}
                 >
+                  {selectionMode && (
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => toggleSelected(exercise.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0"
+                    />
+                  )}
                   <div
                     className={`relative w-16 h-16 rounded-lg bg-muted overflow-hidden shrink-0 ${
-                      firstImage || hasVideo ? 'cursor-pointer hover:ring-2 hover:ring-primary transition-all' : ''
+                      !selectionMode && (firstImage || hasVideo) ? 'cursor-pointer hover:ring-2 hover:ring-primary transition-all' : ''
                     }`}
-                    onClick={() => exercise.image_urls?.length && setZoomImages(exercise.image_urls)}
+                    onClick={(e) => {
+                      if (selectionMode) return;
+                      if (exercise.image_urls?.length) {
+                        e.stopPropagation();
+                        setZoomImages(exercise.image_urls);
+                      }
+                    }}
                   >
                     {firstImage ? (
                       <>
@@ -482,24 +500,26 @@ export default function ExerciseLibraryPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-9 w-9"
-                      onClick={() => handleEdit(exercise)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-9 w-9 text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(exercise)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {!selectionMode && (
+                    <div className="flex gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-9 w-9"
+                        onClick={() => handleEdit(exercise)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-9 w-9 text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(exercise)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               );
             })}
