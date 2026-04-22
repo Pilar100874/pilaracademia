@@ -117,7 +117,7 @@ export default function ExerciseLibraryPage() {
     return name;
   };
 
-  const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBulkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = '';
     if (!files.length) return;
@@ -125,16 +125,44 @@ export default function ExerciseLibraryPage() {
       toast.error('Faça login para enviar vídeos');
       return;
     }
-
-    // Determine category to assign and base name
-    const targetCategoryId =
+    // Pre-select category from current filter when applicable
+    const initial =
       filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY
         ? filterCategory
-        : null;
+        : NO_CATEGORY;
+    setBulkCategoryChoice(initial);
+    setNewBulkCategoryName('');
+    setPendingFiles(files);
+  };
+
+  const runBulkUpload = async () => {
+    if (!pendingFiles || !user) return;
+    const files = pendingFiles;
+
+    // Resolve target category (create new if requested)
+    let targetCategoryId: string | null = null;
+    if (bulkCategoryChoice === NEW_CATEGORY) {
+      const name = newBulkCategoryName.trim();
+      if (!name) {
+        toast.error('Informe o nome da nova categoria');
+        return;
+      }
+      try {
+        const created = await createCategory.mutateAsync(name);
+        targetCategoryId = created.id;
+      } catch {
+        return;
+      }
+    } else if (bulkCategoryChoice !== NO_CATEGORY) {
+      targetCategoryId = bulkCategoryChoice;
+    }
+
     const baseName = targetCategoryId
-      ? categories.find((c) => c.id === targetCategoryId)?.name ?? 'Exercício'
+      ? categories.find((c) => c.id === targetCategoryId)?.name ??
+        (bulkCategoryChoice === NEW_CATEGORY ? newBulkCategoryName.trim() : 'Exercício')
       : 'Exercício';
 
+    setPendingFiles(null);
     setBulkUploading({ done: 0, total: files.length });
     const usedNames = new Set<string>();
     let successCount = 0;
