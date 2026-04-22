@@ -1100,24 +1100,54 @@ export default function ExerciseLibraryPage() {
         open={createCategoryOpen}
         onOpenChange={(open) => {
           setCreateCategoryOpen(open);
-          if (!open) setNewCategoryValue('');
+          if (!open) {
+            setNewCategoryValue('');
+            setNewCategoryParentId(null);
+          }
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nova categoria</DialogTitle>
+            <DialogTitle>
+              {newCategoryParentId ? 'Nova subcategoria' : 'Nova categoria'}
+            </DialogTitle>
             <DialogDescription>
-              Crie uma categoria para organizar seus exercícios.
+              {newCategoryParentId
+                ? `Será criada dentro de "${categoryNameMap.get(newCategoryParentId) ?? ''}".`
+                : 'Crie uma categoria para organizar seus exercícios.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label>Nome</Label>
-            <Input
-              autoFocus
-              value={newCategoryValue}
-              onChange={(e) => setNewCategoryValue(e.target.value)}
-              placeholder="Ex.: Peito, Costas, Pernas..."
-            />
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Categoria pai (opcional)</Label>
+              <Select
+                value={newCategoryParentId ?? NO_CATEGORY}
+                onValueChange={(v) => setNewCategoryParentId(v === NO_CATEGORY ? null : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CATEGORY}>Nenhuma (categoria raiz)</SelectItem>
+                  {orderedCategories.map(({ cat, depth }) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      <span style={{ paddingLeft: depth * 12 }}>
+                        {depth > 0 ? '↳ ' : ''}{cat.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Nome</Label>
+              <Input
+                autoFocus
+                value={newCategoryValue}
+                onChange={(e) => setNewCategoryValue(e.target.value)}
+                placeholder="Ex.: Peito, Costas, Pernas..."
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateCategoryOpen(false)}>
@@ -1127,9 +1157,13 @@ export default function ExerciseLibraryPage() {
               disabled={createCategory.isPending || !newCategoryValue.trim()}
               onClick={async () => {
                 try {
-                  const created = await createCategory.mutateAsync(newCategoryValue.trim());
+                  const created = await createCategory.mutateAsync({
+                    name: newCategoryValue.trim(),
+                    parent_id: newCategoryParentId,
+                  });
                   setCreateCategoryOpen(false);
                   setNewCategoryValue('');
+                  setNewCategoryParentId(null);
                   setFilterCategory(created.id);
                 } catch {
                   // toast handled in hook
