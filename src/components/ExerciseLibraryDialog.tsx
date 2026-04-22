@@ -35,12 +35,12 @@ export function ExerciseLibraryDialog({
   onOpenChange,
   editingExercise,
 }: ExerciseLibraryDialogProps) {
-  const { createExercise, updateExercise, uploadExerciseImage } = useExerciseLibrary();
+  const { exercises, createExercise, updateExercise, uploadExerciseImage } = useExerciseLibrary();
   const { categories, createCategory } = useExerciseCategories();
 
   const [name, setName] = useState('');
-  const [defaultSets, setDefaultSets] = useState(3);
-  const [defaultReps, setDefaultReps] = useState(12);
+  const [defaultSets, setDefaultSets] = useState(1);
+  const [defaultReps, setDefaultReps] = useState(10);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showNewCategory, setShowNewCategory] = useState(false);
@@ -77,8 +77,8 @@ export function ExerciseLibraryDialog({
         });
       } else {
         setName('');
-        setDefaultSets(3);
-        setDefaultReps(12);
+        setDefaultSets(1);
+        setDefaultReps(10);
         setCategoryId(null);
         setImages([]);
         setVideo({
