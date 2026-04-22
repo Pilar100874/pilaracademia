@@ -100,11 +100,11 @@ export function WorkoutViewerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black flex flex-col [&>button]:text-white [&>button]:hover:bg-white/20 [&>button]:top-4 [&>button]:right-4 [&>button]:z-50 [&>button]:bg-black/40 [&>button]:backdrop-blur-md [&>button]:rounded-full"
+        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black [&>button]:text-white [&>button]:hover:bg-white/20 [&>button]:top-4 [&>button]:right-4 [&>button]:z-50 [&>button]:bg-black/40 [&>button]:backdrop-blur-md [&>button]:rounded-full"
         onKeyDown={handleKeyDown}
       >
-        {/* Media area - takes all available space above the bottom panel */}
-        <div className="relative flex-1 min-h-0 flex items-center justify-center bg-black overflow-hidden">
+        {/* Fullscreen media area */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black overflow-hidden">
           {showVideo && hasVideo ? (
             <ExerciseVideoPlayer
               videoType={currentExercise.video_type}
@@ -205,43 +205,44 @@ export function WorkoutViewerDialog({
           </div>
         )}
 
-        {/* Exercise info panel - single compact row */}
-        <div className="relative z-40 shrink-0 bg-black/80 backdrop-blur-md border-t border-white/10 px-3 py-2">
-          <div className="flex items-center gap-2">
+        {/* Floating transparent control bar over the media */}
+        <div className="absolute bottom-4 left-4 right-4 z-40 pointer-events-none">
+          <div className="flex items-center gap-3 pointer-events-auto bg-black/30 backdrop-blur-md rounded-full border border-white/10 pl-3 pr-2 py-2 shadow-2xl">
             {/* Number badge */}
-            <div className="bg-primary text-primary-foreground h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0">
+            <div className="bg-primary text-primary-foreground h-10 w-10 rounded-full flex items-center justify-center text-base font-bold shrink-0">
               {currentExerciseIndex + 1}
             </div>
 
             {/* Name + sets×reps */}
             <div className="flex-1 min-w-0">
-              <p className="text-white font-bold text-sm truncate leading-tight">
+              <p className="text-white font-bold text-base truncate leading-tight drop-shadow">
                 {currentExercise.name}
               </p>
-              <p className="text-white/70 text-xs leading-tight">
+              <p className="text-white/80 text-sm leading-tight drop-shadow">
                 {currentExercise.sets} × {currentExercise.reps}
               </p>
             </div>
 
-            {/* Navigation */}
+            {/* Navigation - large transparent buttons */}
             <Button
               size="icon"
-              variant="outline"
-              className="h-9 w-9 shrink-0 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              variant="ghost"
+              className="h-12 w-12 shrink-0 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/25 hover:text-white disabled:opacity-30"
               onClick={handlePreviousExercise}
               disabled={isFirstExercise}
               aria-label="Anterior"
             >
-              <ChevronUp className="h-4 w-4" />
+              <ChevronUp className="h-6 w-6" />
             </Button>
             <Button
               size="icon"
-              className="h-9 w-9 shrink-0"
+              variant="ghost"
+              className="h-12 w-12 shrink-0 rounded-full bg-primary/80 backdrop-blur-sm text-primary-foreground hover:bg-primary disabled:opacity-30"
               onClick={handleNextExercise}
               disabled={isLastExercise}
               aria-label="Próximo"
             >
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-6 w-6" />
             </Button>
           </div>
         </div>
