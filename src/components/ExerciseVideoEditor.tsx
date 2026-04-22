@@ -8,7 +8,7 @@ import { Trash2, Upload, Youtube, Video as VideoIcon, Loader2 } from 'lucide-rea
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { parseYouTubeId, formatSeconds, buildYouTubeEmbedUrl } from '@/lib/youtubeUtils';
+import { parseYouTubeId, formatSeconds, buildYouTubeEmbedUrl, parseTimeToSeconds } from '@/lib/youtubeUtils';
 
 export interface ExerciseVideoData {
   video_type: 'youtube' | 'upload' | null;
