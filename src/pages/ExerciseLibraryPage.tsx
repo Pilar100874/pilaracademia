@@ -39,7 +39,7 @@ export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { exercises, isLoading, deleteExercise, createExercise, moveExercises } = useExerciseLibrary();
-  const { categories, deleteCategory, createCategory } = useExerciseCategories();
+  const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [dialogOpen, setDialogOpen] = useState(false);
