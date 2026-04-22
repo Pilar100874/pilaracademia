@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,9 +9,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary';
+import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
-import { Dumbbell, Search, Plus, Check, ImageIcon } from 'lucide-react';
+import { VideoThumbnail } from '@/components/VideoThumbnail';
+import { Dumbbell, Search, Plus, Check, ImageIcon, Tag } from 'lucide-react';
 
 interface SelectExerciseDialogProps {
   open: boolean;
@@ -20,6 +29,9 @@ interface SelectExerciseDialogProps {
   onCreateNew: () => void;
 }
 
+const ALL_CATEGORIES = '__all__';
+const NO_CATEGORY = '__none__';
+
 export function SelectExerciseDialog({
   open,
   onOpenChange,
@@ -27,15 +39,30 @@ export function SelectExerciseDialog({
   onCreateNew,
 }: SelectExerciseDialogProps) {
   const { exercises, isLoading } = useExerciseLibrary();
+  const { categories } = useExerciseCategories();
   const [search, setSearch] = useState('');
+  const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [selectedExercise, setSelectedExercise] = useState<LibraryExercise | null>(null);
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState(12);
   const [zoomImages, setZoomImages] = useState<string[]>([]);
 
-  const filteredExercises = exercises.filter((ex) =>
-    ex.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const categoryNameMap = useMemo(() => {
+    const m = new Map<string, string>();
+    categories.forEach((c) => m.set(c.id, c.name));
+    return m;
+  }, [categories]);
+
+  const filteredExercises = exercises.filter((ex) => {
+    const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
+    let matchesCategory = true;
+    if (filterCategory === NO_CATEGORY) {
+      matchesCategory = !ex.category_id;
+    } else if (filterCategory !== ALL_CATEGORIES) {
+      matchesCategory = ex.category_id === filterCategory;
+    }
+    return matchesSearch && matchesCategory;
+  });
 
   const handleSelectExercise = (exercise: LibraryExercise) => {
     setSelectedExercise(exercise);
@@ -49,6 +76,7 @@ export function SelectExerciseDialog({
       onOpenChange(false);
       setSelectedExercise(null);
       setSearch('');
+      setFilterCategory(ALL_CATEGORIES);
     }
   };
 
@@ -56,6 +84,7 @@ export function SelectExerciseDialog({
     if (!isOpen) {
       setSelectedExercise(null);
       setSearch('');
+      setFilterCategory(ALL_CATEGORIES);
     }
     onOpenChange(isOpen);
   };
@@ -79,6 +108,25 @@ export function SelectExerciseDialog({
             />
           </div>
 
+          {/* Category filter */}
+          <div className="flex items-center gap-2">
+            <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Filtrar por categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_CATEGORIES}>Todas as categorias</SelectItem>
+                <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Exercise list */}
           <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
             {isLoading ? (
@@ -89,7 +137,9 @@ export function SelectExerciseDialog({
               <div className="py-8 text-center space-y-3">
                 <Dumbbell className="h-12 w-12 text-muted-foreground mx-auto" />
                 <p className="text-muted-foreground">
-                  {search ? 'Nenhum exercício encontrado' : 'Sua biblioteca está vazia'}
+                  {search || filterCategory !== ALL_CATEGORIES
+                    ? 'Nenhum exercício encontrado'
+                    : 'Sua biblioteca está vazia'}
                 </p>
                 <Button variant="outline" onClick={onCreateNew}>
                   <Plus className="h-4 w-4 mr-1" />
@@ -102,6 +152,10 @@ export function SelectExerciseDialog({
                   const isSelected = selectedExercise?.id === exercise.id;
                   const firstImage = exercise.image_urls?.[0];
                   const imageCount = exercise.image_urls?.length || 0;
+                  const hasVideo = !!exercise.video_url && !!exercise.video_type;
+                  const categoryName = exercise.category_id
+                    ? categoryNameMap.get(exercise.category_id)
+                    : null;
 
                   return (
                     <button
@@ -113,8 +167,10 @@ export function SelectExerciseDialog({
                           : 'border-border hover:bg-muted/50'
                       }`}
                     >
-                      <div 
-                        className={`relative w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0 ${firstImage ? 'hover:ring-2 hover:ring-primary transition-all' : ''}`}
+                      <div
+                        className={`relative w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0 ${
+                          firstImage ? 'hover:ring-2 hover:ring-primary transition-all' : ''
+                        }`}
                         onClick={(e) => {
                           if (exercise.image_urls?.length) {
                             e.stopPropagation();
@@ -136,6 +192,14 @@ export function SelectExerciseDialog({
                               </div>
                             )}
                           </>
+                        ) : hasVideo ? (
+                          <VideoThumbnail
+                            videoType={exercise.video_type}
+                            videoUrl={exercise.video_url}
+                            startSeconds={exercise.video_start_seconds}
+                            className="w-full h-full"
+                            iconSize="sm"
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Dumbbell className="h-5 w-5 text-muted-foreground" />
@@ -145,9 +209,16 @@ export function SelectExerciseDialog({
 
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{exercise.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {exercise.default_sets} séries × {exercise.default_reps} reps
-                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm text-muted-foreground">
+                            {exercise.default_sets} séries × {exercise.default_reps} reps
+                          </p>
+                          {categoryName && (
+                            <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                              {categoryName}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {isSelected && (
