@@ -4,11 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, Upload, Youtube, Video as VideoIcon, Loader2 } from 'lucide-react';
+import { Trash2, Upload, Youtube, Video as VideoIcon, Loader2, Instagram } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { parseYouTubeId, formatSeconds, buildYouTubeEmbedUrl, parseTimeToSeconds } from '@/lib/youtubeUtils';
+import { parseYouTubeId, formatSeconds, buildYouTubeEmbedUrl, parseTimeToSeconds, parseInstagramShortcode, buildInstagramEmbedUrl } from '@/lib/youtubeUtils';
 
 export interface ExerciseVideoData {
   video_type: 'youtube' | 'upload' | null;
