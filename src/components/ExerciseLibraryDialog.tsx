@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { LibraryExercise, useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { X, Dumbbell, Save, Crop, Camera, ImageIcon } from 'lucide-react';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
+import { ExerciseVideoEditor, ExerciseVideoData } from '@/components/ExerciseVideoEditor';
 
 interface ExerciseLibraryDialogProps {
   open: boolean;
