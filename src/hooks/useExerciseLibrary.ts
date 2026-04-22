@@ -131,6 +131,22 @@ export function useExerciseLibrary() {
     },
   });
 
+  const moveExercises = useMutation({
+    mutationFn: async (data: { ids: string[]; category_id: string | null }) => {
+      if (!data.ids.length) return;
+      const { error } = await supabase
+        .from('exercise_library')
+        .update({ category_id: data.category_id })
+        .in('id', data.ids);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+      toast.success(`${vars.ids.length} exercício(s) movido(s)`);
+    },
+    onError: () => toast.error('Erro ao mover exercícios'),
+  });
+
   const uploadExerciseImage = async (file: File): Promise<string> => {
     if (!user) throw new Error('User not authenticated');
 
@@ -156,6 +172,7 @@ export function useExerciseLibrary() {
     createExercise,
     updateExercise,
     deleteExercise,
+    moveExercises,
     uploadExerciseImage,
   };
 }

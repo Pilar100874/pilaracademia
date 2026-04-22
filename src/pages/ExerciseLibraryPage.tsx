@@ -23,7 +23,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2, CheckSquare, X, FolderInput } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -36,7 +37,7 @@ const NEW_CATEGORY = '__new__';
 export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { exercises, isLoading, deleteExercise, createExercise } = useExerciseLibrary();
+  const { exercises, isLoading, deleteExercise, createExercise, moveExercises } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
@@ -51,6 +52,51 @@ export default function ExerciseLibraryPage() {
   const [bulkCategoryChoice, setBulkCategoryChoice] = useState<string>(NO_CATEGORY);
   const [newBulkCategoryName, setNewBulkCategoryName] = useState('');
   const bulkInputRef = useRef<HTMLInputElement>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [moveCategoryChoice, setMoveCategoryChoice] = useState<string>(NO_CATEGORY);
+  const [newMoveCategoryName, setNewMoveCategoryName] = useState('');
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const exitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const runMoveSelected = async () => {
+    let targetCategoryId: string | null = null;
+    if (moveCategoryChoice === NEW_CATEGORY) {
+      const name = newMoveCategoryName.trim();
+      if (!name) {
+        toast.error('Informe o nome da nova categoria');
+        return;
+      }
+      try {
+        const created = await createCategory.mutateAsync(name);
+        targetCategoryId = created.id;
+      } catch {
+        return;
+      }
+    } else if (moveCategoryChoice !== NO_CATEGORY) {
+      targetCategoryId = moveCategoryChoice;
+    }
+    await moveExercises.mutateAsync({
+      ids: Array.from(selectedIds),
+      category_id: targetCategoryId,
+    });
+    setMoveDialogOpen(false);
+    setNewMoveCategoryName('');
+    exitSelectionMode();
+  };
 
   const categoryNameMap = useMemo(() => {
     const m = new Map<string, string>();
@@ -230,32 +276,63 @@ export default function ExerciseLibraryPage() {
               {exercises.length} exercício{exercises.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!!bulkUploading}
-            onClick={() => bulkInputRef.current?.click()}
-            title="Enviar vários vídeos de uma vez"
-          >
-            {bulkUploading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                {bulkUploading.done}/{bulkUploading.total}
-              </>
-            ) : (
-              <>
-                <Upload className="h-4 w-4 mr-1" />
-                Vídeos
-              </>
-            )}
-          </Button>
-          <Button onClick={() => {
-            setEditingExercise(null);
-            setDialogOpen(true);
-          }}>
-            <Plus className="h-4 w-4 mr-1" />
-            Novo
-          </Button>
+          {selectionMode ? (
+            <>
+              <Button variant="outline" size="sm" onClick={exitSelectionMode}>
+                <X className="h-4 w-4 mr-1" /> Cancelar
+              </Button>
+              <Button
+                size="sm"
+                disabled={selectedIds.size === 0}
+                onClick={() => {
+                  setMoveCategoryChoice(NO_CATEGORY);
+                  setNewMoveCategoryName('');
+                  setMoveDialogOpen(true);
+                }}
+              >
+                <FolderInput className="h-4 w-4 mr-1" />
+                Mover ({selectedIds.size})
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectionMode(true)}
+                title="Selecionar para mover"
+              >
+                <CheckSquare className="h-4 w-4 mr-1" />
+                Selecionar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!!bulkUploading}
+                onClick={() => bulkInputRef.current?.click()}
+                title="Enviar vários vídeos de uma vez"
+              >
+                {bulkUploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    {bulkUploading.done}/{bulkUploading.total}
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-1" />
+                    Vídeos
+                  </>
+                )}
+              </Button>
+              <Button onClick={() => {
+                setEditingExercise(null);
+                setDialogOpen(true);
+              }}>
+                <Plus className="h-4 w-4 mr-1" />
+                Novo
+              </Button>
+            </>
+          )}
           <input
             ref={bulkInputRef}
             type="file"
@@ -352,16 +429,34 @@ export default function ExerciseLibraryPage() {
                 ? categoryNameMap.get(exercise.category_id)
                 : null;
 
+              const isSelected = selectedIds.has(exercise.id);
               return (
                 <div
                   key={exercise.id}
-                  className="flex items-center gap-3 p-3 rounded-xl border bg-card"
+                  onClick={selectionMode ? () => toggleSelected(exercise.id) : undefined}
+                  className={`flex items-center gap-3 p-3 rounded-xl border bg-card transition-colors ${
+                    selectionMode ? 'cursor-pointer' : ''
+                  } ${isSelected ? 'border-primary ring-2 ring-primary/40' : ''}`}
                 >
+                  {selectionMode && (
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => toggleSelected(exercise.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0"
+                    />
+                  )}
                   <div
                     className={`relative w-16 h-16 rounded-lg bg-muted overflow-hidden shrink-0 ${
-                      firstImage || hasVideo ? 'cursor-pointer hover:ring-2 hover:ring-primary transition-all' : ''
+                      !selectionMode && (firstImage || hasVideo) ? 'cursor-pointer hover:ring-2 hover:ring-primary transition-all' : ''
                     }`}
-                    onClick={() => exercise.image_urls?.length && setZoomImages(exercise.image_urls)}
+                    onClick={(e) => {
+                      if (selectionMode) return;
+                      if (exercise.image_urls?.length) {
+                        e.stopPropagation();
+                        setZoomImages(exercise.image_urls);
+                      }
+                    }}
                   >
                     {firstImage ? (
                       <>
@@ -405,24 +500,26 @@ export default function ExerciseLibraryPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-9 w-9"
-                      onClick={() => handleEdit(exercise)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-9 w-9 text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(exercise)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {!selectionMode && (
+                    <div className="flex gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-9 w-9"
+                        onClick={() => handleEdit(exercise)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-9 w-9 text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(exercise)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -460,6 +557,70 @@ export default function ExerciseLibraryPage() {
         open={zoomImages.length > 0}
         onOpenChange={(open) => !open && setZoomImages([])}
       />
+
+      {/* Move selected exercises dialog */}
+      <Dialog
+        open={moveDialogOpen}
+        onOpenChange={(open) => {
+          setMoveDialogOpen(open);
+          if (!open) setNewMoveCategoryName('');
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mover exercícios</DialogTitle>
+            <DialogDescription>
+              {selectedIds.size} exercício(s) selecionado(s). Escolha a categoria de destino.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Categoria de destino</Label>
+              <Select value={moveCategoryChoice} onValueChange={setMoveCategoryChoice}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={NEW_CATEGORY}>+ Criar nova categoria</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {moveCategoryChoice === NEW_CATEGORY && (
+              <div className="space-y-2">
+                <Label>Nome da nova categoria</Label>
+                <Input
+                  autoFocus
+                  placeholder="Ex.: Peito, Costas, Pernas..."
+                  value={newMoveCategoryName}
+                  onChange={(e) => setNewMoveCategoryName(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={runMoveSelected}
+              disabled={
+                moveExercises.isPending ||
+                (moveCategoryChoice === NEW_CATEGORY && !newMoveCategoryName.trim())
+              }
+            >
+              {moveExercises.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Movendo...</>
+              ) : 'Mover'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk upload category picker */}
       <Dialog
