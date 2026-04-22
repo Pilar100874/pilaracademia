@@ -100,20 +100,11 @@ export function WorkoutViewerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black/95 [&>button]:text-white [&>button]:hover:bg-white/20 [&>button]:top-4 [&>button]:right-4"
+        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black [&>button]:text-white [&>button]:hover:bg-white/20 [&>button]:top-4 [&>button]:right-4 [&>button]:z-50 [&>button]:bg-black/40 [&>button]:backdrop-blur-md [&>button]:rounded-full"
         onKeyDown={handleKeyDown}
       >
-
-        {/* Header overlay */}
-        <div className="absolute top-4 left-4 z-40">
-          <h2 className="text-white font-bold text-lg drop-shadow-lg">{plan.name}</h2>
-          <p className="text-white/70 text-sm">
-            Exercício {currentExerciseIndex + 1} de {exercises.length}
-          </p>
-        </div>
-
-        {/* Main media area - centered fullscreen */}
-        <div className="absolute inset-0 flex items-center justify-center p-4">
+        {/* Fullscreen media area */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black">
           {showVideo && hasVideo ? (
             <ExerciseVideoPlayer
               videoType={currentExercise.video_type}
@@ -122,13 +113,13 @@ export function WorkoutViewerDialog({
               endSeconds={currentExercise.video_end_seconds}
               autoPlay
               loop
-              className="w-full max-w-4xl aspect-video"
+              className="w-full h-full"
             />
           ) : currentImages.length > 0 ? (
             <img
               src={currentImages[currentPhotoIndex]}
               alt={`${currentExercise.name} - Foto ${currentPhotoIndex + 1}`}
-              className="max-w-full max-h-full object-contain"
+              className="w-full h-full object-contain"
             />
           ) : hasVideo ? (
             <ExerciseVideoPlayer
@@ -138,7 +129,7 @@ export function WorkoutViewerDialog({
               endSeconds={currentExercise.video_end_seconds}
               autoPlay
               loop
-              className="w-full max-w-4xl aspect-video"
+              className="w-full h-full"
             />
           ) : (
             <div className="flex flex-col items-center justify-center text-white/50">
@@ -148,6 +139,15 @@ export function WorkoutViewerDialog({
           )}
         </div>
 
+        {/* Header overlay (on top of media) */}
+        <div className="absolute top-4 left-4 right-20 z-40 pointer-events-none">
+          <div className="inline-block bg-black/40 backdrop-blur-md rounded-xl px-3 py-2">
+            <h2 className="text-white font-bold text-lg drop-shadow-lg">{plan.name}</h2>
+            <p className="text-white/80 text-xs">
+              Exercício {currentExerciseIndex + 1} de {exercises.length}
+            </p>
+          </div>
+        </div>
         {/* Toggle video/image button - only show if both exist */}
         {hasVideo && currentImages.length > 0 && (
           <div className="absolute top-4 right-16 z-40">
@@ -206,8 +206,8 @@ export function WorkoutViewerDialog({
           </div>
         )}
 
-        {/* Exercise info overlay - bottom */}
-        <div className="absolute bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-20 pb-6 px-4">
+        {/* Exercise info overlay - bottom (glassmorphic, floats over media) */}
+        <div className="absolute bottom-3 left-3 right-3 z-40 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 p-4 shadow-2xl">
           {/* Exercise number badge */}
           <div className="flex items-center gap-3 mb-3">
             <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-bold">
