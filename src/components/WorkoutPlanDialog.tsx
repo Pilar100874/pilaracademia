@@ -131,6 +131,10 @@ export function WorkoutPlanDialog({
       reps,
       image_urls: libraryExercise.image_urls || [],
       order_index: exercises.length,
+      video_type: libraryExercise.video_type ?? null,
+      video_url: libraryExercise.video_url ?? null,
+      video_start_seconds: libraryExercise.video_start_seconds ?? null,
+      video_end_seconds: libraryExercise.video_end_seconds ?? null,
     });
   };
 
