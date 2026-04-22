@@ -205,38 +205,26 @@ export function WorkoutViewerDialog({
           </div>
         )}
 
-        {/* Side navigation - Previous (left edge, no background) */}
-        {!isFirstExercise && (
-          <button
-            onClick={handlePreviousExercise}
-            aria-label="Anterior"
-            className="group absolute left-0 sm:left-2 top-1/2 -translate-y-1/2 z-40 h-20 w-14 sm:h-24 sm:w-20 flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
-          >
-            <ChevronLeft className="h-12 w-12 sm:h-16 sm:w-16 transition-transform group-hover:-translate-x-1" strokeWidth={3} />
-          </button>
-        )}
-
-        {/* Side navigation - Next (right edge, no background) */}
-        {!isLastExercise && (
-          <button
-            onClick={handleNextExercise}
-            aria-label="Próximo"
-            className="group absolute right-0 sm:right-2 top-1/2 -translate-y-1/2 z-40 h-20 w-14 sm:h-24 sm:w-20 flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
-          >
-            <ChevronRight className="h-12 w-12 sm:h-16 sm:w-16 transition-transform group-hover:translate-x-1" strokeWidth={3} />
-          </button>
-        )}
-
-        {/* Floating info bar over the media (no nav buttons here anymore) */}
+        {/* Floating bottom bar with prev/info/next */}
         <div className="absolute bottom-4 left-4 right-4 z-40 pointer-events-none">
-          <div className="flex items-center gap-3 pointer-events-auto bg-black/30 backdrop-blur-md rounded-full border border-white/10 pl-3 pr-5 py-2 shadow-2xl mx-auto max-w-md">
+          <div className="flex items-center gap-2 pointer-events-auto bg-black/40 backdrop-blur-md rounded-full border border-white/10 p-2 shadow-2xl mx-auto max-w-lg">
+            {/* Previous */}
+            <button
+              onClick={handlePreviousExercise}
+              disabled={isFirstExercise}
+              aria-label="Anterior"
+              className="group h-12 w-12 shrink-0 rounded-full flex items-center justify-center text-white transition-all hover:bg-white/15 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            >
+              <ChevronLeft className="h-7 w-7 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.5} />
+            </button>
+
             {/* Number badge */}
             <div className="bg-primary text-primary-foreground h-10 w-10 rounded-full flex items-center justify-center text-base font-bold shrink-0">
               {currentExerciseIndex + 1}
             </div>
 
             {/* Name + sets×reps */}
-            <div className="flex-1 min-w-0 text-center">
+            <div className="flex-1 min-w-0 text-center px-1">
               <p className="text-white font-bold text-base truncate leading-tight drop-shadow">
                 {currentExercise.name}
               </p>
@@ -244,6 +232,16 @@ export function WorkoutViewerDialog({
                 {currentExercise.sets} × {currentExercise.reps}
               </p>
             </div>
+
+            {/* Next */}
+            <button
+              onClick={handleNextExercise}
+              disabled={isLastExercise}
+              aria-label="Próximo"
+              className="group h-12 w-12 shrink-0 rounded-full bg-primary/90 flex items-center justify-center text-primary-foreground transition-all hover:bg-primary active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-primary/90"
+            >
+              <ChevronRight className="h-7 w-7 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
+            </button>
           </div>
         </div>
       </DialogContent>
