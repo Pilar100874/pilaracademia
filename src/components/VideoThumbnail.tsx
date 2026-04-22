@@ -13,11 +13,14 @@ interface Props {
   autoplayPreview?: boolean;
 }
 
+// Module-level cache so re-mounts (scrolling) reuse already captured frames.
+const frameCache = new Map<string, string>();
+
 /**
  * Renders a thumbnail for an exercise video at the configured start time.
- * - YouTube: uses the official thumbnail (start seconds is informational only,
- *   YouTube doesn't offer per-second thumbnails publicly).
- * - Upload: captures the frame at video_start_seconds via a hidden <video>.
+ * - YouTube: uses the official thumbnail.
+ * - Upload: captures the frame at video_start_seconds via a hidden <video>,
+ *   cached in-memory for instant reuse.
  */
 export function VideoThumbnail({
   videoType,
@@ -28,7 +31,10 @@ export function VideoThumbnail({
   iconSize = 'md',
   autoplayPreview = false,
 }: Props) {
-  const [frameUrl, setFrameUrl] = useState<string | null>(null);
+  const cacheKey = videoUrl ? `${videoUrl}@${startSeconds ?? 0}` : '';
+  const [frameUrl, setFrameUrl] = useState<string | null>(
+    cacheKey ? frameCache.get(cacheKey) ?? null : null
+  );
   const [errored, setErrored] = useState(false);
   const videoElRef = useRef<HTMLVideoElement | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
@@ -66,9 +72,11 @@ export function VideoThumbnail({
 
   // Capture frame for uploaded videos (when not autoplaying)
   useEffect(() => {
-    if (isUploadAutoplay) return;
     if (videoType !== 'upload' || !videoUrl) return;
-    setFrameUrl(null);
+    if (frameCache.has(cacheKey)) {
+      setFrameUrl(frameCache.get(cacheKey)!);
+      return;
+    }
     setErrored(false);
 
     const video = document.createElement('video');
@@ -91,16 +99,23 @@ export function VideoThumbnail({
 
     const onSeeked = () => {
       try {
+        // Downscale captured frame to ~360px wide for fast rendering & low memory.
+        const maxW = 360;
+        const vw = video.videoWidth || 320;
+        const vh = video.videoHeight || 180;
+        const scale = Math.min(1, maxW / vw);
         const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth || 320;
-        canvas.height = video.videoHeight || 180;
+        canvas.width = Math.round(vw * scale);
+        canvas.height = Math.round(vh * scale);
         const ctx = canvas.getContext('2d');
         if (!ctx) {
           setErrored(true);
           return;
         }
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        setFrameUrl(canvas.toDataURL('image/jpeg', 0.7));
+        const data = canvas.toDataURL('image/jpeg', 0.6);
+        frameCache.set(cacheKey, data);
+        setFrameUrl(data);
       } catch {
         setErrored(true);
       }
@@ -119,14 +134,15 @@ export function VideoThumbnail({
       video.src = '';
       videoElRef.current = null;
     };
-  }, [videoType, videoUrl, startSeconds, isUploadAutoplay]);
+  }, [videoType, videoUrl, startSeconds, cacheKey]);
 
   if (!videoUrl || !videoType) return null;
 
   let thumbSrc: string | null = null;
   if (videoType === 'youtube') {
     const id = parseYouTubeId(videoUrl);
-    if (id) thumbSrc = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+    // mqdefault (320x180) loads much faster than hqdefault (480x360)
+    if (id) thumbSrc = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
   } else if (videoType === 'upload' && frameUrl) {
     thumbSrc = frameUrl;
   }
@@ -136,13 +152,15 @@ export function VideoThumbnail({
 
   const isInstagram = videoType === 'instagram';
 
-  // Live autoplay preview for uploaded videos
+  // Live autoplay preview for uploaded videos — show captured frame as poster
+  // so the area is never blank while the video downloads.
   if (isUploadAutoplay) {
     return (
       <div className={`relative bg-black ${className ?? ''}`}>
         <video
           ref={previewRef}
           src={videoUrl}
+          poster={frameUrl ?? undefined}
           muted
           autoPlay
           playsInline
@@ -160,6 +178,8 @@ export function VideoThumbnail({
         <img
           src={thumbSrc}
           alt="Pré-visualização do vídeo"
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover"
           onError={() => setErrored(true)}
         />
