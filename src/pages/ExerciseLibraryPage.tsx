@@ -52,6 +52,51 @@ export default function ExerciseLibraryPage() {
   const [bulkCategoryChoice, setBulkCategoryChoice] = useState<string>(NO_CATEGORY);
   const [newBulkCategoryName, setNewBulkCategoryName] = useState('');
   const bulkInputRef = useRef<HTMLInputElement>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [moveCategoryChoice, setMoveCategoryChoice] = useState<string>(NO_CATEGORY);
+  const [newMoveCategoryName, setNewMoveCategoryName] = useState('');
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const exitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const runMoveSelected = async () => {
+    let targetCategoryId: string | null = null;
+    if (moveCategoryChoice === NEW_CATEGORY) {
+      const name = newMoveCategoryName.trim();
+      if (!name) {
+        toast.error('Informe o nome da nova categoria');
+        return;
+      }
+      try {
+        const created = await createCategory.mutateAsync(name);
+        targetCategoryId = created.id;
+      } catch {
+        return;
+      }
+    } else if (moveCategoryChoice !== NO_CATEGORY) {
+      targetCategoryId = moveCategoryChoice;
+    }
+    await moveExercises.mutateAsync({
+      ids: Array.from(selectedIds),
+      category_id: targetCategoryId,
+    });
+    setMoveDialogOpen(false);
+    setNewMoveCategoryName('');
+    exitSelectionMode();
+  };
 
   const categoryNameMap = useMemo(() => {
     const m = new Map<string, string>();
