@@ -14,6 +14,15 @@ import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,12 +31,13 @@ import { toast } from 'sonner';
 
 const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
+const NEW_CATEGORY = '__new__';
 
 export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { exercises, isLoading, deleteExercise, createExercise } = useExerciseLibrary();
-  const { categories, deleteCategory } = useExerciseCategories();
+  const { categories, deleteCategory, createCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -37,6 +47,9 @@ export default function ExerciseLibraryPage() {
   const [zoomImages, setZoomImages] = useState<string[]>([]);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
   const [bulkUploading, setBulkUploading] = useState<{ done: number; total: number } | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
+  const [bulkCategoryChoice, setBulkCategoryChoice] = useState<string>(NO_CATEGORY);
+  const [newBulkCategoryName, setNewBulkCategoryName] = useState('');
   const bulkInputRef = useRef<HTMLInputElement>(null);
 
   const categoryNameMap = useMemo(() => {
@@ -104,7 +117,7 @@ export default function ExerciseLibraryPage() {
     return name;
   };
 
-  const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBulkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = '';
     if (!files.length) return;
@@ -112,16 +125,44 @@ export default function ExerciseLibraryPage() {
       toast.error('Faça login para enviar vídeos');
       return;
     }
-
-    // Determine category to assign and base name
-    const targetCategoryId =
+    // Pre-select category from current filter when applicable
+    const initial =
       filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY
         ? filterCategory
-        : null;
+        : NO_CATEGORY;
+    setBulkCategoryChoice(initial);
+    setNewBulkCategoryName('');
+    setPendingFiles(files);
+  };
+
+  const runBulkUpload = async () => {
+    if (!pendingFiles || !user) return;
+    const files = pendingFiles;
+
+    // Resolve target category (create new if requested)
+    let targetCategoryId: string | null = null;
+    if (bulkCategoryChoice === NEW_CATEGORY) {
+      const name = newBulkCategoryName.trim();
+      if (!name) {
+        toast.error('Informe o nome da nova categoria');
+        return;
+      }
+      try {
+        const created = await createCategory.mutateAsync(name);
+        targetCategoryId = created.id;
+      } catch {
+        return;
+      }
+    } else if (bulkCategoryChoice !== NO_CATEGORY) {
+      targetCategoryId = bulkCategoryChoice;
+    }
+
     const baseName = targetCategoryId
-      ? categories.find((c) => c.id === targetCategoryId)?.name ?? 'Exercício'
+      ? categories.find((c) => c.id === targetCategoryId)?.name ??
+        (bulkCategoryChoice === NEW_CATEGORY ? newBulkCategoryName.trim() : 'Exercício')
       : 'Exercício';
 
+    setPendingFiles(null);
     setBulkUploading({ done: 0, total: files.length });
     const usedNames = new Set<string>();
     let successCount = 0;
@@ -419,6 +460,78 @@ export default function ExerciseLibraryPage() {
         open={zoomImages.length > 0}
         onOpenChange={(open) => !open && setZoomImages([])}
       />
+
+      {/* Bulk upload category picker */}
+      <Dialog
+        open={!!pendingFiles}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingFiles(null);
+            setNewBulkCategoryName('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Categoria dos vídeos</DialogTitle>
+            <DialogDescription>
+              {pendingFiles?.length} vídeo(s) selecionado(s). Escolha em qual categoria criar os exercícios.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Select
+                value={bulkCategoryChoice}
+                onValueChange={setBulkCategoryChoice}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={NEW_CATEGORY}>+ Criar nova categoria</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {bulkCategoryChoice === NEW_CATEGORY && (
+              <div className="space-y-2">
+                <Label>Nome da nova categoria</Label>
+                <Input
+                  autoFocus
+                  placeholder="Ex.: Peito, Costas, Pernas..."
+                  value={newBulkCategoryName}
+                  onChange={(e) => setNewBulkCategoryName(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPendingFiles(null);
+                setNewBulkCategoryName('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={runBulkUpload}
+              disabled={
+                bulkCategoryChoice === NEW_CATEGORY && !newBulkCategoryName.trim()
+              }
+            >
+              Enviar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
