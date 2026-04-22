@@ -28,6 +28,8 @@ const DAYS_OF_WEEK = [
   { label: 'Sáb', value: 6 },
 ];
 
+const EMPTY_EXERCISES: WorkoutExercise[] = [];
+
 interface WorkoutPlanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -65,8 +67,7 @@ export function WorkoutPlanDialog({
     return workoutPlans.find(p => p.id === editingPlan.id) || editingPlan;
   }, [workoutPlans, editingPlan]);
 
-  // Sync exercises from the current plan (updates in real-time)
-  const exercises = currentPlan?.exercises || [];
+  const exercises = currentPlan?.exercises ?? EMPTY_EXERCISES;
 
   // Sync name and days only when the dialog opens or editingPlan changes
   useEffect(() => {
@@ -79,9 +80,8 @@ export function WorkoutPlanDialog({
     }
   }, [editingPlan?.id, open]);
 
-  // Sync local exercises for drag-and-drop
   useEffect(() => {
-    setLocalExercises(exercises);
+    setLocalExercises((prev) => (prev === exercises ? prev : exercises));
   }, [exercises]);
 
   const handleDayToggle = (day: number) => {
