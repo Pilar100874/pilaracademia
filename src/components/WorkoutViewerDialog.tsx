@@ -100,7 +100,7 @@ export function WorkoutViewerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black [&>button]:text-white [&>button]:hover:bg-white/20 [&>button]:top-4 [&>button]:right-4 [&>button]:z-50 [&>button]:bg-black/40 [&>button]:backdrop-blur-md [&>button]:rounded-full"
+        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black [&>button]:text-white [&>button]:hover:bg-white/30 [&>button]:top-4 [&>button]:right-4 [&>button]:z-50 [&>button]:h-11 [&>button]:w-11 [&>button]:bg-black/60 [&>button]:backdrop-blur-xl [&>button]:rounded-full [&>button]:border [&>button]:border-white/30 [&>button]:shadow-2xl [&>button>svg]:h-5 [&>button>svg]:w-5 [&>button>svg]:stroke-[2.5]"
         onKeyDown={handleKeyDown}
       >
         {/* Fullscreen media area */}
