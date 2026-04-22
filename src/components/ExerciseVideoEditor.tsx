@@ -123,22 +123,7 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ytId, tab]);
 
-  // Propagate Instagram changes
-  useEffect(() => {
-    if (tab !== 'instagram') return;
-    if (igShortcode) {
-      const url = `https://www.instagram.com/p/${igShortcode}/`;
-      if (value.video_type !== 'instagram' || value.video_url !== url) {
-        onChange({
-          video_type: 'instagram',
-          video_url: url,
-          video_start_seconds: null,
-          video_end_seconds: null,
-        });
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [igShortcode, tab]);
+
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
