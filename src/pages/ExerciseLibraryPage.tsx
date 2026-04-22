@@ -728,6 +728,33 @@ export default function ExerciseLibraryPage() {
         onOpenChange={(open) => !open && setZoomImages([])}
       />
 
+      {/* Video preview popup */}
+      <Dialog
+        open={!!videoPreview}
+        onOpenChange={(open) => !open && setVideoPreview(null)}
+      >
+        <DialogContent className="max-w-2xl p-0 overflow-hidden bg-black border-0">
+          <DialogHeader className="px-4 pt-4 pb-2 bg-background">
+            <DialogTitle className="truncate pr-8">
+              {videoPreview?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {videoPreview && (
+            <div className="w-full aspect-video bg-black">
+              <ExerciseVideoPlayer
+                videoType={videoPreview.video_type}
+                videoUrl={videoPreview.video_url}
+                startSeconds={videoPreview.video_start_seconds}
+                endSeconds={videoPreview.video_end_seconds}
+                autoPlay
+                loop
+                className="w-full h-full"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Bulk delete dialog */}
       <Dialog
         open={bulkDeleteOpen}
