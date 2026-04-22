@@ -978,6 +978,113 @@ export default function ExerciseLibraryPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Rename category dialog */}
+      <Dialog
+        open={!!renameCategory}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRenameCategory(null);
+            setRenameValue('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Renomear categoria</DialogTitle>
+            <DialogDescription>
+              Atualize o nome de "{renameCategory?.name}".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Novo nome</Label>
+            <Input
+              autoFocus
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              placeholder="Nome da categoria"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameCategory(null)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={
+                updateCategory.isPending ||
+                !renameValue.trim() ||
+                renameValue.trim() === renameCategory?.name
+              }
+              onClick={async () => {
+                if (!renameCategory) return;
+                try {
+                  await updateCategory.mutateAsync({
+                    id: renameCategory.id,
+                    name: renameValue.trim(),
+                  });
+                  setRenameCategory(null);
+                  setRenameValue('');
+                } catch {
+                  // toast handled in hook
+                }
+              }}
+            >
+              {updateCategory.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Salvando...</>
+              ) : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create category dialog */}
+      <Dialog
+        open={createCategoryOpen}
+        onOpenChange={(open) => {
+          setCreateCategoryOpen(open);
+          if (!open) setNewCategoryValue('');
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova categoria</DialogTitle>
+            <DialogDescription>
+              Crie uma categoria para organizar seus exercícios.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Nome</Label>
+            <Input
+              autoFocus
+              value={newCategoryValue}
+              onChange={(e) => setNewCategoryValue(e.target.value)}
+              placeholder="Ex.: Peito, Costas, Pernas..."
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateCategoryOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={createCategory.isPending || !newCategoryValue.trim()}
+              onClick={async () => {
+                try {
+                  const created = await createCategory.mutateAsync(newCategoryValue.trim());
+                  setCreateCategoryOpen(false);
+                  setNewCategoryValue('');
+                  setFilterCategory(created.id);
+                } catch {
+                  // toast handled in hook
+                }
+              }}
+            >
+              {createCategory.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Criando...</>
+              ) : 'Criar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
