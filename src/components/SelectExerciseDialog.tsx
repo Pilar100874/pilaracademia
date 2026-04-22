@@ -75,23 +75,28 @@ export function SelectExerciseDialog({
     );
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = () => {
     if (!selectedIds.length || isAdding) return;
+    const idsToAdd = [...selectedIds];
+    // Close the dialog immediately for snappy UX; do the inserts in the
+    // background so the user isn't stuck waiting on N sequential round-trips.
     setIsAdding(true);
-    try {
-      // Add in the order they were selected
-      for (const id of selectedIds) {
-        const ex = exerciseMap.get(id);
-        if (!ex) continue;
-        await onSelect(ex, ex.default_sets, ex.default_reps);
+    onOpenChange(false);
+    setSelectedIds([]);
+    setSearch('');
+    setFilterCategory(ALL_CATEGORIES);
+
+    (async () => {
+      try {
+        for (const id of idsToAdd) {
+          const ex = exerciseMap.get(id);
+          if (!ex) continue;
+          await onSelect(ex, ex.default_sets, ex.default_reps);
+        }
+      } finally {
+        setIsAdding(false);
       }
-      onOpenChange(false);
-      setSelectedIds([]);
-      setSearch('');
-      setFilterCategory(ALL_CATEGORIES);
-    } finally {
-      setIsAdding(false);
-    }
+    })();
   };
 
   const handleClose = (isOpen: boolean) => {
