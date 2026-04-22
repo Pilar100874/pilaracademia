@@ -131,10 +131,6 @@ export function ExerciseLibraryDialog({
   };
 
   const handleCategoryChange = (value: string) => {
-    if (value === NEW_CATEGORY) {
-      setShowNewCategory(true);
-      return;
-    }
     if (value === NO_CATEGORY) {
       setCategoryId(null);
       return;
@@ -142,18 +138,28 @@ export function ExerciseLibraryDialog({
     setCategoryId(value);
   };
 
-  const handleCreateNewCategory = async () => {
-    const trimmed = newCategoryName.trim();
-    if (!trimmed) return;
-    try {
-      const created = await createCategory.mutateAsync(trimmed);
-      setCategoryId(created.id);
-      setShowNewCategory(false);
-      setNewCategoryName('');
-    } catch {
-      // toast handled in hook
-    }
-  };
+  // Hierarchical ordering for category select (root → children indented).
+  const orderedCategories = (() => {
+    const childrenOf = new Map<string | null, typeof categories>();
+    categories.forEach((c) => {
+      const key = (c as any).parent_id ?? null;
+      const arr = childrenOf.get(key) ?? [];
+      arr.push(c);
+      childrenOf.set(key, arr);
+    });
+    const out: { cat: typeof categories[number]; depth: number }[] = [];
+    const walk = (parentId: string | null, depth: number) => {
+      const list = (childrenOf.get(parentId) ?? []).slice().sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+      list.forEach((c) => {
+        out.push({ cat: c, depth });
+        walk(c.id, depth + 1);
+      });
+    };
+    walk(null, 0);
+    return out;
+  })();
 
   const generateAutoName = (): string => {
     const categoryName = categoryId
