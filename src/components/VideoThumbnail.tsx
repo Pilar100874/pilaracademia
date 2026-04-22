@@ -96,6 +96,8 @@ export function VideoThumbnail({
   const playSize = iconSize === 'sm' ? 'h-3.5 w-3.5' : 'h-5 w-5';
   const badgeSize = iconSize === 'sm' ? 'h-6 w-6' : 'h-8 w-8';
 
+  const isInstagram = videoType === 'instagram';
+
   return (
     <div className={`relative bg-black ${className ?? ''}`}>
       {thumbSrc && !errored ? (
@@ -105,12 +107,18 @@ export function VideoThumbnail({
           className="w-full h-full object-cover"
           onError={() => setErrored(true)}
         />
+      ) : isInstagram ? (
+        <div className="w-full h-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400" />
       ) : (
         <div className="w-full h-full bg-muted" />
       )}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className={`${badgeSize} rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center`}>
-          <Play className={`${playSize} text-white fill-white`} />
+          {isInstagram ? (
+            <Instagram className={`${playSize} text-white`} />
+          ) : (
+            <Play className={`${playSize} text-white fill-white`} />
+          )}
         </div>
       </div>
     </div>
