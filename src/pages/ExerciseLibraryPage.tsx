@@ -105,6 +105,79 @@ export default function ExerciseLibraryPage() {
     exitSelectionMode();
   };
 
+  // Check which exercise IDs are referenced by any workout plan
+  const checkExerciseUsage = async (
+    ids: string[]
+  ): Promise<Map<string, string[]>> => {
+    const usage = new Map<string, string[]>();
+    if (!ids.length) return usage;
+    const { data, error } = await supabase
+      .from('workout_exercises')
+      .select('exercise_library_id, workout_plans(name)')
+      .in('exercise_library_id', ids);
+    if (error) {
+      console.error('Usage check failed', error);
+      throw error;
+    }
+    (data ?? []).forEach((row: any) => {
+      const exId = row.exercise_library_id as string | null;
+      const planName = row.workout_plans?.name as string | undefined;
+      if (!exId) return;
+      const list = usage.get(exId) ?? [];
+      if (planName && !list.includes(planName)) list.push(planName);
+      usage.set(exId, list);
+    });
+    return usage;
+  };
+
+  const openBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkDeleteChecking(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const usage = await checkExerciseUsage(ids);
+      const deletableIds: string[] = [];
+      const blocked: { id: string; name: string; plans: string[] }[] = [];
+      ids.forEach((id) => {
+        const plans = usage.get(id);
+        const ex = exercises.find((e) => e.id === id);
+        if (plans && plans.length > 0) {
+          blocked.push({ id, name: ex?.name ?? 'Exercício', plans });
+        } else {
+          deletableIds.push(id);
+        }
+      });
+      setBulkDeleteBlocked({ deletableIds, blocked });
+      setBulkDeleteOpen(true);
+    } catch {
+      toast.error('Erro ao verificar uso dos exercícios');
+    } finally {
+      setBulkDeleteChecking(false);
+    }
+  };
+
+  const runBulkDelete = async () => {
+    if (!bulkDeleteBlocked) return;
+    const { deletableIds } = bulkDeleteBlocked;
+    if (!deletableIds.length) {
+      setBulkDeleteOpen(false);
+      return;
+    }
+    setBulkDeleting(true);
+    try {
+      for (const id of deletableIds) {
+        await deleteExercise.mutateAsync(id);
+      }
+      setBulkDeleteOpen(false);
+      setBulkDeleteBlocked(null);
+      exitSelectionMode();
+    } catch {
+      // toast handled in mutation
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const categoryNameMap = useMemo(() => {
     const m = new Map<string, string>();
     categories.forEach((c) => m.set(c.id, c.name));
