@@ -70,6 +70,7 @@ export default function ExerciseLibraryPage() {
   const [renameValue, setRenameValue] = useState('');
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
   const [newCategoryValue, setNewCategoryValue] = useState('');
+  const [newCategoryParentId, setNewCategoryParentId] = useState<string | null>(null);
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
