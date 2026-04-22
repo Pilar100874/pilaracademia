@@ -357,6 +357,14 @@ export function WorkoutPlanDialog({
         exercise={editingExercise}
         onSave={handleSaveExercise}
       />
+
+      <ConfirmDeleteDialog
+        open={!!deletingExercise}
+        onOpenChange={(open) => !open && setDeletingExercise(null)}
+        itemName={deletingExercise?.name}
+        title="Remover exercício do treino?"
+        onConfirm={() => deletingExercise && handleDeleteExercise(deletingExercise.id)}
+      />
     </>
   );
 }
