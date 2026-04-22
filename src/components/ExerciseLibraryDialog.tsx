@@ -27,7 +27,6 @@ interface ExerciseLibraryDialogProps {
   editingExercise: LibraryExercise | null;
 }
 
-const NEW_CATEGORY = '__new__';
 const NO_CATEGORY = '__none__';
 
 export function ExerciseLibraryDialog({
