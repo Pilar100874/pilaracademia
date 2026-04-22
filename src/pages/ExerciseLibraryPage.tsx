@@ -836,16 +836,40 @@ export default function ExerciseLibraryPage() {
         onOpenChange={(open) => !open && setZoomImages([])}
       />
 
-      {/* Full-screen video preview popup */}
-      <VideoPreviewDialog
-        open={!!videoPreview}
-        onOpenChange={(open) => !open && setVideoPreview(null)}
-        name={videoPreview?.name}
-        videoType={videoPreview?.video_type}
-        videoUrl={videoPreview?.video_url}
-        startSeconds={videoPreview?.video_start_seconds}
-        endSeconds={videoPreview?.video_end_seconds}
-      />
+      {/* Full-screen video preview popup with prev/next navigation */}
+      {(() => {
+        const videoList = filteredExercises.filter(
+          (ex) => ex.video_url && ex.video_type
+        );
+        const currentIndex = videoPreview
+          ? videoList.findIndex((ex) => ex.id === videoPreview.id)
+          : -1;
+        const goTo = (delta: number) => {
+          if (currentIndex < 0) return;
+          const next = videoList[currentIndex + delta];
+          if (next) setVideoPreview(next);
+        };
+        return (
+          <VideoPreviewDialog
+            open={!!videoPreview}
+            onOpenChange={(open) => !open && setVideoPreview(null)}
+            name={videoPreview?.name}
+            videoType={videoPreview?.video_type}
+            videoUrl={videoPreview?.video_url}
+            startSeconds={videoPreview?.video_start_seconds}
+            endSeconds={videoPreview?.video_end_seconds}
+            onPrev={() => goTo(-1)}
+            onNext={() => goTo(1)}
+            hasPrev={currentIndex > 0}
+            hasNext={currentIndex >= 0 && currentIndex < videoList.length - 1}
+            position={
+              currentIndex >= 0
+                ? { current: currentIndex + 1, total: videoList.length }
+                : undefined
+            }
+          />
+        );
+      })()}
 
       {/* Bulk delete dialog */}
       <Dialog
