@@ -558,6 +558,70 @@ export default function ExerciseLibraryPage() {
         onOpenChange={(open) => !open && setZoomImages([])}
       />
 
+      {/* Move selected exercises dialog */}
+      <Dialog
+        open={moveDialogOpen}
+        onOpenChange={(open) => {
+          setMoveDialogOpen(open);
+          if (!open) setNewMoveCategoryName('');
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mover exercícios</DialogTitle>
+            <DialogDescription>
+              {selectedIds.size} exercício(s) selecionado(s). Escolha a categoria de destino.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Categoria de destino</Label>
+              <Select value={moveCategoryChoice} onValueChange={setMoveCategoryChoice}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={NEW_CATEGORY}>+ Criar nova categoria</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {moveCategoryChoice === NEW_CATEGORY && (
+              <div className="space-y-2">
+                <Label>Nome da nova categoria</Label>
+                <Input
+                  autoFocus
+                  placeholder="Ex.: Peito, Costas, Pernas..."
+                  value={newMoveCategoryName}
+                  onChange={(e) => setNewMoveCategoryName(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={runMoveSelected}
+              disabled={
+                moveExercises.isPending ||
+                (moveCategoryChoice === NEW_CATEGORY && !newMoveCategoryName.trim())
+              }
+            >
+              {moveExercises.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Movendo...</>
+              ) : 'Mover'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Bulk upload category picker */}
       <Dialog
         open={!!pendingFiles}
