@@ -14,6 +14,7 @@ import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
+import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ export default function ExerciseLibraryPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState<LibraryExercise | null>(null);
   const [zoomImages, setZoomImages] = useState<string[]>([]);
+  const [videoPreview, setVideoPreview] = useState<LibraryExercise | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
   const [bulkUploading, setBulkUploading] = useState<{ done: number; total: number } | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
@@ -618,8 +620,10 @@ export default function ExerciseLibraryPage() {
                     }`}
                     onClick={(e) => {
                       if (selectionMode) return;
-                      if (exercise.image_urls?.length) {
-                        e.stopPropagation();
+                      e.stopPropagation();
+                      if (hasVideo) {
+                        setVideoPreview(exercise);
+                      } else if (exercise.image_urls?.length) {
                         setZoomImages(exercise.image_urls);
                       }
                     }}
@@ -723,6 +727,33 @@ export default function ExerciseLibraryPage() {
         open={zoomImages.length > 0}
         onOpenChange={(open) => !open && setZoomImages([])}
       />
+
+      {/* Video preview popup */}
+      <Dialog
+        open={!!videoPreview}
+        onOpenChange={(open) => !open && setVideoPreview(null)}
+      >
+        <DialogContent className="max-w-2xl p-0 overflow-hidden bg-black border-0">
+          <DialogHeader className="px-4 pt-4 pb-2 bg-background">
+            <DialogTitle className="truncate pr-8">
+              {videoPreview?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {videoPreview && (
+            <div className="w-full aspect-video bg-black">
+              <ExerciseVideoPlayer
+                videoType={videoPreview.video_type}
+                videoUrl={videoPreview.video_url}
+                startSeconds={videoPreview.video_start_seconds}
+                endSeconds={videoPreview.video_end_seconds}
+                autoPlay
+                loop
+                className="w-full h-full"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk delete dialog */}
       <Dialog
