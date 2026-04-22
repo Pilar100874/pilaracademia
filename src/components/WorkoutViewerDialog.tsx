@@ -206,8 +206,8 @@ export function WorkoutViewerDialog({
           </div>
         )}
 
-        {/* Exercise info overlay - bottom */}
-        <div className="absolute bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-20 pb-6 px-4">
+        {/* Exercise info overlay - bottom (glassmorphic, floats over media) */}
+        <div className="absolute bottom-3 left-3 right-3 z-40 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 p-4 shadow-2xl">
           {/* Exercise number badge */}
           <div className="flex items-center gap-3 mb-3">
             <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-bold">
