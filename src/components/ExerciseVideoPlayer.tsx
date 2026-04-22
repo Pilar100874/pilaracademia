@@ -227,7 +227,6 @@ export function ExerciseVideoPlayer({
           style={{ width: '100%', maxWidth: 540, height: '100%', minHeight: 640, border: 0 }}
           scrolling="yes"
           allow="encrypted-media"
-          sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
         />
         <button
           type="button"
