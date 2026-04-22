@@ -6,8 +6,11 @@ interface Props {
   videoType: 'youtube' | 'upload' | 'instagram' | string | null;
   videoUrl: string | null;
   startSeconds?: number | null;
+  endSeconds?: number | null;
   className?: string;
   iconSize?: 'sm' | 'md';
+  /** If true and the video is an 'upload', plays it muted/looping as a live preview */
+  autoplayPreview?: boolean;
 }
 
 /**
