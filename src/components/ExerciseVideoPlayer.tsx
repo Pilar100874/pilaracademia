@@ -250,7 +250,7 @@ export function ExerciseVideoPlayer({
         muted
         playsInline
         onContextMenu={(e) => e.preventDefault()}
-        className="w-full h-full object-cover bg-black pointer-events-none"
+        className="w-full h-full object-contain bg-black pointer-events-none"
       />
     </div>
   );
