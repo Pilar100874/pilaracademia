@@ -140,11 +140,23 @@ export function WorkoutViewerDialog({
         </div>
         {/* Header overlay (on top of media) */}
         <div className="absolute top-4 left-4 right-20 z-40 pointer-events-none">
-          <div className="inline-block bg-black/40 backdrop-blur-md rounded-xl px-3 py-2">
-            <h2 className="text-white font-bold text-lg drop-shadow-lg">{plan.name}</h2>
-            <p className="text-white/80 text-xs">
-              Exercício {currentExerciseIndex + 1} de {exercises.length}
-            </p>
+          <div className="inline-flex items-center gap-3 bg-black/40 backdrop-blur-xl rounded-2xl pl-2 pr-4 py-2 border border-white/10 shadow-xl">
+            <div className="bg-gradient-to-br from-primary to-primary/70 h-10 w-10 rounded-xl flex items-center justify-center shadow-md ring-1 ring-white/20 shrink-0">
+              <Dumbbell className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-white font-extrabold text-base sm:text-lg leading-tight tracking-tight truncate drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                {plan.name}
+              </h2>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="inline-flex items-baseline gap-1 text-white text-[11px] font-semibold bg-white/15 px-2 py-0.5 rounded-full backdrop-blur-sm">
+                  <span className="font-bold">{exercises.length}</span>
+                  <span className="text-white/70 text-[9px] uppercase tracking-wider">
+                    exercícios
+                  </span>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
         {/* Toggle video/image button - only show if both exist */}
