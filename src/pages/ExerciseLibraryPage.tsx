@@ -552,6 +552,7 @@ export default function ExerciseLibraryPage() {
             className="sr-only"
             onChange={handleBulkUpload}
           />
+          </div>
         </div>
 
         {/* Search + Filter */}
