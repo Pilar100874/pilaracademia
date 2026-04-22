@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -643,6 +644,23 @@ export default function ExerciseLibraryPage() {
             )}
           </div>
         </div>
+        {bulkUploading && (
+          <div className="px-4 pb-3 space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium flex items-center gap-1.5">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Enviando vídeos... {bulkUploading.done}/{bulkUploading.total}
+              </span>
+              <span className="text-muted-foreground tabular-nums">
+                {Math.round((bulkUploading.done / Math.max(bulkUploading.total, 1)) * 100)}%
+              </span>
+            </div>
+            <Progress
+              value={(bulkUploading.done / Math.max(bulkUploading.total, 1)) * 100}
+              className="h-2"
+            />
+          </div>
+        )}
       </div>
 
       {/* Content */}
