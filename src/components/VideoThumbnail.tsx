@@ -108,7 +108,10 @@ export function VideoThumbnail({
           onError={() => setErrored(true)}
         />
       ) : isInstagram ? (
-        <div className="w-full h-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400" />
+        <div
+          className="w-full h-full"
+          style={{ background: 'linear-gradient(135deg, hsl(280 70% 50%), hsl(330 80% 55%), hsl(20 90% 55%))' }}
+        />
       ) : (
         <div className="w-full h-full bg-muted" />
       )}
