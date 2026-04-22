@@ -573,9 +573,11 @@ export default function ExerciseLibraryPage() {
               <SelectContent>
                 <SelectItem value={ALL_CATEGORIES}>Todas as categorias</SelectItem>
                 <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
-                {categories.map((cat) => (
+                {orderedCategories.map(({ cat, depth }) => (
                   <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
+                    <span style={{ paddingLeft: depth * 12 }}>
+                      {depth > 0 ? '↳ ' : ''}{cat.name}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -587,6 +589,7 @@ export default function ExerciseLibraryPage() {
               title="Criar categoria"
               onClick={() => {
                 setNewCategoryValue('');
+                setNewCategoryParentId(null);
                 setCreateCategoryOpen(true);
               }}
             >
@@ -594,6 +597,19 @@ export default function ExerciseLibraryPage() {
             </Button>
             {filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY && (
               <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 shrink-0"
+                  title="Criar subcategoria"
+                  onClick={() => {
+                    setNewCategoryValue('');
+                    setNewCategoryParentId(filterCategory);
+                    setCreateCategoryOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
                 <Button
                   size="icon"
                   variant="ghost"
