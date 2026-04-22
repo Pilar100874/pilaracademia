@@ -460,6 +460,78 @@ export default function ExerciseLibraryPage() {
         open={zoomImages.length > 0}
         onOpenChange={(open) => !open && setZoomImages([])}
       />
+
+      {/* Bulk upload category picker */}
+      <Dialog
+        open={!!pendingFiles}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingFiles(null);
+            setNewBulkCategoryName('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Categoria dos vídeos</DialogTitle>
+            <DialogDescription>
+              {pendingFiles?.length} vídeo(s) selecionado(s). Escolha em qual categoria criar os exercícios.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Select
+                value={bulkCategoryChoice}
+                onValueChange={setBulkCategoryChoice}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={NEW_CATEGORY}>+ Criar nova categoria</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {bulkCategoryChoice === NEW_CATEGORY && (
+              <div className="space-y-2">
+                <Label>Nome da nova categoria</Label>
+                <Input
+                  autoFocus
+                  placeholder="Ex.: Peito, Costas, Pernas..."
+                  value={newBulkCategoryName}
+                  onChange={(e) => setNewBulkCategoryName(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPendingFiles(null);
+                setNewBulkCategoryName('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={runBulkUpload}
+              disabled={
+                bulkCategoryChoice === NEW_CATEGORY && !newBulkCategoryName.trim()
+              }
+            >
+              Enviar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
