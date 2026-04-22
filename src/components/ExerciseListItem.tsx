@@ -4,6 +4,7 @@ import { WorkoutExercise } from '@/hooks/useWorkoutPlans';
 import { GripVertical, Edit, Trash2, Dumbbell, ImageIcon } from 'lucide-react';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
+import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
 
 interface ExerciseListItemProps {
   exercise: WorkoutExercise;
@@ -19,15 +20,22 @@ export function ExerciseListItem({
   onDelete,
 }: ExerciseListItemProps) {
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
 
   // Support both image_urls and legacy image_url
-  const images = exercise.image_urls?.length 
-    ? exercise.image_urls 
-    : exercise.image_url 
-      ? [exercise.image_url] 
+  const images = exercise.image_urls?.length
+    ? exercise.image_urls
+    : exercise.image_url
+      ? [exercise.image_url]
       : [];
   const imageCount = images.length;
   const firstImage = images[0];
+  const hasVideo = !!(exercise.video_url && exercise.video_type);
+
+  const handleThumbClick = () => {
+    if (hasVideo) setVideoOpen(true);
+    else if (firstImage) setZoomOpen(true);
+  };
 
   return (
     <>
@@ -40,11 +48,11 @@ export function ExerciseListItem({
           {index + 1}
         </span>
 
-        <div 
+        <div
           className="relative w-14 h-14 rounded-lg bg-muted overflow-hidden shrink-0 cursor-pointer hover:ring-2 hover:ring-primary transition-all [&_.absolute]:hidden"
-          onClick={() => firstImage && setZoomOpen(true)}
+          onClick={handleThumbClick}
         >
-          {exercise.video_url && exercise.video_type ? (
+          {hasVideo ? (
             <VideoThumbnail
               videoType={exercise.video_type}
               videoUrl={exercise.video_url}
@@ -101,6 +109,16 @@ export function ExerciseListItem({
         alt={exercise.name}
         open={zoomOpen}
         onOpenChange={setZoomOpen}
+      />
+
+      <VideoPreviewDialog
+        open={videoOpen}
+        onOpenChange={setVideoOpen}
+        name={exercise.name}
+        videoType={exercise.video_type}
+        videoUrl={exercise.video_url}
+        startSeconds={exercise.video_start_seconds}
+        endSeconds={exercise.video_end_seconds}
       />
     </>
   );
