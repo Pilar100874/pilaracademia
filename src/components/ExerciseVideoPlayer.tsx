@@ -123,7 +123,8 @@ export function ExerciseVideoPlayer({
         playerVars: {
           autoplay: autoPlay ? 1 : 0,
           mute: 1,
-          controls: 1,
+          controls: 0,
+          disablekb: 1,
           rel: 0,
           modestbranding: 1,
           playsinline: 1,
@@ -195,8 +196,9 @@ export function ExerciseVideoPlayer({
     const id = parseYouTubeId(videoUrl);
     if (!id) return null;
     return (
-      <div className={className}>
+      <div className={`${className ?? ''} relative`}>
         <div ref={ytContainerRef} className="w-full h-full" />
+        <div className="absolute inset-0" style={{ pointerEvents: 'auto' }} onClick={(e) => e.preventDefault()} />
       </div>
     );
   }
@@ -206,11 +208,11 @@ export function ExerciseVideoPlayer({
       <video
         ref={videoRef}
         src={videoUrl}
-        controls
         autoPlay={autoPlay}
         muted
         playsInline
-        className="w-full h-full bg-black"
+        onContextMenu={(e) => e.preventDefault()}
+        className="w-full h-full bg-black pointer-events-none"
       />
     </div>
   );
