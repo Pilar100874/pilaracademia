@@ -207,11 +207,11 @@ export function ExerciseVideoPlayer({
       <video
         ref={videoRef}
         src={videoUrl}
-        controls
         autoPlay={autoPlay}
         muted
         playsInline
-        className="w-full h-full bg-black"
+        onContextMenu={(e) => e.preventDefault()}
+        className="w-full h-full bg-black pointer-events-none"
       />
     </div>
   );
