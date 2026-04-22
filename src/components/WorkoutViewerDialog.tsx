@@ -111,21 +111,62 @@ export function WorkoutViewerDialog({
           </p>
         </div>
 
-        {/* Main image area - centered fullscreen */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          {currentImages.length > 0 ? (
+        {/* Main media area - centered fullscreen */}
+        <div className="absolute inset-0 flex items-center justify-center p-4">
+          {showVideo && hasVideo ? (
+            <ExerciseVideoPlayer
+              videoType={currentExercise.video_type}
+              videoUrl={currentExercise.video_url}
+              startSeconds={currentExercise.video_start_seconds}
+              endSeconds={currentExercise.video_end_seconds}
+              autoPlay
+              className="w-full max-w-4xl aspect-video"
+            />
+          ) : currentImages.length > 0 ? (
             <img
               src={currentImages[currentPhotoIndex]}
               alt={`${currentExercise.name} - Foto ${currentPhotoIndex + 1}`}
               className="max-w-full max-h-full object-contain"
             />
+          ) : hasVideo ? (
+            <ExerciseVideoPlayer
+              videoType={currentExercise.video_type}
+              videoUrl={currentExercise.video_url}
+              startSeconds={currentExercise.video_start_seconds}
+              endSeconds={currentExercise.video_end_seconds}
+              className="w-full max-w-4xl aspect-video"
+            />
           ) : (
             <div className="flex flex-col items-center justify-center text-white/50">
               <Dumbbell className="h-24 w-24 mb-4" />
-              <p className="text-lg">Sem imagem</p>
+              <p className="text-lg">Sem mídia</p>
             </div>
           )}
         </div>
+
+        {/* Toggle video/image button - only show if both exist */}
+        {hasVideo && currentImages.length > 0 && (
+          <div className="absolute top-4 right-16 z-40">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setShowVideo((s) => !s)}
+              className="gap-1.5"
+            >
+              {showVideo ? (
+                <>
+                  <ImageIcon className="h-4 w-4" />
+                  Ver foto
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4" />
+                  Ver vídeo
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* Photo navigation (left/right) - only show if multiple photos */}
         {hasMultiplePhotos && (
