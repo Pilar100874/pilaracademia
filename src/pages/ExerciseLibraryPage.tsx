@@ -105,28 +105,63 @@ export default function ExerciseLibraryPage() {
     exitSelectionMode();
   };
 
-  // Check which exercise IDs are referenced by any workout plan
+  // Check which exercise IDs are referenced by any workout plan.
+  // Matches by exercise_library_id (new entries) AND by name (legacy entries
+  // added before we started persisting the link).
   const checkExerciseUsage = async (
     ids: string[]
   ): Promise<Map<string, string[]>> => {
     const usage = new Map<string, string[]>();
     if (!ids.length) return usage;
-    const { data, error } = await supabase
-      .from('workout_exercises')
-      .select('exercise_library_id, workout_plans(name)')
-      .in('exercise_library_id', ids);
-    if (error) {
-      console.error('Usage check failed', error);
-      throw error;
+
+    const targetExercises = exercises.filter((e) => ids.includes(e.id));
+    const names = Array.from(new Set(targetExercises.map((e) => e.name)));
+
+    const [byIdRes, byNameRes] = await Promise.all([
+      supabase
+        .from('workout_exercises')
+        .select('exercise_library_id, name, workout_plans(name)')
+        .in('exercise_library_id', ids),
+      names.length
+        ? supabase
+            .from('workout_exercises')
+            .select('exercise_library_id, name, workout_plans(name)')
+            .in('name', names)
+        : Promise.resolve({ data: [] as any[], error: null } as any),
+    ]);
+    if (byIdRes.error) {
+      console.error('Usage check failed', byIdRes.error);
+      throw byIdRes.error;
     }
-    (data ?? []).forEach((row: any) => {
-      const exId = row.exercise_library_id as string | null;
-      const planName = row.workout_plans?.name as string | undefined;
-      if (!exId) return;
+    if (byNameRes.error) {
+      console.error('Usage check (name) failed', byNameRes.error);
+      throw byNameRes.error;
+    }
+
+    const addUse = (exId: string, planName?: string) => {
       const list = usage.get(exId) ?? [];
       if (planName && !list.includes(planName)) list.push(planName);
       usage.set(exId, list);
+    };
+
+    (byIdRes.data ?? []).forEach((row: any) => {
+      const exId = row.exercise_library_id as string | null;
+      if (!exId) return;
+      addUse(exId, row.workout_plans?.name);
     });
+
+    const nameToIds = new Map<string, string[]>();
+    targetExercises.forEach((e) => {
+      const arr = nameToIds.get(e.name) ?? [];
+      arr.push(e.id);
+      nameToIds.set(e.name, arr);
+    });
+    (byNameRes.data ?? []).forEach((row: any) => {
+      if (row.exercise_library_id && ids.includes(row.exercise_library_id)) return;
+      const matchIds = nameToIds.get(row.name) ?? [];
+      matchIds.forEach((exId) => addUse(exId, row.workout_plans?.name));
+    });
+
     return usage;
   };
 
