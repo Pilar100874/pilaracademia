@@ -66,6 +66,10 @@ export default function ExerciseLibraryPage() {
   } | null>(null);
   const [bulkDeleteChecking, setBulkDeleteChecking] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [renameCategory, setRenameCategory] = useState<{ id: string; name: string } | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
+  const [newCategoryValue, setNewCategoryValue] = useState('');
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
