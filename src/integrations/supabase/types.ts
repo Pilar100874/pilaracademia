@@ -92,6 +92,30 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercise_entries: {
         Row: {
           calories_burned: number
@@ -127,6 +151,7 @@ export type Database = {
       }
       exercise_library: {
         Row: {
+          category_id: string | null
           created_at: string
           default_reps: number
           default_sets: number
@@ -141,6 +166,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           default_reps?: number
           default_sets?: number
@@ -155,6 +181,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           default_reps?: number
           default_sets?: number
@@ -168,7 +195,15 @@ export type Database = {
           video_type?: string | null
           video_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "exercise_library_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       food_entries: {
         Row: {
