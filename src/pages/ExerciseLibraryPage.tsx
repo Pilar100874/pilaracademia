@@ -37,7 +37,7 @@ const NEW_CATEGORY = '__new__';
 export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { exercises, isLoading, deleteExercise, createExercise } = useExerciseLibrary();
+  const { exercises, isLoading, deleteExercise, createExercise, moveExercises } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
