@@ -205,25 +205,25 @@ export function WorkoutViewerDialog({
           </div>
         )}
 
-        {/* Side navigation - Previous (left) */}
+        {/* Side navigation - Previous (left edge, no background) */}
         {!isFirstExercise && (
           <button
             onClick={handlePreviousExercise}
             aria-label="Anterior"
-            className="group absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-40 h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white shadow-2xl flex items-center justify-center transition-all hover:bg-white/25 hover:scale-110 active:scale-95"
+            className="group absolute left-0 sm:left-2 top-1/2 -translate-y-1/2 z-40 h-20 w-14 sm:h-24 sm:w-20 flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
           >
-            <ChevronLeft className="h-7 w-7 sm:h-8 sm:w-8 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.5} />
+            <ChevronLeft className="h-12 w-12 sm:h-16 sm:w-16 transition-transform group-hover:-translate-x-1" strokeWidth={3} />
           </button>
         )}
 
-        {/* Side navigation - Next (right) */}
+        {/* Side navigation - Next (right edge, no background) */}
         {!isLastExercise && (
           <button
             onClick={handleNextExercise}
             aria-label="Próximo"
-            className="group absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-40 h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-primary/80 backdrop-blur-xl border border-white/20 text-primary-foreground shadow-2xl flex items-center justify-center transition-all hover:bg-primary hover:scale-110 active:scale-95"
+            className="group absolute right-0 sm:right-2 top-1/2 -translate-y-1/2 z-40 h-20 w-14 sm:h-24 sm:w-20 flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
           >
-            <ChevronRight className="h-7 w-7 sm:h-8 sm:w-8 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
+            <ChevronRight className="h-12 w-12 sm:h-16 sm:w-16 transition-transform group-hover:translate-x-1" strokeWidth={3} />
           </button>
         )}
 
