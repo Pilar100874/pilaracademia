@@ -73,12 +73,8 @@ function TimeInput({ id, seconds, onCommit }: TimeInputProps) {
 
 export function ExerciseVideoEditor({ value, onChange }: Props) {
   const { user } = useAuth();
-  const [tab, setTab] = useState<'youtube' | 'upload' | 'instagram'>(
-    value.video_type === 'upload'
-      ? 'upload'
-      : value.video_type === 'instagram'
-      ? 'instagram'
-      : 'youtube',
+  const [tab, setTab] = useState<'youtube' | 'upload'>(
+    value.video_type === 'upload' ? 'upload' : 'youtube',
   );
 
   // YouTube state
@@ -87,11 +83,6 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
   );
   const [ytDuration, setYtDuration] = useState<number | null>(null);
 
-  // Instagram state
-  const [igInput, setIgInput] = useState(
-    value.video_type === 'instagram' ? value.video_url ?? '' : '',
-  );
-  const igShortcode = useMemo(() => parseInstagramShortcode(igInput), [igInput]);
 
   // Upload state
   const [uploading, setUploading] = useState(false);
