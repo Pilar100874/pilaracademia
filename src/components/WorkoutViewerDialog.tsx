@@ -219,18 +219,28 @@ export function WorkoutViewerDialog({
             </button>
 
             {/* Number badge */}
-            <div className="bg-primary text-primary-foreground h-10 w-10 rounded-full flex items-center justify-center text-base font-bold shrink-0">
-              {currentExerciseIndex + 1}
+            <div className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground h-12 w-12 rounded-2xl flex flex-col items-center justify-center font-extrabold shadow-lg ring-2 ring-white/20 shrink-0">
+              <span className="text-lg leading-none">{currentExerciseIndex + 1}</span>
+              <span className="text-[9px] font-medium opacity-80 leading-none mt-0.5">
+                /{exercises.length}
+              </span>
             </div>
 
             {/* Name + sets×reps */}
-            <div className="flex-1 min-w-0 text-center px-1">
-              <p className="text-white font-bold text-base truncate leading-tight drop-shadow">
+            <div className="flex-1 min-w-0 text-left px-1">
+              <p className="text-white font-bold text-base sm:text-lg truncate leading-tight tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {currentExercise.name}
               </p>
-              <p className="text-white/80 text-sm leading-tight drop-shadow">
-                {currentExercise.sets} × {currentExercise.reps}
-              </p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="inline-flex items-baseline gap-1 text-white text-xs font-semibold bg-white/15 px-2 py-0.5 rounded-full backdrop-blur-sm">
+                  <span className="font-bold">{currentExercise.sets}</span>
+                  <span className="text-white/70 text-[10px] uppercase tracking-wider">séries</span>
+                </span>
+                <span className="inline-flex items-baseline gap-1 text-white text-xs font-semibold bg-white/15 px-2 py-0.5 rounded-full backdrop-blur-sm">
+                  <span className="font-bold">{currentExercise.reps}</span>
+                  <span className="text-white/70 text-[10px] uppercase tracking-wider">reps</span>
+                </span>
+              </div>
             </div>
 
             {/* Next */}
