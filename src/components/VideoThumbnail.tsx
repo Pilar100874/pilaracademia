@@ -6,8 +6,11 @@ interface Props {
   videoType: 'youtube' | 'upload' | 'instagram' | string | null;
   videoUrl: string | null;
   startSeconds?: number | null;
+  endSeconds?: number | null;
   className?: string;
   iconSize?: 'sm' | 'md';
+  /** If true and the video is an 'upload', plays it muted/looping as a live preview */
+  autoplayPreview?: boolean;
 }
 
 /**
@@ -20,15 +23,50 @@ export function VideoThumbnail({
   videoType,
   videoUrl,
   startSeconds,
+  endSeconds,
   className,
   iconSize = 'md',
+  autoplayPreview = false,
 }: Props) {
   const [frameUrl, setFrameUrl] = useState<string | null>(null);
   const [errored, setErrored] = useState(false);
   const videoElRef = useRef<HTMLVideoElement | null>(null);
+  const previewRef = useRef<HTMLVideoElement | null>(null);
 
-  // Capture frame for uploaded videos
+  const isUploadAutoplay = autoplayPreview && videoType === 'upload' && !!videoUrl;
+
+  // Loop the upload preview between start/end seconds
   useEffect(() => {
+    if (!isUploadAutoplay) return;
+    const v = previewRef.current;
+    if (!v) return;
+    const start = Math.max(0, startSeconds ?? 0);
+    const end = endSeconds ?? null;
+
+    const onLoaded = () => {
+      try { v.currentTime = start; v.play().catch(() => {}); } catch {}
+    };
+    const onTime = () => {
+      if (end !== null && v.currentTime >= end) {
+        try { v.currentTime = start; } catch {}
+      }
+    };
+    const onEnded = () => {
+      try { v.currentTime = start; v.play().catch(() => {}); } catch {}
+    };
+    v.addEventListener('loadedmetadata', onLoaded);
+    v.addEventListener('timeupdate', onTime);
+    v.addEventListener('ended', onEnded);
+    return () => {
+      v.removeEventListener('loadedmetadata', onLoaded);
+      v.removeEventListener('timeupdate', onTime);
+      v.removeEventListener('ended', onEnded);
+    };
+  }, [isUploadAutoplay, startSeconds, endSeconds, videoUrl]);
+
+  // Capture frame for uploaded videos (when not autoplaying)
+  useEffect(() => {
+    if (isUploadAutoplay) return;
     if (videoType !== 'upload' || !videoUrl) return;
     setFrameUrl(null);
     setErrored(false);
@@ -81,7 +119,7 @@ export function VideoThumbnail({
       video.src = '';
       videoElRef.current = null;
     };
-  }, [videoType, videoUrl, startSeconds]);
+  }, [videoType, videoUrl, startSeconds, isUploadAutoplay]);
 
   if (!videoUrl || !videoType) return null;
 
@@ -97,6 +135,24 @@ export function VideoThumbnail({
   const badgeSize = iconSize === 'sm' ? 'h-6 w-6' : 'h-8 w-8';
 
   const isInstagram = videoType === 'instagram';
+
+  // Live autoplay preview for uploaded videos
+  if (isUploadAutoplay) {
+    return (
+      <div className={`relative bg-black ${className ?? ''}`}>
+        <video
+          ref={previewRef}
+          src={videoUrl}
+          muted
+          autoPlay
+          playsInline
+          loop
+          preload="metadata"
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`relative bg-black ${className ?? ''}`}>
