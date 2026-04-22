@@ -103,6 +103,16 @@ export function parseInstagramShortcode(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export function buildInstagramEmbedUrl(shortcode: string): string {
-  return `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
+/**
+ * Detect if the Instagram URL points to a Reel/TV (single video) vs a regular post.
+ * Reel embed often plays inline while /p/ video posts may show "Watch on Instagram".
+ */
+export function isInstagramReel(url: string): boolean {
+  if (!url) return false;
+  return /instagram\.com\/(?:reel|reels|tv)\//i.test(url);
+}
+
+export function buildInstagramEmbedUrl(shortcode: string, isReel = false): string {
+  const path = isReel ? 'reel' : 'p';
+  return `https://www.instagram.com/${path}/${shortcode}/embed/captioned/`;
 }
