@@ -921,9 +921,11 @@ export default function ExerciseLibraryPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
-                  {categories.map((cat) => (
+                  {orderedCategories.map(({ cat, depth }) => (
                     <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
+                      <span style={{ paddingLeft: depth * 12 }}>
+                        {depth > 0 ? '↳ ' : ''}{cat.name}
+                      </span>
                     </SelectItem>
                   ))}
                   <SelectItem value={NEW_CATEGORY}>+ Criar nova categoria</SelectItem>
