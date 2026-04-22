@@ -118,7 +118,12 @@ export function ExerciseVideoPlayer({
     loadYouTubeAPI().then((YT) => {
       if (cancelled || !ytContainerRef.current) return;
 
-      player = new YT.Player(ytContainerRef.current, {
+      // YT replaces the target node with an iframe. Create a child element
+      // so React keeps owning the wrapper and won't crash on unmount.
+      const target = document.createElement('div');
+      ytContainerRef.current.appendChild(target);
+
+      player = new YT.Player(target, {
         videoId: id,
         playerVars: {
           autoplay: autoPlay ? 1 : 0,
