@@ -166,7 +166,7 @@ export function VideoThumbnail({
       <div className={`relative bg-black ${className ?? ''}`}>
         <video
           ref={previewRef}
-          src={videoUrl}
+          src={playableUrl ?? videoUrl}
           poster={frameUrl ?? undefined}
           muted
           autoPlay
