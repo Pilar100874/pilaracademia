@@ -167,7 +167,7 @@ export function SelectExerciseDialog({
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 pb-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pb-2">
                 {filteredExercises.map((exercise) => {
                   const selectionIdx = selectedIds.indexOf(exercise.id);
                   const isSelected = selectionIdx !== -1;
@@ -206,8 +206,8 @@ export function SelectExerciseDialog({
                               className="w-full h-full object-cover"
                             />
                             {imageCount > 1 && (
-                              <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
-                                <ImageIcon className="h-3 w-3" />
+                              <div className="absolute bottom-0.5 right-0.5 bg-black/60 text-white text-[9px] px-1 py-0.5 rounded flex items-center gap-0.5">
+                                <ImageIcon className="h-2.5 w-2.5" />
                                 {imageCount}
                               </div>
                             )}
@@ -220,31 +220,31 @@ export function SelectExerciseDialog({
                             endSeconds={exercise.video_end_seconds}
                             autoplayPreview
                             className="w-full h-full"
-                            iconSize="md"
+                            iconSize="sm"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <Dumbbell className="h-10 w-10 text-muted-foreground" />
+                            <Dumbbell className="h-7 w-7 text-muted-foreground" />
                           </div>
                         )}
 
                         {/* Selection badge with order number */}
                         {isSelected && (
-                          <div className="absolute top-1.5 left-1.5 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-lg text-xs font-bold">
+                          <div className="absolute top-1 left-1 h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-lg text-[10px] font-bold">
                             {selectionIdx + 1}
                           </div>
                         )}
                       </div>
 
                       {/* Info */}
-                      <div className="p-2.5 space-y-1">
-                        <p className="font-medium text-sm leading-tight line-clamp-2">{exercise.name}</p>
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs text-muted-foreground">
+                      <div className="p-1.5 space-y-0.5">
+                        <p className="font-medium text-xs leading-tight line-clamp-2">{exercise.name}</p>
+                        <div className="flex items-center justify-between gap-1">
+                          <p className="text-[10px] text-muted-foreground">
                             {exercise.default_sets}×{exercise.default_reps}
                           </p>
                           {categoryName && (
-                            <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary truncate max-w-[60%]">
+                            <span className="inline-flex items-center text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary truncate max-w-[60%]">
                               {categoryName}
                             </span>
                           )}
