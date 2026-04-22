@@ -542,19 +542,48 @@ export default function ExerciseLibraryPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9 shrink-0"
+              title="Criar categoria"
+              onClick={() => {
+                setNewCategoryValue('');
+                setCreateCategoryOpen(true);
+              }}
+            >
+              <FolderPlus className="h-4 w-4" />
+            </Button>
             {filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY && (
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-9 w-9 text-destructive hover:text-destructive shrink-0"
-                title="Excluir categoria"
-                onClick={() => {
-                  const cat = categories.find((c) => c.id === filterCategory);
-                  if (cat) setCategoryToDelete({ id: cat.id, name: cat.name });
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 shrink-0"
+                  title="Renomear categoria"
+                  onClick={() => {
+                    const cat = categories.find((c) => c.id === filterCategory);
+                    if (cat) {
+                      setRenameValue(cat.name);
+                      setRenameCategory({ id: cat.id, name: cat.name });
+                    }
+                  }}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 text-destructive hover:text-destructive shrink-0"
+                  title="Excluir categoria"
+                  onClick={() => {
+                    const cat = categories.find((c) => c.id === filterCategory);
+                    if (cat) setCategoryToDelete({ id: cat.id, name: cat.name });
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
             )}
           </div>
         </div>
