@@ -10,6 +10,10 @@ export interface LibraryExercise {
   image_urls: string[];
   default_sets: number;
   default_reps: number;
+  video_type: 'youtube' | 'upload' | null;
+  video_url: string | null;
+  video_start_seconds: number | null;
+  video_end_seconds: number | null;
   created_at: string;
   updated_at: string;
 }
