@@ -103,8 +103,8 @@ export function WorkoutViewerDialog({
         className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black flex flex-col [&>button]:text-white [&>button]:hover:bg-white/20 [&>button]:top-4 [&>button]:right-4 [&>button]:z-50 [&>button]:bg-black/40 [&>button]:backdrop-blur-md [&>button]:rounded-full"
         onKeyDown={handleKeyDown}
       >
-        {/* Media area - takes all available space above the bottom panel */}
-        <div className="relative flex-1 min-h-0 flex items-center justify-center bg-black overflow-hidden">
+        {/* Fullscreen media area */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black overflow-hidden">
           {showVideo && hasVideo ? (
             <ExerciseVideoPlayer
               videoType={currentExercise.video_type}
