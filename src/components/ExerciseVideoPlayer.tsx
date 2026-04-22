@@ -216,13 +216,13 @@ export function ExerciseVideoPlayer({
     const shortcode = parseInstagramShortcode(videoUrl);
     if (!shortcode) return null;
     return (
-      <div className={className}>
+      <div className={`${className ?? ''} flex items-center justify-center bg-black overflow-auto`}>
         <iframe
           src={buildInstagramEmbedUrl(shortcode)}
           title="Instagram"
-          className="w-full h-full bg-black"
-          frameBorder={0}
-          scrolling="no"
+          className="bg-black"
+          style={{ width: '100%', maxWidth: 540, height: '100%', minHeight: 640, border: 0 }}
+          scrolling="yes"
           allow="encrypted-media"
         />
       </div>
