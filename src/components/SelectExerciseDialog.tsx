@@ -105,7 +105,7 @@ export function SelectExerciseDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] h-[90vh] !flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Adicionar Exercícios ao Treino</DialogTitle>
         </DialogHeader>
