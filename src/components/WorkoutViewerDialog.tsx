@@ -205,16 +205,38 @@ export function WorkoutViewerDialog({
           </div>
         )}
 
-        {/* Floating transparent control bar over the media */}
+        {/* Side navigation - Previous (left) */}
+        {!isFirstExercise && (
+          <button
+            onClick={handlePreviousExercise}
+            aria-label="Anterior"
+            className="group absolute left-4 top-1/2 -translate-y-1/2 z-40 h-16 w-16 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white shadow-2xl flex items-center justify-center transition-all hover:bg-white/25 hover:scale-110 active:scale-95"
+          >
+            <ChevronLeft className="h-8 w-8 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.5} />
+          </button>
+        )}
+
+        {/* Side navigation - Next (right) */}
+        {!isLastExercise && (
+          <button
+            onClick={handleNextExercise}
+            aria-label="Próximo"
+            className="group absolute right-4 top-1/2 -translate-y-1/2 z-40 h-16 w-16 rounded-full bg-primary/80 backdrop-blur-xl border border-white/20 text-primary-foreground shadow-2xl flex items-center justify-center transition-all hover:bg-primary hover:scale-110 active:scale-95"
+          >
+            <ChevronRight className="h-8 w-8 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
+          </button>
+        )}
+
+        {/* Floating info bar over the media (no nav buttons here anymore) */}
         <div className="absolute bottom-4 left-4 right-4 z-40 pointer-events-none">
-          <div className="flex items-center gap-3 pointer-events-auto bg-black/30 backdrop-blur-md rounded-full border border-white/10 pl-3 pr-2 py-2 shadow-2xl">
+          <div className="flex items-center gap-3 pointer-events-auto bg-black/30 backdrop-blur-md rounded-full border border-white/10 pl-3 pr-5 py-2 shadow-2xl mx-auto max-w-md">
             {/* Number badge */}
             <div className="bg-primary text-primary-foreground h-10 w-10 rounded-full flex items-center justify-center text-base font-bold shrink-0">
               {currentExerciseIndex + 1}
             </div>
 
             {/* Name + sets×reps */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 text-center">
               <p className="text-white font-bold text-base truncate leading-tight drop-shadow">
                 {currentExercise.name}
               </p>
@@ -222,28 +244,6 @@ export function WorkoutViewerDialog({
                 {currentExercise.sets} × {currentExercise.reps}
               </p>
             </div>
-
-            {/* Navigation - large transparent buttons */}
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-12 w-12 shrink-0 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/25 hover:text-white disabled:opacity-30"
-              onClick={handlePreviousExercise}
-              disabled={isFirstExercise}
-              aria-label="Anterior"
-            >
-              <ChevronUp className="h-6 w-6" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-12 w-12 shrink-0 rounded-full bg-primary/80 backdrop-blur-sm text-primary-foreground hover:bg-primary disabled:opacity-30"
-              onClick={handleNextExercise}
-              disabled={isLastExercise}
-              aria-label="Próximo"
-            >
-              <ChevronDown className="h-6 w-6" />
-            </Button>
           </div>
         </div>
       </DialogContent>
