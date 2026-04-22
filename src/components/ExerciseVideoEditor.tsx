@@ -223,37 +223,26 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Dica: o YouTube não permite ler a duração automaticamente. Ajuste o
-                início e fim manualmente (em segundos) abaixo.
+                Dica: defina o início e o fim no formato <strong>M:SS</strong> (ex: 1:30).
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="yt-start" className="text-xs">Início (s)</Label>
-                  <Input
+                  <Label htmlFor="yt-start" className="text-xs">Início (M:SS)</Label>
+                  <TimeInput
                     id="yt-start"
-                    type="number"
-                    min={0}
-                    value={start}
-                    onChange={(e) =>
-                      onChange({
-                        ...value,
-                        video_start_seconds: Math.max(0, Number(e.target.value) || 0),
-                      })
+                    seconds={start}
+                    onCommit={(s) =>
+                      onChange({ ...value, video_start_seconds: Math.max(0, s) })
                     }
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="yt-end" className="text-xs">Fim (s)</Label>
-                  <Input
+                  <Label htmlFor="yt-end" className="text-xs">Fim (M:SS)</Label>
+                  <TimeInput
                     id="yt-end"
-                    type="number"
-                    min={0}
-                    value={end}
-                    onChange={(e) =>
-                      onChange({
-                        ...value,
-                        video_end_seconds: Math.max(0, Number(e.target.value) || 0),
-                      })
+                    seconds={end}
+                    onCommit={(s) =>
+                      onChange({ ...value, video_end_seconds: Math.max(0, s) })
                     }
                   />
                 </div>
