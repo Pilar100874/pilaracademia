@@ -154,6 +154,10 @@ export function ExerciseLibraryDialog({
           default_sets: defaultSets,
           default_reps: defaultReps,
           image_urls: allImageUrls,
+          video_type: video.video_type,
+          video_url: video.video_url,
+          video_start_seconds: video.video_start_seconds,
+          video_end_seconds: video.video_end_seconds,
         });
       } else {
         await createExercise.mutateAsync({
@@ -161,6 +165,10 @@ export function ExerciseLibraryDialog({
           default_sets: defaultSets,
           default_reps: defaultReps,
           image_urls: allImageUrls,
+          video_type: video.video_type,
+          video_url: video.video_url,
+          video_start_seconds: video.video_start_seconds,
+          video_end_seconds: video.video_end_seconds,
         });
       }
 
