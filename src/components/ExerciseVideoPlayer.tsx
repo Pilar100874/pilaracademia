@@ -8,6 +8,7 @@ interface Props {
   endSeconds?: number | null;
   className?: string;
   autoPlay?: boolean;
+  loop?: boolean;
 }
 
 /**
