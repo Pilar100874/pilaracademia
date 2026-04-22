@@ -85,8 +85,6 @@ export function ExerciseLibraryDialog({
           video_end_seconds: null,
         });
       }
-      setShowNewCategory(false);
-      setNewCategoryName('');
     }
   }, [editingExercise?.id, open]);
 
