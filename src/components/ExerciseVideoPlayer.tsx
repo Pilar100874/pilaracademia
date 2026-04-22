@@ -123,7 +123,8 @@ export function ExerciseVideoPlayer({
         playerVars: {
           autoplay: autoPlay ? 1 : 0,
           mute: 1,
-          controls: 1,
+          controls: 0,
+          disablekb: 1,
           rel: 0,
           modestbranding: 1,
           playsinline: 1,
