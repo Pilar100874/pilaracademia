@@ -10,12 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlans';
 import { Save } from 'lucide-react';
+import { ExerciseVideoEditor, ExerciseVideoData } from '@/components/ExerciseVideoEditor';
 
 interface EditWorkoutExerciseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   exercise: WorkoutExercise | null;
-  onSave: (sets: number, reps: number) => void;
+  onSave: (data: { sets: number; reps: number; video: ExerciseVideoData }) => void;
 }
 
 export function EditWorkoutExerciseDialog({
@@ -26,16 +27,28 @@ export function EditWorkoutExerciseDialog({
 }: EditWorkoutExerciseDialogProps) {
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState(12);
+  const [video, setVideo] = useState<ExerciseVideoData>({
+    video_type: null,
+    video_url: null,
+    video_start_seconds: null,
+    video_end_seconds: null,
+  });
 
   useEffect(() => {
     if (exercise && open) {
       setSets(exercise.sets);
       setReps(exercise.reps);
+      setVideo({
+        video_type: exercise.video_type ?? null,
+        video_url: exercise.video_url ?? null,
+        video_start_seconds: exercise.video_start_seconds ?? null,
+        video_end_seconds: exercise.video_end_seconds ?? null,
+      });
     }
   }, [exercise, open]);
 
   const handleSave = () => {
-    onSave(sets, reps);
+    onSave({ sets, reps, video });
     onOpenChange(false);
   };
 
@@ -43,7 +56,7 @@ export function EditWorkoutExerciseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Exercício</DialogTitle>
         </DialogHeader>
@@ -77,6 +90,8 @@ export function EditWorkoutExerciseDialog({
               />
             </div>
           </div>
+
+          <ExerciseVideoEditor value={video} onChange={setVideo} />
 
           <Button onClick={handleSave} className="w-full">
             <Save className="h-4 w-4 mr-2" />
