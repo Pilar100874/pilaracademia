@@ -135,6 +135,10 @@ export type Database = {
           name: string
           updated_at: string
           user_id: string
+          video_end_seconds: number | null
+          video_start_seconds: number | null
+          video_type: string | null
+          video_url: string | null
         }
         Insert: {
           created_at?: string
@@ -145,6 +149,10 @@ export type Database = {
           name: string
           updated_at?: string
           user_id: string
+          video_end_seconds?: number | null
+          video_start_seconds?: number | null
+          video_type?: string | null
+          video_url?: string | null
         }
         Update: {
           created_at?: string
@@ -155,6 +163,10 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string
+          video_end_seconds?: number | null
+          video_start_seconds?: number | null
+          video_type?: string | null
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -477,6 +489,10 @@ export type Database = {
           order_index: number
           reps: number
           sets: number
+          video_end_seconds: number | null
+          video_start_seconds: number | null
+          video_type: string | null
+          video_url: string | null
           workout_plan_id: string
         }
         Insert: {
@@ -489,6 +505,10 @@ export type Database = {
           order_index?: number
           reps?: number
           sets?: number
+          video_end_seconds?: number | null
+          video_start_seconds?: number | null
+          video_type?: string | null
+          video_url?: string | null
           workout_plan_id: string
         }
         Update: {
@@ -501,6 +521,10 @@ export type Database = {
           order_index?: number
           reps?: number
           sets?: number
+          video_end_seconds?: number | null
+          video_start_seconds?: number | null
+          video_type?: string | null
+          video_url?: string | null
           workout_plan_id?: string
         }
         Relationships: [
