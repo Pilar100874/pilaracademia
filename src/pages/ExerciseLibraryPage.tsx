@@ -25,7 +25,8 @@ const NO_CATEGORY = '__none__';
 
 export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
-  const { exercises, isLoading, deleteExercise } = useExerciseLibrary();
+  const { user } = useAuth();
+  const { exercises, isLoading, deleteExercise, createExercise } = useExerciseLibrary();
   const { categories, deleteCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
@@ -35,6 +36,8 @@ export default function ExerciseLibraryPage() {
   const [exerciseToDelete, setExerciseToDelete] = useState<LibraryExercise | null>(null);
   const [zoomImages, setZoomImages] = useState<string[]>([]);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [bulkUploading, setBulkUploading] = useState<{ done: number; total: number } | null>(null);
+  const bulkInputRef = useRef<HTMLInputElement>(null);
 
   const categoryNameMap = useMemo(() => {
     const m = new Map<string, string>();
