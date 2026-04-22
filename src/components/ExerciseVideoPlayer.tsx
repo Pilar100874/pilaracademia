@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { parseYouTubeId, parseInstagramShortcode, buildInstagramEmbedUrl } from '@/lib/youtubeUtils';
 
 interface Props {
