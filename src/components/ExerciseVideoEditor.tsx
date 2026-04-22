@@ -4,11 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, Upload, Youtube, Video as VideoIcon, Loader2, Instagram } from 'lucide-react';
+import { Trash2, Upload, Youtube, Video as VideoIcon, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { parseYouTubeId, formatSeconds, buildYouTubeEmbedUrl, parseTimeToSeconds, parseInstagramShortcode, buildInstagramEmbedUrl, isInstagramReel } from '@/lib/youtubeUtils';
+import { parseYouTubeId, formatSeconds, buildYouTubeEmbedUrl, parseTimeToSeconds } from '@/lib/youtubeUtils';
 
 export interface ExerciseVideoData {
   video_type: 'youtube' | 'upload' | 'instagram' | null;
@@ -73,12 +73,8 @@ function TimeInput({ id, seconds, onCommit }: TimeInputProps) {
 
 export function ExerciseVideoEditor({ value, onChange }: Props) {
   const { user } = useAuth();
-  const [tab, setTab] = useState<'youtube' | 'upload' | 'instagram'>(
-    value.video_type === 'upload'
-      ? 'upload'
-      : value.video_type === 'instagram'
-      ? 'instagram'
-      : 'youtube',
+  const [tab, setTab] = useState<'youtube' | 'upload'>(
+    value.video_type === 'upload' ? 'upload' : 'youtube',
   );
 
   // YouTube state
@@ -87,11 +83,6 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
   );
   const [ytDuration, setYtDuration] = useState<number | null>(null);
 
-  // Instagram state
-  const [igInput, setIgInput] = useState(
-    value.video_type === 'instagram' ? value.video_url ?? '' : '',
-  );
-  const igShortcode = useMemo(() => parseInstagramShortcode(igInput), [igInput]);
 
   // Upload state
   const [uploading, setUploading] = useState(false);
@@ -132,22 +123,7 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ytId, tab]);
 
-  // Propagate Instagram changes
-  useEffect(() => {
-    if (tab !== 'instagram') return;
-    if (igShortcode) {
-      const url = `https://www.instagram.com/p/${igShortcode}/`;
-      if (value.video_type !== 'instagram' || value.video_url !== url) {
-        onChange({
-          video_type: 'instagram',
-          video_url: url,
-          video_start_seconds: null,
-          video_end_seconds: null,
-        });
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [igShortcode, tab]);
+
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -213,7 +189,6 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
     setYtInput('');
     setYtDuration(null);
     setUploadDuration(null);
-    setIgInput('');
   };
 
   const start = value.video_start_seconds ?? 0;
@@ -263,15 +238,11 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
         )}
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as 'youtube' | 'upload' | 'instagram')}>
-        <TabsList className="grid grid-cols-3 w-full">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as 'youtube' | 'upload')}>
+        <TabsList className="grid grid-cols-2 w-full">
           <TabsTrigger value="youtube">
             <Youtube className="h-4 w-4 mr-1" />
             YouTube
-          </TabsTrigger>
-          <TabsTrigger value="instagram">
-            <Instagram className="h-4 w-4 mr-1" />
-            Instagram
           </TabsTrigger>
           <TabsTrigger value="upload">
             <Upload className="h-4 w-4 mr-1" />
@@ -328,35 +299,6 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
               </div>
               <p className="text-xs text-muted-foreground text-center">
                 Trecho: {formatSeconds(start)} → {formatSeconds(end)}
-              </p>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="instagram" className="space-y-3 mt-3">
-          <Input
-            placeholder="Cole o link do post/reel do Instagram"
-            value={igInput}
-            onChange={(e) => setIgInput(e.target.value)}
-          />
-          {igInput && !igShortcode && (
-            <p className="text-xs text-destructive">Link do Instagram inválido</p>
-          )}
-          {igShortcode && value.video_type === 'instagram' && (
-            <div className="space-y-2">
-              <div className="w-full rounded-lg overflow-hidden bg-black mx-auto" style={{ aspectRatio: '9 / 16', maxWidth: 320 }}>
-                <iframe
-                  key={igShortcode}
-                  src={buildInstagramEmbedUrl(igShortcode, isInstagramReel(igInput))}
-                  title="Preview Instagram"
-                  className="w-full h-full"
-                  frameBorder={0}
-                  scrolling="no"
-                  allow="encrypted-media"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                O Instagram não permite recorte de tempo nem autoplay. O vídeo será exibido com os controles do próprio Instagram.
               </p>
             </div>
           )}
