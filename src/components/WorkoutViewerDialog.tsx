@@ -245,21 +245,6 @@ export function WorkoutViewerDialog({
             </Button>
           </div>
         </div>
-          {/* Exercise progress dots */}
-          <div className="flex justify-center gap-1.5 mt-4">
-            {exercises.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentExerciseIndex(index)}
-                className={`h-2 rounded-full transition-all ${
-                  index === currentExerciseIndex
-                    ? 'w-6 bg-primary'
-                    : 'w-2 bg-white/30 hover:bg-white/50'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
       </DialogContent>
     </Dialog>
   );
