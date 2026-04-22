@@ -315,6 +315,35 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
           )}
         </TabsContent>
 
+        <TabsContent value="instagram" className="space-y-3 mt-3">
+          <Input
+            placeholder="Cole o link do post/reel do Instagram"
+            value={igInput}
+            onChange={(e) => setIgInput(e.target.value)}
+          />
+          {igInput && !igShortcode && (
+            <p className="text-xs text-destructive">Link do Instagram inválido</p>
+          )}
+          {igShortcode && value.video_type === 'instagram' && (
+            <div className="space-y-2">
+              <div className="w-full rounded-lg overflow-hidden bg-black mx-auto" style={{ aspectRatio: '9 / 16', maxWidth: 320 }}>
+                <iframe
+                  key={igShortcode}
+                  src={buildInstagramEmbedUrl(igShortcode)}
+                  title="Preview Instagram"
+                  className="w-full h-full"
+                  frameBorder={0}
+                  scrolling="no"
+                  allow="encrypted-media"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O Instagram não permite recorte de tempo nem autoplay. O vídeo será exibido com os controles do próprio Instagram.
+              </p>
+            </div>
+          )}
+        </TabsContent>
+
         <TabsContent value="upload" className="space-y-3 mt-3">
           {value.video_type !== 'upload' && (
             <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 p-6 text-center space-y-3">
