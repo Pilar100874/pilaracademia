@@ -1,8 +1,9 @@
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
-import { Edit, ChevronRight, Dumbbell, Play } from 'lucide-react';
+import { Edit, ChevronRight, ChevronLeft, Dumbbell, Play } from 'lucide-react';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
 
 const DAYS_SHORT = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
@@ -16,6 +17,35 @@ interface WorkoutPlanCardProps {
 
 export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanCardProps) {
   const exerciseCount = plan.exercises?.length || 0;
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateArrows = () => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    updateArrows();
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', updateArrows, { passive: true });
+    const ro = new ResizeObserver(updateArrows);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', updateArrows);
+      ro.disconnect();
+    };
+  }, [plan.exercises?.length]);
+
+  const scrollBy = (dir: 1 | -1) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * (el.clientWidth * 0.8), behavior: 'smooth' });
+  };
 
   if (compact) {
     return (
@@ -74,39 +104,65 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
               ))}
             </div>
 
-            {/* Exercise preview */}
+            {/* Exercise preview with arrows */}
             {plan.exercises && plan.exercises.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {plan.exercises.map((exercise) => {
-                  const firstImg = exercise.image_urls?.[0] ?? exercise.image_url;
-                  return (
-                    <div
-                      key={exercise.id}
-                      className="shrink-0 w-20 h-20 rounded-xl bg-muted overflow-hidden relative [&_.absolute]:hidden"
-                    >
-                      {exercise.video_url && exercise.video_type ? (
-                        <VideoThumbnail
-                          videoType={exercise.video_type}
-                          videoUrl={exercise.video_url}
-                          startSeconds={exercise.video_start_seconds}
-                          endSeconds={exercise.video_end_seconds}
-                          iconSize="sm"
-                          className="w-full h-full"
-                        />
-                      ) : firstImg ? (
-                        <img
-                          src={firstImg}
-                          alt={exercise.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Dumbbell className="h-7 w-7 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+              <div className="relative">
+                <div
+                  ref={scrollerRef}
+                  className="flex gap-2 overflow-x-auto pb-1 scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {plan.exercises.map((exercise) => {
+                    const firstImg = exercise.image_urls?.[0] ?? exercise.image_url;
+                    return (
+                      <div
+                        key={exercise.id}
+                        className="shrink-0 w-20 h-20 rounded-xl bg-muted overflow-hidden relative [&_.absolute]:hidden"
+                      >
+                        {exercise.video_url && exercise.video_type ? (
+                          <VideoThumbnail
+                            videoType={exercise.video_type}
+                            videoUrl={exercise.video_url}
+                            startSeconds={exercise.video_start_seconds}
+                            endSeconds={exercise.video_end_seconds}
+                            iconSize="sm"
+                            className="w-full h-full"
+                          />
+                        ) : firstImg ? (
+                          <img
+                            src={firstImg}
+                            alt={exercise.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Dumbbell className="h-7 w-7 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {canScrollLeft && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); scrollBy(-1); }}
+                    aria-label="Anterior"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-background/95 backdrop-blur border shadow-md flex items-center justify-center text-foreground hover:bg-background transition"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                )}
+                {canScrollRight && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); scrollBy(1); }}
+                    aria-label="Próximo"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-background/95 backdrop-blur border shadow-md flex items-center justify-center text-foreground hover:bg-background transition"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                )}
               </div>
             )}
           </div>
