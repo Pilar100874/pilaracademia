@@ -71,6 +71,7 @@ export function buildYouTubeEmbedUrl(
   start?: number | null,
   end?: number | null,
   autoplay = false,
+  loop = false,
 ): string {
   const params = new URLSearchParams({
     rel: '0',
@@ -82,6 +83,11 @@ export function buildYouTubeEmbedUrl(
   if (autoplay) {
     params.set('autoplay', '1');
     params.set('mute', '1');
+  }
+  if (loop) {
+    params.set('loop', '1');
+    // YouTube requires a playlist param for loop to work on a single video
+    params.set('playlist', videoId);
   }
   return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
 }
