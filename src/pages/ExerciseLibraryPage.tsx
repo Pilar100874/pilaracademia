@@ -373,6 +373,32 @@ export default function ExerciseLibraryPage() {
               <Button variant="outline" size="sm" onClick={exitSelectionMode}>
                 <X className="h-4 w-4 mr-1" /> Cancelar
               </Button>
+              {(() => {
+                const allSelected =
+                  filteredExercises.length > 0 &&
+                  filteredExercises.every((ex) => selectedIds.has(ex.id));
+                return (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={filteredExercises.length === 0}
+                    onClick={() => {
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        if (allSelected) {
+                          filteredExercises.forEach((ex) => next.delete(ex.id));
+                        } else {
+                          filteredExercises.forEach((ex) => next.add(ex.id));
+                        }
+                        return next;
+                      });
+                    }}
+                  >
+                    <CheckSquare className="h-4 w-4 mr-1" />
+                    {allSelected ? 'Limpar' : 'Todos'}
+                  </Button>
+                );
+              })()}
               <Button
                 size="sm"
                 disabled={selectedIds.size === 0}
