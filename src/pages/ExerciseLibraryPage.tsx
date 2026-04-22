@@ -385,6 +385,19 @@ export default function ExerciseLibraryPage() {
                 <FolderInput className="h-4 w-4 mr-1" />
                 Mover ({selectedIds.size})
               </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={selectedIds.size === 0 || bulkDeleteChecking}
+                onClick={openBulkDelete}
+              >
+                {bulkDeleteChecking ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-1" />
+                )}
+                Excluir ({selectedIds.size})
+              </Button>
             </>
           ) : (
             <>
