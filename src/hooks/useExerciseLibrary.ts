@@ -10,6 +10,10 @@ export interface LibraryExercise {
   image_urls: string[];
   default_sets: number;
   default_reps: number;
+  video_type: 'youtube' | 'upload' | null;
+  video_url: string | null;
+  video_start_seconds: number | null;
+  video_end_seconds: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -41,6 +45,10 @@ export function useExerciseLibrary() {
       image_urls?: string[];
       default_sets?: number;
       default_reps?: number;
+      video_type?: 'youtube' | 'upload' | null;
+      video_url?: string | null;
+      video_start_seconds?: number | null;
+      video_end_seconds?: number | null;
     }) => {
       if (!user) throw new Error('User not authenticated');
 
@@ -52,6 +60,10 @@ export function useExerciseLibrary() {
           image_urls: data.image_urls || [],
           default_sets: data.default_sets || 3,
           default_reps: data.default_reps || 12,
+          video_type: data.video_type ?? null,
+          video_url: data.video_url ?? null,
+          video_start_seconds: data.video_start_seconds ?? null,
+          video_end_seconds: data.video_end_seconds ?? null,
         })
         .select()
         .single();
@@ -75,6 +87,10 @@ export function useExerciseLibrary() {
       image_urls?: string[];
       default_sets?: number;
       default_reps?: number;
+      video_type?: 'youtube' | 'upload' | null;
+      video_url?: string | null;
+      video_start_seconds?: number | null;
+      video_end_seconds?: number | null;
     }) => {
       const { id, ...updateData } = data;
       const { error } = await supabase

@@ -12,6 +12,10 @@ export interface WorkoutExercise {
   sets: number;
   reps: number;
   order_index: number;
+  video_type: 'youtube' | 'upload' | null;
+  video_url: string | null;
+  video_start_seconds: number | null;
+  video_end_seconds: number | null;
   created_at: string;
 }
 
@@ -136,6 +140,10 @@ export function useWorkoutPlans() {
       sets: number;
       reps: number;
       order_index: number;
+      video_type?: 'youtube' | 'upload' | null;
+      video_url?: string | null;
+      video_start_seconds?: number | null;
+      video_end_seconds?: number | null;
     }) => {
       const { data: exercise, error } = await supabase
         .from('workout_exercises')
@@ -166,6 +174,10 @@ export function useWorkoutPlans() {
       sets?: number;
       reps?: number;
       order_index?: number;
+      video_type?: 'youtube' | 'upload' | null;
+      video_url?: string | null;
+      video_start_seconds?: number | null;
+      video_end_seconds?: number | null;
     }) => {
       const { id, image_urls, ...rest } = data;
       const updateData: Record<string, unknown> = { ...rest };

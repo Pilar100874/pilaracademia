@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
-import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon } from 'lucide-react';
+import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 
 interface WorkoutViewerDialogProps {
   open: boolean;
@@ -17,19 +18,21 @@ export function WorkoutViewerDialog({
 }: WorkoutViewerDialogProps) {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [showVideo, setShowVideo] = useState(false);
   const exercises = plan.exercises || [];
 
   const currentExercise = exercises[currentExerciseIndex];
-  
+
   // Get images for current exercise (support both image_urls and legacy image_url)
   const currentImages = currentExercise
-    ? currentExercise.image_urls?.length 
-      ? currentExercise.image_urls 
-      : currentExercise.image_url 
-        ? [currentExercise.image_url] 
+    ? currentExercise.image_urls?.length
+      ? currentExercise.image_urls
+      : currentExercise.image_url
+        ? [currentExercise.image_url]
         : []
     : [];
 
+  const hasVideo = !!(currentExercise?.video_type && currentExercise?.video_url);
   const isFirstExercise = currentExerciseIndex === 0;
   const isLastExercise = currentExerciseIndex === exercises.length - 1;
   const hasMultiplePhotos = currentImages.length > 1;
@@ -37,6 +40,7 @@ export function WorkoutViewerDialog({
   // Reset photo index when exercise changes
   useEffect(() => {
     setCurrentPhotoIndex(0);
+    setShowVideo(false);
   }, [currentExerciseIndex]);
 
   // Reset indices when dialog opens
@@ -107,21 +111,62 @@ export function WorkoutViewerDialog({
           </p>
         </div>
 
-        {/* Main image area - centered fullscreen */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          {currentImages.length > 0 ? (
+        {/* Main media area - centered fullscreen */}
+        <div className="absolute inset-0 flex items-center justify-center p-4">
+          {showVideo && hasVideo ? (
+            <ExerciseVideoPlayer
+              videoType={currentExercise.video_type}
+              videoUrl={currentExercise.video_url}
+              startSeconds={currentExercise.video_start_seconds}
+              endSeconds={currentExercise.video_end_seconds}
+              autoPlay
+              className="w-full max-w-4xl aspect-video"
+            />
+          ) : currentImages.length > 0 ? (
             <img
               src={currentImages[currentPhotoIndex]}
               alt={`${currentExercise.name} - Foto ${currentPhotoIndex + 1}`}
               className="max-w-full max-h-full object-contain"
             />
+          ) : hasVideo ? (
+            <ExerciseVideoPlayer
+              videoType={currentExercise.video_type}
+              videoUrl={currentExercise.video_url}
+              startSeconds={currentExercise.video_start_seconds}
+              endSeconds={currentExercise.video_end_seconds}
+              className="w-full max-w-4xl aspect-video"
+            />
           ) : (
             <div className="flex flex-col items-center justify-center text-white/50">
               <Dumbbell className="h-24 w-24 mb-4" />
-              <p className="text-lg">Sem imagem</p>
+              <p className="text-lg">Sem mídia</p>
             </div>
           )}
         </div>
+
+        {/* Toggle video/image button - only show if both exist */}
+        {hasVideo && currentImages.length > 0 && (
+          <div className="absolute top-4 right-16 z-40">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setShowVideo((s) => !s)}
+              className="gap-1.5"
+            >
+              {showVideo ? (
+                <>
+                  <ImageIcon className="h-4 w-4" />
+                  Ver foto
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4" />
+                  Ver vídeo
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* Photo navigation (left/right) - only show if multiple photos */}
         {hasMultiplePhotos && (
