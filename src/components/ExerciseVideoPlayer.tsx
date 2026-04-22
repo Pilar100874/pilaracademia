@@ -207,14 +207,8 @@ export function ExerciseVideoPlayer({
     const id = parseYouTubeId(videoUrl);
     if (!id) return null;
     return (
-      <div className={`${className ?? ''} relative overflow-hidden bg-black`}>
-        {/* Oversize the iframe so the video covers the container without letterbox.
-            177.78% width = 16/9 of height; 177.78% height = 16/9 of width. */}
-        <div
-          ref={ytContainerRef}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 [&>iframe]:!w-full [&>iframe]:!h-full"
-          style={{ width: '177.78vh', height: '56.25vw', minWidth: '100%', minHeight: '100%' }}
-        />
+      <div className={`${className ?? ''} relative bg-black`}>
+        <div ref={ytContainerRef} className="w-full h-full [&>iframe]:!w-full [&>iframe]:!h-full" />
         <div className="absolute inset-0" style={{ pointerEvents: 'auto' }} onClick={(e) => e.preventDefault()} />
       </div>
     );
