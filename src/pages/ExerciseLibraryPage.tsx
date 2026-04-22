@@ -82,6 +82,99 @@ export default function ExerciseLibraryPage() {
     }
   };
 
+  const generateUniqueName = (baseName: string, used: Set<string>): string => {
+    const prefix = `${baseName} `;
+    const usedNumbers = new Set<number>();
+    exercises.forEach((ex) => {
+      if (ex.name.startsWith(prefix)) {
+        const n = parseInt(ex.name.slice(prefix.length).trim(), 10);
+        if (!Number.isNaN(n)) usedNumbers.add(n);
+      }
+    });
+    used.forEach((name) => {
+      if (name.startsWith(prefix)) {
+        const n = parseInt(name.slice(prefix.length).trim(), 10);
+        if (!Number.isNaN(n)) usedNumbers.add(n);
+      }
+    });
+    let next = 1;
+    while (usedNumbers.has(next)) next++;
+    const name = `${baseName} ${next}`;
+    used.add(name);
+    return name;
+  };
+
+  const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (!files.length) return;
+    if (!user) {
+      toast.error('Faça login para enviar vídeos');
+      return;
+    }
+
+    // Determine category to assign and base name
+    const targetCategoryId =
+      filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY
+        ? filterCategory
+        : null;
+    const baseName = targetCategoryId
+      ? categories.find((c) => c.id === targetCategoryId)?.name ?? 'Exercício'
+      : 'Exercício';
+
+    setBulkUploading({ done: 0, total: files.length });
+    const usedNames = new Set<string>();
+    let successCount = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        if (!file.type.startsWith('video/')) {
+          toast.error(`${file.name}: não é um vídeo`);
+          continue;
+        }
+        if (file.size > 50 * 1024 * 1024) {
+          toast.error(`${file.name}: maior que 50 MB`);
+          continue;
+        }
+
+        const ext = file.name.split('.').pop() || 'mp4';
+        const path = `${user.id}/${Date.now()}-${i}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from('exercise-videos')
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (upErr) throw upErr;
+
+        const { data: pub } = supabase.storage
+          .from('exercise-videos')
+          .getPublicUrl(path);
+
+        await createExercise.mutateAsync({
+          name: generateUniqueName(baseName, usedNames),
+          default_sets: 1,
+          default_reps: 10,
+          image_urls: [],
+          video_type: 'upload',
+          video_url: pub.publicUrl,
+          video_start_seconds: 0,
+          video_end_seconds: null,
+          category_id: targetCategoryId,
+        });
+        successCount++;
+      } catch (err) {
+        console.error('Bulk upload error', err);
+        toast.error(`Erro ao enviar ${file.name}`);
+      } finally {
+        setBulkUploading((prev) => prev && { ...prev, done: prev.done + 1 });
+      }
+    }
+
+    setBulkUploading(null);
+    if (successCount > 0) {
+      toast.success(`${successCount} exercício(s) criado(s)`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
