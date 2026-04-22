@@ -60,6 +60,7 @@ export function WorkoutPlanDialog({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<WorkoutExercise | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [deletingExercise, setDeletingExercise] = useState<WorkoutExercise | null>(null);
 
   // Get the current plan from workoutPlans (this updates when query is invalidated)
   const currentPlan = useMemo(() => {
@@ -140,6 +141,7 @@ export function WorkoutPlanDialog({
 
   const handleDeleteExercise = async (id: string) => {
     await deleteExercise.mutateAsync(id);
+    setDeletingExercise(null);
   };
 
   const handleDragStart = (index: number) => {
@@ -286,7 +288,7 @@ export function WorkoutPlanDialog({
                           exercise={exercise}
                           index={index}
                           onEdit={() => handleEditExercise(exercise)}
-                          onDelete={() => handleDeleteExercise(exercise.id)}
+                          onDelete={() => setDeletingExercise(exercise)}
                         />
                       </div>
                     ))}
