@@ -8,8 +8,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { LibraryExercise, useExerciseLibrary } from '@/hooks/useExerciseLibrary';
-import { X, Dumbbell, Save, Crop, Camera, ImageIcon } from 'lucide-react';
+import { useExerciseCategories } from '@/hooks/useExerciseCategories';
+import { X, Dumbbell, Save, Crop, Camera, ImageIcon, Plus } from 'lucide-react';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { ExerciseVideoEditor, ExerciseVideoData } from '@/components/ExerciseVideoEditor';
 
@@ -19,17 +27,23 @@ interface ExerciseLibraryDialogProps {
   editingExercise: LibraryExercise | null;
 }
 
+const NEW_CATEGORY = '__new__';
+const NO_CATEGORY = '__none__';
+
 export function ExerciseLibraryDialog({
   open,
   onOpenChange,
   editingExercise,
 }: ExerciseLibraryDialogProps) {
   const { createExercise, updateExercise, uploadExerciseImage } = useExerciseLibrary();
+  const { categories, createCategory } = useExerciseCategories();
 
   const [name, setName] = useState('');
   const [defaultSets, setDefaultSets] = useState(3);
   const [defaultReps, setDefaultReps] = useState(12);
-  // Track images with their type (existing URL or new file)
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [showNewCategory, setShowNewCategory] = useState(false);
   const [images, setImages] = useState<Array<{ type: 'url' | 'file'; value: string; file?: File }>>([]);
   const [video, setVideo] = useState<ExerciseVideoData>({
     video_type: null,
@@ -43,14 +57,13 @@ export function ExerciseLibraryDialog({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset form when dialog opens/closes or editing exercise changes
   useEffect(() => {
     if (open) {
       if (editingExercise) {
         setName(editingExercise.name);
         setDefaultSets(editingExercise.default_sets);
         setDefaultReps(editingExercise.default_reps);
-        // Convert existing URLs to our unified format
+        setCategoryId(editingExercise.category_id ?? null);
         const existingImages = (editingExercise.image_urls || []).map(url => ({
           type: 'url' as const,
           value: url,
@@ -66,6 +79,7 @@ export function ExerciseLibraryDialog({
         setName('');
         setDefaultSets(3);
         setDefaultReps(12);
+        setCategoryId(null);
         setImages([]);
         setVideo({
           video_type: null,
@@ -74,6 +88,8 @@ export function ExerciseLibraryDialog({
           video_end_seconds: null,
         });
       }
+      setShowNewCategory(false);
+      setNewCategoryName('');
     }
   }, [editingExercise?.id, open]);
 
@@ -88,7 +104,6 @@ export function ExerciseLibraryDialog({
       };
       reader.readAsDataURL(file);
     }
-    // Reset the input so the same file can be selected again
     e.target.value = '';
   };
 
@@ -115,21 +130,40 @@ export function ExerciseLibraryDialog({
     }
   };
 
+  const handleCategoryChange = (value: string) => {
+    if (value === NEW_CATEGORY) {
+      setShowNewCategory(true);
+      return;
+    }
+    if (value === NO_CATEGORY) {
+      setCategoryId(null);
+      return;
+    }
+    setCategoryId(value);
+  };
+
+  const handleCreateNewCategory = async () => {
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+    try {
+      const created = await createCategory.mutateAsync(trimmed);
+      setCategoryId(created.id);
+      setShowNewCategory(false);
+      setNewCategoryName('');
+    } catch {
+      // toast handled in hook
+    }
+  };
+
   const handleSave = async () => {
     if (!name.trim()) return;
 
     setIsSaving(true);
     try {
-      // Separate existing URLs from new files
-      const existingUrls = images
-        .filter((img) => img.type === 'url')
-        .map((img) => img.value);
-      
       const newFiles = images
         .filter((img) => img.type === 'file' && img.file)
         .map((img) => img.file!);
 
-      // Upload new images
       let newImageUrls: string[] = [];
       if (newFiles.length > 0) {
         newImageUrls = await Promise.all(
@@ -137,39 +171,28 @@ export function ExerciseLibraryDialog({
         );
       }
 
-      // Preserve order: iterate through images array and replace files with uploaded URLs
       let fileIndex = 0;
       const allImageUrls = images.map((img) => {
-        if (img.type === 'url') {
-          return img.value;
-        } else {
-          return newImageUrls[fileIndex++];
-        }
+        if (img.type === 'url') return img.value;
+        return newImageUrls[fileIndex++];
       });
 
+      const payload = {
+        name: name.trim(),
+        default_sets: defaultSets,
+        default_reps: defaultReps,
+        image_urls: allImageUrls,
+        video_type: video.video_type,
+        video_url: video.video_url,
+        video_start_seconds: video.video_start_seconds,
+        video_end_seconds: video.video_end_seconds,
+        category_id: categoryId,
+      };
+
       if (editingExercise) {
-        await updateExercise.mutateAsync({
-          id: editingExercise.id,
-          name: name.trim(),
-          default_sets: defaultSets,
-          default_reps: defaultReps,
-          image_urls: allImageUrls,
-          video_type: video.video_type,
-          video_url: video.video_url,
-          video_start_seconds: video.video_start_seconds,
-          video_end_seconds: video.video_end_seconds,
-        });
+        await updateExercise.mutateAsync({ id: editingExercise.id, ...payload });
       } else {
-        await createExercise.mutateAsync({
-          name: name.trim(),
-          default_sets: defaultSets,
-          default_reps: defaultReps,
-          image_urls: allImageUrls,
-          video_type: video.video_type,
-          video_url: video.video_url,
-          video_start_seconds: video.video_start_seconds,
-          video_end_seconds: video.video_end_seconds,
-        });
+        await createExercise.mutateAsync(payload);
       }
 
       onOpenChange(false);
@@ -177,6 +200,8 @@ export function ExerciseLibraryDialog({
       setIsSaving(false);
     }
   };
+
+  const selectValue = categoryId ?? NO_CATEGORY;
 
   return (
     <>
@@ -290,6 +315,57 @@ export function ExerciseLibraryDialog({
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ex: Supino Reto"
               />
+            </div>
+
+            {/* Category */}
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              {showNewCategory ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Ex: Peito"
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleCreateNewCategory}
+                    disabled={!newCategoryName.trim() || createCategory.isPending}
+                  >
+                    Criar
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowNewCategory(false);
+                      setNewCategoryName('');
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Select value={selectValue} onValueChange={handleCategoryChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value={NEW_CATEGORY}>
+                      + Criar nova categoria
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

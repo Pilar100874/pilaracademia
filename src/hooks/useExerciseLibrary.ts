@@ -14,6 +14,7 @@ export interface LibraryExercise {
   video_url: string | null;
   video_start_seconds: number | null;
   video_end_seconds: number | null;
+  category_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -49,6 +50,7 @@ export function useExerciseLibrary() {
       video_url?: string | null;
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;
+      category_id?: string | null;
     }) => {
       if (!user) throw new Error('User not authenticated');
 
@@ -64,6 +66,7 @@ export function useExerciseLibrary() {
           video_url: data.video_url ?? null,
           video_start_seconds: data.video_start_seconds ?? null,
           video_end_seconds: data.video_end_seconds ?? null,
+          category_id: data.category_id ?? null,
         })
         .select()
         .single();
@@ -91,6 +94,7 @@ export function useExerciseLibrary() {
       video_url?: string | null;
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;
+      category_id?: string | null;
     }) => {
       const { id, ...updateData } = data;
       const { error } = await supabase

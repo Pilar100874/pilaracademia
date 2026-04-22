@@ -1,26 +1,54 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary';
+import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
-import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft } from 'lucide-react';
+import { VideoThumbnail } from '@/components/VideoThumbnail';
+import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+const ALL_CATEGORIES = '__all__';
+const NO_CATEGORY = '__none__';
 
 export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const { exercises, isLoading, deleteExercise } = useExerciseLibrary();
+  const { categories, deleteCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
+  const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<LibraryExercise | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState<LibraryExercise | null>(null);
   const [zoomImages, setZoomImages] = useState<string[]>([]);
+  const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
 
-  const filteredExercises = exercises.filter((ex) =>
-    ex.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const categoryNameMap = useMemo(() => {
+    const m = new Map<string, string>();
+    categories.forEach((c) => m.set(c.id, c.name));
+    return m;
+  }, [categories]);
+
+  const filteredExercises = exercises.filter((ex) => {
+    const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
+    let matchesCategory = true;
+    if (filterCategory === NO_CATEGORY) {
+      matchesCategory = !ex.category_id;
+    } else if (filterCategory !== ALL_CATEGORIES) {
+      matchesCategory = ex.category_id === filterCategory;
+    }
+    return matchesSearch && matchesCategory;
+  });
 
   const handleEdit = (exercise: LibraryExercise) => {
     setEditingExercise(exercise);
@@ -37,6 +65,14 @@ export default function ExerciseLibraryPage() {
       await deleteExercise.mutateAsync(exerciseToDelete.id);
       setDeleteDialogOpen(false);
       setExerciseToDelete(null);
+    }
+  };
+
+  const confirmDeleteCategory = async () => {
+    if (categoryToDelete) {
+      await deleteCategory.mutateAsync(categoryToDelete.id);
+      if (filterCategory === categoryToDelete.id) setFilterCategory(ALL_CATEGORIES);
+      setCategoryToDelete(null);
     }
   };
 
@@ -63,8 +99,8 @@ export default function ExerciseLibraryPage() {
           </Button>
         </div>
 
-        {/* Search */}
-        <div className="px-4 pb-4">
+        {/* Search + Filter */}
+        <div className="px-4 pb-4 space-y-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -73,6 +109,37 @@ export default function ExerciseLibraryPage() {
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Filtrar por categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_CATEGORIES}>Todas as categorias</SelectItem>
+                <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-9 w-9 text-destructive hover:text-destructive shrink-0"
+                title="Excluir categoria"
+                onClick={() => {
+                  const cat = categories.find((c) => c.id === filterCategory);
+                  if (cat) setCategoryToDelete({ id: cat.id, name: cat.name });
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -88,15 +155,17 @@ export default function ExerciseLibraryPage() {
             <Dumbbell className="h-16 w-16 text-muted-foreground mx-auto" />
             <div>
               <p className="font-medium">
-                {search ? 'Nenhum exercício encontrado' : 'Biblioteca vazia'}
+                {search || filterCategory !== ALL_CATEGORIES
+                  ? 'Nenhum exercício encontrado'
+                  : 'Biblioteca vazia'}
               </p>
               <p className="text-sm text-muted-foreground">
-                {search
-                  ? 'Tente outro termo de busca'
+                {search || filterCategory !== ALL_CATEGORIES
+                  ? 'Tente outro filtro ou termo de busca'
                   : 'Crie seus exercícios para usar nos treinos'}
               </p>
             </div>
-            {!search && (
+            {!search && filterCategory === ALL_CATEGORIES && (
               <Button onClick={() => {
                 setEditingExercise(null);
                 setDialogOpen(true);
@@ -111,14 +180,20 @@ export default function ExerciseLibraryPage() {
             {filteredExercises.map((exercise) => {
               const firstImage = exercise.image_urls?.[0];
               const imageCount = exercise.image_urls?.length || 0;
+              const hasVideo = !!exercise.video_url && !!exercise.video_type;
+              const categoryName = exercise.category_id
+                ? categoryNameMap.get(exercise.category_id)
+                : null;
 
               return (
                 <div
                   key={exercise.id}
                   className="flex items-center gap-3 p-3 rounded-xl border bg-card"
                 >
-                  <div 
-                    className={`relative w-16 h-16 rounded-lg bg-muted overflow-hidden shrink-0 ${firstImage ? 'cursor-pointer hover:ring-2 hover:ring-primary transition-all' : ''}`}
+                  <div
+                    className={`relative w-16 h-16 rounded-lg bg-muted overflow-hidden shrink-0 ${
+                      firstImage || hasVideo ? 'cursor-pointer hover:ring-2 hover:ring-primary transition-all' : ''
+                    }`}
                     onClick={() => exercise.image_urls?.length && setZoomImages(exercise.image_urls)}
                   >
                     {firstImage ? (
@@ -135,6 +210,13 @@ export default function ExerciseLibraryPage() {
                           </div>
                         )}
                       </>
+                    ) : hasVideo ? (
+                      <VideoThumbnail
+                        videoType={exercise.video_type}
+                        videoUrl={exercise.video_url}
+                        startSeconds={exercise.video_start_seconds}
+                        className="w-full h-full"
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Dumbbell className="h-6 w-6 text-muted-foreground" />
@@ -144,9 +226,16 @@ export default function ExerciseLibraryPage() {
 
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold truncate">{exercise.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {exercise.default_sets} séries × {exercise.default_reps} reps
-                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm text-muted-foreground">
+                        {exercise.default_sets} séries × {exercise.default_reps} reps
+                      </p>
+                      {categoryName && (
+                        <span className="inline-flex items-center text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                          {categoryName}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex gap-1">
@@ -189,6 +278,14 @@ export default function ExerciseLibraryPage() {
         onConfirm={confirmDelete}
         title="Excluir exercício?"
         description={`O exercício "${exerciseToDelete?.name}" será removido da biblioteca. Os treinos que usam este exercício não serão afetados.`}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!categoryToDelete}
+        onOpenChange={(open) => !open && setCategoryToDelete(null)}
+        onConfirm={confirmDeleteCategory}
+        title="Excluir categoria?"
+        description={`A categoria "${categoryToDelete?.name}" será removida. Os exercícios vinculados continuarão na biblioteca, apenas sem categoria.`}
       />
 
       <ImageZoomDialog
