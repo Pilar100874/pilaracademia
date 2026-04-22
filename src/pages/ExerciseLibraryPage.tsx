@@ -14,6 +14,15 @@ import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
