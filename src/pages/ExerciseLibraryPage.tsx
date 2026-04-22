@@ -14,6 +14,7 @@ import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
+import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import {
   Dialog,
   DialogContent,
