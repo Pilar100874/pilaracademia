@@ -218,7 +218,6 @@ export function SelectExerciseDialog({
                             videoUrl={exercise.video_url}
                             startSeconds={exercise.video_start_seconds}
                             endSeconds={exercise.video_end_seconds}
-                            autoplayPreview
                             className="w-full h-full"
                             iconSize="sm"
                           />
