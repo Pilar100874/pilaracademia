@@ -18,19 +18,21 @@ export function WorkoutViewerDialog({
 }: WorkoutViewerDialogProps) {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [showVideo, setShowVideo] = useState(false);
   const exercises = plan.exercises || [];
 
   const currentExercise = exercises[currentExerciseIndex];
-  
+
   // Get images for current exercise (support both image_urls and legacy image_url)
   const currentImages = currentExercise
-    ? currentExercise.image_urls?.length 
-      ? currentExercise.image_urls 
-      : currentExercise.image_url 
-        ? [currentExercise.image_url] 
+    ? currentExercise.image_urls?.length
+      ? currentExercise.image_urls
+      : currentExercise.image_url
+        ? [currentExercise.image_url]
         : []
     : [];
 
+  const hasVideo = !!(currentExercise?.video_type && currentExercise?.video_url);
   const isFirstExercise = currentExerciseIndex === 0;
   const isLastExercise = currentExerciseIndex === exercises.length - 1;
   const hasMultiplePhotos = currentImages.length > 1;
