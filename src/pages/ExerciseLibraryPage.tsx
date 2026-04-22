@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,15 +14,19 @@ import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
-import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag } from 'lucide-react';
+import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
 
 export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
-  const { exercises, isLoading, deleteExercise } = useExerciseLibrary();
+  const { user } = useAuth();
+  const { exercises, isLoading, deleteExercise, createExercise } = useExerciseLibrary();
   const { categories, deleteCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
@@ -32,6 +36,8 @@ export default function ExerciseLibraryPage() {
   const [exerciseToDelete, setExerciseToDelete] = useState<LibraryExercise | null>(null);
   const [zoomImages, setZoomImages] = useState<string[]>([]);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [bulkUploading, setBulkUploading] = useState<{ done: number; total: number } | null>(null);
+  const bulkInputRef = useRef<HTMLInputElement>(null);
 
   const categoryNameMap = useMemo(() => {
     const m = new Map<string, string>();
@@ -76,6 +82,99 @@ export default function ExerciseLibraryPage() {
     }
   };
 
+  const generateUniqueName = (baseName: string, used: Set<string>): string => {
+    const prefix = `${baseName} `;
+    const usedNumbers = new Set<number>();
+    exercises.forEach((ex) => {
+      if (ex.name.startsWith(prefix)) {
+        const n = parseInt(ex.name.slice(prefix.length).trim(), 10);
+        if (!Number.isNaN(n)) usedNumbers.add(n);
+      }
+    });
+    used.forEach((name) => {
+      if (name.startsWith(prefix)) {
+        const n = parseInt(name.slice(prefix.length).trim(), 10);
+        if (!Number.isNaN(n)) usedNumbers.add(n);
+      }
+    });
+    let next = 1;
+    while (usedNumbers.has(next)) next++;
+    const name = `${baseName} ${next}`;
+    used.add(name);
+    return name;
+  };
+
+  const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (!files.length) return;
+    if (!user) {
+      toast.error('Faça login para enviar vídeos');
+      return;
+    }
+
+    // Determine category to assign and base name
+    const targetCategoryId =
+      filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY
+        ? filterCategory
+        : null;
+    const baseName = targetCategoryId
+      ? categories.find((c) => c.id === targetCategoryId)?.name ?? 'Exercício'
+      : 'Exercício';
+
+    setBulkUploading({ done: 0, total: files.length });
+    const usedNames = new Set<string>();
+    let successCount = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        if (!file.type.startsWith('video/')) {
+          toast.error(`${file.name}: não é um vídeo`);
+          continue;
+        }
+        if (file.size > 50 * 1024 * 1024) {
+          toast.error(`${file.name}: maior que 50 MB`);
+          continue;
+        }
+
+        const ext = file.name.split('.').pop() || 'mp4';
+        const path = `${user.id}/${Date.now()}-${i}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from('exercise-videos')
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (upErr) throw upErr;
+
+        const { data: pub } = supabase.storage
+          .from('exercise-videos')
+          .getPublicUrl(path);
+
+        await createExercise.mutateAsync({
+          name: generateUniqueName(baseName, usedNames),
+          default_sets: 1,
+          default_reps: 10,
+          image_urls: [],
+          video_type: 'upload',
+          video_url: pub.publicUrl,
+          video_start_seconds: 0,
+          video_end_seconds: null,
+          category_id: targetCategoryId,
+        });
+        successCount++;
+      } catch (err) {
+        console.error('Bulk upload error', err);
+        toast.error(`Erro ao enviar ${file.name}`);
+      } finally {
+        setBulkUploading((prev) => prev && { ...prev, done: prev.done + 1 });
+      }
+    }
+
+    setBulkUploading(null);
+    if (successCount > 0) {
+      toast.success(`${successCount} exercício(s) criado(s)`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
@@ -90,6 +189,25 @@ export default function ExerciseLibraryPage() {
               {exercises.length} exercício{exercises.length !== 1 ? 's' : ''}
             </p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!!bulkUploading}
+            onClick={() => bulkInputRef.current?.click()}
+            title="Enviar vários vídeos de uma vez"
+          >
+            {bulkUploading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                {bulkUploading.done}/{bulkUploading.total}
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-1" />
+                Vídeos
+              </>
+            )}
+          </Button>
           <Button onClick={() => {
             setEditingExercise(null);
             setDialogOpen(true);
@@ -97,6 +215,14 @@ export default function ExerciseLibraryPage() {
             <Plus className="h-4 w-4 mr-1" />
             Novo
           </Button>
+          <input
+            ref={bulkInputRef}
+            type="file"
+            accept="video/*"
+            multiple
+            className="sr-only"
+            onChange={handleBulkUpload}
+          />
         </div>
 
         {/* Search + Filter */}
