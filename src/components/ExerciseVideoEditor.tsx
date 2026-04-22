@@ -245,11 +245,15 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
         )}
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as 'youtube' | 'upload')}>
-        <TabsList className="grid grid-cols-2 w-full">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as 'youtube' | 'upload' | 'instagram')}>
+        <TabsList className="grid grid-cols-3 w-full">
           <TabsTrigger value="youtube">
             <Youtube className="h-4 w-4 mr-1" />
             YouTube
+          </TabsTrigger>
+          <TabsTrigger value="instagram">
+            <Instagram className="h-4 w-4 mr-1" />
+            Instagram
           </TabsTrigger>
           <TabsTrigger value="upload">
             <Upload className="h-4 w-4 mr-1" />
