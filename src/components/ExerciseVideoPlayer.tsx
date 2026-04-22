@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { parseYouTubeId, parseInstagramShortcode, buildInstagramEmbedUrl } from '@/lib/youtubeUtils';
 
 interface Props {
@@ -52,6 +53,7 @@ export function ExerciseVideoPlayer({
   const ytContainerRef = useRef<HTMLDivElement>(null);
   const ytPlayerRef = useRef<any>(null);
   const ytIntervalRef = useRef<number | null>(null);
+  const [igReloadKey, setIgReloadKey] = useState(0);
 
   const start = startSeconds ?? 0;
   const end = endSeconds ?? 0;
@@ -216,8 +218,9 @@ export function ExerciseVideoPlayer({
     const shortcode = parseInstagramShortcode(videoUrl);
     if (!shortcode) return null;
     return (
-      <div className={`${className ?? ''} flex items-center justify-center bg-black overflow-auto`}>
+      <div className={`${className ?? ''} relative flex items-center justify-center bg-black overflow-auto`}>
         <iframe
+          key={igReloadKey}
           src={buildInstagramEmbedUrl(shortcode)}
           title="Instagram"
           className="bg-black"
@@ -225,6 +228,14 @@ export function ExerciseVideoPlayer({
           scrolling="yes"
           allow="encrypted-media"
         />
+        <button
+          type="button"
+          onClick={() => setIgReloadKey((k) => k + 1)}
+          aria-label="Recarregar vídeo"
+          className="absolute bottom-3 right-3 z-10 h-10 w-10 rounded-full bg-black/70 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/90 transition-colors shadow-lg"
+        >
+          <RotateCcw className="h-5 w-5" />
+        </button>
       </div>
     );
   }
