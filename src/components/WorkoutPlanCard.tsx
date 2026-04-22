@@ -82,7 +82,7 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
                   return (
                     <div
                       key={exercise.id}
-                      className="shrink-0 w-12 h-12 rounded-lg bg-muted overflow-hidden relative"
+                      className="shrink-0 w-20 h-20 rounded-xl bg-muted overflow-hidden relative [&_.absolute]:hidden"
                     >
                       {exercise.video_url && exercise.video_type ? (
                         <VideoThumbnail
@@ -101,15 +101,15 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Dumbbell className="h-5 w-5 text-muted-foreground" />
+                          <Dumbbell className="h-7 w-7 text-muted-foreground" />
                         </div>
                       )}
                     </div>
                   );
                 })}
                 {plan.exercises.length > 4 && (
-                  <div className="shrink-0 w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
-                    <span className="text-xs text-muted-foreground font-medium">
+                  <div className="shrink-0 w-20 h-20 rounded-xl bg-muted flex items-center justify-center">
+                    <span className="text-sm text-muted-foreground font-semibold">
                       +{plan.exercises.length - 4}
                     </span>
                   </div>
