@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2, CheckSquare, X, FolderInput } from 'lucide-react';
+import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2, CheckSquare, X, FolderInput, Pencil, FolderPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,7 +39,7 @@ export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { exercises, isLoading, deleteExercise, createExercise, moveExercises } = useExerciseLibrary();
-  const { categories, deleteCategory, createCategory } = useExerciseCategories();
+  const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -66,6 +66,10 @@ export default function ExerciseLibraryPage() {
   } | null>(null);
   const [bulkDeleteChecking, setBulkDeleteChecking] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [renameCategory, setRenameCategory] = useState<{ id: string; name: string } | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
+  const [newCategoryValue, setNewCategoryValue] = useState('');
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
@@ -538,19 +542,48 @@ export default function ExerciseLibraryPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9 shrink-0"
+              title="Criar categoria"
+              onClick={() => {
+                setNewCategoryValue('');
+                setCreateCategoryOpen(true);
+              }}
+            >
+              <FolderPlus className="h-4 w-4" />
+            </Button>
             {filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY && (
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-9 w-9 text-destructive hover:text-destructive shrink-0"
-                title="Excluir categoria"
-                onClick={() => {
-                  const cat = categories.find((c) => c.id === filterCategory);
-                  if (cat) setCategoryToDelete({ id: cat.id, name: cat.name });
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 shrink-0"
+                  title="Renomear categoria"
+                  onClick={() => {
+                    const cat = categories.find((c) => c.id === filterCategory);
+                    if (cat) {
+                      setRenameValue(cat.name);
+                      setRenameCategory({ id: cat.id, name: cat.name });
+                    }
+                  }}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 text-destructive hover:text-destructive shrink-0"
+                  title="Excluir categoria"
+                  onClick={() => {
+                    const cat = categories.find((c) => c.id === filterCategory);
+                    if (cat) setCategoryToDelete({ id: cat.id, name: cat.name });
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -941,6 +974,113 @@ export default function ExerciseLibraryPage() {
               }
             >
               Enviar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename category dialog */}
+      <Dialog
+        open={!!renameCategory}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRenameCategory(null);
+            setRenameValue('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Renomear categoria</DialogTitle>
+            <DialogDescription>
+              Atualize o nome de "{renameCategory?.name}".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Novo nome</Label>
+            <Input
+              autoFocus
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              placeholder="Nome da categoria"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameCategory(null)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={
+                updateCategory.isPending ||
+                !renameValue.trim() ||
+                renameValue.trim() === renameCategory?.name
+              }
+              onClick={async () => {
+                if (!renameCategory) return;
+                try {
+                  await updateCategory.mutateAsync({
+                    id: renameCategory.id,
+                    name: renameValue.trim(),
+                  });
+                  setRenameCategory(null);
+                  setRenameValue('');
+                } catch {
+                  // toast handled in hook
+                }
+              }}
+            >
+              {updateCategory.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Salvando...</>
+              ) : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create category dialog */}
+      <Dialog
+        open={createCategoryOpen}
+        onOpenChange={(open) => {
+          setCreateCategoryOpen(open);
+          if (!open) setNewCategoryValue('');
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova categoria</DialogTitle>
+            <DialogDescription>
+              Crie uma categoria para organizar seus exercícios.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Nome</Label>
+            <Input
+              autoFocus
+              value={newCategoryValue}
+              onChange={(e) => setNewCategoryValue(e.target.value)}
+              placeholder="Ex.: Peito, Costas, Pernas..."
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateCategoryOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={createCategory.isPending || !newCategoryValue.trim()}
+              onClick={async () => {
+                try {
+                  const created = await createCategory.mutateAsync(newCategoryValue.trim());
+                  setCreateCategoryOpen(false);
+                  setNewCategoryValue('');
+                  setFilterCategory(created.id);
+                } catch {
+                  // toast handled in hook
+                }
+              }}
+            >
+              {createCategory.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Criando...</>
+              ) : 'Criar'}
             </Button>
           </DialogFooter>
         </DialogContent>
