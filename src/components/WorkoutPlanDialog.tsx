@@ -174,12 +174,25 @@ export function WorkoutPlanDialog({
     setEditingExercise(exercise);
   };
 
-  const handleSaveExercise = async (sets: number, reps: number) => {
+  const handleSaveExercise = async (data: {
+    sets: number;
+    reps: number;
+    video: {
+      video_type: 'youtube' | 'upload' | null;
+      video_url: string | null;
+      video_start_seconds: number | null;
+      video_end_seconds: number | null;
+    };
+  }) => {
     if (!editingExercise) return;
     await updateExercise.mutateAsync({
       id: editingExercise.id,
-      sets,
-      reps,
+      sets: data.sets,
+      reps: data.reps,
+      video_type: data.video.video_type,
+      video_url: data.video.video_url,
+      video_start_seconds: data.video.video_start_seconds,
+      video_end_seconds: data.video.video_end_seconds,
     });
     setEditingExercise(null);
   };
