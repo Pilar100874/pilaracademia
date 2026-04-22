@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,8 +14,11 @@ import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
-import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag } from 'lucide-react';
+import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
