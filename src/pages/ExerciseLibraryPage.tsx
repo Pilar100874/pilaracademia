@@ -437,16 +437,17 @@ export default function ExerciseLibraryPage() {
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b">
-        <div className="flex items-center gap-3 p-4">
+        <div className="flex items-center gap-3 p-4 flex-wrap">
           <Button variant="ghost" size="icon" onClick={() => navigate('/workouts')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold">Biblioteca de Exercícios</h1>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold truncate">Biblioteca de Exercícios</h1>
             <p className="text-sm text-muted-foreground">
               {exercises.length} exercício{exercises.length !== 1 ? 's' : ''}
             </p>
           </div>
+          <div className="flex items-center gap-2 flex-wrap justify-end ml-auto">
           {selectionMode ? (
             <>
               <Button variant="outline" size="sm" onClick={exitSelectionMode}>
