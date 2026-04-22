@@ -24,6 +24,53 @@ interface Props {
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB
 
+interface TimeInputProps {
+  id?: string;
+  seconds: number;
+  onCommit: (seconds: number) => void;
+}
+
+function TimeInput({ id, seconds, onCommit }: TimeInputProps) {
+  const [text, setText] = useState(formatSeconds(seconds));
+  const [invalid, setInvalid] = useState(false);
+
+  // Sync external changes (e.g. when video data is reset/loaded)
+  useEffect(() => {
+    setText(formatSeconds(seconds));
+    setInvalid(false);
+  }, [seconds]);
+
+  const commit = () => {
+    const parsed = parseTimeToSeconds(text);
+    if (parsed == null) {
+      setInvalid(true);
+      return;
+    }
+    setInvalid(false);
+    setText(formatSeconds(parsed));
+    onCommit(parsed);
+  };
+
+  return (
+    <Input
+      id={id}
+      inputMode="numeric"
+      placeholder="0:00"
+      value={text}
+      aria-invalid={invalid}
+      className={invalid ? 'border-destructive' : ''}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+    />
+  );
+}
+
 export function ExerciseVideoEditor({ value, onChange }: Props) {
   const { user } = useAuth();
   const [tab, setTab] = useState<'youtube' | 'upload'>(
