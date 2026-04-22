@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 
 const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
+const NEW_CATEGORY = '__new__';
 
 export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
