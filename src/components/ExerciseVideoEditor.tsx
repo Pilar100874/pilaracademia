@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { parseYouTubeId, formatSeconds, buildYouTubeEmbedUrl, parseTimeToSeconds, parseInstagramShortcode, buildInstagramEmbedUrl } from '@/lib/youtubeUtils';
 
 export interface ExerciseVideoData {
-  video_type: 'youtube' | 'upload' | null;
+  video_type: 'youtube' | 'upload' | 'instagram' | null;
   video_url: string | null;
   video_start_seconds: number | null;
   video_end_seconds: number | null;
@@ -73,8 +73,12 @@ function TimeInput({ id, seconds, onCommit }: TimeInputProps) {
 
 export function ExerciseVideoEditor({ value, onChange }: Props) {
   const { user } = useAuth();
-  const [tab, setTab] = useState<'youtube' | 'upload'>(
-    value.video_type === 'upload' ? 'upload' : 'youtube',
+  const [tab, setTab] = useState<'youtube' | 'upload' | 'instagram'>(
+    value.video_type === 'upload'
+      ? 'upload'
+      : value.video_type === 'instagram'
+      ? 'instagram'
+      : 'youtube',
   );
 
   // YouTube state
@@ -82,6 +86,12 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
     value.video_type === 'youtube' ? value.video_url ?? '' : '',
   );
   const [ytDuration, setYtDuration] = useState<number | null>(null);
+
+  // Instagram state
+  const [igInput, setIgInput] = useState(
+    value.video_type === 'instagram' ? value.video_url ?? '' : '',
+  );
+  const igShortcode = useMemo(() => parseInstagramShortcode(igInput), [igInput]);
 
   // Upload state
   const [uploading, setUploading] = useState(false);
