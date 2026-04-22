@@ -12,7 +12,7 @@ export interface WorkoutExercise {
   sets: number;
   reps: number;
   order_index: number;
-  video_type: 'youtube' | 'upload' | null;
+  video_type: 'youtube' | 'upload' | 'instagram' | null;
   video_url: string | null;
   video_start_seconds: number | null;
   video_end_seconds: number | null;
@@ -140,7 +140,7 @@ export function useWorkoutPlans() {
       sets: number;
       reps: number;
       order_index: number;
-      video_type?: 'youtube' | 'upload' | null;
+      video_type?: 'youtube' | 'upload' | 'instagram' | null;
       video_url?: string | null;
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;
@@ -174,7 +174,7 @@ export function useWorkoutPlans() {
       sets?: number;
       reps?: number;
       order_index?: number;
-      video_type?: 'youtube' | 'upload' | null;
+      video_type?: 'youtube' | 'upload' | 'instagram' | null;
       video_url?: string | null;
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;

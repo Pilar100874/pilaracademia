@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { parseYouTubeId } from '@/lib/youtubeUtils';
+import { parseYouTubeId, parseInstagramShortcode, buildInstagramEmbedUrl } from '@/lib/youtubeUtils';
 
 interface Props {
-  videoType: 'youtube' | 'upload' | string | null;
+  videoType: 'youtube' | 'upload' | 'instagram' | string | null;
   videoUrl: string | null;
   startSeconds?: number | null;
   endSeconds?: number | null;
@@ -199,6 +199,23 @@ export function ExerciseVideoPlayer({
       <div className={`${className ?? ''} relative`}>
         <div ref={ytContainerRef} className="w-full h-full" />
         <div className="absolute inset-0" style={{ pointerEvents: 'auto' }} onClick={(e) => e.preventDefault()} />
+      </div>
+    );
+  }
+
+  if (videoType === 'instagram') {
+    const shortcode = parseInstagramShortcode(videoUrl);
+    if (!shortcode) return null;
+    return (
+      <div className={className}>
+        <iframe
+          src={buildInstagramEmbedUrl(shortcode)}
+          title="Instagram"
+          className="w-full h-full bg-black"
+          frameBorder={0}
+          scrolling="no"
+          allow="encrypted-media"
+        />
       </div>
     );
   }

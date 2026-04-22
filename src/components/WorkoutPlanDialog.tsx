@@ -178,7 +178,7 @@ export function WorkoutPlanDialog({
     sets: number;
     reps: number;
     video: {
-      video_type: 'youtube' | 'upload' | null;
+      video_type: 'youtube' | 'upload' | 'instagram' | null;
       video_url: string | null;
       video_start_seconds: number | null;
       video_end_seconds: number | null;

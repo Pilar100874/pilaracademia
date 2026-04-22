@@ -10,7 +10,7 @@ export interface LibraryExercise {
   image_urls: string[];
   default_sets: number;
   default_reps: number;
-  video_type: 'youtube' | 'upload' | null;
+  video_type: 'youtube' | 'upload' | 'instagram' | null;
   video_url: string | null;
   video_start_seconds: number | null;
   video_end_seconds: number | null;
@@ -46,7 +46,7 @@ export function useExerciseLibrary() {
       image_urls?: string[];
       default_sets?: number;
       default_reps?: number;
-      video_type?: 'youtube' | 'upload' | null;
+      video_type?: 'youtube' | 'upload' | 'instagram' | null;
       video_url?: string | null;
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;
@@ -90,7 +90,7 @@ export function useExerciseLibrary() {
       image_urls?: string[];
       default_sets?: number;
       default_reps?: number;
-      video_type?: 'youtube' | 'upload' | null;
+      video_type?: 'youtube' | 'upload' | 'instagram' | null;
       video_url?: string | null;
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;
