@@ -203,6 +203,23 @@ export function ExerciseVideoPlayer({
     );
   }
 
+  if (videoType === 'instagram') {
+    const shortcode = parseInstagramShortcode(videoUrl);
+    if (!shortcode) return null;
+    return (
+      <div className={className}>
+        <iframe
+          src={buildInstagramEmbedUrl(shortcode)}
+          title="Instagram"
+          className="w-full h-full bg-black"
+          frameBorder={0}
+          scrolling="no"
+          allow="encrypted-media"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={className}>
       <video
