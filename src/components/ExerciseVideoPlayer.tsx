@@ -23,6 +23,7 @@ export function ExerciseVideoPlayer({
   endSeconds,
   className,
   autoPlay = false,
+  loop = false,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
