@@ -40,6 +40,7 @@ export function WorkoutViewerDialog({
   // Reset photo index when exercise changes
   useEffect(() => {
     setCurrentPhotoIndex(0);
+    setShowVideo(false);
   }, [currentExerciseIndex]);
 
   // Reset indices when dialog opens
