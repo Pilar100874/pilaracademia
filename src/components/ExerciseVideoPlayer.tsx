@@ -122,7 +122,7 @@ export function ExerciseVideoPlayer({
         videoId: id,
         playerVars: {
           autoplay: autoPlay ? 1 : 0,
-          mute: autoPlay || loop ? 1 : 0,
+          mute: 1,
           controls: 1,
           rel: 0,
           modestbranding: 1,
@@ -133,8 +133,8 @@ export function ExerciseVideoPlayer({
         events: {
           onReady: (e: any) => {
             try {
+              e.target.mute();
               if (autoPlay || loop) {
-                e.target.mute();
                 e.target.playVideo();
               }
             } catch {
@@ -208,7 +208,7 @@ export function ExerciseVideoPlayer({
         src={videoUrl}
         controls
         autoPlay={autoPlay}
-        muted={autoPlay || loop}
+        muted
         playsInline
         className="w-full h-full bg-black"
       />
