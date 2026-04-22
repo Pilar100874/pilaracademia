@@ -226,13 +226,50 @@ export default function ExerciseLibraryPage() {
     return m;
   }, [categories]);
 
+  // Build hierarchical list (root first, then children indented).
+  // Also map descendants for filtering.
+  const { orderedCategories, descendantsMap } = useMemo(() => {
+    const childrenOf = new Map<string | null, typeof categories>();
+    categories.forEach((c) => {
+      const key = c.parent_id ?? null;
+      const arr = childrenOf.get(key) ?? [];
+      arr.push(c);
+      childrenOf.set(key, arr);
+    });
+    const ordered: { cat: typeof categories[number]; depth: number }[] = [];
+    const walk = (parentId: string | null, depth: number) => {
+      const list = (childrenOf.get(parentId) ?? []).slice().sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+      list.forEach((c) => {
+        ordered.push({ cat: c, depth });
+        walk(c.id, depth + 1);
+      });
+    };
+    walk(null, 0);
+
+    const descendants = new Map<string, Set<string>>();
+    const collect = (id: string): Set<string> => {
+      if (descendants.has(id)) return descendants.get(id)!;
+      const set = new Set<string>([id]);
+      (childrenOf.get(id) ?? []).forEach((child) => {
+        collect(child.id).forEach((d) => set.add(d));
+      });
+      descendants.set(id, set);
+      return set;
+    };
+    categories.forEach((c) => collect(c.id));
+    return { orderedCategories: ordered, descendantsMap: descendants };
+  }, [categories]);
+
   const filteredExercises = exercises.filter((ex) => {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
     let matchesCategory = true;
     if (filterCategory === NO_CATEGORY) {
       matchesCategory = !ex.category_id;
     } else if (filterCategory !== ALL_CATEGORIES) {
-      matchesCategory = ex.category_id === filterCategory;
+      const allowed = descendantsMap.get(filterCategory);
+      matchesCategory = !!ex.category_id && !!allowed?.has(ex.category_id);
     }
     return matchesSearch && matchesCategory;
   });
