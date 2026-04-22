@@ -192,6 +192,10 @@ export function ExerciseVideoPlayer({
         // ignore
       }
       ytPlayerRef.current = null;
+      // Clean any iframe YT injected so React's wrapper unmounts cleanly
+      if (ytContainerRef.current) {
+        ytContainerRef.current.innerHTML = '';
+      }
     };
   }, [videoType, videoUrl, start, end, autoPlay, loop]);
 
