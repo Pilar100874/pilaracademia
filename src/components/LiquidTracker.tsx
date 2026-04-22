@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Droplets, Plus, Trash2, ChevronDown, Pencil, Check, X, Clock } from 'lucide-react';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
 import { useProfile } from '@/hooks/useProfile';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 
 import { format } from 'date-fns';
 
@@ -28,6 +29,7 @@ export function LiquidTracker({ selectedDate, onDataChange }: LiquidTrackerProps
   const [editingEntry, setEditingEntry] = useState<{ id: string; amount: number } | null>(null);
   const [editAmount, setEditAmount] = useState('');
   const [customAmount, setCustomAmount] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const dailyGoal = profile?.daily_liquid_ml || 2000;
   const todayTotal = getTodayTotal();
@@ -141,7 +143,7 @@ export function LiquidTracker({ selectedDate, onDataChange }: LiquidTrackerProps
                       size="sm" 
                       variant="ghost" 
                       className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDelete(entry.id)}
+                      onClick={() => setDeletingId(entry.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -231,6 +233,19 @@ export function LiquidTracker({ selectedDate, onDataChange }: LiquidTrackerProps
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDeleteDialog
+        open={!!deletingId}
+        onOpenChange={(open) => !open && setDeletingId(null)}
+        title="Excluir registro de líquido?"
+        description="Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita."
+        onConfirm={async () => {
+          if (deletingId) {
+            await handleDelete(deletingId);
+            setDeletingId(null);
+          }
+        }}
+      />
     </>
   );
 }

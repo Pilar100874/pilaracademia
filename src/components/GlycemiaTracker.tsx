@@ -7,6 +7,7 @@ import { Activity, Plus, Trash2, ChevronDown, Pencil, Check, Clock, TrendingUp, 
 import { useGlycemiaEntries, MEASUREMENT_TYPES, getGlycemiaStatus, GlycemiaEntry } from '@/hooks/useGlycemiaEntries';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { calculateGlycemicImpact } from '@/lib/glycemicImpact';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { format } from 'date-fns';
 
 interface GlycemiaTrackerProps {
@@ -34,6 +35,7 @@ export function GlycemiaTracker({ selectedDate }: GlycemiaTrackerProps) {
   const [editingEntry, setEditingEntry] = useState<GlycemiaEntry | null>(null);
   const [editGlucose, setEditGlucose] = useState('');
   const [editType, setEditType] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const latestReading = getLatestReading();
   const averageToday = getAverageToday();
@@ -224,7 +226,7 @@ export function GlycemiaTracker({ selectedDate }: GlycemiaTrackerProps) {
                           size="sm" 
                           variant="ghost" 
                           className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                          onClick={() => handleDelete(entry.id)}
+                          onClick={() => setDeletingId(entry.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -345,6 +347,19 @@ export function GlycemiaTracker({ selectedDate }: GlycemiaTrackerProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDeleteDialog
+        open={!!deletingId}
+        onOpenChange={(open) => !open && setDeletingId(null)}
+        title="Excluir medição de glicemia?"
+        description="Tem certeza que deseja excluir esta medição? Esta ação não pode ser desfeita."
+        onConfirm={async () => {
+          if (deletingId) {
+            await handleDelete(deletingId);
+            setDeletingId(null);
+          }
+        }}
+      />
     </>
   );
 }
