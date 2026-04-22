@@ -100,7 +100,7 @@ export function WorkoutViewerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black [&>button]:text-white [&>button]:hover:bg-white/30 [&>button]:top-4 [&>button]:right-4 [&>button]:z-50 [&>button]:h-11 [&>button]:w-11 [&>button]:bg-black/60 [&>button]:backdrop-blur-xl [&>button]:rounded-full [&>button]:border [&>button]:border-white/30 [&>button]:shadow-2xl [&>button>svg]:h-5 [&>button>svg]:w-5 [&>button>svg]:stroke-[2.5]"
+        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black [&>button]:top-5 [&>button]:right-5 [&>button]:z-50 [&>button]:h-12 [&>button]:w-12 [&>button]:p-0 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button]:bg-black/50 [&>button]:backdrop-blur-2xl [&>button]:border [&>button]:border-white/25 [&>button]:text-white [&>button]:opacity-100 [&>button]:shadow-[0_4px_20px_rgba(0,0,0,0.6)] [&>button]:transition-all [&>button]:hover:bg-black/70 [&>button]:hover:scale-110 [&>button]:hover:border-white/40 [&>button]:active:scale-95 [&>button>svg]:h-6 [&>button>svg]:w-6 [&>button>svg]:stroke-[2.5]"
         onKeyDown={handleKeyDown}
       >
         {/* Fullscreen media area */}
