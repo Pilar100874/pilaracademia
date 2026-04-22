@@ -100,7 +100,7 @@ export function WorkoutViewerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black [&>button]:text-white [&>button]:hover:bg-white/20 [&>button]:top-4 [&>button]:right-4 [&>button]:z-50 [&>button]:bg-black/40 [&>button]:backdrop-blur-md [&>button]:rounded-full"
+        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black [&>button]:text-white [&>button]:hover:bg-white/30 [&>button]:top-4 [&>button]:right-4 [&>button]:z-50 [&>button]:h-11 [&>button]:w-11 [&>button]:bg-black/60 [&>button]:backdrop-blur-xl [&>button]:rounded-full [&>button]:border [&>button]:border-white/30 [&>button]:shadow-2xl [&>button>svg]:h-5 [&>button>svg]:w-5 [&>button>svg]:stroke-[2.5]"
         onKeyDown={handleKeyDown}
       >
         {/* Fullscreen media area */}
@@ -205,32 +205,27 @@ export function WorkoutViewerDialog({
           </div>
         )}
 
-        {/* Centered navigation buttons */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 flex items-center gap-6 pointer-events-none">
-          {!isFirstExercise ? (
-            <button
-              onClick={handlePreviousExercise}
-              aria-label="Anterior"
-              className="group pointer-events-auto h-16 w-16 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white shadow-2xl flex items-center justify-center transition-all hover:bg-white/25 hover:scale-110 active:scale-95"
-            >
-              <ChevronLeft className="h-8 w-8 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.5} />
-            </button>
-          ) : (
-            <div className="h-16 w-16" />
-          )}
+        {/* Side navigation - Previous (left) */}
+        {!isFirstExercise && (
+          <button
+            onClick={handlePreviousExercise}
+            aria-label="Anterior"
+            className="group absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-40 h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white shadow-2xl flex items-center justify-center transition-all hover:bg-white/25 hover:scale-110 active:scale-95"
+          >
+            <ChevronLeft className="h-7 w-7 sm:h-8 sm:w-8 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.5} />
+          </button>
+        )}
 
-          {!isLastExercise ? (
-            <button
-              onClick={handleNextExercise}
-              aria-label="Próximo"
-              className="group pointer-events-auto h-16 w-16 rounded-full bg-primary/80 backdrop-blur-xl border border-white/20 text-primary-foreground shadow-2xl flex items-center justify-center transition-all hover:bg-primary hover:scale-110 active:scale-95"
-            >
-              <ChevronRight className="h-8 w-8 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
-            </button>
-          ) : (
-            <div className="h-16 w-16" />
-          )}
-        </div>
+        {/* Side navigation - Next (right) */}
+        {!isLastExercise && (
+          <button
+            onClick={handleNextExercise}
+            aria-label="Próximo"
+            className="group absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-40 h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-primary/80 backdrop-blur-xl border border-white/20 text-primary-foreground shadow-2xl flex items-center justify-center transition-all hover:bg-primary hover:scale-110 active:scale-95"
+          >
+            <ChevronRight className="h-7 w-7 sm:h-8 sm:w-8 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
+          </button>
+        )}
 
         {/* Floating info bar over the media (no nav buttons here anymore) */}
         <div className="absolute bottom-4 left-4 right-4 z-40 pointer-events-none">
