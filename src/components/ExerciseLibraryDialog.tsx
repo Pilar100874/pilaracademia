@@ -31,6 +31,12 @@ export function ExerciseLibraryDialog({
   const [defaultReps, setDefaultReps] = useState(12);
   // Track images with their type (existing URL or new file)
   const [images, setImages] = useState<Array<{ type: 'url' | 'file'; value: string; file?: File }>>([]);
+  const [video, setVideo] = useState<ExerciseVideoData>({
+    video_type: null,
+    video_url: null,
+    video_start_seconds: null,
+    video_end_seconds: null,
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -50,11 +56,23 @@ export function ExerciseLibraryDialog({
           value: url,
         }));
         setImages(existingImages);
+        setVideo({
+          video_type: editingExercise.video_type ?? null,
+          video_url: editingExercise.video_url ?? null,
+          video_start_seconds: editingExercise.video_start_seconds ?? null,
+          video_end_seconds: editingExercise.video_end_seconds ?? null,
+        });
       } else {
         setName('');
         setDefaultSets(3);
         setDefaultReps(12);
         setImages([]);
+        setVideo({
+          video_type: null,
+          video_url: null,
+          video_start_seconds: null,
+          video_end_seconds: null,
+        });
       }
     }
   }, [editingExercise?.id, open]);
