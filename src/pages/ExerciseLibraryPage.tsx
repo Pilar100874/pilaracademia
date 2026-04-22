@@ -200,9 +200,21 @@ export default function ExerciseLibraryPage() {
     setDialogOpen(true);
   };
 
-  const handleDelete = (exercise: LibraryExercise) => {
-    setExerciseToDelete(exercise);
-    setDeleteDialogOpen(true);
+  const handleDelete = async (exercise: LibraryExercise) => {
+    try {
+      const usage = await checkExerciseUsage([exercise.id]);
+      const plans = usage.get(exercise.id);
+      if (plans && plans.length > 0) {
+        toast.error(
+          `Não é possível excluir: usado em ${plans.length} treino(s) — ${plans.join(', ')}`
+        );
+        return;
+      }
+      setExerciseToDelete(exercise);
+      setDeleteDialogOpen(true);
+    } catch {
+      toast.error('Erro ao verificar uso do exercício');
+    }
   };
 
   const confirmDelete = async () => {
