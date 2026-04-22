@@ -91,3 +91,18 @@ export function buildYouTubeEmbedUrl(
   }
   return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
 }
+
+/**
+ * Parse an Instagram post/reel URL and return the canonical shortcode.
+ */
+export function parseInstagramShortcode(url: string): string | null {
+  if (!url) return null;
+  const trimmed = url.trim();
+  const re = /instagram\.com\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/i;
+  const match = trimmed.match(re);
+  return match ? match[1] : null;
+}
+
+export function buildInstagramEmbedUrl(shortcode: string): string {
+  return `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
+}
