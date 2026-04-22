@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { Edit, ChevronRight, Dumbbell, Play } from 'lucide-react';
+import { VideoThumbnail } from '@/components/VideoThumbnail';
 
 const DAYS_SHORT = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
@@ -76,24 +77,36 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
             {/* Exercise preview */}
             {plan.exercises && plan.exercises.length > 0 && (
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {plan.exercises.slice(0, 4).map((exercise) => (
-                  <div
-                    key={exercise.id}
-                    className="shrink-0 w-12 h-12 rounded-lg bg-muted overflow-hidden"
-                  >
-                    {exercise.image_url ? (
-                      <img
-                        src={exercise.image_url}
-                        alt={exercise.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Dumbbell className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {plan.exercises.slice(0, 4).map((exercise) => {
+                  const firstImg = exercise.image_urls?.[0] ?? exercise.image_url;
+                  return (
+                    <div
+                      key={exercise.id}
+                      className="shrink-0 w-12 h-12 rounded-lg bg-muted overflow-hidden relative"
+                    >
+                      {exercise.video_url && exercise.video_type ? (
+                        <VideoThumbnail
+                          videoType={exercise.video_type}
+                          videoUrl={exercise.video_url}
+                          startSeconds={exercise.video_start_seconds}
+                          endSeconds={exercise.video_end_seconds}
+                          iconSize="sm"
+                          className="w-full h-full"
+                        />
+                      ) : firstImg ? (
+                        <img
+                          src={firstImg}
+                          alt={exercise.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Dumbbell className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
                 {plan.exercises.length > 4 && (
                   <div className="shrink-0 w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
                     <span className="text-xs text-muted-foreground font-medium">
