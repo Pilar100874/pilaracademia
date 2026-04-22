@@ -37,7 +37,7 @@ export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { exercises, isLoading, deleteExercise, createExercise } = useExerciseLibrary();
-  const { categories, deleteCategory } = useExerciseCategories();
+  const { categories, deleteCategory, createCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -47,6 +47,9 @@ export default function ExerciseLibraryPage() {
   const [zoomImages, setZoomImages] = useState<string[]>([]);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
   const [bulkUploading, setBulkUploading] = useState<{ done: number; total: number } | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
+  const [bulkCategoryChoice, setBulkCategoryChoice] = useState<string>(NO_CATEGORY);
+  const [newBulkCategoryName, setNewBulkCategoryName] = useState('');
   const bulkInputRef = useRef<HTMLInputElement>(null);
 
   const categoryNameMap = useMemo(() => {
