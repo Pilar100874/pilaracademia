@@ -315,6 +315,8 @@ export function ExerciseLibraryDialog({
               </div>
             </div>
 
+            <ExerciseVideoEditor value={video} onChange={setVideo} />
+
             <Button
               onClick={handleSave}
               disabled={!name.trim() || isSaving}
