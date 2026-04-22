@@ -83,13 +83,13 @@ export function VideoPreviewDialog({
         )}
 
         {showNav && (
-          <>
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4 pb-safe">
             <button
               type="button"
               onClick={onPrev}
               disabled={!hasPrev}
               aria-label="Vídeo anterior"
-              className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-40 h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-black/50 backdrop-blur-2xl border border-white/25 text-white shadow-[0_4px_20px_rgba(0,0,0,0.6)] flex items-center justify-center transition-all hover:bg-black/70 hover:scale-110 hover:border-white/40 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 disabled:cursor-not-allowed"
+              className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-black/50 backdrop-blur-2xl border border-white/25 text-white shadow-[0_4px_20px_rgba(0,0,0,0.6)] flex items-center justify-center transition-all hover:bg-black/70 hover:scale-110 hover:border-white/40 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="h-7 w-7 stroke-[2.5]" />
             </button>
@@ -98,11 +98,11 @@ export function VideoPreviewDialog({
               onClick={onNext}
               disabled={!hasNext}
               aria-label="Próximo vídeo"
-              className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 z-40 h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-black/50 backdrop-blur-2xl border border-white/25 text-white shadow-[0_4px_20px_rgba(0,0,0,0.6)] flex items-center justify-center transition-all hover:bg-black/70 hover:scale-110 hover:border-white/40 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 disabled:cursor-not-allowed"
+              className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-black/50 backdrop-blur-2xl border border-white/25 text-white shadow-[0_4px_20px_rgba(0,0,0,0.6)] flex items-center justify-center transition-all hover:bg-black/70 hover:scale-110 hover:border-white/40 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 disabled:cursor-not-allowed"
             >
               <ChevronRight className="h-7 w-7 stroke-[2.5]" />
             </button>
-          </>
+          </div>
         )}
       </DialogContent>
     </Dialog>
