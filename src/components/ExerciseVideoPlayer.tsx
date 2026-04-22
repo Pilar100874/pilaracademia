@@ -218,7 +218,7 @@ export function ExerciseVideoPlayer({
     const shortcode = parseInstagramShortcode(videoUrl);
     if (!shortcode) return null;
     return (
-      <div className={`${className ?? ''} relative flex items-center justify-center bg-black overflow-auto`}>
+      <div className={`${className ?? ''} relative flex items-center justify-center bg-black overflow-hidden`}>
         <iframe
           key={igReloadKey}
           src={buildInstagramEmbedUrl(shortcode)}
