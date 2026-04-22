@@ -77,7 +77,7 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
             {/* Exercise preview */}
             {plan.exercises && plan.exercises.length > 0 && (
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {plan.exercises.slice(0, 4).map((exercise) => {
+                {plan.exercises.map((exercise) => {
                   const firstImg = exercise.image_urls?.[0] ?? exercise.image_url;
                   return (
                     <div
@@ -107,13 +107,6 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
                     </div>
                   );
                 })}
-                {plan.exercises.length > 4 && (
-                  <div className="shrink-0 w-20 h-20 rounded-xl bg-muted flex items-center justify-center">
-                    <span className="text-sm text-muted-foreground font-semibold">
-                      +{plan.exercises.length - 4}
-                    </span>
-                  </div>
-                )}
               </div>
             )}
           </div>
