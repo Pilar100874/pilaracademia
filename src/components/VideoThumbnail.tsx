@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Play } from 'lucide-react';
+import { Play, Instagram } from 'lucide-react';
 import { parseYouTubeId } from '@/lib/youtubeUtils';
 
 interface Props {
-  videoType: 'youtube' | 'upload' | string | null;
+  videoType: 'youtube' | 'upload' | 'instagram' | string | null;
   videoUrl: string | null;
   startSeconds?: number | null;
   className?: string;
