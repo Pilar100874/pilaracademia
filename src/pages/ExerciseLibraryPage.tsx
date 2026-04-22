@@ -663,6 +663,61 @@ export default function ExerciseLibraryPage() {
         onOpenChange={(open) => !open && setZoomImages([])}
       />
 
+      {/* Bulk delete dialog */}
+      <Dialog
+        open={bulkDeleteOpen}
+        onOpenChange={(open) => {
+          setBulkDeleteOpen(open);
+          if (!open) setBulkDeleteBlocked(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir exercícios?</DialogTitle>
+            <DialogDescription>
+              {bulkDeleteBlocked && bulkDeleteBlocked.deletableIds.length > 0
+                ? `${bulkDeleteBlocked.deletableIds.length} exercício(s) serão removidos da biblioteca.`
+                : 'Nenhum dos selecionados pode ser excluído.'}
+            </DialogDescription>
+          </DialogHeader>
+          {bulkDeleteBlocked && bulkDeleteBlocked.blocked.length > 0 && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 space-y-2 max-h-60 overflow-y-auto">
+              <p className="text-sm font-medium text-destructive">
+                {bulkDeleteBlocked.blocked.length} exercício(s) em uso e serão ignorados:
+              </p>
+              <ul className="space-y-1 text-sm">
+                {bulkDeleteBlocked.blocked.map((b) => (
+                  <li key={b.id} className="text-muted-foreground">
+                    <span className="text-foreground font-medium">{b.name}</span>
+                    {' '}— treino(s): {b.plans.join(', ')}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDeleteOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={runBulkDelete}
+              disabled={
+                bulkDeleting ||
+                !bulkDeleteBlocked ||
+                bulkDeleteBlocked.deletableIds.length === 0
+              }
+            >
+              {bulkDeleting ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Excluindo...</>
+              ) : (
+                `Excluir ${bulkDeleteBlocked?.deletableIds.length ?? 0}`
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Move selected exercises dialog */}
       <Dialog
         open={moveDialogOpen}
