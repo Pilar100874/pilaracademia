@@ -35,12 +35,12 @@ export function ExerciseLibraryDialog({
   onOpenChange,
   editingExercise,
 }: ExerciseLibraryDialogProps) {
-  const { createExercise, updateExercise, uploadExerciseImage } = useExerciseLibrary();
+  const { exercises, createExercise, updateExercise, uploadExerciseImage } = useExerciseLibrary();
   const { categories, createCategory } = useExerciseCategories();
 
   const [name, setName] = useState('');
-  const [defaultSets, setDefaultSets] = useState(3);
-  const [defaultReps, setDefaultReps] = useState(12);
+  const [defaultSets, setDefaultSets] = useState(1);
+  const [defaultReps, setDefaultReps] = useState(10);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showNewCategory, setShowNewCategory] = useState(false);
@@ -77,8 +77,8 @@ export function ExerciseLibraryDialog({
         });
       } else {
         setName('');
-        setDefaultSets(3);
-        setDefaultReps(12);
+        setDefaultSets(1);
+        setDefaultReps(10);
         setCategoryId(null);
         setImages([]);
         setVideo({
@@ -155,11 +155,32 @@ export function ExerciseLibraryDialog({
     }
   };
 
-  const handleSave = async () => {
-    if (!name.trim()) return;
+  const generateAutoName = (): string => {
+    const categoryName = categoryId
+      ? categories.find((c) => c.id === categoryId)?.name ?? 'Exercício'
+      : 'Exercício';
 
+    // Find existing exercises with the same category prefix and pick next number
+    const prefix = `${categoryName} `;
+    const usedNumbers = new Set<number>();
+    exercises.forEach((ex) => {
+      if (editingExercise && ex.id === editingExercise.id) return;
+      if (ex.name.startsWith(prefix)) {
+        const rest = ex.name.slice(prefix.length).trim();
+        const n = parseInt(rest, 10);
+        if (!Number.isNaN(n)) usedNumbers.add(n);
+      }
+    });
+    let next = 1;
+    while (usedNumbers.has(next)) next++;
+    return `${categoryName} ${next}`;
+  };
+
+  const handleSave = async () => {
     setIsSaving(true);
     try {
+      const finalName = name.trim() || generateAutoName();
+
       const newFiles = images
         .filter((img) => img.type === 'file' && img.file)
         .map((img) => img.file!);
@@ -178,7 +199,7 @@ export function ExerciseLibraryDialog({
       });
 
       const payload = {
-        name: name.trim(),
+        name: finalName,
         default_sets: defaultSets,
         default_reps: defaultReps,
         image_urls: allImageUrls,
@@ -308,12 +329,14 @@ export function ExerciseLibraryDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="exercise-name">Nome do Exercício</Label>
+              <Label htmlFor="exercise-name">
+                Nome do Exercício <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
+              </Label>
               <Input
                 id="exercise-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Supino Reto"
+                placeholder="Em branco: usa categoria + número"
               />
             </div>
 
@@ -395,7 +418,7 @@ export function ExerciseLibraryDialog({
 
             <Button
               onClick={handleSave}
-              disabled={!name.trim() || isSaving}
+              disabled={isSaving}
               className="w-full"
             >
               <Save className="h-4 w-4 mr-1" />
