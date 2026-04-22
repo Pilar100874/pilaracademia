@@ -53,6 +53,7 @@ export function ExerciseVideoPlayer({
   const ytContainerRef = useRef<HTMLDivElement>(null);
   const ytPlayerRef = useRef<any>(null);
   const ytIntervalRef = useRef<number | null>(null);
+  const [igReloadKey, setIgReloadKey] = useState(0);
 
   const start = startSeconds ?? 0;
   const end = endSeconds ?? 0;
