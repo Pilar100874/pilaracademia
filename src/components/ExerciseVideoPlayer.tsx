@@ -196,8 +196,9 @@ export function ExerciseVideoPlayer({
     const id = parseYouTubeId(videoUrl);
     if (!id) return null;
     return (
-      <div className={className}>
+      <div className={`${className ?? ''} relative`}>
         <div ref={ytContainerRef} className="w-full h-full" />
+        <div className="absolute inset-0" style={{ pointerEvents: 'auto' }} onClick={(e) => e.preventDefault()} />
       </div>
     );
   }
