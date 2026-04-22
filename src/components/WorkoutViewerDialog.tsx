@@ -205,62 +205,44 @@ export function WorkoutViewerDialog({
           </div>
         )}
 
-        {/* Exercise info panel - sits below the media (no overlap) */}
-        <div className="relative z-40 shrink-0 bg-black/80 backdrop-blur-md border-t border-white/10 p-4">
-          {/* Exercise number badge */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-bold">
+        {/* Exercise info panel - single compact row */}
+        <div className="relative z-40 shrink-0 bg-black/80 backdrop-blur-md border-t border-white/10 px-3 py-2">
+          <div className="flex items-center gap-2">
+            {/* Number badge */}
+            <div className="bg-primary text-primary-foreground h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0">
               {currentExerciseIndex + 1}
             </div>
-            <h3 className="text-white text-xl font-bold">{currentExercise.name}</h3>
-          </div>
 
-          {/* Sets and reps */}
-          <div className="flex gap-4 mb-4">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 text-center">
-              <p className="text-2xl font-bold text-white">{currentExercise.sets}</p>
-              <p className="text-xs text-white/70">Séries</p>
+            {/* Name + sets×reps */}
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-bold text-sm truncate leading-tight">
+                {currentExercise.name}
+              </p>
+              <p className="text-white/70 text-xs leading-tight">
+                {currentExercise.sets} × {currentExercise.reps}
+              </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 text-center">
-              <p className="text-2xl font-bold text-white">{currentExercise.reps}</p>
-              <p className="text-xs text-white/70">Repetições</p>
-            </div>
-          </div>
 
-          {/* Exercise navigation */}
-          <div className="flex gap-3">
+            {/* Navigation */}
             <Button
+              size="icon"
               variant="outline"
-              className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              className="h-9 w-9 shrink-0 bg-white/10 border-white/20 text-white hover:bg-white/20"
               onClick={handlePreviousExercise}
               disabled={isFirstExercise}
+              aria-label="Anterior"
             >
-              <ChevronUp className="h-4 w-4 mr-1" />
-              Anterior
+              <ChevronUp className="h-4 w-4" />
             </Button>
             <Button
-              className="flex-1"
+              size="icon"
+              className="h-9 w-9 shrink-0"
               onClick={handleNextExercise}
               disabled={isLastExercise}
+              aria-label="Próximo"
             >
-              Próximo
-              <ChevronDown className="h-4 w-4 ml-1" />
+              <ChevronDown className="h-4 w-4" />
             </Button>
-          </div>
-
-          {/* Exercise progress dots */}
-          <div className="flex justify-center gap-1.5 mt-4">
-            {exercises.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentExerciseIndex(index)}
-                className={`h-2 rounded-full transition-all ${
-                  index === currentExerciseIndex
-                    ? 'w-6 bg-primary'
-                    : 'w-2 bg-white/30 hover:bg-white/50'
-                }`}
-              />
-            ))}
           </div>
         </div>
       </DialogContent>
