@@ -136,6 +136,7 @@ export function WorkoutPlanDialog({
       video_url: libraryExercise.video_url ?? null,
       video_start_seconds: libraryExercise.video_start_seconds ?? null,
       video_end_seconds: libraryExercise.video_end_seconds ?? null,
+      exercise_library_id: libraryExercise.id,
     });
   };
 
