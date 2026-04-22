@@ -16,6 +16,7 @@ import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
 import {
   Dialog,
   DialogContent,
