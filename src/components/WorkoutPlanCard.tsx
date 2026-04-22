@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { Edit, ChevronRight, Dumbbell, Play } from 'lucide-react';
+import { VideoThumbnail } from '@/components/VideoThumbnail';
 
 const DAYS_SHORT = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
