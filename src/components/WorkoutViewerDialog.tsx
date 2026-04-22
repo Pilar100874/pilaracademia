@@ -100,11 +100,11 @@ export function WorkoutViewerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black [&>button]:text-white [&>button]:hover:bg-white/20 [&>button]:top-4 [&>button]:right-4 [&>button]:z-50 [&>button]:bg-black/40 [&>button]:backdrop-blur-md [&>button]:rounded-full"
+        className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black flex flex-col [&>button]:text-white [&>button]:hover:bg-white/20 [&>button]:top-4 [&>button]:right-4 [&>button]:z-50 [&>button]:bg-black/40 [&>button]:backdrop-blur-md [&>button]:rounded-full"
         onKeyDown={handleKeyDown}
       >
-        {/* Fullscreen media area */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black">
+        {/* Media area - takes all available space above the bottom panel */}
+        <div className="relative flex-1 min-h-0 flex items-center justify-center bg-black overflow-hidden">
           {showVideo && hasVideo ? (
             <ExerciseVideoPlayer
               videoType={currentExercise.video_type}
@@ -138,7 +138,6 @@ export function WorkoutViewerDialog({
             </div>
           )}
         </div>
-
         {/* Header overlay (on top of media) */}
         <div className="absolute top-4 left-4 right-20 z-40 pointer-events-none">
           <div className="inline-block bg-black/40 backdrop-blur-md rounded-xl px-3 py-2">
@@ -206,8 +205,8 @@ export function WorkoutViewerDialog({
           </div>
         )}
 
-        {/* Exercise info overlay - bottom (glassmorphic, floats over media) */}
-        <div className="absolute bottom-3 left-3 right-3 z-40 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 p-4 shadow-2xl">
+        {/* Exercise info panel - sits below the media (no overlap) */}
+        <div className="relative z-40 shrink-0 bg-black/80 backdrop-blur-md border-t border-white/10 p-4">
           {/* Exercise number badge */}
           <div className="flex items-center gap-3 mb-3">
             <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-bold">
