@@ -189,6 +189,25 @@ export default function ExerciseLibraryPage() {
               {exercises.length} exercício{exercises.length !== 1 ? 's' : ''}
             </p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!!bulkUploading}
+            onClick={() => bulkInputRef.current?.click()}
+            title="Enviar vários vídeos de uma vez"
+          >
+            {bulkUploading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                {bulkUploading.done}/{bulkUploading.total}
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-1" />
+                Vídeos
+              </>
+            )}
+          </Button>
           <Button onClick={() => {
             setEditingExercise(null);
             setDialogOpen(true);
@@ -196,6 +215,14 @@ export default function ExerciseLibraryPage() {
             <Plus className="h-4 w-4 mr-1" />
             Novo
           </Button>
+          <input
+            ref={bulkInputRef}
+            type="file"
+            accept="video/*"
+            multiple
+            className="sr-only"
+            onChange={handleBulkUpload}
+          />
         </div>
 
         {/* Search + Filter */}
