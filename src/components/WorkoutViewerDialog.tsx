@@ -120,6 +120,7 @@ export function WorkoutViewerDialog({
               startSeconds={currentExercise.video_start_seconds}
               endSeconds={currentExercise.video_end_seconds}
               autoPlay
+              loop
               className="w-full max-w-4xl aspect-video"
             />
           ) : currentImages.length > 0 ? (
