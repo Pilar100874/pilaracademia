@@ -8,7 +8,7 @@ import { Trash2, Upload, Youtube, Video as VideoIcon, Loader2 } from 'lucide-rea
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { parseYouTubeId, formatSeconds, buildYouTubeEmbedUrl } from '@/lib/youtubeUtils';
+import { parseYouTubeId, formatSeconds, buildYouTubeEmbedUrl, parseTimeToSeconds } from '@/lib/youtubeUtils';
 
 export interface ExerciseVideoData {
   video_type: 'youtube' | 'upload' | null;
@@ -23,6 +23,53 @@ interface Props {
 }
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB
+
+interface TimeInputProps {
+  id?: string;
+  seconds: number;
+  onCommit: (seconds: number) => void;
+}
+
+function TimeInput({ id, seconds, onCommit }: TimeInputProps) {
+  const [text, setText] = useState(formatSeconds(seconds));
+  const [invalid, setInvalid] = useState(false);
+
+  // Sync external changes (e.g. when video data is reset/loaded)
+  useEffect(() => {
+    setText(formatSeconds(seconds));
+    setInvalid(false);
+  }, [seconds]);
+
+  const commit = () => {
+    const parsed = parseTimeToSeconds(text);
+    if (parsed == null) {
+      setInvalid(true);
+      return;
+    }
+    setInvalid(false);
+    setText(formatSeconds(parsed));
+    onCommit(parsed);
+  };
+
+  return (
+    <Input
+      id={id}
+      inputMode="numeric"
+      placeholder="0:00"
+      value={text}
+      aria-invalid={invalid}
+      className={invalid ? 'border-destructive' : ''}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+    />
+  );
+}
 
 export function ExerciseVideoEditor({ value, onChange }: Props) {
   const { user } = useAuth();
@@ -223,37 +270,26 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Dica: o YouTube não permite ler a duração automaticamente. Ajuste o
-                início e fim manualmente (em segundos) abaixo.
+                Dica: defina o início e o fim no formato <strong>M:SS</strong> (ex: 1:30).
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="yt-start" className="text-xs">Início (s)</Label>
-                  <Input
+                  <Label htmlFor="yt-start" className="text-xs">Início (M:SS)</Label>
+                  <TimeInput
                     id="yt-start"
-                    type="number"
-                    min={0}
-                    value={start}
-                    onChange={(e) =>
-                      onChange({
-                        ...value,
-                        video_start_seconds: Math.max(0, Number(e.target.value) || 0),
-                      })
+                    seconds={start}
+                    onCommit={(s) =>
+                      onChange({ ...value, video_start_seconds: Math.max(0, s) })
                     }
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="yt-end" className="text-xs">Fim (s)</Label>
-                  <Input
+                  <Label htmlFor="yt-end" className="text-xs">Fim (M:SS)</Label>
+                  <TimeInput
                     id="yt-end"
-                    type="number"
-                    min={0}
-                    value={end}
-                    onChange={(e) =>
-                      onChange({
-                        ...value,
-                        video_end_seconds: Math.max(0, Number(e.target.value) || 0),
-                      })
+                    seconds={end}
+                    onCommit={(s) =>
+                      onChange({ ...value, video_end_seconds: Math.max(0, s) })
                     }
                   />
                 </div>

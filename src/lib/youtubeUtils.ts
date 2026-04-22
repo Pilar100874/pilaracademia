@@ -30,6 +30,42 @@ export function formatSeconds(totalSeconds: number): string {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
+/**
+ * Parse a time string in formats: "M:SS", "MM:SS", "H:MM:SS", or plain seconds "123".
+ * Returns total seconds, or null if invalid.
+ */
+export function parseTimeToSeconds(input: string): number | null {
+  if (input == null) return null;
+  const trimmed = String(input).trim();
+  if (!trimmed) return 0;
+
+  // Plain number (seconds)
+  if (/^\d+(\.\d+)?$/.test(trimmed)) {
+    const n = Number(trimmed);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  }
+
+  // M:SS or H:MM:SS
+  const parts = trimmed.split(':');
+  if (parts.length < 2 || parts.length > 3) return null;
+  if (!parts.every((p) => /^\d+$/.test(p))) return null;
+
+  const nums = parts.map((p) => parseInt(p, 10));
+  if (nums.some((n) => !Number.isFinite(n) || n < 0)) return null;
+
+  let total = 0;
+  if (nums.length === 2) {
+    const [m, s] = nums;
+    if (s >= 60) return null;
+    total = m * 60 + s;
+  } else {
+    const [h, m, s] = nums;
+    if (m >= 60 || s >= 60) return null;
+    total = h * 3600 + m * 60 + s;
+  }
+  return total;
+}
+
 export function buildYouTubeEmbedUrl(
   videoId: string,
   start?: number | null,
