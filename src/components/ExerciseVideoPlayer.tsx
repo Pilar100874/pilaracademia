@@ -8,6 +8,7 @@ interface Props {
   endSeconds?: number | null;
   className?: string;
   autoPlay?: boolean;
+  loop?: boolean;
 }
 
 /**
@@ -22,6 +23,7 @@ export function ExerciseVideoPlayer({
   endSeconds,
   className,
   autoPlay = false,
+  loop = false,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -46,7 +48,7 @@ export function ExerciseVideoPlayer({
         // Loop the trimmed segment
         try {
           v.currentTime = start;
-          if (autoPlay) v.play().catch(() => {});
+          if (autoPlay || loop) v.play().catch(() => {});
         } catch {
           // ignore
         }
@@ -59,13 +61,24 @@ export function ExerciseVideoPlayer({
       }
     };
 
+    const handleEnded = () => {
+      try {
+        v.currentTime = start;
+        if (autoPlay || loop) v.play().catch(() => {});
+      } catch {
+        // ignore
+      }
+    };
+
     v.addEventListener('loadedmetadata', handleLoaded);
     v.addEventListener('timeupdate', handleTimeUpdate);
+    v.addEventListener('ended', handleEnded);
     return () => {
       v.removeEventListener('loadedmetadata', handleLoaded);
       v.removeEventListener('timeupdate', handleTimeUpdate);
+      v.removeEventListener('ended', handleEnded);
     };
-  }, [videoType, videoUrl, start, end, autoPlay]);
+  }, [videoType, videoUrl, start, end, autoPlay, loop]);
 
   if (!videoUrl || !videoType) return null;
 
@@ -75,7 +88,7 @@ export function ExerciseVideoPlayer({
     return (
       <div className={className}>
         <iframe
-          src={buildYouTubeEmbedUrl(id, start, end, autoPlay)}
+          src={buildYouTubeEmbedUrl(id, start, end, autoPlay, loop)}
           title="Vídeo do exercício"
           className="w-full h-full"
           frameBorder={0}
@@ -93,8 +106,9 @@ export function ExerciseVideoPlayer({
         src={videoUrl}
         controls
         autoPlay={autoPlay}
-        muted={autoPlay}
+        muted={autoPlay || loop}
         playsInline
+        loop={loop && !(end > 0)}
         className="w-full h-full bg-black"
       />
     </div>
