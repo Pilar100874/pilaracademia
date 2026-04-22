@@ -7,6 +7,7 @@ export interface ExerciseCategory {
   id: string;
   user_id: string;
   name: string;
+  parent_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -31,11 +32,14 @@ export function useExerciseCategories() {
   });
 
   const createCategory = useMutation({
-    mutationFn: async (name: string) => {
+    mutationFn: async (input: string | { name: string; parent_id?: string | null }) => {
       if (!user) throw new Error('User not authenticated');
+      const payload = typeof input === 'string'
+        ? { name: input.trim(), parent_id: null }
+        : { name: input.name.trim(), parent_id: input.parent_id ?? null };
       const { data, error } = await supabase
         .from('exercise_categories')
-        .insert({ user_id: user.id, name: name.trim() })
+        .insert({ user_id: user.id, ...payload })
         .select()
         .single();
       if (error) throw error;
@@ -52,10 +56,13 @@ export function useExerciseCategories() {
   });
 
   const updateCategory = useMutation({
-    mutationFn: async (data: { id: string; name: string }) => {
+    mutationFn: async (data: { id: string; name?: string; parent_id?: string | null }) => {
+      const update: Record<string, any> = {};
+      if (data.name !== undefined) update.name = data.name.trim();
+      if (data.parent_id !== undefined) update.parent_id = data.parent_id;
       const { error } = await supabase
         .from('exercise_categories')
-        .update({ name: data.name.trim() })
+        .update(update)
         .eq('id', data.id);
       if (error) throw error;
     },

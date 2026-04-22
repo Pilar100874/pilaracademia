@@ -27,7 +27,6 @@ interface ExerciseLibraryDialogProps {
   editingExercise: LibraryExercise | null;
 }
 
-const NEW_CATEGORY = '__new__';
 const NO_CATEGORY = '__none__';
 
 export function ExerciseLibraryDialog({
@@ -36,14 +35,12 @@ export function ExerciseLibraryDialog({
   editingExercise,
 }: ExerciseLibraryDialogProps) {
   const { exercises, createExercise, updateExercise, uploadExerciseImage } = useExerciseLibrary();
-  const { categories, createCategory } = useExerciseCategories();
+  const { categories } = useExerciseCategories();
 
   const [name, setName] = useState('');
-  const [defaultSets, setDefaultSets] = useState(1);
+  const [defaultSets, setDefaultSets] = useState(3);
   const [defaultReps, setDefaultReps] = useState(10);
   const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [showNewCategory, setShowNewCategory] = useState(false);
   const [images, setImages] = useState<Array<{ type: 'url' | 'file'; value: string; file?: File }>>([]);
   const [video, setVideo] = useState<ExerciseVideoData>({
     video_type: null,
@@ -88,8 +85,6 @@ export function ExerciseLibraryDialog({
           video_end_seconds: null,
         });
       }
-      setShowNewCategory(false);
-      setNewCategoryName('');
     }
   }, [editingExercise?.id, open]);
 
@@ -131,10 +126,6 @@ export function ExerciseLibraryDialog({
   };
 
   const handleCategoryChange = (value: string) => {
-    if (value === NEW_CATEGORY) {
-      setShowNewCategory(true);
-      return;
-    }
     if (value === NO_CATEGORY) {
       setCategoryId(null);
       return;
@@ -142,18 +133,28 @@ export function ExerciseLibraryDialog({
     setCategoryId(value);
   };
 
-  const handleCreateNewCategory = async () => {
-    const trimmed = newCategoryName.trim();
-    if (!trimmed) return;
-    try {
-      const created = await createCategory.mutateAsync(trimmed);
-      setCategoryId(created.id);
-      setShowNewCategory(false);
-      setNewCategoryName('');
-    } catch {
-      // toast handled in hook
-    }
-  };
+  // Hierarchical ordering for category select (root → children indented).
+  const orderedCategories = (() => {
+    const childrenOf = new Map<string | null, typeof categories>();
+    categories.forEach((c) => {
+      const key = (c as any).parent_id ?? null;
+      const arr = childrenOf.get(key) ?? [];
+      arr.push(c);
+      childrenOf.set(key, arr);
+    });
+    const out: { cat: typeof categories[number]; depth: number }[] = [];
+    const walk = (parentId: string | null, depth: number) => {
+      const list = (childrenOf.get(parentId) ?? []).slice().sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+      list.forEach((c) => {
+        out.push({ cat: c, depth });
+        walk(c.id, depth + 1);
+      });
+    };
+    walk(null, 0);
+    return out;
+  })();
 
   const generateAutoName = (): string => {
     const categoryName = categoryId
@@ -343,52 +344,24 @@ export function ExerciseLibraryDialog({
             {/* Category */}
             <div className="space-y-2">
               <Label>Categoria</Label>
-              {showNewCategory ? (
-                <div className="flex gap-2">
-                  <Input
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="Ex: Peito"
-                    autoFocus
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleCreateNewCategory}
-                    disabled={!newCategoryName.trim() || createCategory.isPending}
-                  >
-                    Criar
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setShowNewCategory(false);
-                      setNewCategoryName('');
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <Select value={selectValue} onValueChange={handleCategoryChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecionar categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value={NEW_CATEGORY}>
-                      + Criar nova categoria
+              <Select value={selectValue} onValueChange={handleCategoryChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                  {orderedCategories.map(({ cat, depth }) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      <span style={{ paddingLeft: depth * 12 }}>
+                        {depth > 0 ? '↳ ' : ''}{cat.name}
+                      </span>
                     </SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Para criar categorias, use a tela da Biblioteca de Exercícios.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

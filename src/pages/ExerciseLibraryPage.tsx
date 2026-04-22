@@ -70,6 +70,7 @@ export default function ExerciseLibraryPage() {
   const [renameValue, setRenameValue] = useState('');
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
   const [newCategoryValue, setNewCategoryValue] = useState('');
+  const [newCategoryParentId, setNewCategoryParentId] = useState<string | null>(null);
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
@@ -225,13 +226,50 @@ export default function ExerciseLibraryPage() {
     return m;
   }, [categories]);
 
+  // Build hierarchical list (root first, then children indented).
+  // Also map descendants for filtering.
+  const { orderedCategories, descendantsMap } = useMemo(() => {
+    const childrenOf = new Map<string | null, typeof categories>();
+    categories.forEach((c) => {
+      const key = c.parent_id ?? null;
+      const arr = childrenOf.get(key) ?? [];
+      arr.push(c);
+      childrenOf.set(key, arr);
+    });
+    const ordered: { cat: typeof categories[number]; depth: number }[] = [];
+    const walk = (parentId: string | null, depth: number) => {
+      const list = (childrenOf.get(parentId) ?? []).slice().sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+      list.forEach((c) => {
+        ordered.push({ cat: c, depth });
+        walk(c.id, depth + 1);
+      });
+    };
+    walk(null, 0);
+
+    const descendants = new Map<string, Set<string>>();
+    const collect = (id: string): Set<string> => {
+      if (descendants.has(id)) return descendants.get(id)!;
+      const set = new Set<string>([id]);
+      (childrenOf.get(id) ?? []).forEach((child) => {
+        collect(child.id).forEach((d) => set.add(d));
+      });
+      descendants.set(id, set);
+      return set;
+    };
+    categories.forEach((c) => collect(c.id));
+    return { orderedCategories: ordered, descendantsMap: descendants };
+  }, [categories]);
+
   const filteredExercises = exercises.filter((ex) => {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
     let matchesCategory = true;
     if (filterCategory === NO_CATEGORY) {
       matchesCategory = !ex.category_id;
     } else if (filterCategory !== ALL_CATEGORIES) {
-      matchesCategory = ex.category_id === filterCategory;
+      const allowed = descendantsMap.get(filterCategory);
+      matchesCategory = !!ex.category_id && !!allowed?.has(ex.category_id);
     }
     return matchesSearch && matchesCategory;
   });
@@ -535,9 +573,11 @@ export default function ExerciseLibraryPage() {
               <SelectContent>
                 <SelectItem value={ALL_CATEGORIES}>Todas as categorias</SelectItem>
                 <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
-                {categories.map((cat) => (
+                {orderedCategories.map(({ cat, depth }) => (
                   <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
+                    <span style={{ paddingLeft: depth * 12 }}>
+                      {depth > 0 ? '↳ ' : ''}{cat.name}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -549,6 +589,7 @@ export default function ExerciseLibraryPage() {
               title="Criar categoria"
               onClick={() => {
                 setNewCategoryValue('');
+                setNewCategoryParentId(null);
                 setCreateCategoryOpen(true);
               }}
             >
@@ -556,6 +597,19 @@ export default function ExerciseLibraryPage() {
             </Button>
             {filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY && (
               <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 shrink-0"
+                  title="Criar subcategoria"
+                  onClick={() => {
+                    setNewCategoryValue('');
+                    setNewCategoryParentId(filterCategory);
+                    setCreateCategoryOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
                 <Button
                   size="icon"
                   variant="ghost"
@@ -867,9 +921,11 @@ export default function ExerciseLibraryPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
-                  {categories.map((cat) => (
+                  {orderedCategories.map(({ cat, depth }) => (
                     <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
+                      <span style={{ paddingLeft: depth * 12 }}>
+                        {depth > 0 ? '↳ ' : ''}{cat.name}
+                      </span>
                     </SelectItem>
                   ))}
                   <SelectItem value={NEW_CATEGORY}>+ Criar nova categoria</SelectItem>
@@ -936,9 +992,11 @@ export default function ExerciseLibraryPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
-                  {categories.map((cat) => (
+                  {orderedCategories.map(({ cat, depth }) => (
                     <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
+                      <span style={{ paddingLeft: depth * 12 }}>
+                        {depth > 0 ? '↳ ' : ''}{cat.name}
+                      </span>
                     </SelectItem>
                   ))}
                   <SelectItem value={NEW_CATEGORY}>+ Criar nova categoria</SelectItem>
@@ -1042,24 +1100,54 @@ export default function ExerciseLibraryPage() {
         open={createCategoryOpen}
         onOpenChange={(open) => {
           setCreateCategoryOpen(open);
-          if (!open) setNewCategoryValue('');
+          if (!open) {
+            setNewCategoryValue('');
+            setNewCategoryParentId(null);
+          }
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nova categoria</DialogTitle>
+            <DialogTitle>
+              {newCategoryParentId ? 'Nova subcategoria' : 'Nova categoria'}
+            </DialogTitle>
             <DialogDescription>
-              Crie uma categoria para organizar seus exercícios.
+              {newCategoryParentId
+                ? `Será criada dentro de "${categoryNameMap.get(newCategoryParentId) ?? ''}".`
+                : 'Crie uma categoria para organizar seus exercícios.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label>Nome</Label>
-            <Input
-              autoFocus
-              value={newCategoryValue}
-              onChange={(e) => setNewCategoryValue(e.target.value)}
-              placeholder="Ex.: Peito, Costas, Pernas..."
-            />
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Categoria pai (opcional)</Label>
+              <Select
+                value={newCategoryParentId ?? NO_CATEGORY}
+                onValueChange={(v) => setNewCategoryParentId(v === NO_CATEGORY ? null : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CATEGORY}>Nenhuma (categoria raiz)</SelectItem>
+                  {orderedCategories.map(({ cat, depth }) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      <span style={{ paddingLeft: depth * 12 }}>
+                        {depth > 0 ? '↳ ' : ''}{cat.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Nome</Label>
+              <Input
+                autoFocus
+                value={newCategoryValue}
+                onChange={(e) => setNewCategoryValue(e.target.value)}
+                placeholder="Ex.: Peito, Costas, Pernas..."
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateCategoryOpen(false)}>
@@ -1069,9 +1157,13 @@ export default function ExerciseLibraryPage() {
               disabled={createCategory.isPending || !newCategoryValue.trim()}
               onClick={async () => {
                 try {
-                  const created = await createCategory.mutateAsync(newCategoryValue.trim());
+                  const created = await createCategory.mutateAsync({
+                    name: newCategoryValue.trim(),
+                    parent_id: newCategoryParentId,
+                  });
                   setCreateCategoryOpen(false);
                   setNewCategoryValue('');
+                  setNewCategoryParentId(null);
                   setFilterCategory(created.id);
                 } catch {
                   // toast handled in hook
