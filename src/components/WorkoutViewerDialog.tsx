@@ -37,11 +37,12 @@ export function WorkoutViewerDialog({
   const isLastExercise = currentExerciseIndex === exercises.length - 1;
   const hasMultiplePhotos = currentImages.length > 1;
 
-  // Reset photo index when exercise changes
+  // Reset media state when exercise changes or dialog opens
   useEffect(() => {
+    if (!open) return;
     setCurrentPhotoIndex(0);
-    setShowVideo(false);
-  }, [currentExerciseIndex]);
+    setShowVideo(hasVideo);
+  }, [currentExerciseIndex, open, hasVideo]);
 
   // Reset indices when dialog opens
   useEffect(() => {
@@ -135,6 +136,8 @@ export function WorkoutViewerDialog({
               videoUrl={currentExercise.video_url}
               startSeconds={currentExercise.video_start_seconds}
               endSeconds={currentExercise.video_end_seconds}
+              autoPlay
+              loop
               className="w-full max-w-4xl aspect-video"
             />
           ) : (
