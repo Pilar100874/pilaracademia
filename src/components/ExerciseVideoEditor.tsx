@@ -8,7 +8,7 @@ import { Trash2, Upload, Youtube, Video as VideoIcon, Loader2, Instagram } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { parseYouTubeId, formatSeconds, buildYouTubeEmbedUrl, parseTimeToSeconds, parseInstagramShortcode, buildInstagramEmbedUrl } from '@/lib/youtubeUtils';
+import { parseYouTubeId, formatSeconds, buildYouTubeEmbedUrl, parseTimeToSeconds, parseInstagramShortcode, buildInstagramEmbedUrl, isInstagramReel } from '@/lib/youtubeUtils';
 
 export interface ExerciseVideoData {
   video_type: 'youtube' | 'upload' | 'instagram' | null;
@@ -347,7 +347,7 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
               <div className="w-full rounded-lg overflow-hidden bg-black mx-auto" style={{ aspectRatio: '9 / 16', maxWidth: 320 }}>
                 <iframe
                   key={igShortcode}
-                  src={buildInstagramEmbedUrl(igShortcode)}
+                  src={buildInstagramEmbedUrl(igShortcode, isInstagramReel(igInput))}
                   title="Preview Instagram"
                   className="w-full h-full"
                   frameBorder={0}

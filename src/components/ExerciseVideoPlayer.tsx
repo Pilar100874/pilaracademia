@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { parseYouTubeId, parseInstagramShortcode, buildInstagramEmbedUrl } from '@/lib/youtubeUtils';
+import { parseYouTubeId, parseInstagramShortcode, buildInstagramEmbedUrl, isInstagramReel } from '@/lib/youtubeUtils';
 
 interface Props {
   videoType: 'youtube' | 'upload' | 'instagram' | string | null;
@@ -221,7 +221,7 @@ export function ExerciseVideoPlayer({
       <div className={`${className ?? ''} relative flex items-center justify-center bg-black overflow-hidden`}>
         <iframe
           key={igReloadKey}
-          src={buildInstagramEmbedUrl(shortcode)}
+          src={buildInstagramEmbedUrl(shortcode, isInstagramReel(videoUrl))}
           title="Instagram"
           className="bg-black"
           style={{ width: '100%', maxWidth: 540, height: '100%', minHeight: 640, border: 0 }}
