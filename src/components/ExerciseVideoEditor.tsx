@@ -213,6 +213,7 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
     setYtInput('');
     setYtDuration(null);
     setUploadDuration(null);
+    setIgInput('');
   };
 
   const start = value.video_start_seconds ?? 0;

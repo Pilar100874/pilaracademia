@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { parseYouTubeId } from '@/lib/youtubeUtils';
+import { parseYouTubeId, parseInstagramShortcode, buildInstagramEmbedUrl } from '@/lib/youtubeUtils';
 
 interface Props {
-  videoType: 'youtube' | 'upload' | string | null;
+  videoType: 'youtube' | 'upload' | 'instagram' | string | null;
   videoUrl: string | null;
   startSeconds?: number | null;
   endSeconds?: number | null;
