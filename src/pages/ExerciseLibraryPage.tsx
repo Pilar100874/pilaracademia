@@ -716,9 +716,11 @@ export default function ExerciseLibraryPage() {
                   } ${isSelected ? 'border-primary ring-2 ring-primary/40' : ''}`}
                 >
                   <div
-                    className={`relative w-full aspect-video bg-muted overflow-hidden ${
-                      mediaClickable ? 'cursor-pointer' : ''
-                    }`}
+                    className={`relative w-full overflow-hidden ${
+                      firstImage
+                        ? 'min-h-[12rem] sm:min-h-[13rem] lg:min-h-[14rem] bg-muted/40 flex items-center justify-center p-2 sm:p-3'
+                        : 'aspect-video bg-muted'
+                    } ${mediaClickable ? 'cursor-pointer' : ''}`}
                     onClick={(e) => {
                       if (selectionMode) return;
                       e.stopPropagation();
@@ -735,7 +737,7 @@ export default function ExerciseLibraryPage() {
                           src={firstImage}
                           alt={exercise.name}
                           loading="lazy"
-                          className="w-full h-full object-contain"
+                          className="max-h-[16rem] w-full object-contain"
                         />
                         {imageCount > 1 && (
                           <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
