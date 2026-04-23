@@ -735,7 +735,7 @@ export default function ExerciseLibraryPage() {
                           src={firstImage}
                           alt={exercise.name}
                           loading="lazy"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                         />
                         {imageCount > 1 && (
                           <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
