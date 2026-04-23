@@ -696,7 +696,7 @@ export default function ExerciseLibraryPage() {
             )}
           </div>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {filteredExercises.map((exercise) => {
               const firstImage = exercise.image_urls?.[0];
               const imageCount = exercise.image_urls?.length || 0;
@@ -706,25 +706,18 @@ export default function ExerciseLibraryPage() {
                 : null;
 
               const isSelected = selectedIds.has(exercise.id);
+              const mediaClickable = !selectionMode && (firstImage || hasVideo);
               return (
                 <div
                   key={exercise.id}
                   onClick={selectionMode ? () => toggleSelected(exercise.id) : undefined}
-                  className={`flex items-center gap-3 p-3 rounded-xl border bg-card transition-colors ${
+                  className={`group flex flex-col rounded-xl border bg-card overflow-hidden transition-colors ${
                     selectionMode ? 'cursor-pointer' : ''
                   } ${isSelected ? 'border-primary ring-2 ring-primary/40' : ''}`}
                 >
-                  {selectionMode && (
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => toggleSelected(exercise.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="shrink-0"
-                    />
-                  )}
                   <div
-                    className={`relative w-16 h-16 rounded-lg bg-muted overflow-hidden shrink-0 ${
-                      !selectionMode && (firstImage || hasVideo) ? 'cursor-pointer hover:ring-2 hover:ring-primary transition-all' : ''
+                    className={`relative w-full aspect-video bg-muted overflow-hidden ${
+                      mediaClickable ? 'cursor-pointer' : ''
                     }`}
                     onClick={(e) => {
                       if (selectionMode) return;
@@ -741,10 +734,11 @@ export default function ExerciseLibraryPage() {
                         <img
                           src={firstImage}
                           alt={exercise.name}
+                          loading="lazy"
                           className="w-full h-full object-cover"
                         />
                         {imageCount > 1 && (
-                          <div className="absolute bottom-0 right-0 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded-tl flex items-center gap-0.5">
+                          <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
                             <ImageIcon className="h-3 w-3" />
                             {imageCount}
                           </div>
@@ -759,45 +753,58 @@ export default function ExerciseLibraryPage() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Dumbbell className="h-6 w-6 text-muted-foreground" />
+                        <Dumbbell className="h-10 w-10 text-muted-foreground" />
+                      </div>
+                    )}
+
+                    {selectionMode && (
+                      <div className="absolute top-1.5 left-1.5">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleSelected(exercise.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="bg-background/90 border-2"
+                        />
                       </div>
                     )}
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{exercise.name}</p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm text-muted-foreground">
-                        {exercise.default_sets} séries × {exercise.default_reps} reps
-                      </p>
-                      {categoryName && (
-                        <span className="inline-flex items-center text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                          {categoryName}
-                        </span>
-                      )}
+                  <div className="p-2.5 flex items-start gap-2">
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <p className="font-semibold text-sm leading-tight line-clamp-2">{exercise.name}</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs text-muted-foreground">
+                          {exercise.default_sets}×{exercise.default_reps}
+                        </p>
+                        {categoryName && (
+                          <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary truncate max-w-[60%]">
+                            {categoryName}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {!selectionMode && (
-                    <div className="flex gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-9 w-9"
-                        onClick={() => handleEdit(exercise)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-9 w-9 text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(exercise)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                    {!selectionMode && (
+                      <div className="flex flex-col -mr-1 -mt-1 shrink-0">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={(e) => { e.stopPropagation(); handleEdit(exercise); }}
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={(e) => { e.stopPropagation(); handleDelete(exercise); }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
