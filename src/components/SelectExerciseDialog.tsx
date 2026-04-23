@@ -230,6 +230,7 @@ export function SelectExerciseDialog({
                             endSeconds={exercise.video_end_seconds}
                             className="w-full h-full"
                             iconSize="md"
+                            objectFit="contain"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">

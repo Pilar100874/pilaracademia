@@ -8,6 +8,7 @@ interface Props {
   endSeconds?: number | null;
   className?: string;
   iconSize?: 'sm' | 'md';
+  objectFit?: 'cover' | 'contain';
 }
 
 /**
@@ -22,6 +23,7 @@ export function LazyVideoPreview({
   endSeconds,
   className,
   iconSize = 'md',
+  objectFit = 'cover',
 }: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
@@ -51,6 +53,7 @@ export function LazyVideoPreview({
         autoplayPreview={visible}
         className="w-full h-full"
         iconSize={iconSize}
+        objectFit={objectFit}
       />
     </div>
   );
