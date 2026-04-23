@@ -10,6 +10,7 @@ interface Props {
   endSeconds?: number | null;
   className?: string;
   iconSize?: 'sm' | 'md';
+  objectFit?: 'cover' | 'contain';
   /** If true and the video is an 'upload', plays it muted/looping as a live preview */
   autoplayPreview?: boolean;
 }
@@ -30,6 +31,7 @@ export function VideoThumbnail({
   endSeconds,
   className,
   iconSize = 'md',
+  objectFit = 'cover',
   autoplayPreview = false,
 }: Props) {
   const cacheKey = videoUrl ? `${videoUrl}@${startSeconds ?? 0}` : '';
@@ -173,7 +175,7 @@ export function VideoThumbnail({
           playsInline
           loop
           preload="metadata"
-          className="w-full h-full object-cover"
+          className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'}`}
         />
       </div>
     );
@@ -187,7 +189,7 @@ export function VideoThumbnail({
           alt="Pré-visualização do vídeo"
           loading="lazy"
           decoding="async"
-          className="w-full h-full object-cover"
+          className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'}`}
           onError={() => setErrored(true)}
         />
       ) : isInstagram ? (
