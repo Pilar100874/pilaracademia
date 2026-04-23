@@ -717,7 +717,7 @@ export default function ExerciseLibraryPage() {
                   <div
                     className={`relative w-full overflow-hidden ${
                       firstImage || hasVideo
-                        ? 'min-h-[12rem] sm:min-h-[13rem] lg:min-h-[14rem] bg-muted/40 flex items-center justify-center p-2 sm:p-3'
+                        ? 'h-48 sm:h-52 lg:h-56 bg-muted/40 flex items-center justify-center p-2 sm:p-3'
                         : 'aspect-video bg-muted'
                     } ${mediaClickable ? 'cursor-pointer' : ''}`}
                     onClick={(e) => {
