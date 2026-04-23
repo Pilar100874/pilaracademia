@@ -195,7 +195,11 @@ export function SelectExerciseDialog({
                     >
                       {/* Large media area */}
                       <div
-                        className="relative w-full aspect-video bg-muted overflow-hidden"
+                        className={`relative w-full overflow-hidden ${
+                          firstImage || hasVideo
+                            ? 'min-h-[12rem] sm:min-h-[13rem] bg-muted/40 flex items-center justify-center p-2 sm:p-3'
+                            : 'aspect-video bg-muted'
+                        }`}
                         onClick={(e) => {
                           if (exercise.image_urls?.length) {
                             e.stopPropagation();
@@ -208,7 +212,7 @@ export function SelectExerciseDialog({
                             <img
                               src={firstImage}
                               alt={exercise.name}
-                              className="w-full h-full object-cover"
+                              className="max-h-[16rem] w-full object-contain"
                               loading="lazy"
                             />
                             {imageCount > 1 && (
