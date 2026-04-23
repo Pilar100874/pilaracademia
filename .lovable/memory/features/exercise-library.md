@@ -5,7 +5,7 @@ type: feature
 ---
 - Exercises are stored in `exercise_library` table, decoupled from workout plans, and can be reused across plans.
 - Each user manages their own categories via `exercise_categories` table (CRUD). Exercises reference a category via nullable `category_id` (ON DELETE SET NULL).
-- Categories support **subcategories** via nullable `parent_id` (self-FK, ON DELETE CASCADE). Selects render hierarchical with `↳` and indentation. Filtering by a parent category includes all descendants.
+- Categories support **subcategories** via nullable `parent_id` (self-FK, ON DELETE CASCADE). Selects render hierarchical with `↳` and indentation. Filtering by a category shows ONLY exercises in that exact category — subcategory exercises are NOT included (user must select the subcategory explicitly).
 - **Category creation/management lives ONLY in the Exercise Library page** (header buttons: create root, create subcategory of current filter, rename, delete). The exercise create/edit dialog only lets the user pick from the existing tree — no inline creation there.
 - Both the library page and the SelectExerciseDialog include a category dropdown filter.
 
