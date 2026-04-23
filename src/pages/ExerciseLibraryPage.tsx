@@ -717,7 +717,7 @@ export default function ExerciseLibraryPage() {
                 >
                   <div
                     className={`relative w-full overflow-hidden ${
-                      firstImage
+                      firstImage || hasVideo
                         ? 'min-h-[12rem] sm:min-h-[13rem] lg:min-h-[14rem] bg-muted/40 flex items-center justify-center p-2 sm:p-3'
                         : 'aspect-video bg-muted'
                     } ${mediaClickable ? 'cursor-pointer' : ''}`}
@@ -752,6 +752,7 @@ export default function ExerciseLibraryPage() {
                         videoUrl={exercise.video_url}
                         startSeconds={exercise.video_start_seconds}
                         className="w-full h-full"
+                        objectFit="contain"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
