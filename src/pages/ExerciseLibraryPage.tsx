@@ -270,8 +270,7 @@ export default function ExerciseLibraryPage() {
     if (filterCategory === NO_CATEGORY) {
       matchesCategory = !ex.category_id;
     } else if (filterCategory !== ALL_CATEGORIES) {
-      const allowed = descendantsMap.get(filterCategory);
-      matchesCategory = !!ex.category_id && !!allowed?.has(ex.category_id);
+      matchesCategory = ex.category_id === filterCategory;
     }
     return matchesSearch && matchesCategory;
   });
