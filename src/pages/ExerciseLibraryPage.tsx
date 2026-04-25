@@ -40,6 +40,7 @@ const NEW_CATEGORY = '__new__';
 
 export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { exercises, isLoading, deleteExercise, createExercise, moveExercises } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
