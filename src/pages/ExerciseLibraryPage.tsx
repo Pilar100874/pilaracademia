@@ -687,6 +687,11 @@ export default function ExerciseLibraryPage() {
                       : NO_CATEGORY
                   );
                   setIgNewCategoryName('');
+                  setIgUrl('');
+                  setIgNamePrefix('');
+                  setIgError(null);
+                  setIgPartialErrors([]);
+                  setIgResult(null);
                   setIgDialogOpen(true);
                 }}
                 title="Importar vídeos de um post do Instagram"
