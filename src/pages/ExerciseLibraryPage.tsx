@@ -432,6 +432,27 @@ export default function ExerciseLibraryPage() {
     }
 
     setIgImporting(true);
+    setIgProgress(5);
+    setIgProgressLabel('Conectando ao Instagram...');
+    // Simula progresso enquanto a edge function trabalha (não há streaming)
+    const progressTimer = setInterval(() => {
+      setIgProgress((p) => {
+        if (p < 30) {
+          setIgProgressLabel('Conectando ao Instagram...');
+          return p + 2;
+        }
+        if (p < 70) {
+          setIgProgressLabel('Baixando vídeo(s)...');
+          return p + 1.5;
+        }
+        if (p < 92) {
+          setIgProgressLabel('Enviando para a biblioteca...');
+          return p + 0.5;
+        }
+        return p;
+      });
+    }, 250);
+
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
@@ -444,11 +465,31 @@ export default function ExerciseLibraryPage() {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
 
+      clearInterval(progressTimer);
+      setIgProgress(100);
+      setIgProgressLabel('Concluído');
+
       if (error) {
-        toast.error(error.message || 'Falha ao importar do Instagram');
+        // Tenta extrair payload de erro do edge function
+        const ctx = (error as any).context;
+        let payload: any = null;
+        try {
+          if (ctx && typeof ctx.json === 'function') payload = await ctx.json();
+        } catch { /* ignore */ }
+        if (payload?.needs_api_key) {
+          toast.error('Configure a chave da API primeiro');
+          setApiKeyDialogOpen(true);
+          return;
+        }
+        toast.error(payload?.error || error.message || 'Falha ao importar do Instagram');
         return;
       }
       if (!data?.success) {
+        if (data?.needs_api_key) {
+          toast.error('Configure a chave da API primeiro');
+          setApiKeyDialogOpen(true);
+          return;
+        }
         toast.error(data?.error || 'Nenhum vídeo importado');
         return;
       }
@@ -463,10 +504,16 @@ export default function ExerciseLibraryPage() {
       setIgNamePrefix('');
       setIgNewCategoryName('');
     } catch (e) {
+      clearInterval(progressTimer);
       console.error(e);
       toast.error('Erro ao importar do Instagram');
     } finally {
+      clearInterval(progressTimer);
       setIgImporting(false);
+      setTimeout(() => {
+        setIgProgress(0);
+        setIgProgressLabel('');
+      }, 400);
     }
   };
 
