@@ -1305,6 +1305,96 @@ export default function ExerciseLibraryPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Instagram import dialog */}
+      <Dialog
+        open={igDialogOpen}
+        onOpenChange={(open) => {
+          if (!igImporting) setIgDialogOpen(open);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Importar do Instagram</DialogTitle>
+            <DialogDescription>
+              Cole a URL de um post ou reel público. Se for carrossel, todos os vídeos serão importados.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>URL do post</Label>
+              <Input
+                autoFocus
+                placeholder="https://www.instagram.com/p/..."
+                value={igUrl}
+                onChange={(e) => setIgUrl(e.target.value)}
+                disabled={igImporting}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Nome (opcional)</Label>
+              <Input
+                placeholder="Ex.: Agachamento Búlgaro"
+                value={igNamePrefix}
+                onChange={(e) => setIgNamePrefix(e.target.value)}
+                disabled={igImporting}
+              />
+              <p className="text-xs text-muted-foreground">
+                Se vier mais de um vídeo, será numerado: "Nome (1)", "Nome (2)"...
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Select
+                value={igCategoryChoice}
+                onValueChange={setIgCategoryChoice}
+                disabled={igImporting}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                  {orderedCategories.map(({ cat, depth }) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      <span style={{ paddingLeft: depth * 12 }}>
+                        {depth > 0 ? '↳ ' : ''}{cat.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={NEW_CATEGORY}>+ Criar nova categoria</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {igCategoryChoice === NEW_CATEGORY && (
+              <div className="space-y-2">
+                <Label>Nome da nova categoria</Label>
+                <Input
+                  placeholder="Ex.: Peito, Costas, Pernas..."
+                  value={igNewCategoryName}
+                  onChange={(e) => setIgNewCategoryName(e.target.value)}
+                  disabled={igImporting}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIgDialogOpen(false)}
+              disabled={igImporting}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={runInstagramImport} disabled={igImporting || !igUrl.trim()}>
+              {igImporting ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Importando...</>
+              ) : (
+                <><Instagram className="h-4 w-4 mr-1" /> Importar</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
