@@ -1534,7 +1534,13 @@ export default function ExerciseLibraryPage() {
                 >
                   Importar outro
                 </Button>
-                <Button onClick={() => setIgDialogOpen(false)}>
+                <Button
+                  onClick={() => {
+                    // Garante que o filtro fica na categoria onde os vídeos foram importados
+                    setFilterCategory(igResult.categoryId ?? NO_CATEGORY);
+                    setIgDialogOpen(false);
+                  }}
+                >
                   Fechar
                 </Button>
               </>
