@@ -399,6 +399,7 @@ export default function ExerciseLibraryPage() {
     setIgImporting(true);
     setIgError(null);
     setIgPartialErrors([]);
+    setIgResult(null);
     setIgProgress(5);
     setIgProgressLabel('Conectando ao Instagram...');
     // Simula progresso enquanto a edge function trabalha (não há streaming)
@@ -445,36 +446,35 @@ export default function ExerciseLibraryPage() {
         } catch { /* ignore */ }
         const msg = payload?.error || error.message || 'Falha ao importar do Instagram';
         setIgError(msg);
-        toast.error(msg);
-        return; // mantém o dialog aberto para o usuário ver o erro
+        return;
       }
       if (!data?.success) {
         const msg = data?.error || 'Nenhum vídeo importado';
         setIgError(msg);
         if (Array.isArray(data?.errors)) setIgPartialErrors(data.errors);
-        toast.error(msg);
         return;
       }
 
-      // Sucesso parcial: alguns vídeos falharam
-      if (Array.isArray(data?.errors) && data.errors.length > 0) {
-        setIgPartialErrors(data.errors);
-        toast.warning(
-          `${data.created_count} importado(s), ${data.errors.length} falharam`
-        );
-      } else {
-        toast.success(`${data.created_count} vídeo(s) importado(s) do Instagram`);
-      }
-      // Ajusta o filtro para mostrar onde os novos exercícios foram parar
+      const partial = Array.isArray(data?.errors) ? data.errors : [];
+      if (partial.length > 0) setIgPartialErrors(partial);
+
+      // Atualiza a lista de exercícios imediatamente
+      await queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+
+      // Ajusta filtro para mostrar onde os novos foram parar
       if (targetCategoryId) {
         setFilterCategory(targetCategoryId);
       } else {
         setFilterCategory(ALL_CATEGORIES);
       }
-      setIgDialogOpen(false);
-      setIgUrl('');
-      setIgNamePrefix('');
-      setIgNewCategoryName('');
+
+      // Salva resultado para mostrar tela final dentro do dialog
+      setIgResult({
+        kind: 'success',
+        created: data.created_count ?? 0,
+        failed: partial.length,
+        categoryId: targetCategoryId,
+      });
     } catch (e) {
       clearInterval(progressTimer);
       console.error(e);
