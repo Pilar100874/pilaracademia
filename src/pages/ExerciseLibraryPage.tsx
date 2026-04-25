@@ -81,51 +81,8 @@ export default function ExerciseLibraryPage() {
   const [igImporting, setIgImporting] = useState(false);
   const [igProgress, setIgProgress] = useState(0);
   const [igProgressLabel, setIgProgressLabel] = useState('');
-  const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
-  const [apiKeyValue, setApiKeyValue] = useState('');
-  const [apiKeySaving, setApiKeySaving] = useState(false);
-  const [apiKeyConfigured, setApiKeyConfigured] = useState<boolean | null>(null);
 
-  // Carrega status da chave (só se está setada ou não, sem expor o valor)
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const { data } = await supabase
-        .from('user_settings')
-        .select('instagram_api_key')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      setApiKeyConfigured(!!data?.instagram_api_key);
-    })();
-  }, [user, apiKeyDialogOpen]);
 
-  const saveApiKey = async () => {
-    if (!user) return;
-    const key = apiKeyValue.trim();
-    if (!key) {
-      toast.error('Cole a sua chave do RapidAPI');
-      return;
-    }
-    setApiKeySaving(true);
-    try {
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert(
-          { user_id: user.id, instagram_api_key: key },
-          { onConflict: 'user_id' }
-        );
-      if (error) throw error;
-      toast.success('Chave salva com sucesso');
-      setApiKeyValue('');
-      setApiKeyDialogOpen(false);
-      setApiKeyConfigured(true);
-    } catch (e) {
-      console.error(e);
-      toast.error('Falha ao salvar a chave');
-    } finally {
-      setApiKeySaving(false);
-    }
-  };
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
@@ -476,20 +433,10 @@ export default function ExerciseLibraryPage() {
         try {
           if (ctx && typeof ctx.json === 'function') payload = await ctx.json();
         } catch { /* ignore */ }
-        if (payload?.needs_api_key) {
-          toast.error('Configure a chave da API primeiro');
-          setApiKeyDialogOpen(true);
-          return;
-        }
         toast.error(payload?.error || error.message || 'Falha ao importar do Instagram');
         return;
       }
       if (!data?.success) {
-        if (data?.needs_api_key) {
-          toast.error('Configure a chave da API primeiro');
-          setApiKeyDialogOpen(true);
-          return;
-        }
         toast.error(data?.error || 'Nenhum vídeo importado');
         return;
       }
@@ -1472,32 +1419,7 @@ export default function ExerciseLibraryPage() {
             )}
           </div>
 
-          {/* Status / botão de configurar a chave da API */}
-          <div className="flex items-center justify-between rounded-lg border bg-muted/40 p-2.5 text-xs">
-            <div className="flex items-center gap-2 min-w-0">
-              {apiKeyConfigured ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
-                  <span className="text-muted-foreground truncate">Chave da API configurada</span>
-                </>
-              ) : (
-                <>
-                  <KeyRound className="h-4 w-4 text-amber-600 shrink-0" />
-                  <span className="text-muted-foreground truncate">Chave da API não configurada</span>
-                </>
-              )}
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => setApiKeyDialogOpen(true)}
-              disabled={igImporting}
-            >
-              {apiKeyConfigured ? 'Alterar' : 'Configurar'}
-            </Button>
-          </div>
+
 
           {/* Barra de progresso durante o import */}
           {igImporting && (
@@ -1528,79 +1450,6 @@ export default function ExerciseLibraryPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog: configurar chave da API do Instagram (RapidAPI) */}
-      <Dialog
-        open={apiKeyDialogOpen}
-        onOpenChange={(open) => {
-          if (!apiKeySaving) setApiKeyDialogOpen(open);
-        }}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <KeyRound className="h-5 w-5" />
-              Chave da API do Instagram
-            </DialogTitle>
-            <DialogDescription>
-              Para baixar vídeos do Instagram precisamos de uma chave gratuita do RapidAPI.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            <div className="rounded-lg bg-muted/50 p-3 space-y-2 text-xs">
-              <p className="font-medium text-foreground">Como obter (1 minuto):</p>
-              <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                <li>
-                  Acesse a página da API no RapidAPI{' '}
-                  <a
-                    href="https://rapidapi.com/thetechguy32744/api/instagram-scraper-stable-api"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-0.5 text-primary underline"
-                  >
-                    abrir <ExternalLink className="h-3 w-3" />
-                  </a>
-                </li>
-                <li>Clique em <span className="font-medium">Subscribe to Test</span> → escolha o plano <span className="font-medium">Basic (grátis)</span>.</li>
-                <li>Volte para a aba <span className="font-medium">Endpoints</span> e copie o valor de <span className="font-mono">x-rapidapi-key</span>.</li>
-                <li>Cole abaixo e salve.</li>
-              </ol>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Chave (x-rapidapi-key)</Label>
-              <Input
-                type="password"
-                autoComplete="off"
-                placeholder="cole aqui a chave do RapidAPI"
-                value={apiKeyValue}
-                onChange={(e) => setApiKeyValue(e.target.value)}
-                disabled={apiKeySaving}
-              />
-              <p className="text-[11px] text-muted-foreground">
-                Sua chave é guardada apenas na sua conta e usada só para baixar os vídeos que você pedir.
-              </p>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setApiKeyDialogOpen(false)}
-              disabled={apiKeySaving}
-            >
-              Cancelar
-            </Button>
-            <Button onClick={saveApiKey} disabled={apiKeySaving || !apiKeyValue.trim()}>
-              {apiKeySaving ? (
-                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Salvando...</>
-              ) : (
-                'Salvar'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
