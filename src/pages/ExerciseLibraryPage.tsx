@@ -81,6 +81,8 @@ export default function ExerciseLibraryPage() {
   const [igImporting, setIgImporting] = useState(false);
   const [igProgress, setIgProgress] = useState(0);
   const [igProgressLabel, setIgProgressLabel] = useState('');
+  const [igError, setIgError] = useState<string | null>(null);
+  const [igPartialErrors, setIgPartialErrors] = useState<string[]>([]);
 
 
 
