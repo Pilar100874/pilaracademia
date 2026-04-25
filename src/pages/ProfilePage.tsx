@@ -262,6 +262,8 @@ export function ProfilePage() {
           </div>
         )}
 
+        <ApifySettingsCard />
+
         <Button 
           size="lg" 
           className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold" 
