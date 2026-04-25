@@ -1,6 +1,6 @@
 // Importa vídeos de um post/reel do Instagram (incluindo carrossel) usando
-// a API "instagram-scraper-api2" do RapidAPI. A chave é lida da tabela
-// user_settings.instagram_api_key do próprio usuário.
+// o ator "apify/instagram-scraper" via API síncrona do Apify.
+// Token de API global: APIFY_API_TOKEN (secret no projeto).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -16,21 +16,6 @@ const json = (status: number, body: unknown) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const RAPIDAPI_HOST = "instagram-scraper-stable-api.p.rapidapi.com";
-
-// Endpoints conhecidos da "Instagram Scraper Stable API" (thetechguy32744) que
-// retornam os dados de um post/reel a partir do shortcode. Tentamos em ordem
-// até obter sucesso, pois o nome exato do endpoint varia entre versões.
-const POST_ENDPOINTS = [
-  "get_media_info.php",
-  "get_post_info.php",
-  "get_media.php",
-  "get_post.php",
-  "get_reel.php",
-  "post_info.php",
-  "media_info.php",
-];
-
 function extractShortcode(url: string): string | null {
   const m = url.match(/instagram\.com\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/);
   return m ? m[1] : null;
@@ -40,153 +25,68 @@ interface VideoItem {
   url: string;
 }
 
-// Percorre recursivamente o JSON e extrai todas as URLs de vídeo (.mp4) que
-// encontrar, agrupadas por "container" (carousel item) quando possível.
-function collectVideosFromNode(node: any): string[] {
-  const found: string[] = [];
-  const seen = new Set<string>();
-
-  const visit = (obj: any) => {
-    if (!obj) return;
-    if (typeof obj === "string") {
-      if (
-        /^https?:\/\/[^"\s]+\.mp4(\?|$)/i.test(obj) &&
-        !seen.has(obj)
-      ) {
-        seen.add(obj);
-        found.push(obj);
-      }
-      return;
-    }
-    if (Array.isArray(obj)) {
-      for (const v of obj) visit(v);
-      return;
-    }
-    if (typeof obj === "object") {
-      // priorizar campos clássicos primeiro, na ordem
-      const priorityKeys = [
-        "video_url",
-        "video_versions",
-        "videos",
-        "playback_url",
-        "src",
-      ];
-      for (const k of priorityKeys) {
-        if (k in obj) visit(obj[k]);
-      }
-      for (const k of Object.keys(obj)) {
-        if (priorityKeys.includes(k)) continue;
-        visit(obj[k]);
-      }
-    }
-  };
-
-  visit(node);
-  return found;
-}
-
-// Extrai vídeos respeitando estrutura de carrossel quando presente.
-function extractVideos(node: any): VideoItem[] {
-  if (!node) return [];
-
-  const root = node?.data ?? node?.items?.[0] ?? node;
-
-  const videos: VideoItem[] = [];
-
-  // 1) Tenta carousel_media (formato Instagram Graph)
-  const carousel =
-    root?.carousel_media ??
-    root?.carousel ??
-    root?.media?.carousel_media ??
-    root?.edge_sidecar_to_children?.edges;
-
-  if (Array.isArray(carousel) && carousel.length > 0) {
-    for (const item of carousel) {
-      const it = item?.node ?? item;
-      const urls = collectVideosFromNode(it);
-      if (urls[0]) videos.push({ url: urls[0] });
-    }
-    if (videos.length > 0) return videos;
-  }
-
-  // 2) Post único
-  const single =
-    root?.video_url ||
-    root?.video_versions?.[0]?.url ||
-    root?.videos?.[0]?.url ||
-    root?.media?.video_url;
-  if (single && typeof single === "string") {
-    return [{ url: single }];
-  }
-
-  // 3) Fallback: varre tudo procurando .mp4
-  const all = collectVideosFromNode(root);
-  return all.map((u) => ({ url: u }));
-}
-
+/**
+ * Roda o ator apify/instagram-scraper de forma síncrona e devolve os vídeos
+ * encontrados (1 ou N para carrossel).
+ */
 async function fetchInstagramVideos(
   rawUrl: string,
-  shortcode: string,
-  apiKey: string,
+  apifyToken: string,
 ): Promise<{ videos: VideoItem[]; raw?: unknown; error?: string }> {
-  const attempts: string[] = [];
+  // run-sync-get-dataset-items roda o ator e devolve o dataset diretamente.
+  const apiUrl =
+    `https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync-get-dataset-items?token=${encodeURIComponent(apifyToken)}&timeout=120`;
 
-  for (const ep of POST_ENDPOINTS) {
-    // tenta com vários nomes de parâmetros comuns
-    const variants = [
-      `post_code=${encodeURIComponent(shortcode)}`,
-      `shortcode=${encodeURIComponent(shortcode)}`,
-      `code=${encodeURIComponent(shortcode)}`,
-      `url=${encodeURIComponent(rawUrl)}`,
-    ];
+  const input = {
+    directUrls: [rawUrl],
+    resultsType: "details",
+    resultsLimit: 1,
+    addParentData: false,
+  };
 
-    for (const qs of variants) {
-      const apiUrl = `https://${RAPIDAPI_HOST}/${ep}?${qs}`;
-      let res: Response;
-      try {
-        res = await fetch(apiUrl, {
-          headers: {
-            "x-rapidapi-key": apiKey,
-            "x-rapidapi-host": RAPIDAPI_HOST,
-          },
-        });
-      } catch (e) {
-        attempts.push(`${ep}?${qs} → fetch error: ${(e as Error).message}`);
-        continue;
-      }
+  let res: Response;
+  try {
+    res = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+  } catch (e) {
+    return { videos: [], error: `Apify fetch error: ${(e as Error).message}` };
+  }
 
-      if (res.status === 404) {
-        attempts.push(`${ep} → 404 (endpoint não existe)`);
-        // próximo endpoint (sem testar outras variantes)
-        break;
-      }
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    return {
+      videos: [],
+      error: `Apify HTTP ${res.status}: ${txt.slice(0, 250)}`,
+    };
+  }
 
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        attempts.push(`${ep}?${qs} → HTTP ${res.status}: ${txt.slice(0, 120)}`);
-        continue;
-      }
+  const items = await res.json().catch(() => null);
+  if (!Array.isArray(items) || items.length === 0) {
+    return { videos: [], error: "Apify retornou dataset vazio" };
+  }
 
-      const data = await res.json().catch(() => null);
-      if (!data) {
-        attempts.push(`${ep}?${qs} → JSON inválido`);
-        continue;
-      }
+  const item = items[0] as any;
+  const videos: VideoItem[] = [];
 
-      const videos = extractVideos(data);
-      if (videos.length > 0) {
-        return { videos, raw: data };
-      }
-      attempts.push(`${ep}?${qs} → 200 mas sem vídeos`);
-      // passar para próxima variante / endpoint
+  // Carrossel: childPosts[]
+  const children = item?.childPosts;
+  if (Array.isArray(children) && children.length > 0) {
+    for (const c of children) {
+      const v = c?.videoUrl || c?.video_url;
+      if (typeof v === "string" && v) videos.push({ url: v });
     }
   }
 
-  return {
-    videos: [],
-    error:
-      `Não foi possível obter o vídeo. Tentativas:\n${attempts.slice(0, 10).join("\n")}`,
-  };
+  // Post único (ou se carrossel não trouxe nada, tenta o pai)
+  if (videos.length === 0) {
+    const v = item?.videoUrl || item?.video_url;
+    if (typeof v === "string" && v) videos.push({ url: v });
+  }
+
+  return { videos, raw: item };
 }
 
 Deno.serve(async (req) => {
@@ -201,6 +101,13 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const apifyToken = Deno.env.get("APIFY_API_TOKEN");
+
+    if (!apifyToken) {
+      return json(500, {
+        error: "APIFY_API_TOKEN não configurado no servidor",
+      });
+    }
 
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -212,22 +119,6 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
 
     const admin = createClient(supabaseUrl, serviceKey);
-
-    // Lê a chave do RapidAPI das configurações do usuário
-    const { data: settings } = await admin
-      .from("user_settings")
-      .select("instagram_api_key")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    const apiKey = settings?.instagram_api_key?.trim();
-    if (!apiKey) {
-      return json(400, {
-        error:
-          "Chave da API do Instagram não configurada. Vá em Configurações da Biblioteca e cole sua chave do RapidAPI.",
-        needs_api_key: true,
-      });
-    }
 
     const body = await req.json().catch(() => ({}));
     const { url, category_id, name_prefix } = body as {
@@ -245,7 +136,10 @@ Deno.serve(async (req) => {
       return json(400, { error: "URL do Instagram inválida" });
     }
 
-    const { videos, error: scrapeErr } = await fetchInstagramVideos(url, shortcode, apiKey);
+    const { videos, error: scrapeErr } = await fetchInstagramVideos(
+      url,
+      apifyToken,
+    );
     if (scrapeErr) {
       return json(502, { error: scrapeErr });
     }
