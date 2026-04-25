@@ -446,6 +446,12 @@ export default function ExerciseLibraryPage() {
           data.errors?.length ? ` (${data.errors.length} falharam)` : ''
         }`
       );
+      // Ajusta o filtro para mostrar onde os novos exercícios foram parar
+      if (targetCategoryId) {
+        setFilterCategory(targetCategoryId);
+      } else {
+        setFilterCategory(ALL_CATEGORIES);
+      }
       setIgDialogOpen(false);
       setIgUrl('');
       setIgNamePrefix('');
