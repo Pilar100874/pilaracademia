@@ -245,7 +245,7 @@ Deno.serve(async (req) => {
       return json(400, { error: "URL do Instagram inválida" });
     }
 
-    const { videos, error: scrapeErr } = await fetchInstagramVideos(url, apiKey);
+    const { videos, error: scrapeErr } = await fetchInstagramVideos(url, shortcode, apiKey);
     if (scrapeErr) {
       return json(502, { error: scrapeErr });
     }
