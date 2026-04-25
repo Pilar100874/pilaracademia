@@ -79,6 +79,53 @@ export default function ExerciseLibraryPage() {
   const [igCategoryChoice, setIgCategoryChoice] = useState<string>(NO_CATEGORY);
   const [igNewCategoryName, setIgNewCategoryName] = useState('');
   const [igImporting, setIgImporting] = useState(false);
+  const [igProgress, setIgProgress] = useState(0);
+  const [igProgressLabel, setIgProgressLabel] = useState('');
+  const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
+  const [apiKeyValue, setApiKeyValue] = useState('');
+  const [apiKeySaving, setApiKeySaving] = useState(false);
+  const [apiKeyConfigured, setApiKeyConfigured] = useState<boolean | null>(null);
+
+  // Carrega status da chave (só se está setada ou não, sem expor o valor)
+  React.useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from('user_settings')
+        .select('instagram_api_key')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      setApiKeyConfigured(!!data?.instagram_api_key);
+    })();
+  }, [user, apiKeyDialogOpen]);
+
+  const saveApiKey = async () => {
+    if (!user) return;
+    const key = apiKeyValue.trim();
+    if (!key) {
+      toast.error('Cole a sua chave do RapidAPI');
+      return;
+    }
+    setApiKeySaving(true);
+    try {
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert(
+          { user_id: user.id, instagram_api_key: key },
+          { onConflict: 'user_id' }
+        );
+      if (error) throw error;
+      toast.success('Chave salva com sucesso');
+      setApiKeyValue('');
+      setApiKeyDialogOpen(false);
+      setApiKeyConfigured(true);
+    } catch (e) {
+      console.error(e);
+      toast.error('Falha ao salvar a chave');
+    } finally {
+      setApiKeySaving(false);
+    }
+  };
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
