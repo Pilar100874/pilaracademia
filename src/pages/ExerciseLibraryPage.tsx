@@ -1457,6 +1457,26 @@ export default function ExerciseLibraryPage() {
             </div>
           )}
 
+          {/* Erro principal */}
+          {igError && !igImporting && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              <p className="font-medium mb-1">Falha ao importar</p>
+              <p className="break-words whitespace-pre-wrap">{igError}</p>
+            </div>
+          )}
+
+          {/* Erros parciais (quando alguns vídeos falharam) */}
+          {igPartialErrors.length > 0 && !igImporting && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400 space-y-1 max-h-40 overflow-auto">
+              <p className="font-medium">Alguns vídeos falharam:</p>
+              <ul className="list-disc pl-4 space-y-0.5">
+                {igPartialErrors.map((err, i) => (
+                  <li key={i} className="break-words">{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <DialogFooter>
             <Button
               variant="outline"
