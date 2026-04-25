@@ -16,7 +16,20 @@ const json = (status: number, body: unknown) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const RAPIDAPI_HOST = "instagram-scraper-api2.p.rapidapi.com";
+const RAPIDAPI_HOST = "instagram-scraper-stable-api.p.rapidapi.com";
+
+// Endpoints conhecidos da "Instagram Scraper Stable API" (thetechguy32744) que
+// retornam os dados de um post/reel a partir do shortcode. Tentamos em ordem
+// até obter sucesso, pois o nome exato do endpoint varia entre versões.
+const POST_ENDPOINTS = [
+  "get_media_info.php",
+  "get_post_info.php",
+  "get_media.php",
+  "get_post.php",
+  "get_reel.php",
+  "post_info.php",
+  "media_info.php",
+];
 
 function extractShortcode(url: string): string | null {
   const m = url.match(/instagram\.com\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/);
@@ -27,57 +40,153 @@ interface VideoItem {
   url: string;
 }
 
-/**
- * Chama o endpoint /v1/post_info do instagram-scraper-api2 e devolve a lista
- * de vídeos (1 ou N para carrossel).
- */
-async function fetchInstagramVideos(
-  rawUrl: string,
-  apiKey: string,
-): Promise<{ videos: VideoItem[]; raw?: unknown; error?: string }> {
-  const apiUrl =
-    `https://${RAPIDAPI_HOST}/v1/post_info?code_or_id_or_url=${encodeURIComponent(rawUrl)}&include_insights=false`;
+// Percorre recursivamente o JSON e extrai todas as URLs de vídeo (.mp4) que
+// encontrar, agrupadas por "container" (carousel item) quando possível.
+function collectVideosFromNode(node: any): string[] {
+  const found: string[] = [];
+  const seen = new Set<string>();
 
-  const res = await fetch(apiUrl, {
-    headers: {
-      "x-rapidapi-key": apiKey,
-      "x-rapidapi-host": RAPIDAPI_HOST,
-    },
-  });
+  const visit = (obj: any) => {
+    if (!obj) return;
+    if (typeof obj === "string") {
+      if (
+        /^https?:\/\/[^"\s]+\.mp4(\?|$)/i.test(obj) &&
+        !seen.has(obj)
+      ) {
+        seen.add(obj);
+        found.push(obj);
+      }
+      return;
+    }
+    if (Array.isArray(obj)) {
+      for (const v of obj) visit(v);
+      return;
+    }
+    if (typeof obj === "object") {
+      // priorizar campos clássicos primeiro, na ordem
+      const priorityKeys = [
+        "video_url",
+        "video_versions",
+        "videos",
+        "playback_url",
+        "src",
+      ];
+      for (const k of priorityKeys) {
+        if (k in obj) visit(obj[k]);
+      }
+      for (const k of Object.keys(obj)) {
+        if (priorityKeys.includes(k)) continue;
+        visit(obj[k]);
+      }
+    }
+  };
 
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    return {
-      videos: [],
-      error: `RapidAPI HTTP ${res.status}: ${txt.slice(0, 200)}`,
-    };
-  }
+  visit(node);
+  return found;
+}
 
-  const data = await res.json().catch(() => null);
-  if (!data) return { videos: [], error: "Resposta inválida da RapidAPI" };
+// Extrai vídeos respeitando estrutura de carrossel quando presente.
+function extractVideos(node: any): VideoItem[] {
+  if (!node) return [];
 
-  const node = (data as any).data ?? data;
+  const root = node?.data ?? node?.items?.[0] ?? node;
+
   const videos: VideoItem[] = [];
 
-  // Carrossel: carousel_media[]
-  const carousel = node?.carousel_media;
+  // 1) Tenta carousel_media (formato Instagram Graph)
+  const carousel =
+    root?.carousel_media ??
+    root?.carousel ??
+    root?.media?.carousel_media ??
+    root?.edge_sidecar_to_children?.edges;
+
   if (Array.isArray(carousel) && carousel.length > 0) {
     for (const item of carousel) {
-      const v =
-        item?.video_url ||
-        item?.video_versions?.[0]?.url ||
-        item?.videos?.[0]?.url;
-      if (v && typeof v === "string") videos.push({ url: v });
+      const it = item?.node ?? item;
+      const urls = collectVideosFromNode(it);
+      if (urls[0]) videos.push({ url: urls[0] });
     }
-  } else {
-    const single =
-      node?.video_url ||
-      node?.video_versions?.[0]?.url ||
-      node?.videos?.[0]?.url;
-    if (single && typeof single === "string") videos.push({ url: single });
+    if (videos.length > 0) return videos;
   }
 
-  return { videos, raw: node };
+  // 2) Post único
+  const single =
+    root?.video_url ||
+    root?.video_versions?.[0]?.url ||
+    root?.videos?.[0]?.url ||
+    root?.media?.video_url;
+  if (single && typeof single === "string") {
+    return [{ url: single }];
+  }
+
+  // 3) Fallback: varre tudo procurando .mp4
+  const all = collectVideosFromNode(root);
+  return all.map((u) => ({ url: u }));
+}
+
+async function fetchInstagramVideos(
+  rawUrl: string,
+  shortcode: string,
+  apiKey: string,
+): Promise<{ videos: VideoItem[]; raw?: unknown; error?: string }> {
+  const attempts: string[] = [];
+
+  for (const ep of POST_ENDPOINTS) {
+    // tenta com vários nomes de parâmetros comuns
+    const variants = [
+      `post_code=${encodeURIComponent(shortcode)}`,
+      `shortcode=${encodeURIComponent(shortcode)}`,
+      `code=${encodeURIComponent(shortcode)}`,
+      `url=${encodeURIComponent(rawUrl)}`,
+    ];
+
+    for (const qs of variants) {
+      const apiUrl = `https://${RAPIDAPI_HOST}/${ep}?${qs}`;
+      let res: Response;
+      try {
+        res = await fetch(apiUrl, {
+          headers: {
+            "x-rapidapi-key": apiKey,
+            "x-rapidapi-host": RAPIDAPI_HOST,
+          },
+        });
+      } catch (e) {
+        attempts.push(`${ep}?${qs} → fetch error: ${(e as Error).message}`);
+        continue;
+      }
+
+      if (res.status === 404) {
+        attempts.push(`${ep} → 404 (endpoint não existe)`);
+        // próximo endpoint (sem testar outras variantes)
+        break;
+      }
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        attempts.push(`${ep}?${qs} → HTTP ${res.status}: ${txt.slice(0, 120)}`);
+        continue;
+      }
+
+      const data = await res.json().catch(() => null);
+      if (!data) {
+        attempts.push(`${ep}?${qs} → JSON inválido`);
+        continue;
+      }
+
+      const videos = extractVideos(data);
+      if (videos.length > 0) {
+        return { videos, raw: data };
+      }
+      attempts.push(`${ep}?${qs} → 200 mas sem vídeos`);
+      // passar para próxima variante / endpoint
+    }
+  }
+
+  return {
+    videos: [],
+    error:
+      `Não foi possível obter o vídeo. Tentativas:\n${attempts.slice(0, 10).join("\n")}`,
+  };
 }
 
 Deno.serve(async (req) => {
