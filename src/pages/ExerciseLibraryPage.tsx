@@ -542,6 +542,26 @@ export default function ExerciseLibraryPage() {
                   </>
                 )}
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIgUrl('');
+                  setIgNamePrefix('');
+                  setIgCategoryChoice(
+                    filterCategory !== ALL_CATEGORIES &&
+                      filterCategory !== NO_CATEGORY
+                      ? filterCategory
+                      : NO_CATEGORY
+                  );
+                  setIgNewCategoryName('');
+                  setIgDialogOpen(true);
+                }}
+                title="Importar vídeos de um post do Instagram"
+              >
+                <Instagram className="h-4 w-4 mr-1" />
+                Instagram
+              </Button>
               <Button onClick={() => {
                 setEditingExercise(null);
                 setDialogOpen(true);
