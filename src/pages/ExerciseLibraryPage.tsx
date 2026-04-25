@@ -87,7 +87,7 @@ export default function ExerciseLibraryPage() {
   const [apiKeyConfigured, setApiKeyConfigured] = useState<boolean | null>(null);
 
   // Carrega status da chave (só se está setada ou não, sem expor o valor)
-  React.useEffect(() => {
+  useEffect(() => {
     if (!user) return;
     (async () => {
       const { data } = await supabase
