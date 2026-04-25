@@ -73,6 +73,12 @@ export default function ExerciseLibraryPage() {
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
   const [newCategoryValue, setNewCategoryValue] = useState('');
   const [newCategoryParentId, setNewCategoryParentId] = useState<string | null>(null);
+  const [igDialogOpen, setIgDialogOpen] = useState(false);
+  const [igUrl, setIgUrl] = useState('');
+  const [igNamePrefix, setIgNamePrefix] = useState('');
+  const [igCategoryChoice, setIgCategoryChoice] = useState<string>(NO_CATEGORY);
+  const [igNewCategoryName, setIgNewCategoryName] = useState('');
+  const [igImporting, setIgImporting] = useState(false);
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
