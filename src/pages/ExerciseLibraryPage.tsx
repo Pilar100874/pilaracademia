@@ -1381,6 +1381,7 @@ export default function ExerciseLibraryPage() {
           if (!open) {
             setIgError(null);
             setIgPartialErrors([]);
+            setIgResult(null);
           }
           setIgDialogOpen(open);
         }}
