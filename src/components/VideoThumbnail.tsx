@@ -160,7 +160,7 @@ export function VideoThumbnail({
     video.addEventListener('error', onError);
 
     return () => {
-      video.removeEventListener('loadedmetadata', onLoaded);
+      video.removeEventListener('loadeddata', onLoadedData);
       video.removeEventListener('seeked', onSeeked);
       video.removeEventListener('error', onError);
       video.src = '';
