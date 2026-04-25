@@ -1392,112 +1392,169 @@ export default function ExerciseLibraryPage() {
               Cole a URL de um post ou reel público. Se for carrossel, todos os vídeos serão importados.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <Label>URL do post</Label>
-              <Input
-                autoFocus
-                placeholder="https://www.instagram.com/p/..."
-                value={igUrl}
-                onChange={(e) => setIgUrl(e.target.value)}
-                disabled={igImporting}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Nome (opcional)</Label>
-              <Input
-                placeholder="Ex.: Agachamento Búlgaro"
-                value={igNamePrefix}
-                onChange={(e) => setIgNamePrefix(e.target.value)}
-                disabled={igImporting}
-              />
-              <p className="text-xs text-muted-foreground">
-                Se vier mais de um vídeo, será numerado: "Nome (1)", "Nome (2)"...
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>Categoria</Label>
-              <Select
-                value={igCategoryChoice}
-                onValueChange={setIgCategoryChoice}
-                disabled={igImporting}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
-                  {orderedCategories.map(({ cat, depth }) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      <span style={{ paddingLeft: depth * 12 }}>
-                        {depth > 0 ? '↳ ' : ''}{cat.name}
-                      </span>
-                    </SelectItem>
-                  ))}
-                  <SelectItem value={NEW_CATEGORY}>+ Criar nova categoria</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {igCategoryChoice === NEW_CATEGORY && (
-              <div className="space-y-2">
-                <Label>Nome da nova categoria</Label>
-                <Input
-                  placeholder="Ex.: Peito, Costas, Pernas..."
-                  value={igNewCategoryName}
-                  onChange={(e) => setIgNewCategoryName(e.target.value)}
-                  disabled={igImporting}
-                />
+          {igResult ? (
+            // Tela de resultado final (sucesso)
+            <div className="py-2 space-y-3">
+              <div className="flex flex-col items-center text-center gap-2">
+                <div className="rounded-full bg-green-500/15 p-3">
+                  <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-500" />
+                </div>
+                <p className="text-base font-semibold">
+                  {igResult.created} vídeo(s) importado(s) com sucesso
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {igResult.categoryId
+                    ? 'Os exercícios foram adicionados à categoria selecionada.'
+                    : 'Os exercícios foram salvos sem categoria.'}
+                  {' '}A biblioteca já foi atualizada.
+                </p>
+                {igResult.failed > 0 && (
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    {igResult.failed} vídeo(s) falharam (veja detalhes abaixo)
+                  </p>
+                )}
               </div>
-            )}
-          </div>
-
-
-
-          {/* Barra de progresso durante o import */}
-          {igImporting && (
-            <div className="space-y-1">
-              <Progress value={igProgress} className="h-2" />
-              <p className="text-xs text-muted-foreground text-center">
-                {igProgressLabel} {Math.round(igProgress)}%
-              </p>
+              {igPartialErrors.length > 0 && (
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400 space-y-1 max-h-40 overflow-auto">
+                  <p className="font-medium">Detalhes das falhas:</p>
+                  <ul className="list-disc pl-4 space-y-0.5">
+                    {igPartialErrors.map((err, i) => (
+                      <li key={i} className="break-words">{err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
-          )}
+          ) : (
+            <>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>URL do post</Label>
+                  <Input
+                    autoFocus
+                    placeholder="https://www.instagram.com/p/..."
+                    value={igUrl}
+                    onChange={(e) => setIgUrl(e.target.value)}
+                    disabled={igImporting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Nome (opcional)</Label>
+                  <Input
+                    placeholder="Ex.: Agachamento Búlgaro"
+                    value={igNamePrefix}
+                    onChange={(e) => setIgNamePrefix(e.target.value)}
+                    disabled={igImporting}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Se vier mais de um vídeo, será numerado: "Nome (1)", "Nome (2)"...
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Categoria</Label>
+                  <Select
+                    value={igCategoryChoice}
+                    onValueChange={setIgCategoryChoice}
+                    disabled={igImporting}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                      {orderedCategories.map(({ cat, depth }) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          <span style={{ paddingLeft: depth * 12 }}>
+                            {depth > 0 ? '↳ ' : ''}{cat.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                      <SelectItem value={NEW_CATEGORY}>+ Criar nova categoria</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {igCategoryChoice === NEW_CATEGORY && (
+                  <div className="space-y-2">
+                    <Label>Nome da nova categoria</Label>
+                    <Input
+                      placeholder="Ex.: Peito, Costas, Pernas..."
+                      value={igNewCategoryName}
+                      onChange={(e) => setIgNewCategoryName(e.target.value)}
+                      disabled={igImporting}
+                    />
+                  </div>
+                )}
+              </div>
 
-          {/* Erro principal */}
-          {igError && !igImporting && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-              <p className="font-medium mb-1">Falha ao importar</p>
-              <p className="break-words whitespace-pre-wrap">{igError}</p>
-            </div>
-          )}
+              {/* Barra de progresso durante o import */}
+              {igImporting && (
+                <div className="space-y-1 mt-3">
+                  <Progress value={igProgress} className="h-2" />
+                  <p className="text-xs text-muted-foreground text-center">
+                    {igProgressLabel} {Math.round(igProgress)}%
+                  </p>
+                </div>
+              )}
 
-          {/* Erros parciais (quando alguns vídeos falharam) */}
-          {igPartialErrors.length > 0 && !igImporting && (
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400 space-y-1 max-h-40 overflow-auto">
-              <p className="font-medium">Alguns vídeos falharam:</p>
-              <ul className="list-disc pl-4 space-y-0.5">
-                {igPartialErrors.map((err, i) => (
-                  <li key={i} className="break-words">{err}</li>
-                ))}
-              </ul>
-            </div>
+              {/* Erro principal */}
+              {igError && !igImporting && (
+                <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                  <p className="font-medium mb-1">Falha ao importar</p>
+                  <p className="break-words whitespace-pre-wrap">{igError}</p>
+                </div>
+              )}
+
+              {/* Erros parciais antes de qualquer sucesso */}
+              {igPartialErrors.length > 0 && !igImporting && (
+                <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400 space-y-1 max-h-40 overflow-auto">
+                  <p className="font-medium">Alguns vídeos falharam:</p>
+                  <ul className="list-disc pl-4 space-y-0.5">
+                    {igPartialErrors.map((err, i) => (
+                      <li key={i} className="break-words">{err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
           )}
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIgDialogOpen(false)}
-              disabled={igImporting}
-            >
-              Cancelar
-            </Button>
-            <Button onClick={runInstagramImport} disabled={igImporting || !igUrl.trim()}>
-              {igImporting ? (
-                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Importando...</>
-              ) : (
-                <><Instagram className="h-4 w-4 mr-1" /> Importar</>
-              )}
-            </Button>
+            {igResult ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIgResult(null);
+                    setIgError(null);
+                    setIgPartialErrors([]);
+                    setIgUrl('');
+                    setIgNamePrefix('');
+                  }}
+                >
+                  Importar outro
+                </Button>
+                <Button onClick={() => setIgDialogOpen(false)}>
+                  Fechar
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setIgDialogOpen(false)}
+                  disabled={igImporting}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={runInstagramImport} disabled={igImporting || !igUrl.trim()}>
+                  {igImporting ? (
+                    <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Importando...</>
+                  ) : (
+                    <><Instagram className="h-4 w-4 mr-1" /> Importar</>
+                  )}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
