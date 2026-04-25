@@ -94,54 +94,60 @@ export function VideoThumbnail({
     // sem crossOrigin (não conseguiremos capturar o frame, mas evitamos o
     // erro silencioso que deixava as miniaturas em branco).
     video.crossOrigin = 'anonymous';
-    video.preload = 'metadata';
+    video.preload = 'auto';
     video.muted = true;
     video.playsInline = true;
-    video.src = videoUrl;
+    // Cache-buster garante uma resposta com header CORS válido (sem reusar
+    // resposta sem CORS já cacheada pelo browser por outra <video> tag).
+    const sep = videoUrl.includes('?') ? '&' : '?';
+    video.src = `${videoUrl}${sep}cors=1`;
     let triedNoCors = false;
+    let captured = false;
 
     const target = Math.max(0, startSeconds ?? 0);
 
-    const onLoaded = () => {
+    const tryCapture = () => {
+      if (captured) return;
       try {
-        video.currentTime = target;
-      } catch {
-        setErrored(true);
-      }
-    };
-
-    const onSeeked = () => {
-      try {
-        // Downscale captured frame to ~360px wide for fast rendering & low memory.
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        if (!vw || !vh) return;
         const maxW = 360;
-        const vw = video.videoWidth || 320;
-        const vh = video.videoHeight || 180;
         const scale = Math.min(1, maxW / vw);
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(vw * scale);
         canvas.height = Math.round(vh * scale);
         const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          setErrored(true);
-          return;
-        }
+        if (!ctx) return;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const data = canvas.toDataURL('image/jpeg', 0.6);
+        captured = true;
         frameCache.set(cacheKey, data);
         setFrameUrl(data);
-      } catch {
+      } catch (err) {
+        // Canvas tainted (CORS) — desiste silenciosamente; o componente
+        // mostra o fundo preto com o ícone de play.
+        captured = true;
         setErrored(true);
       }
     };
 
+    const onLoadedData = () => {
+      if (target > 0) {
+        try { video.currentTime = target; } catch { tryCapture(); }
+      } else {
+        tryCapture();
+      }
+    };
+
+    const onSeeked = () => tryCapture();
+
     const onError = () => {
-      // Primeiro fallback: alguns provedores não enviam CORS headers; tenta
-      // recarregar sem crossOrigin para pelo menos exibir o vídeo.
       if (!triedNoCors) {
         triedNoCors = true;
         try {
           video.removeAttribute('crossorigin');
-          video.src = videoUrl;
+          video.src = `${videoUrl}${sep}nocors=1`;
           video.load();
           return;
         } catch { /* fallthrough */ }
@@ -149,12 +155,12 @@ export function VideoThumbnail({
       setErrored(true);
     };
 
-    video.addEventListener('loadedmetadata', onLoaded);
+    video.addEventListener('loadeddata', onLoadedData);
     video.addEventListener('seeked', onSeeked);
     video.addEventListener('error', onError);
 
     return () => {
-      video.removeEventListener('loadedmetadata', onLoaded);
+      video.removeEventListener('loadeddata', onLoadedData);
       video.removeEventListener('seeked', onSeeked);
       video.removeEventListener('error', onError);
       video.src = '';
