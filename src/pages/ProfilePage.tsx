@@ -7,7 +7,7 @@ import { activityLabels, goalLabels, calculateAge, calculateBMR, calculateTDEE, 
 import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
-import { ApifySettingsCard } from '@/components/ApifySettingsCard';
+
 
 export function ProfilePage() {
   const navigate = useNavigate();
@@ -262,7 +262,6 @@ export function ProfilePage() {
           </div>
         )}
 
-        <ApifySettingsCard />
 
         <Button 
           size="lg" 

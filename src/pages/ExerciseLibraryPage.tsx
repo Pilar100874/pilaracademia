@@ -13,6 +13,13 @@ import {
 import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
+import { ApifySettingsCard } from '@/components/ApifySettingsCard';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Settings, ChevronDown } from 'lucide-react';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
@@ -1490,6 +1497,23 @@ export default function ExerciseLibraryPage() {
                     />
                   </div>
                 )}
+
+                {/* Configuração do token Apify dentro do próprio diálogo */}
+                <Collapsible>
+                  <CollapsibleTrigger
+                    className="flex w-full items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
+                    disabled={igImporting}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      Configurar token Apify (avançado)
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-3">
+                    <ApifySettingsCard />
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
 
               {/* Barra de progresso durante o import */}
