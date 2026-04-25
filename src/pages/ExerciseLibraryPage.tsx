@@ -85,6 +85,10 @@ export default function ExerciseLibraryPage() {
   const [igProgressLabel, setIgProgressLabel] = useState('');
   const [igError, setIgError] = useState<string | null>(null);
   const [igPartialErrors, setIgPartialErrors] = useState<string[]>([]);
+  const [igResult, setIgResult] = useState<
+    | { kind: 'success'; created: number; failed: number; categoryId: string | null }
+    | null
+  >(null);
 
 
 
