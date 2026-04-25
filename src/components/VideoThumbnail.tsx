@@ -134,7 +134,20 @@ export function VideoThumbnail({
       }
     };
 
-    const onError = () => setErrored(true);
+    const onError = () => {
+      // Primeiro fallback: alguns provedores não enviam CORS headers; tenta
+      // recarregar sem crossOrigin para pelo menos exibir o vídeo.
+      if (!triedNoCors) {
+        triedNoCors = true;
+        try {
+          video.removeAttribute('crossorigin');
+          video.src = videoUrl;
+          video.load();
+          return;
+        } catch { /* fallthrough */ }
+      }
+      setErrored(true);
+    };
 
     video.addEventListener('loadedmetadata', onLoaded);
     video.addEventListener('seeked', onSeeked);
