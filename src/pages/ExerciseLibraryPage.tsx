@@ -1419,32 +1419,7 @@ export default function ExerciseLibraryPage() {
             )}
           </div>
 
-          {/* Status / botão de configurar a chave da API */}
-          <div className="flex items-center justify-between rounded-lg border bg-muted/40 p-2.5 text-xs">
-            <div className="flex items-center gap-2 min-w-0">
-              {apiKeyConfigured ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
-                  <span className="text-muted-foreground truncate">Chave da API configurada</span>
-                </>
-              ) : (
-                <>
-                  <KeyRound className="h-4 w-4 text-amber-600 shrink-0" />
-                  <span className="text-muted-foreground truncate">Chave da API não configurada</span>
-                </>
-              )}
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => setApiKeyDialogOpen(true)}
-              disabled={igImporting}
-            >
-              {apiKeyConfigured ? 'Alterar' : 'Configurar'}
-            </Button>
-          </div>
+
 
           {/* Barra de progresso durante o import */}
           {igImporting && (
