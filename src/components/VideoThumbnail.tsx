@@ -90,11 +90,15 @@ export function VideoThumbnail({
 
     const video = document.createElement('video');
     videoElRef.current = video;
+    // Tentar com CORS para permitir captura via canvas. Se falhar, recarrega
+    // sem crossOrigin (não conseguiremos capturar o frame, mas evitamos o
+    // erro silencioso que deixava as miniaturas em branco).
     video.crossOrigin = 'anonymous';
     video.preload = 'metadata';
     video.muted = true;
     video.playsInline = true;
     video.src = videoUrl;
+    let triedNoCors = false;
 
     const target = Math.max(0, startSeconds ?? 0);
 
