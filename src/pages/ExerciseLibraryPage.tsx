@@ -433,20 +433,10 @@ export default function ExerciseLibraryPage() {
         try {
           if (ctx && typeof ctx.json === 'function') payload = await ctx.json();
         } catch { /* ignore */ }
-        if (payload?.needs_api_key) {
-          toast.error('Configure a chave da API primeiro');
-          setApiKeyDialogOpen(true);
-          return;
-        }
         toast.error(payload?.error || error.message || 'Falha ao importar do Instagram');
         return;
       }
       if (!data?.success) {
-        if (data?.needs_api_key) {
-          toast.error('Configure a chave da API primeiro');
-          setApiKeyDialogOpen(true);
-          return;
-        }
         toast.error(data?.error || 'Nenhum vídeo importado');
         return;
       }
