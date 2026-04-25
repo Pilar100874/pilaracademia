@@ -81,6 +81,8 @@ export default function ExerciseLibraryPage() {
   const [igImporting, setIgImporting] = useState(false);
   const [igProgress, setIgProgress] = useState(0);
   const [igProgressLabel, setIgProgressLabel] = useState('');
+  const [igError, setIgError] = useState<string | null>(null);
+  const [igPartialErrors, setIgPartialErrors] = useState<string[]>([]);
 
 
 
@@ -389,6 +391,8 @@ export default function ExerciseLibraryPage() {
     }
 
     setIgImporting(true);
+    setIgError(null);
+    setIgPartialErrors([]);
     setIgProgress(5);
     setIgProgressLabel('Conectando ao Instagram...');
     // Simula progresso enquanto a edge function trabalha (não há streaming)
@@ -433,19 +437,28 @@ export default function ExerciseLibraryPage() {
         try {
           if (ctx && typeof ctx.json === 'function') payload = await ctx.json();
         } catch { /* ignore */ }
-        toast.error(payload?.error || error.message || 'Falha ao importar do Instagram');
-        return;
+        const msg = payload?.error || error.message || 'Falha ao importar do Instagram';
+        setIgError(msg);
+        toast.error(msg);
+        return; // mantém o dialog aberto para o usuário ver o erro
       }
       if (!data?.success) {
-        toast.error(data?.error || 'Nenhum vídeo importado');
+        const msg = data?.error || 'Nenhum vídeo importado';
+        setIgError(msg);
+        if (Array.isArray(data?.errors)) setIgPartialErrors(data.errors);
+        toast.error(msg);
         return;
       }
 
-      toast.success(
-        `${data.created_count} vídeo(s) importado(s) do Instagram${
-          data.errors?.length ? ` (${data.errors.length} falharam)` : ''
-        }`
-      );
+      // Sucesso parcial: alguns vídeos falharam
+      if (Array.isArray(data?.errors) && data.errors.length > 0) {
+        setIgPartialErrors(data.errors);
+        toast.warning(
+          `${data.created_count} importado(s), ${data.errors.length} falharam`
+        );
+      } else {
+        toast.success(`${data.created_count} vídeo(s) importado(s) do Instagram`);
+      }
       // Ajusta o filtro para mostrar onde os novos exercícios foram parar
       if (targetCategoryId) {
         setFilterCategory(targetCategoryId);
@@ -459,7 +472,9 @@ export default function ExerciseLibraryPage() {
     } catch (e) {
       clearInterval(progressTimer);
       console.error(e);
-      toast.error('Erro ao importar do Instagram');
+      const msg = (e as Error)?.message || 'Erro ao importar do Instagram';
+      setIgError(msg);
+      toast.error(msg);
     } finally {
       clearInterval(progressTimer);
       setIgImporting(false);
@@ -1356,7 +1371,12 @@ export default function ExerciseLibraryPage() {
       <Dialog
         open={igDialogOpen}
         onOpenChange={(open) => {
-          if (!igImporting) setIgDialogOpen(open);
+          if (igImporting) return;
+          if (!open) {
+            setIgError(null);
+            setIgPartialErrors([]);
+          }
+          setIgDialogOpen(open);
         }}
       >
         <DialogContent>
@@ -1434,6 +1454,26 @@ export default function ExerciseLibraryPage() {
               <p className="text-xs text-muted-foreground text-center">
                 {igProgressLabel} {Math.round(igProgress)}%
               </p>
+            </div>
+          )}
+
+          {/* Erro principal */}
+          {igError && !igImporting && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              <p className="font-medium mb-1">Falha ao importar</p>
+              <p className="break-words whitespace-pre-wrap">{igError}</p>
+            </div>
+          )}
+
+          {/* Erros parciais (quando alguns vídeos falharam) */}
+          {igPartialErrors.length > 0 && !igImporting && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400 space-y-1 max-h-40 overflow-auto">
+              <p className="font-medium">Alguns vídeos falharam:</p>
+              <ul className="list-disc pl-4 space-y-0.5">
+                {igPartialErrors.map((err, i) => (
+                  <li key={i} className="break-words">{err}</li>
+                ))}
+              </ul>
             </div>
           )}
 
