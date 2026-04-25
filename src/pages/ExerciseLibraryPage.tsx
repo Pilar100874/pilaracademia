@@ -391,6 +391,8 @@ export default function ExerciseLibraryPage() {
     }
 
     setIgImporting(true);
+    setIgError(null);
+    setIgPartialErrors([]);
     setIgProgress(5);
     setIgProgressLabel('Conectando ao Instagram...');
     // Simula progresso enquanto a edge function trabalha (não há streaming)
@@ -435,19 +437,28 @@ export default function ExerciseLibraryPage() {
         try {
           if (ctx && typeof ctx.json === 'function') payload = await ctx.json();
         } catch { /* ignore */ }
-        toast.error(payload?.error || error.message || 'Falha ao importar do Instagram');
-        return;
+        const msg = payload?.error || error.message || 'Falha ao importar do Instagram';
+        setIgError(msg);
+        toast.error(msg);
+        return; // mantém o dialog aberto para o usuário ver o erro
       }
       if (!data?.success) {
-        toast.error(data?.error || 'Nenhum vídeo importado');
+        const msg = data?.error || 'Nenhum vídeo importado';
+        setIgError(msg);
+        if (Array.isArray(data?.errors)) setIgPartialErrors(data.errors);
+        toast.error(msg);
         return;
       }
 
-      toast.success(
-        `${data.created_count} vídeo(s) importado(s) do Instagram${
-          data.errors?.length ? ` (${data.errors.length} falharam)` : ''
-        }`
-      );
+      // Sucesso parcial: alguns vídeos falharam
+      if (Array.isArray(data?.errors) && data.errors.length > 0) {
+        setIgPartialErrors(data.errors);
+        toast.warning(
+          `${data.created_count} importado(s), ${data.errors.length} falharam`
+        );
+      } else {
+        toast.success(`${data.created_count} vídeo(s) importado(s) do Instagram`);
+      }
       // Ajusta o filtro para mostrar onde os novos exercícios foram parar
       if (targetCategoryId) {
         setFilterCategory(targetCategoryId);
@@ -461,7 +472,9 @@ export default function ExerciseLibraryPage() {
     } catch (e) {
       clearInterval(progressTimer);
       console.error(e);
-      toast.error('Erro ao importar do Instagram');
+      const msg = (e as Error)?.message || 'Erro ao importar do Instagram';
+      setIgError(msg);
+      toast.error(msg);
     } finally {
       clearInterval(progressTimer);
       setIgImporting(false);
