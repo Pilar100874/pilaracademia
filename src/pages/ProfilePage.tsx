@@ -262,7 +262,6 @@ export function ProfilePage() {
           </div>
         )}
 
-        <ApifySettingsCard />
 
         <Button 
           size="lg" 
