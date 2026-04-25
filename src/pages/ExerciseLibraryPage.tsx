@@ -1471,6 +1471,44 @@ export default function ExerciseLibraryPage() {
               </div>
             )}
           </div>
+
+          {/* Status / botão de configurar a chave da API */}
+          <div className="flex items-center justify-between rounded-lg border bg-muted/40 p-2.5 text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              {apiKeyConfigured ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                  <span className="text-muted-foreground truncate">Chave da API configurada</span>
+                </>
+              ) : (
+                <>
+                  <KeyRound className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span className="text-muted-foreground truncate">Chave da API não configurada</span>
+                </>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => setApiKeyDialogOpen(true)}
+              disabled={igImporting}
+            >
+              {apiKeyConfigured ? 'Alterar' : 'Configurar'}
+            </Button>
+          </div>
+
+          {/* Barra de progresso durante o import */}
+          {igImporting && (
+            <div className="space-y-1">
+              <Progress value={igProgress} className="h-2" />
+              <p className="text-xs text-muted-foreground text-center">
+                {igProgressLabel} {Math.round(igProgress)}%
+              </p>
+            </div>
+          )}
+
           <DialogFooter>
             <Button
               variant="outline"
@@ -1484,6 +1522,80 @@ export default function ExerciseLibraryPage() {
                 <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Importando...</>
               ) : (
                 <><Instagram className="h-4 w-4 mr-1" /> Importar</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: configurar chave da API do Instagram (RapidAPI) */}
+      <Dialog
+        open={apiKeyDialogOpen}
+        onOpenChange={(open) => {
+          if (!apiKeySaving) setApiKeyDialogOpen(open);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Chave da API do Instagram
+            </DialogTitle>
+            <DialogDescription>
+              Para baixar vídeos do Instagram precisamos de uma chave gratuita do RapidAPI.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="rounded-lg bg-muted/50 p-3 space-y-2 text-xs">
+              <p className="font-medium text-foreground">Como obter (1 minuto):</p>
+              <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                <li>
+                  Acesse a página da API no RapidAPI{' '}
+                  <a
+                    href="https://rapidapi.com/restyler/api/instagram-scraper-api2"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-0.5 text-primary underline"
+                  >
+                    abrir <ExternalLink className="h-3 w-3" />
+                  </a>
+                </li>
+                <li>Clique em <span className="font-medium">Subscribe to Test</span> → escolha o plano <span className="font-medium">Basic (grátis)</span>.</li>
+                <li>Volte para a aba <span className="font-medium">Endpoints</span> e copie o valor de <span className="font-mono">x-rapidapi-key</span>.</li>
+                <li>Cole abaixo e salve.</li>
+              </ol>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Chave (x-rapidapi-key)</Label>
+              <Input
+                type="password"
+                autoComplete="off"
+                placeholder="cole aqui a chave do RapidAPI"
+                value={apiKeyValue}
+                onChange={(e) => setApiKeyValue(e.target.value)}
+                disabled={apiKeySaving}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Sua chave é guardada apenas na sua conta e usada só para baixar os vídeos que você pedir.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setApiKeyDialogOpen(false)}
+              disabled={apiKeySaving}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={saveApiKey} disabled={apiKeySaving || !apiKeyValue.trim()}>
+              {apiKeySaving ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Salvando...</>
+              ) : (
+                'Salvar'
               )}
             </Button>
           </DialogFooter>
