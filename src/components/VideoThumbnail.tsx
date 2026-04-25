@@ -16,7 +16,6 @@ interface Props {
 }
 
 // Module-level cache so re-mounts (scrolling) reuse already captured frames.
-// v2: ensure clean HMR after fixing onLoaded reference
 const frameCache = new Map<string, string>();
 
 /**
@@ -91,77 +90,54 @@ export function VideoThumbnail({
 
     const video = document.createElement('video');
     videoElRef.current = video;
-    // Tentar com CORS para permitir captura via canvas. Se falhar, recarrega
-    // sem crossOrigin (não conseguiremos capturar o frame, mas evitamos o
-    // erro silencioso que deixava as miniaturas em branco).
     video.crossOrigin = 'anonymous';
-    video.preload = 'auto';
+    video.preload = 'metadata';
     video.muted = true;
     video.playsInline = true;
-    // Cache-buster garante uma resposta com header CORS válido (sem reusar
-    // resposta sem CORS já cacheada pelo browser por outra <video> tag).
-    const sep = videoUrl.includes('?') ? '&' : '?';
-    video.src = `${videoUrl}${sep}cors=1`;
-    let triedNoCors = false;
-    let captured = false;
+    video.src = videoUrl;
 
     const target = Math.max(0, startSeconds ?? 0);
 
-    const tryCapture = () => {
-      if (captured) return;
+    const onLoaded = () => {
       try {
-        const vw = video.videoWidth;
-        const vh = video.videoHeight;
-        if (!vw || !vh) return;
+        video.currentTime = target;
+      } catch {
+        setErrored(true);
+      }
+    };
+
+    const onSeeked = () => {
+      try {
+        // Downscale captured frame to ~360px wide for fast rendering & low memory.
         const maxW = 360;
+        const vw = video.videoWidth || 320;
+        const vh = video.videoHeight || 180;
         const scale = Math.min(1, maxW / vw);
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(vw * scale);
         canvas.height = Math.round(vh * scale);
         const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        if (!ctx) {
+          setErrored(true);
+          return;
+        }
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const data = canvas.toDataURL('image/jpeg', 0.6);
-        captured = true;
         frameCache.set(cacheKey, data);
         setFrameUrl(data);
-      } catch (err) {
-        // Canvas tainted (CORS) — desiste silenciosamente; o componente
-        // mostra o fundo preto com o ícone de play.
-        captured = true;
+      } catch {
         setErrored(true);
       }
     };
 
-    const onLoadedData = () => {
-      if (target > 0) {
-        try { video.currentTime = target; } catch { tryCapture(); }
-      } else {
-        tryCapture();
-      }
-    };
+    const onError = () => setErrored(true);
 
-    const onSeeked = () => tryCapture();
-
-    const onError = () => {
-      if (!triedNoCors) {
-        triedNoCors = true;
-        try {
-          video.removeAttribute('crossorigin');
-          video.src = `${videoUrl}${sep}nocors=1`;
-          video.load();
-          return;
-        } catch { /* fallthrough */ }
-      }
-      setErrored(true);
-    };
-
-    video.addEventListener('loadeddata', onLoadedData);
+    video.addEventListener('loadedmetadata', onLoaded);
     video.addEventListener('seeked', onSeeked);
     video.addEventListener('error', onError);
 
     return () => {
-      video.removeEventListener('loadeddata', onLoadedData);
+      video.removeEventListener('loadedmetadata', onLoaded);
       video.removeEventListener('seeked', onSeeked);
       video.removeEventListener('error', onError);
       video.src = '';
