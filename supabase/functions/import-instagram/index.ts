@@ -57,6 +57,13 @@ async function fetchInstagramVideos(
 
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
+    if (res.status === 401) {
+      return {
+        videos: [],
+        error:
+          "Token Apify inválido ou expirado. Verifique se ele começa com 'apify_api_' e foi copiado de console.apify.com → Settings → Integrations. Remova o token pessoal nas configurações para usar o token padrão do servidor.",
+      };
+    }
     return {
       videos: [],
       error: `Apify HTTP ${res.status}: ${txt.slice(0, 250)}`,
