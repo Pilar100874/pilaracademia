@@ -101,13 +101,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const apifyToken = Deno.env.get("APIFY_API_TOKEN");
-
-    if (!apifyToken) {
-      return json(500, {
-        error: "APIFY_API_TOKEN não configurado no servidor",
-      });
-    }
+    const globalApifyToken = Deno.env.get("APIFY_API_TOKEN");
 
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -119,6 +113,22 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
 
     const admin = createClient(supabaseUrl, serviceKey);
+
+    // Token do usuário tem prioridade sobre o global
+    const { data: settings } = await admin
+      .from("user_settings")
+      .select("instagram_api_key")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const apifyToken = (settings?.instagram_api_key as string | null) ||
+      globalApifyToken;
+
+    if (!apifyToken) {
+      return json(500, {
+        error: "Nenhum token Apify configurado. Adicione um nas Configurações.",
+      });
+    }
 
     const body = await req.json().catch(() => ({}));
     const { url, category_id, name_prefix } = body as {
