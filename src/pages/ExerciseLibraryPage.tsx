@@ -1553,7 +1553,7 @@ export default function ExerciseLibraryPage() {
                 <li>
                   Acesse a página da API no RapidAPI{' '}
                   <a
-                    href="https://rapidapi.com/restyler/api/instagram-scraper-api2"
+                    href="https://rapidapi.com/thetechguy32744/api/instagram-scraper-stable-api"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-0.5 text-primary underline"
