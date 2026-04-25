@@ -1371,7 +1371,12 @@ export default function ExerciseLibraryPage() {
       <Dialog
         open={igDialogOpen}
         onOpenChange={(open) => {
-          if (!igImporting) setIgDialogOpen(open);
+          if (igImporting) return;
+          if (!open) {
+            setIgError(null);
+            setIgPartialErrors([]);
+          }
+          setIgDialogOpen(open);
         }}
       >
         <DialogContent>
