@@ -359,6 +359,70 @@ export default function ExerciseLibraryPage() {
     setPendingFiles(files);
   };
 
+  const runInstagramImport = async () => {
+    if (!user) return;
+    const url = igUrl.trim();
+    if (!url) {
+      toast.error('Cole a URL do post do Instagram');
+      return;
+    }
+
+    let targetCategoryId: string | null = null;
+    if (igCategoryChoice === NEW_CATEGORY) {
+      const name = igNewCategoryName.trim();
+      if (!name) {
+        toast.error('Informe o nome da nova categoria');
+        return;
+      }
+      try {
+        const created = await createCategory.mutateAsync(name);
+        targetCategoryId = created.id;
+      } catch {
+        return;
+      }
+    } else if (igCategoryChoice !== NO_CATEGORY) {
+      targetCategoryId = igCategoryChoice;
+    }
+
+    setIgImporting(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const { data, error } = await supabase.functions.invoke('import-instagram', {
+        body: {
+          url,
+          category_id: targetCategoryId,
+          name_prefix: igNamePrefix.trim() || undefined,
+        },
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+
+      if (error) {
+        toast.error(error.message || 'Falha ao importar do Instagram');
+        return;
+      }
+      if (!data?.success) {
+        toast.error(data?.error || 'Nenhum vídeo importado');
+        return;
+      }
+
+      toast.success(
+        `${data.created_count} vídeo(s) importado(s) do Instagram${
+          data.errors?.length ? ` (${data.errors.length} falharam)` : ''
+        }`
+      );
+      setIgDialogOpen(false);
+      setIgUrl('');
+      setIgNamePrefix('');
+      setIgNewCategoryName('');
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao importar do Instagram');
+    } finally {
+      setIgImporting(false);
+    }
+  };
+
   const runBulkUpload = async () => {
     if (!pendingFiles || !user) return;
     const files = pendingFiles;
