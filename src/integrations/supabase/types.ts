@@ -500,6 +500,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          created_at: string
+          id: string
+          instagram_api_key: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          instagram_api_key?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          instagram_api_key?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       weight_history: {
         Row: {
           created_at: string
