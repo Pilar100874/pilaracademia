@@ -34,7 +34,7 @@ export function useExerciseLibrary() {
         .from('exercise_library')
         .select('*')
         .eq('user_id', user.id)
-        .order('name', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as LibraryExercise[];
