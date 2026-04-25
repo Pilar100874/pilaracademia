@@ -16,6 +16,7 @@ interface Props {
 }
 
 // Module-level cache so re-mounts (scrolling) reuse already captured frames.
+// v2: ensure clean HMR after fixing onLoaded reference
 const frameCache = new Map<string, string>();
 
 /**
