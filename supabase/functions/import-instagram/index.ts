@@ -128,12 +128,24 @@ Deno.serve(async (req) => {
       .eq("user_id", userId)
       .maybeSingle();
 
-    const apifyToken = (settings?.instagram_api_key as string | null) ||
-      globalApifyToken;
+    // Token pessoal só é usado se tiver formato válido (apify_api_...).
+    // Caso contrário, cai para o token global do servidor.
+    const personalToken = (settings?.instagram_api_key as string | null)?.trim();
+    const personalTokenValid = personalToken &&
+      personalToken.startsWith("apify_api_");
+    const apifyToken = personalTokenValid ? personalToken : globalApifyToken;
 
     if (!apifyToken) {
       return json(500, {
-        error: "Nenhum token Apify configurado. Adicione um nas Configurações.",
+        error:
+          "Nenhum token Apify configurado. Adicione um token válido (começa com 'apify_api_') nas configurações.",
+      });
+    }
+
+    if (personalToken && !personalTokenValid && !globalApifyToken) {
+      return json(400, {
+        error:
+          "O token salvo não parece ser do Apify (deve começar com 'apify_api_'). Remova-o ou substitua por um token válido.",
       });
     }
 
