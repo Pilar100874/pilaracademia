@@ -1,6 +1,6 @@
-// Edge function: importa vídeos de um post/reel do Instagram (incluindo carrossel)
-// Faz download do(s) MP4(s), envia para o bucket exercise-videos e cria
-// um item em exercise_library para cada vídeo.
+// Importa vídeos de um post/reel do Instagram (incluindo carrossel) usando
+// a API "instagram-scraper-api2" do RapidAPI. A chave é lida da tabela
+// user_settings.instagram_api_key do próprio usuário.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -16,9 +16,7 @@ const json = (status: number, body: unknown) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-// User-Agent de browser real (sem isso o Instagram bloqueia)
-const UA =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+const RAPIDAPI_HOST = "instagram-scraper-api2.p.rapidapi.com";
 
 function extractShortcode(url: string): string | null {
   const m = url.match(/instagram\.com\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/);
@@ -27,69 +25,59 @@ function extractShortcode(url: string): string | null {
 
 interface VideoItem {
   url: string;
-  width?: number;
-  height?: number;
 }
 
 /**
- * Tenta múltiplas estratégias para extrair os vídeos de um post.
- * Retorna a lista de vídeos encontrados (1 para post simples, N para carrossel).
+ * Chama o endpoint /v1/post_info do instagram-scraper-api2 e devolve a lista
+ * de vídeos (1 ou N para carrossel).
  */
-async function fetchInstagramVideos(shortcode: string): Promise<VideoItem[]> {
-  const videos: VideoItem[] = [];
+async function fetchInstagramVideos(
+  rawUrl: string,
+  apiKey: string,
+): Promise<{ videos: VideoItem[]; raw?: unknown; error?: string }> {
+  const apiUrl =
+    `https://${RAPIDAPI_HOST}/v1/post_info?code_or_id_or_url=${encodeURIComponent(rawUrl)}&include_insights=false`;
 
-  // Estratégia 1: endpoint embed (mais estável, não exige login)
-  const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
-  const embedRes = await fetch(embedUrl, {
+  const res = await fetch(apiUrl, {
     headers: {
-      "User-Agent": UA,
-      "Accept-Language": "en-US,en;q=0.9",
+      "x-rapidapi-key": apiKey,
+      "x-rapidapi-host": RAPIDAPI_HOST,
     },
   });
 
-  if (embedRes.ok) {
-    const html = await embedRes.text();
-
-    // Procura o JSON com dados do post (TimeSliceImpl / additionalDataLoaded)
-    const jsonMatches = [
-      ...html.matchAll(/"video_url":"([^"]+\.mp4[^"]*)"/g),
-      ...html.matchAll(/"video_versions":\s*\[\s*\{[^}]*"url":"([^"]+)"/g),
-    ];
-
-    const seen = new Set<string>();
-    for (const m of jsonMatches) {
-      let url = m[1].replace(/\\u0026/g, "&").replace(/\\\//g, "/").replace(/\\"/g, '"');
-      try {
-        url = JSON.parse(`"${url}"`);
-      } catch {
-        // ignora
-      }
-      if (!seen.has(url)) {
-        seen.add(url);
-        videos.push({ url });
-      }
-    }
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    return {
+      videos: [],
+      error: `RapidAPI HTTP ${res.status}: ${txt.slice(0, 200)}`,
+    };
   }
 
-  // Estratégia 2: oembed-like página principal (fallback)
-  if (videos.length === 0) {
-    const pageUrl = `https://www.instagram.com/p/${shortcode}/`;
-    const pageRes = await fetch(pageUrl, {
-      headers: {
-        "User-Agent": UA,
-        "Accept-Language": "en-US,en;q=0.9",
-      },
-    });
-    if (pageRes.ok) {
-      const html = await pageRes.text();
-      const og = html.match(/<meta property="og:video"\s+content="([^"]+)"/);
-      if (og) {
-        videos.push({ url: og[1].replace(/&amp;/g, "&") });
-      }
+  const data = await res.json().catch(() => null);
+  if (!data) return { videos: [], error: "Resposta inválida da RapidAPI" };
+
+  const node = (data as any).data ?? data;
+  const videos: VideoItem[] = [];
+
+  // Carrossel: carousel_media[]
+  const carousel = node?.carousel_media;
+  if (Array.isArray(carousel) && carousel.length > 0) {
+    for (const item of carousel) {
+      const v =
+        item?.video_url ||
+        item?.video_versions?.[0]?.url ||
+        item?.videos?.[0]?.url;
+      if (v && typeof v === "string") videos.push({ url: v });
     }
+  } else {
+    const single =
+      node?.video_url ||
+      node?.video_versions?.[0]?.url ||
+      node?.videos?.[0]?.url;
+    if (single && typeof single === "string") videos.push({ url: single });
   }
 
-  return videos;
+  return { videos, raw: node };
 }
 
 Deno.serve(async (req) => {
@@ -105,7 +93,6 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Cliente para validar o usuário
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -115,8 +102,23 @@ Deno.serve(async (req) => {
     }
     const userId = userData.user.id;
 
-    // Cliente admin para upload + insert
     const admin = createClient(supabaseUrl, serviceKey);
+
+    // Lê a chave do RapidAPI das configurações do usuário
+    const { data: settings } = await admin
+      .from("user_settings")
+      .select("instagram_api_key")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const apiKey = settings?.instagram_api_key?.trim();
+    if (!apiKey) {
+      return json(400, {
+        error:
+          "Chave da API do Instagram não configurada. Vá em Configurações da Biblioteca e cole sua chave do RapidAPI.",
+        needs_api_key: true,
+      });
+    }
 
     const body = await req.json().catch(() => ({}));
     const { url, category_id, name_prefix } = body as {
@@ -134,11 +136,14 @@ Deno.serve(async (req) => {
       return json(400, { error: "URL do Instagram inválida" });
     }
 
-    const videos = await fetchInstagramVideos(shortcode);
+    const { videos, error: scrapeErr } = await fetchInstagramVideos(url, apiKey);
+    if (scrapeErr) {
+      return json(502, { error: scrapeErr });
+    }
     if (videos.length === 0) {
       return json(404, {
         error:
-          "Nenhum vídeo encontrado. O post pode ser privado, ter só imagens, ou o Instagram bloqueou o acesso.",
+          "Nenhum vídeo encontrado nesse post. Verifique se é público e contém vídeos.",
       });
     }
 
@@ -148,10 +153,7 @@ Deno.serve(async (req) => {
     for (let i = 0; i < videos.length; i++) {
       const v = videos[i];
       try {
-        // Baixa o MP4
-        const videoRes = await fetch(v.url, {
-          headers: { "User-Agent": UA, Referer: "https://www.instagram.com/" },
-        });
+        const videoRes = await fetch(v.url);
         if (!videoRes.ok) {
           errors.push(`Vídeo ${i + 1}: HTTP ${videoRes.status}`);
           continue;
@@ -163,7 +165,6 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Upload pro storage
         const path = `${userId}/instagram-${shortcode}-${i + 1}-${Date.now()}.mp4`;
         const { error: upErr } = await admin.storage
           .from("exercise-videos")
