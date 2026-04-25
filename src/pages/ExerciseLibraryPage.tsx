@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2, CheckSquare, X, FolderInput, Pencil, FolderPlus } from 'lucide-react';
+import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2, CheckSquare, X, FolderInput, Pencil, FolderPlus, Instagram } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -73,6 +73,12 @@ export default function ExerciseLibraryPage() {
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
   const [newCategoryValue, setNewCategoryValue] = useState('');
   const [newCategoryParentId, setNewCategoryParentId] = useState<string | null>(null);
+  const [igDialogOpen, setIgDialogOpen] = useState(false);
+  const [igUrl, setIgUrl] = useState('');
+  const [igNamePrefix, setIgNamePrefix] = useState('');
+  const [igCategoryChoice, setIgCategoryChoice] = useState<string>(NO_CATEGORY);
+  const [igNewCategoryName, setIgNewCategoryName] = useState('');
+  const [igImporting, setIgImporting] = useState(false);
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
@@ -353,6 +359,70 @@ export default function ExerciseLibraryPage() {
     setPendingFiles(files);
   };
 
+  const runInstagramImport = async () => {
+    if (!user) return;
+    const url = igUrl.trim();
+    if (!url) {
+      toast.error('Cole a URL do post do Instagram');
+      return;
+    }
+
+    let targetCategoryId: string | null = null;
+    if (igCategoryChoice === NEW_CATEGORY) {
+      const name = igNewCategoryName.trim();
+      if (!name) {
+        toast.error('Informe o nome da nova categoria');
+        return;
+      }
+      try {
+        const created = await createCategory.mutateAsync(name);
+        targetCategoryId = created.id;
+      } catch {
+        return;
+      }
+    } else if (igCategoryChoice !== NO_CATEGORY) {
+      targetCategoryId = igCategoryChoice;
+    }
+
+    setIgImporting(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const { data, error } = await supabase.functions.invoke('import-instagram', {
+        body: {
+          url,
+          category_id: targetCategoryId,
+          name_prefix: igNamePrefix.trim() || undefined,
+        },
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+
+      if (error) {
+        toast.error(error.message || 'Falha ao importar do Instagram');
+        return;
+      }
+      if (!data?.success) {
+        toast.error(data?.error || 'Nenhum vídeo importado');
+        return;
+      }
+
+      toast.success(
+        `${data.created_count} vídeo(s) importado(s) do Instagram${
+          data.errors?.length ? ` (${data.errors.length} falharam)` : ''
+        }`
+      );
+      setIgDialogOpen(false);
+      setIgUrl('');
+      setIgNamePrefix('');
+      setIgNewCategoryName('');
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao importar do Instagram');
+    } finally {
+      setIgImporting(false);
+    }
+  };
+
   const runBulkUpload = async () => {
     if (!pendingFiles || !user) return;
     const files = pendingFiles;
@@ -535,6 +605,26 @@ export default function ExerciseLibraryPage() {
                     Vídeos
                   </>
                 )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIgUrl('');
+                  setIgNamePrefix('');
+                  setIgCategoryChoice(
+                    filterCategory !== ALL_CATEGORIES &&
+                      filterCategory !== NO_CATEGORY
+                      ? filterCategory
+                      : NO_CATEGORY
+                  );
+                  setIgNewCategoryName('');
+                  setIgDialogOpen(true);
+                }}
+                title="Importar vídeos de um post do Instagram"
+              >
+                <Instagram className="h-4 w-4 mr-1" />
+                Instagram
               </Button>
               <Button onClick={() => {
                 setEditingExercise(null);
@@ -1211,6 +1301,96 @@ export default function ExerciseLibraryPage() {
               {createCategory.isPending ? (
                 <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Criando...</>
               ) : 'Criar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Instagram import dialog */}
+      <Dialog
+        open={igDialogOpen}
+        onOpenChange={(open) => {
+          if (!igImporting) setIgDialogOpen(open);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Importar do Instagram</DialogTitle>
+            <DialogDescription>
+              Cole a URL de um post ou reel público. Se for carrossel, todos os vídeos serão importados.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>URL do post</Label>
+              <Input
+                autoFocus
+                placeholder="https://www.instagram.com/p/..."
+                value={igUrl}
+                onChange={(e) => setIgUrl(e.target.value)}
+                disabled={igImporting}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Nome (opcional)</Label>
+              <Input
+                placeholder="Ex.: Agachamento Búlgaro"
+                value={igNamePrefix}
+                onChange={(e) => setIgNamePrefix(e.target.value)}
+                disabled={igImporting}
+              />
+              <p className="text-xs text-muted-foreground">
+                Se vier mais de um vídeo, será numerado: "Nome (1)", "Nome (2)"...
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Select
+                value={igCategoryChoice}
+                onValueChange={setIgCategoryChoice}
+                disabled={igImporting}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                  {orderedCategories.map(({ cat, depth }) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      <span style={{ paddingLeft: depth * 12 }}>
+                        {depth > 0 ? '↳ ' : ''}{cat.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={NEW_CATEGORY}>+ Criar nova categoria</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {igCategoryChoice === NEW_CATEGORY && (
+              <div className="space-y-2">
+                <Label>Nome da nova categoria</Label>
+                <Input
+                  placeholder="Ex.: Peito, Costas, Pernas..."
+                  value={igNewCategoryName}
+                  onChange={(e) => setIgNewCategoryName(e.target.value)}
+                  disabled={igImporting}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIgDialogOpen(false)}
+              disabled={igImporting}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={runInstagramImport} disabled={igImporting || !igUrl.trim()}>
+              {igImporting ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Importando...</>
+              ) : (
+                <><Instagram className="h-4 w-4 mr-1" /> Importar</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
