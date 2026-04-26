@@ -162,19 +162,33 @@ export default function MasterPage() {
               </DialogHeader>
               <div className="space-y-3">
                 <div>
-                  <Label>Nome</Label>
+                  <Label>Nome da clínica *</Label>
                   <Input value={name} onChange={e => setName(e.target.value)} placeholder="Studio Pilates" />
                 </div>
                 <div>
-                  <Label>Slug (identificador único)</Label>
+                  <Label>Slug (URL) — opcional</Label>
                   <Input value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} placeholder="studio-pilates" />
+                  <p className="text-xs text-muted-foreground mt-1">Se vazio, geramos a partir do nome.</p>
                 </div>
-                <div>
-                  <Label>E-mail do administrador (opcional)</Label>
-                  <Input value={adminEmail} onChange={e => setAdminEmail(e.target.value)} placeholder="admin@clinica.com" />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Se vazio, você mesmo será o admin. O usuário precisa já estar cadastrado.
-                  </p>
+                <div className="pt-2 border-t">
+                  <p className="text-sm font-semibold mb-2">Administrador da clínica</p>
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Nome do admin</Label>
+                      <Input value={adminName} onChange={e => setAdminName(e.target.value)} placeholder="Maria Silva" />
+                    </div>
+                    <div>
+                      <Label>E-mail *</Label>
+                      <Input type="email" value={adminEmail} onChange={e => setAdminEmail(e.target.value)} placeholder="admin@clinica.com" />
+                    </div>
+                    <div>
+                      <Label>Senha inicial *</Label>
+                      <Input type="text" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="mín. 6 caracteres" />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        O admin será obrigado a trocar a senha no primeiro login.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
