@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, ListOrdered, GripVertical, Library, Pencil, Check, X, MessageCircle, Play, Maximize2, Dumbbell, LayoutTemplate } from 'lucide-react';
+import { Plus, Trash2, ListOrdered, GripVertical, Library, Pencil, Check, X, MessageCircle, Play, Maximize2, Dumbbell, LayoutTemplate, Search, Clock, Filter, Layers } from 'lucide-react';
 import { ShareSequenceDialog } from '@/components/ShareSequenceDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
