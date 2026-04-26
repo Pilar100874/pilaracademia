@@ -389,7 +389,7 @@ export function usePrescriptions(filters: { clinicId?: string | null; studentId?
   });
   const create = useMutation({
     mutationFn: async (input: { clinic_id: string; student_id: string; sequence_id: string; context: 'in_class' | 'at_home'; scheduled_for?: string | null; notes?: string; created_by: string }) => {
-      const { error } = await supabase.from('prescriptions').insert({
+      const { data, error } = await supabase.from('prescriptions').insert({
         clinic_id: input.clinic_id,
         student_id: input.student_id,
         sequence_id: input.sequence_id,
@@ -397,8 +397,9 @@ export function usePrescriptions(filters: { clinicId?: string | null; studentId?
         scheduled_for: input.scheduled_for ?? null,
         notes: input.notes ?? null,
         created_by: input.created_by,
-      });
+      }).select('*').single();
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['prescriptions'] });
