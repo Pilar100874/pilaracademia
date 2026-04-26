@@ -6,8 +6,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save, Repeat, FileText, LogIn, Settings } from 'lucide-react';
+import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save, Repeat, FileText, LogIn, Settings, Search, Users as UsersIcon } from 'lucide-react';
 import { impersonate } from '@/lib/impersonation';
+import { StudentInstructorsManager } from '@/components/StudentInstructorsManager';
+import { useMyStudentIds } from '@/hooks/useStaff';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,7 +23,7 @@ import { toast } from 'sonner';
 const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 export default function StudentsPage() {
-  const { activeClinicId, isAdmin } = useUserRoles();
+  const { activeClinicId, isAdmin, isInstructor } = useUserRoles();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: students = [], create, remove, update } = useStudents(activeClinicId);
@@ -74,6 +76,9 @@ export default function StudentsPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', skill_level_id: '', notes: '' });
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [onlyMine, setOnlyMine] = useState(false);
+  const { data: myStudentIds } = useMyStudentIds(activeClinicId, user?.id);
 
   // Prescriptions for selected
   const { data: studentPrescs = [] } = useQuery({
@@ -315,11 +320,49 @@ export default function StudentsPage() {
       <div className="grid md:grid-cols-[320px_1fr] gap-4">
         {/* Lista */}
         <Card className="p-2 max-h-[70vh] overflow-y-auto">
-          {students.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground text-sm"><User className="h-8 w-8 mx-auto mb-2 opacity-50" />Nenhum aluno.</div>
-          ) : (
-            students.map((s) => {
+          <div className="p-2 space-y-2 sticky top-0 bg-card z-10">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar aluno..."
+                className="pl-8 h-9"
+              />
+            </div>
+            {(isInstructor || isAdmin) && (myStudentIds?.size ?? 0) > 0 && (
+              <Button
+                size="sm"
+                variant={onlyMine ? 'default' : 'outline'}
+                className="w-full h-8"
+                onClick={() => setOnlyMine((v) => !v)}
+              >
+                <UsersIcon className="h-3.5 w-3.5 mr-1" />
+                {onlyMine ? `Meus alunos (${myStudentIds?.size ?? 0})` : 'Mostrar só meus alunos'}
+              </Button>
+            )}
+          </div>
+          {(() => {
+            const term = search.trim().toLowerCase();
+            const filtered = students.filter((s) => {
+              if (onlyMine && myStudentIds && !myStudentIds.has(s.id)) return false;
+              if (!term) return true;
+              return (
+                s.full_name.toLowerCase().includes(term) ||
+                (s.email || '').toLowerCase().includes(term)
+              );
+            });
+            if (filtered.length === 0) {
+              return (
+                <div className="p-6 text-center text-muted-foreground text-sm">
+                  <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  {students.length === 0 ? 'Nenhum aluno.' : 'Nenhum aluno encontrado.'}
+                </div>
+              );
+            }
+            return filtered.map((s) => {
               const lv = levels.find((l) => l.id === s.skill_level_id);
+              const isMine = myStudentIds?.has(s.id);
               return (
                 <button
                   key={s.id}
@@ -334,14 +377,17 @@ export default function StudentsPage() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{s.full_name}</div>
+                    <div className="font-medium truncate flex items-center gap-1">
+                      {s.full_name}
+                      {isMine && <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">meu</Badge>}
+                    </div>
                     {lv && <div className="text-xs text-muted-foreground">{lv.name}</div>}
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </button>
               );
-            })
-          )}
+            });
+          })()}
         </Card>
 
         {/* Detalhe */}
@@ -403,7 +449,13 @@ export default function StudentsPage() {
                   </div>
                 </div>
 
-                {/* Resumo de contrato */}
+                {/* Professores fixos */}
+                {activeClinicId && (
+                  <div className="mt-4 p-3 rounded-lg border bg-muted/30">
+                    <StudentInstructorsManager clinicId={activeClinicId} studentId={current.id} />
+                  </div>
+                )}
+
                 {(current as any).contract_type && (current as any).contract_type !== 'open' && (
                   <div className="mt-4 p-3 rounded-lg border bg-muted/40 text-sm flex items-center justify-between flex-wrap gap-2">
                     {(current as any).contract_type === 'classes' ? (

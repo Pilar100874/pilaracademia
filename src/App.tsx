@@ -20,6 +20,7 @@ import { Loader2 } from "lucide-react";
 import ClinicLayout from "@/pages/clinic/ClinicLayout";
 import ClinicOverviewPage from "@/pages/clinic/ClinicOverviewPage";
 import StudentsPage from "@/pages/clinic/StudentsPage";
+import StaffPage from "@/pages/clinic/StaffPage";
 import EquipmentPage from "@/pages/clinic/EquipmentPage";
 import SkillLevelsPage from "@/pages/clinic/SkillLevelsPage";
 import SequencesPage from "@/pages/clinic/SequencesPage";
@@ -100,6 +101,7 @@ function AppRoutes() {
         <Route path="agenda" element={<AppointmentsPage />} />
         <Route path="grades" element={<BookableSlotsPage />} />
         <Route path="alunos" element={<StudentsPage />} />
+        <Route path="equipe" element={<StaffPage />} />
         <Route path="evolucao" element={<StudentEvolutionPage />} />
         <Route path="equipamentos" element={<EquipmentPage />} />
         <Route path="niveis" element={<SkillLevelsPage />} />

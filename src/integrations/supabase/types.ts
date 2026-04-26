@@ -1530,6 +1530,33 @@ export type Database = {
         }
         Relationships: []
       }
+      student_instructors: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string
+          id: string
+          instructor_user_id: string
+          student_id: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          instructor_user_id: string
+          student_id: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          instructor_user_id?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           clinic_id: string | null
@@ -1754,6 +1781,10 @@ export type Database = {
       }
       is_clinic_staff: {
         Args: { _clinic_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_fixed_instructor_of_student: {
+        Args: { _student_id: string; _user_id: string }
         Returns: boolean
       }
       is_master_admin: { Args: { _user_id: string }; Returns: boolean }
