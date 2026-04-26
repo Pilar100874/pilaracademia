@@ -1546,6 +1546,7 @@ export default function ExerciseLibraryPage() {
                     </CollapsibleContent>
                   </Collapsible>
                 )}
+              </div>
 
               {/* Barra de progresso durante o import */}
               {igImporting && (
