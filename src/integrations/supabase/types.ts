@@ -26,7 +26,10 @@ export type Database = {
           id: string
           instructor_id: string | null
           notes: string | null
+          prescription_id: string | null
+          recurring_schedule_id: string | null
           scheduled_at: string
+          sequence_id: string | null
           status: Database["public"]["Enums"]["appointment_status"]
           student_id: string
           updated_at: string
@@ -42,7 +45,10 @@ export type Database = {
           id?: string
           instructor_id?: string | null
           notes?: string | null
+          prescription_id?: string | null
+          recurring_schedule_id?: string | null
           scheduled_at: string
+          sequence_id?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
           student_id: string
           updated_at?: string
@@ -58,7 +64,10 @@ export type Database = {
           id?: string
           instructor_id?: string | null
           notes?: string | null
+          prescription_id?: string | null
+          recurring_schedule_id?: string | null
           scheduled_at?: string
+          sequence_id?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
           student_id?: string
           updated_at?: string
@@ -1226,6 +1235,60 @@ export type Database = {
           updated_at?: string
           user_id?: string
           weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      recurring_schedules: {
+        Row: {
+          active: boolean
+          clinic_id: string
+          created_at: string
+          created_by: string
+          day_of_week: number
+          duration_minutes: number
+          end_date: string | null
+          equipment_id: string | null
+          id: string
+          instructor_id: string | null
+          notes: string | null
+          start_date: string
+          start_time: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          day_of_week: number
+          duration_minutes?: number
+          end_date?: string | null
+          equipment_id?: string | null
+          id?: string
+          instructor_id?: string | null
+          notes?: string | null
+          start_date?: string
+          start_time: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          day_of_week?: number
+          duration_minutes?: number
+          end_date?: string | null
+          equipment_id?: string | null
+          id?: string
+          instructor_id?: string | null
+          notes?: string | null
+          start_date?: string
+          start_time?: string
+          student_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
