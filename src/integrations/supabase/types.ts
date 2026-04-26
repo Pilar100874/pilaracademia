@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookable_slot_equipment: {
+        Row: {
+          bookable_slot_id: string
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          equipment_id: string
+          id: string
+        }
+        Insert: {
+          bookable_slot_id: string
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          equipment_id: string
+          id?: string
+        }
+        Update: {
+          bookable_slot_id?: string
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          equipment_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookable_slot_equipment_bookable_slot_id_fkey"
+            columns: ["bookable_slot_id"]
+            isOneToOne: false
+            referencedRelation: "bookable_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookable_slot_equipment_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookable_slots: {
         Row: {
           capacity: number
@@ -136,8 +178,11 @@ export type Database = {
           equipment_type: string
           id: string
           identifier: string | null
+          maintenance_notes: string | null
+          maintenance_until: string | null
           name: string
           station_token: string
+          status: string
         }
         Insert: {
           active?: boolean
@@ -146,8 +191,11 @@ export type Database = {
           equipment_type: string
           id?: string
           identifier?: string | null
+          maintenance_notes?: string | null
+          maintenance_until?: string | null
           name: string
           station_token?: string
+          status?: string
         }
         Update: {
           active?: boolean
@@ -156,8 +204,11 @@ export type Database = {
           equipment_type?: string
           id?: string
           identifier?: string | null
+          maintenance_notes?: string | null
+          maintenance_until?: string | null
           name?: string
           station_token?: string
+          status?: string
         }
         Relationships: [
           {
