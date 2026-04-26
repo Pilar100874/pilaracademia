@@ -291,6 +291,27 @@ export default function StudentsPage() {
         </Dialog>
       </div>
 
+      {isAdmin && (
+        <Card className="p-3 flex items-center justify-between gap-3 flex-wrap bg-muted/30">
+          <div className="flex items-center gap-2 text-sm">
+            <Settings className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <div className="font-medium">Permitir entrar como aluno</div>
+              <div className="text-xs text-muted-foreground">
+                Quando ativo, equipe (admin/instrutor/recepcionista) pode visualizar a tela do aluno entrando na conta dele temporariamente.
+              </div>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant={allowLoginAsStudent ? 'default' : 'outline'}
+            onClick={() => toggleAllowLoginAsStudent(!allowLoginAsStudent)}
+          >
+            {allowLoginAsStudent ? 'Ativado' : 'Ativar'}
+          </Button>
+        </Card>
+      )}
+
       <div className="grid md:grid-cols-[320px_1fr] gap-4">
         {/* Lista */}
         <Card className="p-2 max-h-[70vh] overflow-y-auto">
