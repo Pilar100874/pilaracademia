@@ -320,11 +320,49 @@ export default function StudentsPage() {
       <div className="grid md:grid-cols-[320px_1fr] gap-4">
         {/* Lista */}
         <Card className="p-2 max-h-[70vh] overflow-y-auto">
-          {students.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground text-sm"><User className="h-8 w-8 mx-auto mb-2 opacity-50" />Nenhum aluno.</div>
-          ) : (
-            students.map((s) => {
+          <div className="p-2 space-y-2 sticky top-0 bg-card z-10">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar aluno..."
+                className="pl-8 h-9"
+              />
+            </div>
+            {(isInstructor || isAdmin) && (myStudentIds?.size ?? 0) > 0 && (
+              <Button
+                size="sm"
+                variant={onlyMine ? 'default' : 'outline'}
+                className="w-full h-8"
+                onClick={() => setOnlyMine((v) => !v)}
+              >
+                <UsersIcon className="h-3.5 w-3.5 mr-1" />
+                {onlyMine ? `Meus alunos (${myStudentIds?.size ?? 0})` : 'Mostrar só meus alunos'}
+              </Button>
+            )}
+          </div>
+          {(() => {
+            const term = search.trim().toLowerCase();
+            const filtered = students.filter((s) => {
+              if (onlyMine && myStudentIds && !myStudentIds.has(s.id)) return false;
+              if (!term) return true;
+              return (
+                s.full_name.toLowerCase().includes(term) ||
+                (s.email || '').toLowerCase().includes(term)
+              );
+            });
+            if (filtered.length === 0) {
+              return (
+                <div className="p-6 text-center text-muted-foreground text-sm">
+                  <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  {students.length === 0 ? 'Nenhum aluno.' : 'Nenhum aluno encontrado.'}
+                </div>
+              );
+            }
+            return filtered.map((s) => {
               const lv = levels.find((l) => l.id === s.skill_level_id);
+              const isMine = myStudentIds?.has(s.id);
               return (
                 <button
                   key={s.id}
@@ -339,14 +377,17 @@ export default function StudentsPage() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{s.full_name}</div>
+                    <div className="font-medium truncate flex items-center gap-1">
+                      {s.full_name}
+                      {isMine && <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">meu</Badge>}
+                    </div>
                     {lv && <div className="text-xs text-muted-foreground">{lv.name}</div>}
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </button>
               );
-            })
-          )}
+            });
+          })()}
         </Card>
 
         {/* Detalhe */}
