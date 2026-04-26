@@ -11,9 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  ArrowLeft, Plus, Trash2, ListOrdered, Loader2, GripVertical, Library, Pencil, Check, X, Search, Dumbbell, Clock, Layers,
+  ArrowLeft, Plus, Trash2, ListOrdered, Loader2, GripVertical, Library, Pencil, Check, X, Search, Dumbbell, Clock, Layers, Play, Maximize2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ImageZoomDialog } from '@/components/ImageZoomDialog';
+import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from '@dnd-kit/core';
@@ -36,8 +38,12 @@ type GlobalItem = {
   video_start_seconds: number | null; video_end_seconds: number | null;
 };
 
-function SortableRow({ item, idx, onRemove, onEdit }: {
-  item: GlobalItem; idx: number; onRemove: () => void; onEdit: (p: Partial<GlobalItem>) => void;
+function SortableRow({ item, idx, onRemove, onEdit, onZoomImages, onPlayVideo }: {
+  item: GlobalItem; idx: number;
+  onRemove: () => void;
+  onEdit: (p: Partial<GlobalItem>) => void;
+  onZoomImages: (images: string[]) => void;
+  onPlayVideo: (item: GlobalItem) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
@@ -45,6 +51,8 @@ function SortableRow({ item, idx, onRemove, onEdit }: {
   const [sets, setSets] = useState(item.sets);
   const [reps, setReps] = useState(item.reps);
   const [notes, setNotes] = useState(item.notes ?? '');
+  const hasImages = (item.image_urls?.length ?? 0) > 0;
+  const hasVideo = !!item.video_url;
 
   return (
     <div
@@ -61,16 +69,31 @@ function SortableRow({ item, idx, onRemove, onEdit }: {
         <GripVertical className="h-5 w-5" />
       </button>
 
-      <div className="relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 bg-muted/40 flex items-center justify-center">
-        {item.image_urls?.[0] ? (
-          <img src={item.image_urls[0]} alt={item.name} className="h-full w-full object-contain" />
+      <button
+        type="button"
+        onClick={() => hasImages && onZoomImages(item.image_urls as string[])}
+        className={`relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 bg-muted/40 flex items-center justify-center ${hasImages ? 'cursor-zoom-in group/img' : ''}`}
+        title={hasImages ? 'Ampliar imagem' : undefined}
+      >
+        {hasImages ? (
+          <>
+            <img src={item.image_urls![0]} alt={item.name} className="h-full w-full object-contain" />
+            <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/30 transition-colors flex items-center justify-center">
+              <Maximize2 className="h-5 w-5 text-white opacity-0 group-hover/img:opacity-100 transition-opacity" />
+            </div>
+            {(item.image_urls?.length ?? 0) > 1 && (
+              <span className="absolute bottom-1 right-1 text-[10px] bg-black/60 text-white px-1.5 rounded">
+                +{(item.image_urls?.length ?? 1) - 1}
+              </span>
+            )}
+          </>
         ) : (
           <Dumbbell className="h-8 w-8 text-muted-foreground" />
         )}
         <div className="absolute top-1 left-1 h-6 w-6 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center shadow">
           {idx + 1}
         </div>
-      </div>
+      </button>
 
       <div className="flex-1 min-w-0 py-2 pr-2 flex flex-col justify-center gap-1">
         <p className="font-semibold text-sm leading-tight line-clamp-2">{item.name}</p>
@@ -86,6 +109,16 @@ function SortableRow({ item, idx, onRemove, onEdit }: {
             <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
               {item.sets} × {item.reps}
             </span>
+            {hasVideo && (
+              <button
+                type="button"
+                onClick={() => onPlayVideo(item)}
+                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 font-medium hover:bg-rose-500/20 transition-colors"
+              >
+                <Play className="h-3 w-3 fill-current" />
+                Vídeo
+              </button>
+            )}
             {item.notes && (
               <span className="text-[11px] text-muted-foreground line-clamp-1">{item.notes}</span>
             )}
@@ -128,6 +161,8 @@ export default function MasterSequencesPage() {
   const [pickerSearch, setPickerSearch] = useState('');
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ name: '', description: '', estimated_minutes: '' });
+  const [zoomImages, setZoomImages] = useState<string[]>([]);
+  const [videoItem, setVideoItem] = useState<GlobalItem | null>(null);
 
   const { data: sequences = [], isLoading } = useQuery({
     queryKey: ['global-sequences'],
@@ -490,6 +525,8 @@ export default function MasterSequencesPage() {
                         idx={idx}
                         onRemove={() => removeItem.mutate(it.id)}
                         onEdit={(patch) => updateItem.mutate({ id: it.id, ...patch })}
+                        onZoomImages={(imgs) => setZoomImages(imgs)}
+                        onPlayVideo={(item) => setVideoItem(item)}
                       />
                     ))}
                   </div>
@@ -499,6 +536,29 @@ export default function MasterSequencesPage() {
           </Card>
         )}
       </div>
+
+      <ImageZoomDialog
+        images={zoomImages}
+        open={zoomImages.length > 0}
+        onOpenChange={(open) => !open && setZoomImages([])}
+      />
+
+      <Dialog open={!!videoItem} onOpenChange={(o) => !o && setVideoItem(null)}>
+        <DialogContent className="max-w-3xl p-2 sm:p-4">
+          <DialogHeader>
+            <DialogTitle className="text-base">{videoItem?.name}</DialogTitle>
+          </DialogHeader>
+          {videoItem?.video_url && (
+            <ExerciseVideoPlayer
+              videoUrl={videoItem.video_url}
+              videoType={(videoItem.video_type as any) || undefined}
+              startSeconds={videoItem.video_start_seconds ?? undefined}
+              endSeconds={videoItem.video_end_seconds ?? undefined}
+              autoPlay
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
