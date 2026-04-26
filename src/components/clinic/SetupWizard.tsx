@@ -234,7 +234,13 @@ function StepClinic({ clinicId }: { clinicId: string }) {
       </div>
       <div className="space-y-2">
         <Label>Logo</Label>
-        <ClinicLogoUploader clinicId={clinicId} currentUrl={activeClinic?.logo_url ?? null} />
+        <ClinicLogoUploader
+          value={activeClinic?.logo_url ?? null}
+          onChange={async (url) => {
+            const { error } = await supabase.from('clinics').update({ logo_url: url }).eq('id', clinicId);
+            if (error) toast.error(error.message);
+          }}
+        />
         <p className="text-xs text-muted-foreground">Opcional. Aparece no painel e em links públicos.</p>
       </div>
     </div>
