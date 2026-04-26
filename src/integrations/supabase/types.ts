@@ -1086,6 +1086,36 @@ export type Database = {
         }
         Relationships: []
       }
+      impersonation_log: {
+        Row: {
+          actor_user_id: string
+          clinic_id: string | null
+          created_at: string
+          id: string
+          mode: string
+          student_id: string | null
+          target_user_id: string
+        }
+        Insert: {
+          actor_user_id: string
+          clinic_id?: string | null
+          created_at?: string
+          id?: string
+          mode: string
+          student_id?: string | null
+          target_user_id: string
+        }
+        Update: {
+          actor_user_id?: string
+          clinic_id?: string | null
+          created_at?: string
+          id?: string
+          mode?: string
+          student_id?: string | null
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       liquid_entries: {
         Row: {
           amount_ml: number
