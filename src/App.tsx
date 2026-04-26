@@ -33,6 +33,7 @@ import MyPilatesPage from "@/pages/MyPilatesPage";
 import BookClassPage from "@/pages/BookClassPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import ChangePasswordPage from "@/pages/ChangePasswordPage";
+import MasterPage from "@/pages/master/MasterPage";
 import { useMustChangePassword } from "@/hooks/useMustChangePassword";
 
 const queryClient = new QueryClient();
