@@ -13,9 +13,12 @@ export default function ClinicOverviewPage() {
 
   const cards = [
     { label: 'Alunos', value: students.length, icon: Users, to: '/clinica/alunos', color: 'bg-blue-500' },
+    { label: 'Agenda', value: '→', icon: Activity, to: '/clinica/agenda', color: 'bg-violet-500' },
     { label: 'Equipamentos', value: equipment.length, icon: Dumbbell, to: '/clinica/equipamentos', color: 'bg-amber-500' },
     { label: 'Sequências', value: sequences.length, icon: ListOrdered, to: '/clinica/sequencias', color: 'bg-emerald-500' },
     { label: 'Aula ao vivo', value: '→', icon: Activity, to: '/clinica/aula', color: 'bg-rose-500' },
+    { label: 'Evolução', value: '→', icon: Activity, to: '/clinica/evolucao', color: 'bg-cyan-500' },
+    { label: 'Relatórios', value: '→', icon: Activity, to: '/clinica/relatorios', color: 'bg-indigo-500' },
   ];
 
   return (

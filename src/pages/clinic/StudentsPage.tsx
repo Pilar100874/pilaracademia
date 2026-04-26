@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, User, Trash2, ChevronRight, Activity, Calendar } from 'lucide-react';
+import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 export default function StudentsPage() {
   const { activeClinicId } = useUserRoles();
@@ -93,6 +94,27 @@ export default function StudentsPage() {
 
   const compatibleSequences = sequences.filter((s) => !current?.skill_level_id || !s.skill_level_id || s.skill_level_id === current.skill_level_id);
 
+  const [inviteResult, setInviteResult] = useState<{ email: string; password: string } | null>(null);
+  const [inviting, setInviting] = useState(false);
+
+  const handleGenerateAccess = async () => {
+    if (!current || !activeClinicId) return;
+    if (!current.email) { toast.error('Aluno não tem e-mail cadastrado'); return; }
+    setInviting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-student', {
+        body: { student_id: current.id, clinic_id: activeClinicId },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setInviteResult({ email: (data as any).email, password: (data as any).password });
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao gerar acesso');
+    } finally {
+      setInviting(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-4 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
@@ -164,7 +186,10 @@ export default function StudentsPage() {
                     <p className="text-sm text-muted-foreground">{current.email || 'Sem email'} {current.phone ? `· ${current.phone}` : ''}</p>
                     {currentLevel && <Badge className="mt-2" style={{ backgroundColor: currentLevel.color || undefined }}>{currentLevel.name}</Badge>}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={handleGenerateAccess} disabled={inviting || !current.email}>
+                      <KeyRound className="h-3.5 w-3.5 mr-1" />{current.user_id ? 'Resetar senha' : 'Gerar acesso'}
+                    </Button>
                     <Select value={current.skill_level_id || ''} onValueChange={(v) => update.mutate({ id: current.id, skill_level_id: v })}>
                       <SelectTrigger className="w-40"><SelectValue placeholder="Nível" /></SelectTrigger>
                       <SelectContent>{levels.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}</SelectContent>
@@ -172,6 +197,21 @@ export default function StudentsPage() {
                     <Button variant="ghost" size="icon" onClick={() => { remove.mutate(current.id); setSelectedStudent(null); }}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
+                <Dialog open={!!inviteResult} onOpenChange={(o) => !o && setInviteResult(null)}>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Acesso gerado ✓</DialogTitle></DialogHeader>
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">Entregue estas credenciais ao aluno. Ele pode trocar a senha depois.</p>
+                      <div className="p-3 rounded bg-muted font-mono text-sm space-y-1">
+                        <div className="flex items-center justify-between gap-2"><span className="opacity-70">Email:</span><span className="font-bold">{inviteResult?.email}</span></div>
+                        <div className="flex items-center justify-between gap-2"><span className="opacity-70">Senha:</span><span className="font-bold">{inviteResult?.password}</span></div>
+                      </div>
+                      <Button className="w-full" onClick={() => { navigator.clipboard.writeText(`Email: ${inviteResult?.email}\nSenha: ${inviteResult?.password}`); toast.success('Copiado!'); }}>
+                        <Copy className="h-4 w-4 mr-1" />Copiar
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
                 {current.notes && <p className="text-sm mt-3 p-3 bg-muted/50 rounded">{current.notes}</p>}
               </Card>
 
