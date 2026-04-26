@@ -11,9 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  ArrowLeft, Plus, Trash2, ListOrdered, Loader2, GripVertical, Library, Pencil, Check, X, Search, Dumbbell, Clock, Layers,
+  ArrowLeft, Plus, Trash2, ListOrdered, Loader2, GripVertical, Library, Pencil, Check, X, Search, Dumbbell, Clock, Layers, Play, Maximize2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ImageZoomDialog } from '@/components/ImageZoomDialog';
+import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from '@dnd-kit/core';
