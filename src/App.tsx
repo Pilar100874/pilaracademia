@@ -108,6 +108,7 @@ function AppRoutes() {
       {/* Master admin panel */}
       <Route path="/master" element={<ProtectedRoute><MasterPage /></ProtectedRoute>} />
       <Route path="/master/exercicios" element={<ProtectedRoute><MasterExerciseLibraryPage /></ProtectedRoute>} />
+      <Route path="/master/sequencias" element={<ProtectedRoute><MasterSequencesPage /></ProtectedRoute>} />
 
       <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
       <Route path="*" element={<NotFound />} />
