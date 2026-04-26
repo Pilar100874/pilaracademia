@@ -100,7 +100,10 @@ export default function ClinicLayout() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="font-semibold truncate flex-1 text-center px-2">{activeClinic.name}</div>
+          <div className="font-semibold truncate flex-1 text-center px-2 flex items-center justify-center gap-2">
+            {activeClinic.logo_url && <img src={activeClinic.logo_url} alt="" className="h-7 w-7 rounded object-contain" />}
+            <span className="truncate">{activeClinic.name}</span>
+          </div>
           <div className="flex items-center">
             <NotificationsBell />
             <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair">
