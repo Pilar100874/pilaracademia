@@ -54,31 +54,22 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/~oauth/],
         runtimeCaching: [
           {
-            // Never cache Supabase Storage objects (videos/images can have large/stale payloads)
+            // Storage assets (images/videos) — cache aggressively, they are immutable per URL
             urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
-            handler: 'NetworkOnly',
+            handler: 'CacheFirst',
             options: {
-              cacheName: 'supabase-storage-nocache',
+              cacheName: 'supabase-storage-cache',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
           {
-            // Never cache Supabase REST/Functions to avoid stale responses
+            // Never cache Supabase REST/Functions/Auth to avoid stale responses
             urlPattern: /^https:\/\/.*\.supabase\.co\/(rest|functions|auth|realtime)\/.*/i,
             handler: 'NetworkOnly',
-            options: {
-              cacheName: 'supabase-api-nocache',
-            },
-          },
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24,
-              },
-            },
           },
         ],
       },
