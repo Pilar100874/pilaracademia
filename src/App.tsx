@@ -20,6 +20,7 @@ import { Loader2 } from "lucide-react";
 import ClinicLayout from "@/pages/clinic/ClinicLayout";
 import ClinicOverviewPage from "@/pages/clinic/ClinicOverviewPage";
 import StudentsPage from "@/pages/clinic/StudentsPage";
+import StaffPage from "@/pages/clinic/StaffPage";
 import EquipmentPage from "@/pages/clinic/EquipmentPage";
 import SkillLevelsPage from "@/pages/clinic/SkillLevelsPage";
 import SequencesPage from "@/pages/clinic/SequencesPage";
