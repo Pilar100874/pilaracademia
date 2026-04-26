@@ -94,6 +94,27 @@ export default function StudentsPage() {
 
   const compatibleSequences = sequences.filter((s) => !current?.skill_level_id || !s.skill_level_id || s.skill_level_id === current.skill_level_id);
 
+  const [inviteResult, setInviteResult] = useState<{ email: string; password: string } | null>(null);
+  const [inviting, setInviting] = useState(false);
+
+  const handleGenerateAccess = async () => {
+    if (!current || !activeClinicId) return;
+    if (!current.email) { toast.error('Aluno não tem e-mail cadastrado'); return; }
+    setInviting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-student', {
+        body: { student_id: current.id, clinic_id: activeClinicId },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setInviteResult({ email: (data as any).email, password: (data as any).password });
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao gerar acesso');
+    } finally {
+      setInviting(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-4 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
