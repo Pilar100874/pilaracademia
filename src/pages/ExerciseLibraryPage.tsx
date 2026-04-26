@@ -51,7 +51,8 @@ export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { exercises, isLoading, deleteExercise, createExercise, moveExercises } = useExerciseLibrary();
+  const { exercises, isLoading, deleteExercise, createExercise, moveExercises, scope } = useExerciseLibrary();
+  const isGlobalScope = scope.kind === 'global';
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
