@@ -34,6 +34,8 @@ import BookClassPage from "@/pages/BookClassPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import ChangePasswordPage from "@/pages/ChangePasswordPage";
 import MasterPage from "@/pages/master/MasterPage";
+import MasterExerciseLibraryPage from "@/pages/master/MasterExerciseLibraryPage";
+import ClinicExerciseLibraryPage from "@/pages/clinic/ClinicExerciseLibraryPage";
 import { useMustChangePassword } from "@/hooks/useMustChangePassword";
 import { useUserClinicRole } from "@/hooks/useUserClinicRole";
 
