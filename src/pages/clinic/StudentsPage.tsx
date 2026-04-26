@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save, Repeat } from 'lucide-react';
+import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save, Repeat, FileText } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
@@ -183,6 +183,41 @@ export default function StudentsPage() {
     setRecForm({ day_of_week: 1, start_time: '08:00', duration_minutes: 50, equipment_id: '' });
   };
 
+  // Contrato
+  const [contractOpen, setContractOpen] = useState(false);
+  const [contract, setContract] = useState<any>({});
+  const openContract = () => {
+    setContract({
+      contract_type: (current as any)?.contract_type || 'open',
+      contract_classes_total: (current as any)?.contract_classes_total ?? '',
+      contract_classes_used: (current as any)?.contract_classes_used ?? 0,
+      contract_start_date: (current as any)?.contract_start_date || '',
+      contract_end_date: (current as any)?.contract_end_date || '',
+    });
+    setContractOpen(true);
+  };
+  const saveContract = async () => {
+    if (!current) return;
+    const payload: any = { id: current.id, contract_type: contract.contract_type };
+    if (contract.contract_type === 'classes') {
+      payload.contract_classes_total = contract.contract_classes_total === '' ? null : Number(contract.contract_classes_total);
+      payload.contract_classes_used = Number(contract.contract_classes_used) || 0;
+      payload.contract_start_date = null;
+      payload.contract_end_date = null;
+    } else if (contract.contract_type === 'period') {
+      payload.contract_start_date = contract.contract_start_date || null;
+      payload.contract_end_date = contract.contract_end_date || null;
+      payload.contract_classes_total = null;
+    } else {
+      payload.contract_classes_total = null;
+      payload.contract_start_date = null;
+      payload.contract_end_date = null;
+    }
+    await update.mutateAsync(payload);
+    setContractOpen(false);
+    toast.success('Contrato atualizado');
+  };
+
   return (
     <div className="p-6 space-y-4 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
@@ -280,6 +315,9 @@ export default function StudentsPage() {
                     <Button variant="outline" size="sm" onClick={() => setRecOpen(true)}>
                       <Repeat className="h-3.5 w-3.5 mr-1" />Horários fixos {studentRecs.length > 0 && `(${studentRecs.length})`}
                     </Button>
+                    <Button variant="outline" size="sm" onClick={openContract}>
+                      <FileText className="h-3.5 w-3.5 mr-1" />Contrato
+                    </Button>
                     <Button variant="outline" size="sm" onClick={handleGenerateAccess} disabled={inviting || !current.email}>
                       <KeyRound className="h-3.5 w-3.5 mr-1" />{current.user_id ? 'Resetar senha' : 'Gerar acesso'}
                     </Button>
@@ -290,6 +328,17 @@ export default function StudentsPage() {
                     <Button variant="ghost" size="icon" onClick={() => { remove.mutate(current.id); setSelectedStudent(null); }}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
+
+                {/* Resumo de contrato */}
+                {(current as any).contract_type && (current as any).contract_type !== 'open' && (
+                  <div className="mt-4 p-3 rounded-lg border bg-muted/40 text-sm flex items-center justify-between flex-wrap gap-2">
+                    {(current as any).contract_type === 'classes' ? (
+                      <span><b>Pacote:</b> {(current as any).contract_classes_used || 0} / {(current as any).contract_classes_total || 0} aulas usadas</span>
+                    ) : (
+                      <span><b>Período:</b> {(current as any).contract_start_date || '—'} → {(current as any).contract_end_date || '—'}</span>
+                    )}
+                  </div>
+                )}
 
                 {/* Resumo da ficha */}
                 {((current as any).injuries || (current as any).restrictions || (current as any).medical_conditions) && (
@@ -385,6 +434,50 @@ export default function StudentsPage() {
                         </div>
                         <Button onClick={addRecurring} className="w-full"><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
                       </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Dialog Contrato */}
+                <Dialog open={contractOpen} onOpenChange={setContractOpen}>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Contrato · {current.full_name}</DialogTitle></DialogHeader>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm">Tipo de contrato</label>
+                        <Select value={contract.contract_type} onValueChange={(v) => setContract({ ...contract, contract_type: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="open">Aberto (sem limite)</SelectItem>
+                            <SelectItem value="classes">Pacote de aulas</SelectItem>
+                            <SelectItem value="period">Por período (mensal/trimestral)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {contract.contract_type === 'classes' && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs">Total de aulas</label>
+                            <Input type="number" min={0} value={contract.contract_classes_total ?? ''} onChange={(e) => setContract({ ...contract, contract_classes_total: e.target.value })} />
+                          </div>
+                          <div>
+                            <label className="text-xs">Já usadas</label>
+                            <Input type="number" min={0} value={contract.contract_classes_used ?? 0} onChange={(e) => setContract({ ...contract, contract_classes_used: e.target.value })} />
+                          </div>
+                          <p className="col-span-2 text-xs text-muted-foreground">O sistema desconta automaticamente a cada agendamento e devolve no cancelamento.</p>
+                        </div>
+                      )}
+
+                      {contract.contract_type === 'period' && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div><label className="text-xs">Início</label><Input type="date" value={contract.contract_start_date || ''} onChange={(e) => setContract({ ...contract, contract_start_date: e.target.value })} /></div>
+                          <div><label className="text-xs">Fim</label><Input type="date" value={contract.contract_end_date || ''} onChange={(e) => setContract({ ...contract, contract_end_date: e.target.value })} /></div>
+                          <p className="col-span-2 text-xs text-muted-foreground">Bloqueia agendamentos fora do intervalo.</p>
+                        </div>
+                      )}
+
+                      <Button onClick={saveContract} className="w-full"><Save className="h-4 w-4 mr-1" />Salvar contrato</Button>
                     </div>
                   </DialogContent>
                 </Dialog>

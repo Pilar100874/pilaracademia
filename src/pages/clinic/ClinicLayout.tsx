@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useUserRoles } from '@/hooks/useUserRoles';
-import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3 } from 'lucide-react';
+import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3, CalendarPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { NotificationsBell } from '@/components/NotificationsBell';
@@ -8,6 +8,7 @@ import { NotificationsBell } from '@/components/NotificationsBell';
 const navItems = [
   { to: '/clinica', icon: Activity, label: 'Visão', end: true },
   { to: '/clinica/agenda', icon: CalendarDays, label: 'Agenda' },
+  { to: '/clinica/grades', icon: CalendarPlus, label: 'Grades' },
   { to: '/clinica/alunos', icon: Users, label: 'Alunos' },
   { to: '/clinica/evolucao', icon: TrendingUp, label: 'Evolução' },
   { to: '/clinica/sequencias', icon: ListOrdered, label: 'Sequências' },
