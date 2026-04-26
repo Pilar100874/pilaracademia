@@ -410,7 +410,7 @@ export default function GradeMasterPage() {
                         slot={s}
                         studentName={studentName(s.student_id)}
                         sequenceName={s.appointment?.sequence_id ? sequences.find((x) => x.id === s.appointment!.sequence_id)?.name : null}
-                        onClick={() => { setGradeOpen(s); setGradeSeq(s.appointment?.sequence_id || ''); }}
+                        onClick={() => openSlotDialog(s)}
                       />
                     ))}
                   </div>
