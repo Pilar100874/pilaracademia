@@ -204,6 +204,8 @@ export default function SequencesPage() {
   const [libSelected, setLibSelected] = useState<Set<string>>(new Set());
   const [libSearch, setLibSearch] = useState('');
   const [shareOpen, setShareOpen] = useState(false);
+  const [zoomImages, setZoomImages] = useState<string[]>([]);
+  const [videoItem, setVideoItem] = useState<SequenceItem | null>(null);
 
   // Local order for optimistic dnd
   const [localOrder, setLocalOrder] = useState<SequenceItem[]>([]);
