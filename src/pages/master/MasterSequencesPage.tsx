@@ -196,7 +196,20 @@ export default function MasterSequencesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('exercise_library')
-        .select('id,name,image_urls,default_sets,default_reps,video_url,video_type,video_start_seconds,video_end_seconds')
+        .select('id,name,image_urls,default_sets,default_reps,video_url,video_type,video_start_seconds,video_end_seconds,category_id,is_global')
+        .eq('is_global', true)
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: globalCategories = [] } = useQuery({
+    queryKey: ['global-categories-for-pick'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('exercise_categories')
+        .select('id,name,is_global')
         .eq('is_global', true)
         .order('name');
       if (error) throw error;
