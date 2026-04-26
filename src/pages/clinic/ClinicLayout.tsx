@@ -1,14 +1,15 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3, CalendarPlus, Library, LogOut, GraduationCap, ShieldCheck, DoorOpen, MoreHorizontal, Menu } from 'lucide-react';
+import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3, CalendarPlus, Library, LogOut, GraduationCap, ShieldCheck, DoorOpen, MoreHorizontal, Menu, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { NotificationsBell } from '@/components/NotificationsBell';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { SetupWizard, setupWizardCompleted } from '@/components/clinic/SetupWizard';
 
 const baseNavItems = [
   { to: '/clinica', icon: CalendarDays, label: 'Grade Master', end: true, primary: true },
@@ -29,11 +30,19 @@ const baseNavItems = [
 ];
 
 export default function ClinicLayout() {
-  const { isLoading, isStaff, isAdmin, activeClinic } = useUserRoles();
+  const { isLoading, isStaff, isAdmin, activeClinic, activeClinicId } = useUserRoles();
   const navigate = useNavigate();
   const navItems = baseNavItems.filter((item) => !item.adminOnly || isAdmin);
   const primaryItems = navItems.filter((i) => i.primary).slice(0, 4);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  // Open wizard automatically on first visit (per clinic, admin only)
+  useEffect(() => {
+    if (!isLoading && isAdmin && activeClinicId && !setupWizardCompleted(activeClinicId)) {
+      setWizardOpen(true);
+    }
+  }, [isLoading, isAdmin, activeClinicId]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -163,11 +172,22 @@ export default function ClinicLayout() {
             {activeClinic.logo_url && <img src={activeClinic.logo_url} alt="" className="h-7 w-7 rounded object-contain" />}
             <span className="truncate text-sm">{activeClinic.name}</span>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-1">
+            {isAdmin && (
+              <Button variant="ghost" size="icon" onClick={() => setWizardOpen(true)} title="Assistente de configuração">
+                <Sparkles className="h-5 w-5" />
+              </Button>
+            )}
             <NotificationsBell />
           </div>
         </header>
         <header className="hidden md:flex items-center justify-end gap-2 p-3 border-b bg-card sticky top-0 z-30">
+          {isAdmin && (
+            <Button variant="outline" size="sm" onClick={() => setWizardOpen(true)} className="gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              Assistente
+            </Button>
+          )}
           <NotificationsBell />
         </header>
 
@@ -240,6 +260,14 @@ export default function ClinicLayout() {
           </div>
         </nav>
       </main>
+
+      {wizardOpen && activeClinicId && (
+        <SetupWizard
+          clinicId={activeClinicId}
+          onClose={() => setWizardOpen(false)}
+          onCompleted={() => setWizardOpen(false)}
+        />
+      )}
     </div>
   );
 }
