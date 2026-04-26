@@ -193,41 +193,17 @@ export default function GradeMasterPage() {
     return data.id;
   };
 
-  // ===== Definir grade (sequência) =====
-  const [gradeOpen, setGradeOpen] = useState<MergedSlot | null>(null);
-  const [gradeSeq, setGradeSeq] = useState('');
-  const assignGrade = async () => {
-    if (!gradeOpen || !gradeSeq || !user || !activeClinicId) return;
-    const apptId = await materialize(gradeOpen);
-    if (!apptId) return;
-    const dateOnly = new Date(gradeOpen.scheduled_at).toISOString().slice(0, 10);
-    const presc = await createPresc.mutateAsync({
-      clinic_id: activeClinicId,
-      student_id: gradeOpen.student_id,
-      sequence_id: gradeSeq,
-      context: 'in_class',
-      created_by: user.id,
-      scheduled_for: dateOnly,
-    } as any);
-    const prescId = (presc as any)?.id || (presc as any)?.[0]?.id;
-    await supabase.from('class_appointments').update({
-      sequence_id: gradeSeq,
-      prescription_id: prescId || null,
-    }).eq('id', apptId);
-    toast.success('Grade definida');
-    const stu = students.find((s) => s.id === gradeOpen.student_id);
-    if (stu?.user_id) {
-      await supabase.from('notifications').insert({
-        user_id: stu.user_id,
-        clinic_id: activeClinicId,
-        type: 'general',
-        title: 'Grade da próxima aula está pronta',
-        body: format(parseISO(gradeOpen.scheduled_at), "dd/MM 'às' HH:mm", { locale: ptBR }),
-        link: '/meu-pilates',
-      });
-    }
-    setGradeOpen(null);
-    setGradeSeq('');
+  // ===== Definir grade (sequência) — novo dialog multi-aluno =====
+  const [slotDialog, setSlotDialog] = useState<{
+    slot: { scheduled_at: string; duration_minutes: number };
+    focusedStudentId: string;
+  } | null>(null);
+
+  const openSlotDialog = (slot: MergedSlot) => {
+    setSlotDialog({
+      slot: { scheduled_at: slot.scheduled_at, duration_minutes: slot.duration_minutes },
+      focusedStudentId: slot.student_id,
+    });
   };
 
   const handleCheckIn = async (slot: MergedSlot) => {
