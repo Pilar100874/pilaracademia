@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save, Repeat } from 'lucide-react';
+import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save, Repeat, FileText } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
@@ -181,6 +181,41 @@ export default function StudentsPage() {
       created_by: user.id,
     } as any);
     setRecForm({ day_of_week: 1, start_time: '08:00', duration_minutes: 50, equipment_id: '' });
+  };
+
+  // Contrato
+  const [contractOpen, setContractOpen] = useState(false);
+  const [contract, setContract] = useState<any>({});
+  const openContract = () => {
+    setContract({
+      contract_type: (current as any)?.contract_type || 'open',
+      contract_classes_total: (current as any)?.contract_classes_total ?? '',
+      contract_classes_used: (current as any)?.contract_classes_used ?? 0,
+      contract_start_date: (current as any)?.contract_start_date || '',
+      contract_end_date: (current as any)?.contract_end_date || '',
+    });
+    setContractOpen(true);
+  };
+  const saveContract = async () => {
+    if (!current) return;
+    const payload: any = { id: current.id, contract_type: contract.contract_type };
+    if (contract.contract_type === 'classes') {
+      payload.contract_classes_total = contract.contract_classes_total === '' ? null : Number(contract.contract_classes_total);
+      payload.contract_classes_used = Number(contract.contract_classes_used) || 0;
+      payload.contract_start_date = null;
+      payload.contract_end_date = null;
+    } else if (contract.contract_type === 'period') {
+      payload.contract_start_date = contract.contract_start_date || null;
+      payload.contract_end_date = contract.contract_end_date || null;
+      payload.contract_classes_total = null;
+    } else {
+      payload.contract_classes_total = null;
+      payload.contract_start_date = null;
+      payload.contract_end_date = null;
+    }
+    await update.mutateAsync(payload);
+    setContractOpen(false);
+    toast.success('Contrato atualizado');
   };
 
   return (
