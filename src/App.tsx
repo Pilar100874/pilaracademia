@@ -73,7 +73,7 @@ function AppRoutes() {
       {/* Public station tablet route */}
       <Route path="/estacao/:token" element={<StationPage />} />
 
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
       <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
       <Route path="/projections" element={<ProtectedRoute><ProjectionsPage /></ProtectedRoute>} />
       <Route path="/health" element={<ProtectedRoute><HealthPage /></ProtectedRoute>} />
