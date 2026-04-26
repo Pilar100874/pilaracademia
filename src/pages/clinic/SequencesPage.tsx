@@ -417,6 +417,8 @@ export default function SequencesPage() {
                             idx={idx}
                             onRemove={() => removeItem.mutate(it.id)}
                             onEdit={(patch) => updateItem.mutate({ id: it.id, ...patch })}
+                            onZoomImages={(imgs) => setZoomImages(imgs)}
+                            onPlayVideo={(item) => setVideoItem(item)}
                           />
                         ))}
                       </div>
@@ -428,6 +430,29 @@ export default function SequencesPage() {
           )}
         </div>
       </div>
+
+      <ImageZoomDialog
+        images={zoomImages}
+        open={zoomImages.length > 0}
+        onOpenChange={(open) => !open && setZoomImages([])}
+      />
+
+      <Dialog open={!!videoItem} onOpenChange={(o) => !o && setVideoItem(null)}>
+        <DialogContent className="max-w-3xl p-2 sm:p-4">
+          <DialogHeader>
+            <DialogTitle className="text-base">{videoItem?.name}</DialogTitle>
+          </DialogHeader>
+          {videoItem?.video_url && (
+            <ExerciseVideoPlayer
+              videoUrl={videoItem.video_url}
+              videoType={(videoItem.video_type as any) || undefined}
+              startSeconds={videoItem.video_start_seconds ?? undefined}
+              endSeconds={videoItem.video_end_seconds ?? undefined}
+              autoPlay
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
