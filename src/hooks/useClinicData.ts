@@ -201,7 +201,7 @@ export function useEquipment(clinicId: string | null) {
     },
     onError: (e: any) => toast.error(e?.message || 'Erro ao atualizar status'),
   });
-  return { ...query, create, remove, setStatus };
+  return { ...query, create, update, remove, setStatus };
 }
 
 // ===== STUDENTS =====
