@@ -14,8 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookable_slots: {
+        Row: {
+          capacity: number
+          clinic_id: string
+          created_at: string
+          created_by: string
+          duration_minutes: number
+          equipment_id: string | null
+          id: string
+          instructor_id: string | null
+          notes: string | null
+          scheduled_at: string
+        }
+        Insert: {
+          capacity?: number
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          duration_minutes?: number
+          equipment_id?: string | null
+          id?: string
+          instructor_id?: string | null
+          notes?: string | null
+          scheduled_at: string
+        }
+        Update: {
+          capacity?: number
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          duration_minutes?: number
+          equipment_id?: string | null
+          id?: string
+          instructor_id?: string | null
+          notes?: string | null
+          scheduled_at?: string
+        }
+        Relationships: []
+      }
       class_appointments: {
         Row: {
+          bookable_slot_id: string | null
+          booked_by_student: boolean
+          cancelled_at: string | null
+          cancelled_by: string | null
           checked_in_at: string | null
           clinic_id: string
           completed_at: string | null
@@ -35,6 +78,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bookable_slot_id?: string | null
+          booked_by_student?: boolean
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           checked_in_at?: string | null
           clinic_id: string
           completed_at?: string | null
@@ -54,6 +101,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bookable_slot_id?: string | null
+          booked_by_student?: boolean
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           checked_in_at?: string | null
           clinic_id?: string
           completed_at?: string | null
@@ -171,6 +222,35 @@ export type Database = {
           },
         ]
       }
+      clinic_settings: {
+        Row: {
+          booking_open_days_ahead: number
+          cancellation_min_hours: number
+          clinic_id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_open_days_ahead?: number
+          cancellation_min_hours?: number
+          clinic_id: string
+          updated_at?: string
+        }
+        Update: {
+          booking_open_days_ahead?: number
+          cancellation_min_hours?: number
+          clinic_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_settings_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_skill_levels: {
         Row: {
           clinic_id: string
@@ -212,6 +292,11 @@ export type Database = {
           avatar_url: string | null
           birth_date: string | null
           clinic_id: string
+          contract_classes_total: number | null
+          contract_classes_used: number
+          contract_end_date: string | null
+          contract_start_date: string | null
+          contract_type: string
           created_at: string
           email: string | null
           emergency_contact_name: string | null
@@ -236,6 +321,11 @@ export type Database = {
           avatar_url?: string | null
           birth_date?: string | null
           clinic_id: string
+          contract_classes_total?: number | null
+          contract_classes_used?: number
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          contract_type?: string
           created_at?: string
           email?: string | null
           emergency_contact_name?: string | null
@@ -260,6 +350,11 @@ export type Database = {
           avatar_url?: string | null
           birth_date?: string | null
           clinic_id?: string
+          contract_classes_total?: number | null
+          contract_classes_used?: number
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          contract_type?: string
           created_at?: string
           email?: string | null
           emergency_contact_name?: string | null
