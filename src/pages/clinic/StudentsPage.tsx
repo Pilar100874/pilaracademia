@@ -25,6 +25,8 @@ export default function StudentsPage() {
   const { data: levels = [] } = useSkillLevels(activeClinicId);
   const { data: sequences = [] } = useSequences(activeClinicId);
   const { create: createPresc } = usePrescriptions({ clinicId: activeClinicId });
+  const { data: equipment = [] } = useEquipment(activeClinicId);
+  const { data: recurring = [], create: createRec, remove: removeRec } = useRecurringSchedules(activeClinicId);
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', skill_level_id: '', notes: '' });
