@@ -1,14 +1,15 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3, CalendarPlus, Library, LogOut, GraduationCap, ShieldCheck, DoorOpen, MoreHorizontal, Menu } from 'lucide-react';
+import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3, CalendarPlus, Library, LogOut, GraduationCap, ShieldCheck, DoorOpen, MoreHorizontal, Menu, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { NotificationsBell } from '@/components/NotificationsBell';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { SetupWizard, setupWizardCompleted } from '@/components/clinic/SetupWizard';
 
 const baseNavItems = [
   { to: '/clinica', icon: CalendarDays, label: 'Grade Master', end: true, primary: true },
