@@ -5,6 +5,7 @@ import { GripVertical, Edit, Trash2, Dumbbell, ImageIcon } from 'lucide-react';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
+import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
 interface ExerciseListItemProps {
   exercise: WorkoutExercise;
@@ -29,7 +30,7 @@ export function ExerciseListItem({
       ? [exercise.image_url]
       : [];
   const imageCount = images.length;
-  const firstImage = images[0];
+  const firstImage = getFreshMediaUrl(images[0]);
   const hasVideo = !!(exercise.video_url && exercise.video_type);
 
   const handleThumbClick = () => {
