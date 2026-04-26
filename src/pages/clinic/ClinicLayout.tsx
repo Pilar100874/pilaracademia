@@ -1,9 +1,12 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useUserRoles } from '@/hooks/useUserRoles';
-import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3, CalendarPlus, Library } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3, CalendarPlus, Library, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { NotificationsBell } from '@/components/NotificationsBell';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const navItems = [
   { to: '/clinica', icon: Activity, label: 'Visão', end: true },
@@ -22,6 +25,12 @@ const navItems = [
 export default function ClinicLayout() {
   const { isLoading, isStaff, activeClinic } = useUserRoles();
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success('Sessão encerrada');
+    navigate('/auth');
+  };
 
   if (isLoading) {
     return (
@@ -67,10 +76,14 @@ export default function ClinicLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-3 border-t">
+        <div className="p-3 border-t space-y-1">
           <Button variant="ghost" className="w-full justify-start" onClick={() => navigate('/')}>
             <Home className="h-4 w-4 mr-2" />
             Meu app pessoal
+          </Button>
+          <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive" onClick={handleLogout}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair
           </Button>
         </div>
       </aside>
@@ -82,8 +95,13 @@ export default function ClinicLayout() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="font-semibold truncate">{activeClinic.name}</div>
-          <NotificationsBell />
+          <div className="font-semibold truncate flex-1 text-center px-2">{activeClinic.name}</div>
+          <div className="flex items-center">
+            <NotificationsBell />
+            <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair">
+              <LogOut className="h-5 w-5 text-destructive" />
+            </Button>
+          </div>
         </header>
         <header className="hidden md:flex items-center justify-end p-3 border-b bg-card sticky top-0 z-30">
           <NotificationsBell />
