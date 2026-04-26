@@ -1,27 +1,43 @@
 import { useState } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
-import { useEquipment } from '@/hooks/useClinicData';
+import { useEquipment, type Equipment } from '@/hooks/useClinicData';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dumbbell, Plus, Trash2, Copy } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Dumbbell, Plus, Trash2, Copy, Wrench, CheckCircle2, Link2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 const TYPES = ['Reformer', 'Cadillac', 'Chair', 'Barrel', 'Mat', 'Outro'];
 
+const STATUS_META: Record<string, { label: string; className: string }> = {
+  active: { label: 'Ativo', className: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30' },
+  maintenance: { label: 'Manutenção', className: 'bg-amber-500/15 text-amber-700 border-amber-500/30' },
+  inactive: { label: 'Inativo', className: 'bg-muted text-muted-foreground border-border' },
+};
+
 export default function EquipmentPage() {
   const { activeClinicId } = useUserRoles();
-  const { data: equipment = [], create, remove } = useEquipment(activeClinicId);
+  const { data: equipment = [], create, remove, setStatus } = useEquipment(activeClinicId);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [type, setType] = useState('Reformer');
   const [identifier, setIdentifier] = useState('');
 
+  const [maintEq, setMaintEq] = useState<Equipment | null>(null);
+  const [maintNotes, setMaintNotes] = useState('');
+  const [maintUntil, setMaintUntil] = useState('');
+
   const handleAdd = async () => {
     await create.mutateAsync({ name, equipment_type: type, identifier });
-    setName(''); setIdentifier(''); setOpen(false);
+    setName('');
+    setIdentifier('');
+    setOpen(false);
   };
 
   const copyStationLink = (token: string) => {
@@ -30,41 +46,85 @@ export default function EquipmentPage() {
     toast.success('Link do tablet copiado');
   };
 
+  const openMaintenance = (eq: Equipment) => {
+    setMaintEq(eq);
+    setMaintNotes(eq.maintenance_notes ?? '');
+    setMaintUntil(eq.maintenance_until ?? '');
+  };
+
+  const submitMaintenance = async () => {
+    if (!maintEq) return;
+    await setStatus.mutateAsync({
+      id: maintEq.id,
+      status: 'maintenance',
+      maintenance_notes: maintNotes || null,
+      maintenance_until: maintUntil || null,
+    });
+    setMaintEq(null);
+  };
+
+  const reactivate = async (eq: Equipment) => {
+    await setStatus.mutateAsync({ id: eq.id, status: 'active' });
+  };
+
   return (
-    <div className="p-6 space-y-4 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Equipamentos</h1>
-          <p className="text-sm text-muted-foreground">Cada equipamento gera um link de tablet exclusivo.</p>
+    <div className="p-4 sm:p-6 space-y-4 max-w-5xl mx-auto">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight">Equipamentos</h1>
+          <p className="text-sm text-muted-foreground">
+            Cadastre, controle manutenção e vincule equipamentos aos horários da grade.
+          </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Novo equipamento</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm">Nome (ex: Reformer 1)</label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} />
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" asChild>
+            <Link to="/clinica/grade-equipamentos">
+              <Link2 className="h-4 w-4 mr-1" />
+              Vincular à grade
+            </Link>
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-1" />
+                Adicionar
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Novo equipamento</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label>Nome (ex: Reformer 1)</Label>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Tipo</Label>
+                  <Select value={type} onValueChange={setType}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TYPES.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {t}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Identificador (opcional)</Label>
+                  <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="Ex: R1" />
+                </div>
+                <Button onClick={handleAdd} disabled={!name.trim() || create.isPending} className="w-full">
+                  Adicionar
+                </Button>
               </div>
-              <div>
-                <label className="text-sm">Tipo</label>
-                <Select value={type} onValueChange={setType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm">Identificador (opcional)</label>
-                <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="Ex: R1" />
-              </div>
-              <Button onClick={handleAdd} disabled={!name.trim() || create.isPending} className="w-full">Adicionar</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {equipment.length === 0 ? (
@@ -74,24 +134,96 @@ export default function EquipmentPage() {
         </Card>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {equipment.map((eq) => (
-            <Card key={eq.id} className="p-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-semibold">{eq.name}</div>
-                  <div className="text-xs text-muted-foreground">{eq.equipment_type}{eq.identifier ? ` · ${eq.identifier}` : ''}</div>
+          {equipment.map((eq) => {
+            const status = (eq.status ?? 'active') as keyof typeof STATUS_META;
+            const meta = STATUS_META[status] ?? STATUS_META.active;
+            const inMaint = status === 'maintenance';
+            return (
+              <Card key={eq.id} className="p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-semibold truncate">{eq.name}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {eq.equipment_type}
+                      {eq.identifier ? ` · ${eq.identifier}` : ''}
+                    </div>
+                  </div>
+                  <Badge variant="outline" className={meta.className}>
+                    {meta.label}
+                  </Badge>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => remove.mutate(eq.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-              <Button variant="outline" size="sm" className="w-full mt-3" onClick={() => copyStationLink(eq.station_token)}>
-                <Copy className="h-3.5 w-3.5 mr-1" />Copiar link do tablet
-              </Button>
-            </Card>
-          ))}
+
+                {inMaint && (
+                  <div className="text-xs rounded-lg bg-amber-500/10 border border-amber-500/20 p-2 space-y-0.5">
+                    {eq.maintenance_notes && <div className="text-foreground">{eq.maintenance_notes}</div>}
+                    {eq.maintenance_until && (
+                      <div className="text-muted-foreground">
+                        Previsão: {new Date(eq.maintenance_until).toLocaleDateString('pt-BR')}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2 mt-auto">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => copyStationLink(eq.station_token)}>
+                    <Copy className="h-3.5 w-3.5 mr-1" />
+                    Link tablet
+                  </Button>
+                  {inMaint ? (
+                    <Button variant="outline" size="sm" onClick={() => reactivate(eq)}>
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                      Reativar
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={() => openMaintenance(eq)}>
+                      <Wrench className="h-3.5 w-3.5 mr-1" />
+                      Manutenção
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" onClick={() => { if (confirm('Excluir equipamento?')) remove.mutate(eq.id); }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
+
+      {/* Diálogo de manutenção */}
+      <Dialog open={!!maintEq} onOpenChange={(v) => !v && setMaintEq(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="h-5 w-5 text-amber-600" />
+              Colocar em manutenção
+            </DialogTitle>
+          </DialogHeader>
+          {maintEq && (
+            <div className="space-y-3">
+              <div className="text-sm text-muted-foreground">
+                Equipamento: <span className="font-medium text-foreground">{maintEq.name}</span>
+              </div>
+              <div>
+                <Label>Descrição (opcional)</Label>
+                <Textarea
+                  rows={3}
+                  value={maintNotes}
+                  onChange={(e) => setMaintNotes(e.target.value)}
+                  placeholder="Ex: Mola substituída, aguardando técnico"
+                />
+              </div>
+              <div>
+                <Label>Previsão de retorno (opcional)</Label>
+                <Input type="date" value={maintUntil} onChange={(e) => setMaintUntil(e.target.value)} />
+              </div>
+              <Button className="w-full" onClick={submitMaintenance} disabled={setStatus.isPending}>
+                Confirmar manutenção
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

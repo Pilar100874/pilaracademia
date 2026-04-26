@@ -18,6 +18,9 @@ export interface Equipment {
   identifier: string | null;
   station_token: string;
   active: boolean;
+  status?: 'active' | 'maintenance' | 'inactive';
+  maintenance_notes?: string | null;
+  maintenance_until?: string | null;
 }
 
 export interface Student {
@@ -165,7 +168,26 @@ export function useEquipment(clinicId: string | null) {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['equipment', clinicId] }),
   });
-  return { ...query, create, remove };
+  const setStatus = useMutation({
+    mutationFn: async (input: { id: string; status: 'active' | 'maintenance' | 'inactive'; maintenance_notes?: string | null; maintenance_until?: string | null }) => {
+      const payload: any = { status: input.status };
+      if (input.status === 'maintenance') {
+        payload.maintenance_notes = input.maintenance_notes ?? null;
+        payload.maintenance_until = input.maintenance_until ?? null;
+      } else {
+        payload.maintenance_notes = null;
+        payload.maintenance_until = null;
+      }
+      const { error } = await (supabase.from('clinic_equipment') as any).update(payload).eq('id', input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['equipment', clinicId] });
+      toast.success('Status atualizado');
+    },
+    onError: (e: any) => toast.error(e?.message || 'Erro ao atualizar status'),
+  });
+  return { ...query, create, remove, setStatus };
 }
 
 // ===== STUDENTS =====
