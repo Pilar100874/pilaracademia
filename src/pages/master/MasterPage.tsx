@@ -39,6 +39,8 @@ export default function MasterPage() {
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
 
+  const [editing, setEditing] = useState<{ id: string; name: string; slug: string } | null>(null);
+
   const { data: clinics, isLoading } = useQuery({
     queryKey: ["master-clinics"],
     enabled: !!isMaster,
