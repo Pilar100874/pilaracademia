@@ -9,9 +9,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const baseNavItems = [
-  { to: '/clinica', icon: Activity, label: 'Visão', end: true },
-  { to: '/clinica/agenda', icon: CalendarDays, label: 'Agenda' },
-  { to: '/clinica/grades', icon: CalendarPlus, label: 'Grades' },
+  { to: '/clinica', icon: CalendarDays, label: 'Grade Master', end: true },
+  { to: '/clinica/visao', icon: Activity, label: 'Visão' },
+  { to: '/clinica/agenda', icon: CalendarPlus, label: 'Agenda' },
+  { to: '/clinica/grades', icon: CalendarPlus, label: 'Horários' },
   { to: '/clinica/salas', icon: DoorOpen, label: 'Salas' },
   { to: '/clinica/alunos', icon: Users, label: 'Alunos' },
   { to: '/clinica/equipe', icon: GraduationCap, label: 'Equipe', adminOnly: true },
