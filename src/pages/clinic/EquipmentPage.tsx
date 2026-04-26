@@ -127,10 +127,6 @@ export default function EquipmentPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Identificador (opcional)</Label>
-                  <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="Ex: R1" />
-                </div>
                 <Button onClick={handleAdd} disabled={!name.trim() || create.isPending} className="w-full">
                   Adicionar
                 </Button>
