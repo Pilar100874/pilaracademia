@@ -30,11 +30,19 @@ const baseNavItems = [
 ];
 
 export default function ClinicLayout() {
-  const { isLoading, isStaff, isAdmin, activeClinic } = useUserRoles();
+  const { isLoading, isStaff, isAdmin, activeClinic, activeClinicId } = useUserRoles();
   const navigate = useNavigate();
   const navItems = baseNavItems.filter((item) => !item.adminOnly || isAdmin);
   const primaryItems = navItems.filter((i) => i.primary).slice(0, 4);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  // Open wizard automatically on first visit (per clinic, admin only)
+  useEffect(() => {
+    if (!isLoading && isAdmin && activeClinicId && !setupWizardCompleted(activeClinicId)) {
+      setWizardOpen(true);
+    }
+  }, [isLoading, isAdmin, activeClinicId]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
