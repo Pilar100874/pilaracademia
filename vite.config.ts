@@ -48,8 +48,27 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         navigateFallbackDenylist: [/^\/~oauth/],
         runtimeCaching: [
+          {
+            // Never cache Supabase Storage objects (videos/images can have large/stale payloads)
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
+            handler: 'NetworkOnly',
+            options: {
+              cacheName: 'supabase-storage-nocache',
+            },
+          },
+          {
+            // Never cache Supabase REST/Functions to avoid stale responses
+            urlPattern: /^https:\/\/.*\.supabase\.co\/(rest|functions|auth|realtime)\/.*/i,
+            handler: 'NetworkOnly',
+            options: {
+              cacheName: 'supabase-api-nocache',
+            },
+          },
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
