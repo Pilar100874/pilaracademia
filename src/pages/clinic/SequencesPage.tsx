@@ -140,8 +140,10 @@ export default function SequencesPage() {
           <h1 className="text-2xl font-bold">Sequências de exercícios</h1>
           <p className="text-sm text-muted-foreground">Monte grades por equipamento e nível.</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Nova sequência</Button></DialogTrigger>
+        <div className="flex gap-2 flex-wrap">
+          <ImportGlobalTemplateButton clinicId={activeClinicId} onImported={(id) => setSelected(id)} />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Nova sequência</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Nova sequência</DialogTitle></DialogHeader>
             <div className="space-y-3">
