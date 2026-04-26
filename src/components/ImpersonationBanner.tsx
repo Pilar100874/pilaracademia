@@ -25,9 +25,15 @@ export function ImpersonationBanner() {
   const handleExit = async () => {
     setBusy(true);
     try {
-      await endImpersonation();
-      toast.info('Sessão encerrada. Faça login com sua conta original.');
-      navigate('/auth', { replace: true });
+      const { ctx: prev, restored } = await endImpersonation();
+      if (restored) {
+        const target = prev?.origin === 'master' ? '/master' : '/clinica';
+        toast.success('Sessão original restaurada.');
+        navigate(target, { replace: true });
+      } else {
+        toast.info('Sessão encerrada. Faça login com sua conta original.');
+        navigate('/auth', { replace: true });
+      }
     } catch (e: any) {
       toast.error(e?.message || 'Erro ao sair');
     } finally {

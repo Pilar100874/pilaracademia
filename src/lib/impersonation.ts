@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_KEY = 'pilar:impersonation';
+const SESSION_BACKUP_KEY = 'pilar:impersonation:originSession';
 
 export type ImpersonationContext = {
   // info to display in the banner
@@ -10,6 +11,24 @@ export type ImpersonationContext = {
   // master/staff email (so the user knows how to log back in)
   originatorEmail: string;
 };
+
+type SavedSession = {
+  access_token: string;
+  refresh_token: string;
+};
+
+function saveOriginSession(s: SavedSession) {
+  try { sessionStorage.setItem(SESSION_BACKUP_KEY, JSON.stringify(s)); } catch {/* noop */}
+}
+function getOriginSession(): SavedSession | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_BACKUP_KEY);
+    return raw ? JSON.parse(raw) as SavedSession : null;
+  } catch { return null; }
+}
+function clearOriginSession() {
+  try { sessionStorage.removeItem(SESSION_BACKUP_KEY); } catch {/* noop */}
+}
 
 export function setImpersonationContext(ctx: ImpersonationContext) {
   try {
@@ -48,12 +67,19 @@ export async function impersonate(
 ): Promise<string> {
   const { data: sessionData } = await supabase.auth.getSession();
   const originatorEmail = sessionData.session?.user?.email || '';
+  const originAccess = sessionData.session?.access_token;
+  const originRefresh = sessionData.session?.refresh_token;
 
   const { data, error } = await supabase.functions.invoke('impersonate-user', {
     body: payload,
   });
   if (error) throw error;
   if (!data?.email || !data?.password) throw new Error('Resposta inválida do servidor');
+
+  // Backup origin session BEFORE signing in as the target user
+  if (originAccess && originRefresh) {
+    saveOriginSession({ access_token: originAccess, refresh_token: originRefresh });
+  }
 
   const { error: signErr } = await supabase.auth.signInWithPassword({
     email: data.email,
@@ -71,12 +97,32 @@ export async function impersonate(
 }
 
 /**
- * Logs out and clears impersonation context.
- * The originator (master/staff) will need to log in again with their own credentials.
+ * Ends impersonation. If we have a backed-up origin session (master/staff),
+ * restore it transparently so the user goes back to where they came from
+ * without re-entering credentials. Otherwise sign out.
  */
-export async function endImpersonation() {
+export async function endImpersonation(): Promise<{
+  ctx: ImpersonationContext | null;
+  restored: boolean;
+}> {
   const ctx = getImpersonationContext();
+  const saved = getOriginSession();
   clearImpersonationContext();
+
+  if (saved) {
+    // Replace current (impersonated) session with the original one
+    const { error } = await supabase.auth.setSession({
+      access_token: saved.access_token,
+      refresh_token: saved.refresh_token,
+    });
+    clearOriginSession();
+    if (!error) {
+      return { ctx, restored: true };
+    }
+    // Fallback to sign out if restore failed (e.g. token expired)
+  }
+
+  clearOriginSession();
   await supabase.auth.signOut();
-  return ctx;
+  return { ctx, restored: false };
 }
