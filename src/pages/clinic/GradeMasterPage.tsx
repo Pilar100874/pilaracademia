@@ -23,6 +23,7 @@ import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { SlotGradeDialog } from '@/components/clinic/SlotGradeDialog';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; cls: string }> = {
   scheduled:   { label: 'Agendado',  cls: 'bg-secondary text-secondary-foreground' },
@@ -192,41 +193,17 @@ export default function GradeMasterPage() {
     return data.id;
   };
 
-  // ===== Definir grade (sequência) =====
-  const [gradeOpen, setGradeOpen] = useState<MergedSlot | null>(null);
-  const [gradeSeq, setGradeSeq] = useState('');
-  const assignGrade = async () => {
-    if (!gradeOpen || !gradeSeq || !user || !activeClinicId) return;
-    const apptId = await materialize(gradeOpen);
-    if (!apptId) return;
-    const dateOnly = new Date(gradeOpen.scheduled_at).toISOString().slice(0, 10);
-    const presc = await createPresc.mutateAsync({
-      clinic_id: activeClinicId,
-      student_id: gradeOpen.student_id,
-      sequence_id: gradeSeq,
-      context: 'in_class',
-      created_by: user.id,
-      scheduled_for: dateOnly,
-    } as any);
-    const prescId = (presc as any)?.id || (presc as any)?.[0]?.id;
-    await supabase.from('class_appointments').update({
-      sequence_id: gradeSeq,
-      prescription_id: prescId || null,
-    }).eq('id', apptId);
-    toast.success('Grade definida');
-    const stu = students.find((s) => s.id === gradeOpen.student_id);
-    if (stu?.user_id) {
-      await supabase.from('notifications').insert({
-        user_id: stu.user_id,
-        clinic_id: activeClinicId,
-        type: 'general',
-        title: 'Grade da próxima aula está pronta',
-        body: format(parseISO(gradeOpen.scheduled_at), "dd/MM 'às' HH:mm", { locale: ptBR }),
-        link: '/meu-pilates',
-      });
-    }
-    setGradeOpen(null);
-    setGradeSeq('');
+  // ===== Definir grade (sequência) — novo dialog multi-aluno =====
+  const [slotDialog, setSlotDialog] = useState<{
+    slot: { scheduled_at: string; duration_minutes: number };
+    focusedStudentId: string;
+  } | null>(null);
+
+  const openSlotDialog = (slot: MergedSlot) => {
+    setSlotDialog({
+      slot: { scheduled_at: slot.scheduled_at, duration_minutes: slot.duration_minutes },
+      focusedStudentId: slot.student_id,
+    });
   };
 
   const handleCheckIn = async (slot: MergedSlot) => {
@@ -433,7 +410,7 @@ export default function GradeMasterPage() {
                         slot={s}
                         studentName={studentName(s.student_id)}
                         sequenceName={s.appointment?.sequence_id ? sequences.find((x) => x.id === s.appointment!.sequence_id)?.name : null}
-                        onClick={() => { setGradeOpen(s); setGradeSeq(s.appointment?.sequence_id || ''); }}
+                        onClick={() => openSlotDialog(s)}
                       />
                     ))}
                   </div>
@@ -508,7 +485,7 @@ export default function GradeMasterPage() {
                         </Button>
                       )}
 
-                      <Button size="sm" variant={seqName ? 'outline' : 'default'} onClick={() => { setGradeOpen(s); setGradeSeq(seqId || ''); }}>
+                      <Button size="sm" variant={seqName ? 'outline' : 'default'} onClick={() => openSlotDialog(s)}>
                         <ListChecks className="h-3.5 w-3.5 mr-1" />{seqName ? 'Trocar grade' : 'Definir grade'}
                       </Button>
 
@@ -545,38 +522,23 @@ export default function GradeMasterPage() {
         </Card>
       </div>
 
-      {/* Dialog: definir grade */}
-      <Dialog open={!!gradeOpen} onOpenChange={(o) => !o && setGradeOpen(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Grade · {gradeOpen ? studentName(gradeOpen.student_id) : ''} · {gradeOpen && format(parseISO(gradeOpen.scheduled_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            {gradeOpen?.isProjected && (
-              <div className="p-2 rounded bg-amber-500/10 border border-amber-500/30 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                <div>
-                  Esta aula é uma <strong>projeção pós-contrato</strong>. Ao salvar a grade, ela será materializada como aula real.
-                  Lembre-se de <strong>renovar o contrato</strong> do aluno.
-                </div>
-              </div>
-            )}
-            <div>
-              <label className="text-sm">Sequência de exercícios</label>
-              <Select value={gradeSeq} onValueChange={setGradeSeq}>
-                <SelectTrigger><SelectValue placeholder="Escolha uma sequência" /></SelectTrigger>
-                <SelectContent>
-                  {sequences.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-xs text-muted-foreground">A grade fica vinculada à aula. O aluno verá em "Meu Pilates" e a estação carrega automaticamente.</p>
-            <Button onClick={assignGrade} disabled={!gradeSeq} className="w-full">Salvar grade</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Dialog: alunos da aula + grade + propagação */}
+      {slotDialog && user && activeClinicId && (
+        <SlotGradeDialog
+          open={!!slotDialog}
+          onClose={() => setSlotDialog(null)}
+          slot={slotDialog.slot}
+          focusedStudentId={slotDialog.focusedStudentId}
+          clinicId={activeClinicId}
+          userId={user.id}
+          appointments={appointments as any}
+          recurring={recurring}
+          students={students}
+          equipment={equipment}
+          sequences={sequences}
+          onSaved={() => { /* react-query refetch via hooks */ }}
+        />
+      )}
     </div>
   );
 }
