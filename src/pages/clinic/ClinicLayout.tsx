@@ -1,0 +1,109 @@
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+
+const navItems = [
+  { to: '/clinica', icon: Activity, label: 'Visão geral', end: true },
+  { to: '/clinica/alunos', icon: Users, label: 'Alunos' },
+  { to: '/clinica/equipamentos', icon: Dumbbell, label: 'Equipamentos' },
+  { to: '/clinica/niveis', icon: Layers, label: 'Níveis' },
+  { to: '/clinica/sequencias', icon: ListOrdered, label: 'Sequências' },
+  { to: '/clinica/aula', icon: Activity, label: 'Aula ao vivo' },
+];
+
+export default function ClinicLayout() {
+  const { isLoading, isStaff, activeClinic } = useUserRoles();
+  const navigate = useNavigate();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isStaff || !activeClinic) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center gap-4">
+        <p className="text-muted-foreground">Você ainda não faz parte de uma clínica.</p>
+        <div className="flex gap-2">
+          <Button onClick={() => navigate('/clinica/criar')}>Criar minha clínica</Button>
+          <Button variant="outline" onClick={() => navigate('/')}>Voltar</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar desktop */}
+      <aside className="hidden md:flex w-64 flex-col border-r bg-card">
+        <div className="p-4 border-b">
+          <div className="text-xs text-muted-foreground uppercase tracking-wide">Clínica</div>
+          <div className="font-bold truncate">{activeClinic.name}</div>
+        </div>
+        <nav className="flex-1 p-3 space-y-1">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) => cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition',
+                isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-foreground'
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="p-3 border-t">
+          <Button variant="ghost" className="w-full justify-start" onClick={() => navigate('/')}>
+            <Home className="h-4 w-4 mr-2" />
+            Meu app pessoal
+          </Button>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <main className="flex-1 min-w-0 flex flex-col">
+        {/* Mobile top bar */}
+        <header className="md:hidden flex items-center justify-between p-3 border-b bg-card sticky top-0 z-30">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="font-semibold truncate">{activeClinic.name}</div>
+          <div className="w-10" />
+        </header>
+
+        <div className="flex-1 overflow-y-auto pb-24 md:pb-8">
+          <Outlet />
+        </div>
+
+        {/* Mobile bottom nav */}
+        <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur border-t">
+          <div className="flex items-center justify-around h-16 overflow-x-auto">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) => cn(
+                  'flex flex-col items-center gap-0.5 px-2 py-1 min-w-0 flex-1',
+                  isActive ? 'text-primary' : 'text-muted-foreground'
+                )}
+              >
+                <item.icon className="h-5 w-5" />
+                <span className="text-[9px] font-medium truncate">{item.label}</span>
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+      </main>
+    </div>
+  );
+}
