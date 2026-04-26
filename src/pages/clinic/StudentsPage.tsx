@@ -341,6 +341,53 @@ export default function StudentsPage() {
                     </div>
                   </DialogContent>
                 </Dialog>
+
+                {/* Dialog Horários fixos */}
+                <Dialog open={recOpen} onOpenChange={setRecOpen}>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader><DialogTitle>Horários fixos · {current.full_name}</DialogTitle></DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        {studentRecs.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">Nenhum horário fixo. Esse aluno é avulso.</p>
+                        ) : studentRecs.map((r) => {
+                          const eq = equipment.find((e) => e.id === r.equipment_id);
+                          return (
+                            <div key={r.id} className="flex items-center justify-between p-2 rounded border text-sm">
+                              <div>
+                                <span className="font-medium">{DAY_NAMES[r.day_of_week]}</span> · {r.start_time.slice(0, 5)} · {r.duration_minutes}min
+                                {eq && <span className="text-muted-foreground"> · {eq.name}</span>}
+                              </div>
+                              <Button size="icon" variant="ghost" onClick={() => removeRec.mutate(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="border-t pt-3 space-y-2">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">Adicionar horário</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="text-xs">Dia</label>
+                            <Select value={String(recForm.day_of_week)} onValueChange={(v) => setRecForm({ ...recForm, day_of_week: parseInt(v) })}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>{DAY_NAMES.map((d, i) => <SelectItem key={i} value={String(i)}>{d}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
+                          <div><label className="text-xs">Hora</label><Input type="time" value={recForm.start_time} onChange={(e) => setRecForm({ ...recForm, start_time: e.target.value })} /></div>
+                          <div><label className="text-xs">Min</label><Input type="number" value={recForm.duration_minutes} onChange={(e) => setRecForm({ ...recForm, duration_minutes: parseInt(e.target.value) || 50 })} /></div>
+                        </div>
+                        <div>
+                          <label className="text-xs">Equipamento (opcional)</label>
+                          <Select value={recForm.equipment_id} onValueChange={(v) => setRecForm({ ...recForm, equipment_id: v })}>
+                            <SelectTrigger><SelectValue placeholder="Qualquer" /></SelectTrigger>
+                            <SelectContent>{equipment.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <Button onClick={addRecurring} className="w-full"><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </Card>
 
               <Card className="p-5">
