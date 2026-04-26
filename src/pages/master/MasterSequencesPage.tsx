@@ -159,7 +159,7 @@ export default function MasterSequencesPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerSearch, setPickerSearch] = useState('');
+  
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ name: '', description: '', estimated_minutes: '' });
   const [zoomImages, setZoomImages] = useState<string[]>([]);
