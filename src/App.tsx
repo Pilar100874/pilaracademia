@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AuthPage } from "@/pages/AuthPage";
 import { ProfilePage } from "@/pages/ProfilePage";
@@ -40,17 +40,21 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
   const { data: mustChange, isLoading: flagLoading } = useMustChangePassword();
   if (isLoading || flagLoading) return <div className="min-h-screen flex items-center justify-center gradient-hero"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) return <Navigate to="/auth" replace state={{ from: location }} />;
   if (mustChange && window.location.pathname !== '/trocar-senha') return <Navigate to="/trocar-senha" replace />;
   return <>{children}</>;
 }
 
 function AuthRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
+  const from = (location.state as { from?: { pathname?: string; search?: string } } | null)?.from;
+  const redirectTo = `${from?.pathname ?? "/"}${from?.search ?? ""}`;
   if (isLoading) return <div className="min-h-screen flex items-center justify-center gradient-hero"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to={redirectTo} replace />;
   return <>{children}</>;
 }
 
