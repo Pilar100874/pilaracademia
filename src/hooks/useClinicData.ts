@@ -326,7 +326,50 @@ export function useSequenceItems(sequenceId: string | null) {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['sequence-items', sequenceId] }),
   });
-  return { ...query, addItem, removeItem };
+  const updateItem = useMutation({
+    mutationFn: async ({ id, ...patch }: { id: string } & Partial<SequenceItem>) => {
+      const { error } = await supabase.from('exercise_sequence_items').update(patch).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sequence-items', sequenceId] }),
+  });
+  const reorderItems = useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      // Update each item's order_index
+      await Promise.all(orderedIds.map((id, idx) =>
+        supabase.from('exercise_sequence_items').update({ order_index: idx }).eq('id', id)
+      ));
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sequence-items', sequenceId] }),
+  });
+  const addFromLibrary = useMutation({
+    mutationFn: async (libraryExercises: Array<{ id: string; name: string; default_sets: number; default_reps: number; image_urls: string[]; video_url: string | null; video_type: string | null; video_start_seconds: number | null; video_end_seconds: number | null; }>) => {
+      if (!sequenceId) throw new Error('sequence missing');
+      const items = query.data ?? [];
+      let order = items.length;
+      const rows = libraryExercises.map((ex) => ({
+        sequence_id: sequenceId,
+        exercise_library_id: ex.id,
+        name: ex.name,
+        sets: ex.default_sets,
+        reps: ex.default_reps,
+        image_urls: ex.image_urls ?? [],
+        video_url: ex.video_url,
+        video_type: ex.video_type,
+        video_start_seconds: ex.video_start_seconds,
+        video_end_seconds: ex.video_end_seconds,
+        order_index: order++,
+      }));
+      const { error } = await supabase.from('exercise_sequence_items').insert(rows);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['sequence-items', sequenceId] });
+      toast.success('Exercícios adicionados');
+    },
+    onError: (e: any) => toast.error(e?.message || 'Erro ao adicionar'),
+  });
+  return { ...query, addItem, removeItem, updateItem, reorderItems, addFromLibrary };
 }
 
 // ===== PRESCRIPTIONS =====
