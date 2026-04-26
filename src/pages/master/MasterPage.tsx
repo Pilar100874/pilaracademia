@@ -259,6 +259,10 @@ export default function MasterPage() {
                   <Input value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} placeholder="studio-pilates" />
                   <p className="text-xs text-muted-foreground mt-1">Se vazio, geramos a partir do nome.</p>
                 </div>
+                <div>
+                  <Label>Logotipo da clínica</Label>
+                  <ClinicLogoUploader value={logoUrl} onChange={setLogoUrl} />
+                </div>
                 <div className="pt-2 border-t">
                   <p className="text-sm font-semibold mb-2">Administrador da clínica</p>
                   <div className="space-y-3">
