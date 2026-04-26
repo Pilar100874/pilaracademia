@@ -381,6 +381,53 @@ export default function MasterPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!managingCats} onOpenChange={(o) => !o && setManagingCats(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Categorias globais visíveis</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Selecione quais categorias da biblioteca global aparecerão para{" "}
+              <span className="font-semibold">{managingCats?.name}</span>.
+            </p>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-3">
+            <div className="space-y-2 py-2">
+              {globalCategories?.length ? (
+                globalCategories.map((cat) => {
+                  const checked = clinicGlobalCats?.includes(cat.id) ?? false;
+                  return (
+                    <label
+                      key={cat.id}
+                      className="flex items-center gap-3 p-2 rounded-md hover:bg-muted cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) =>
+                          managingCats &&
+                          toggleClinicCategory.mutate({
+                            clinicId: managingCats.id,
+                            categoryId: cat.id,
+                            checked: v === true,
+                          })
+                        }
+                      />
+                      <span className="text-sm">{cat.name}</span>
+                    </label>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Nenhuma categoria global cadastrada ainda.
+                </p>
+              )}
+            </div>
+          </ScrollArea>
+          <DialogFooter>
+            <Button onClick={() => setManagingCats(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
