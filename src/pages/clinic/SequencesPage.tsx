@@ -359,52 +359,252 @@ export default function SequencesPage() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-[320px_1fr] gap-4">
-        <Card className="p-2 max-h-[70vh] overflow-y-auto">
-          {sequences.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground text-sm"><ListOrdered className="h-8 w-8 mx-auto mb-2 opacity-50" />Nenhuma sequência.</div>
-          ) : sequences.map((s) => {
-            const lv = levels.find((l) => l.id === s.skill_level_id);
-            const eq = equipment.find((e) => e.id === s.equipment_id);
-            return (
-              <button key={s.id} onClick={() => setSelected(s.id)} className={`w-full text-left p-3 rounded-lg hover:bg-muted ${selected === s.id ? 'bg-muted' : ''}`}>
-                <div className="font-medium text-sm">{s.name}</div>
-                <div className="text-xs text-muted-foreground flex gap-1 mt-1 flex-wrap">
-                  {eq && <Badge variant="outline" className="text-[10px]">{eq.equipment_type}</Badge>}
-                  {lv && <Badge variant="outline" className="text-[10px]" style={{ borderColor: lv.color || undefined }}>{lv.name}</Badge>}
-                </div>
+      <div className="grid md:grid-cols-[340px_1fr] gap-4">
+        {/* Sidebar list with filters */}
+        <Card className="p-3 max-h-[78vh] flex flex-col gap-3 bg-gradient-to-b from-card to-muted/20">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar sequência..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 h-9 bg-background"
+            />
+          </div>
+
+          {/* Filters */}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <Filter className="h-3 w-3" /> Filtros
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <Select value={filterEquip} onValueChange={setFilterEquip}>
+                <SelectTrigger className="h-8 text-xs bg-background">
+                  <SelectValue placeholder="Equipamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos equipamentos</SelectItem>
+                  {equipment.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterLevel} onValueChange={setFilterLevel}>
+                <SelectTrigger className="h-8 text-xs bg-background">
+                  <SelectValue placeholder="Nível" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos níveis</SelectItem>
+                  {levels.map((l) => (
+                    <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(filterEquip !== '__all__' || filterLevel !== '__all__' || search) && (
+              <button
+                onClick={() => { setFilterEquip('__all__'); setFilterLevel('__all__'); setSearch(''); }}
+                className="text-[10px] text-primary hover:underline"
+              >
+                Limpar filtros
               </button>
-            );
-          })}
+            )}
+          </div>
+
+          {/* Count */}
+          <div className="text-[11px] text-muted-foreground px-0.5">
+            {filteredSequences.length} de {sequences.length} sequência{sequences.length === 1 ? '' : 's'}
+          </div>
+
+          {/* List */}
+          <div className="flex-1 overflow-y-auto -mx-1 px-1 space-y-1.5">
+            {filteredSequences.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-sm">
+                <ListOrdered className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                {sequences.length === 0 ? 'Nenhuma sequência.' : 'Nenhum resultado.'}
+              </div>
+            ) : filteredSequences.map((s) => {
+              const lv = levels.find((l) => l.id === s.skill_level_id);
+              const eq = equipment.find((e) => e.id === s.equipment_id);
+              const isActive = selected === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setSelected(s.id)}
+                  className={`w-full text-left p-2.5 rounded-lg border transition-all ${
+                    isActive
+                      ? 'bg-primary/10 border-primary shadow-sm ring-1 ring-primary/30'
+                      : 'bg-background border-transparent hover:border-border hover:bg-muted/60'
+                  }`}
+                >
+                  <div className={`font-medium text-sm leading-tight line-clamp-2 ${isActive ? 'text-primary' : ''}`}>{s.name}</div>
+                  <div className="flex gap-1 mt-1.5 flex-wrap items-center">
+                    {eq && (
+                      <Badge variant="outline" className="text-[10px] h-4 px-1.5 gap-0.5 font-normal">
+                        <Dumbbell className="h-2.5 w-2.5" /> {eq.name}
+                      </Badge>
+                    )}
+                    {lv && (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] h-4 px-1.5 font-normal"
+                        style={{ borderColor: lv.color || undefined, color: lv.color || undefined }}
+                      >
+                        {lv.name}
+                      </Badge>
+                    )}
+                    {s.estimated_minutes && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                        <Clock className="h-2.5 w-2.5" /> {s.estimated_minutes}min
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </Card>
 
         <div className="space-y-4">
           {!currentSeq ? (
-            <Card className="p-8 text-center text-muted-foreground">Selecione uma sequência.</Card>
+            <Card className="p-12 text-center text-muted-foreground border-dashed">
+              <Layers className="h-12 w-12 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">Selecione uma sequência para visualizar e editar.</p>
+            </Card>
           ) : (
             <>
-              <Card className="p-5">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h2 className="text-xl font-bold">{currentSeq.name}</h2>
-                    {currentSeq.description && <p className="text-sm text-muted-foreground mt-1">{currentSeq.description}</p>}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {activeClinicId && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => setShareOpen(true)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                      >
-                        <MessageCircle className="h-4 w-4 mr-1.5" />
-                        Enviar por WhatsApp
+              <Card className="p-0 overflow-hidden">
+                <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5">
+                  <div className="flex items-start justify-between gap-2 flex-wrap">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Layers className="h-5 w-5 text-primary shrink-0" />
+                        <h2 className="text-xl font-bold truncate">{currentSeq.name}</h2>
+                      </div>
+                      {currentSeq.description && <p className="text-sm text-muted-foreground mt-1">{currentSeq.description}</p>}
+                      <div className="flex gap-1.5 mt-2 flex-wrap">
+                        {(() => {
+                          const eq = equipment.find((e) => e.id === currentSeq.equipment_id);
+                          const lv = levels.find((l) => l.id === currentSeq.skill_level_id);
+                          return (
+                            <>
+                              {eq && (
+                                <Badge variant="secondary" className="gap-1">
+                                  <Dumbbell className="h-3 w-3" /> {eq.name}
+                                </Badge>
+                              )}
+                              {lv && (
+                                <Badge
+                                  variant="outline"
+                                  style={{ borderColor: lv.color || undefined, color: lv.color || undefined }}
+                                >
+                                  {lv.name}
+                                </Badge>
+                              )}
+                              {currentSeq.estimated_minutes && (
+                                <Badge variant="outline" className="gap-1">
+                                  <Clock className="h-3 w-3" /> {currentSeq.estimated_minutes} min
+                                </Badge>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {activeClinicId && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => setShareOpen(true)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1.5" />
+                          WhatsApp
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" onClick={openEditDialog}>
+                        <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
                       </Button>
-                    )}
-                    <Button variant="ghost" size="icon" onClick={() => { if (confirm('Excluir sequência?')) { remove.mutate(currentSeq.id); setSelected(null); } }}><Trash2 className="h-4 w-4" /></Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => { if (confirm('Excluir sequência?')) { remove.mutate(currentSeq.id); setSelected(null); } }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </Card>
+
+              {/* Edit sequence dialog */}
+              <Dialog open={editOpen} onOpenChange={setEditOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Editar sequência</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm">Nome</label>
+                      <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-sm">Equipamento</label>
+                      <Select
+                        value={editForm.equipment_id || '__none__'}
+                        onValueChange={(v) => setEditForm({ ...editForm, equipment_id: v === '__none__' ? '' : v })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Sem equipamento</SelectItem>
+                          {equipment.map((e) => (
+                            <SelectItem key={e.id} value={e.id}>{e.name} ({e.equipment_type})</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-sm">Nível</label>
+                      <Select
+                        value={editForm.skill_level_id || '__none__'}
+                        onValueChange={(v) => setEditForm({ ...editForm, skill_level_id: v === '__none__' ? '' : v })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Sem nível</SelectItem>
+                          {levels.map((l) => (
+                            <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-sm">Duração estimada (min)</label>
+                      <Input
+                        type="number"
+                        value={editForm.estimated_minutes}
+                        onChange={(e) => setEditForm({ ...editForm, estimated_minutes: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm">Descrição</label>
+                      <Textarea
+                        value={editForm.description}
+                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="ghost" onClick={() => setEditOpen(false)}>Cancelar</Button>
+                      <Button onClick={handleUpdate} disabled={!editForm.name.trim() || update.isPending}>
+                        Salvar alterações
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               {activeClinicId && currentSeq && (
                 <ShareSequenceDialog
