@@ -60,8 +60,10 @@ export function ExercisePickerDialog({
   const [categoryFilter, setCategoryFilter] = useState<string>(ALL);
   const [originFilter, setOriginFilter] = useState<string>(ALL);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [zoomImages, setZoomImages] = useState<string[]>([]);
-  const [videoEx, setVideoEx] = useState<PickableExercise | null>(null);
+  // Fullscreen zoom navigator: index within `filtered`
+  const [zoomIdx, setZoomIdx] = useState<number | null>(null);
+  const [zoomImgIdx, setZoomImgIdx] = useState(0);
+  const [showVideo, setShowVideo] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Reset on close
@@ -71,6 +73,9 @@ export function ExercisePickerDialog({
       setSearch('');
       setCategoryFilter(ALL);
       setOriginFilter(ALL);
+      setZoomIdx(null);
+      setZoomImgIdx(0);
+      setShowVideo(false);
     }
     onOpenChange(o);
   };
