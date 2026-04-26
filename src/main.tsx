@@ -2,9 +2,31 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
+const isPreviewOrIframe = (() => {
+  if (typeof window === "undefined") return false;
+  const isPreviewHost =
+    window.location.hostname.includes("id-preview--") ||
+    window.location.hostname.includes("lovableproject.com") ||
+    window.location.hostname.includes("lovable.app");
+  try {
+    return isPreviewHost || window.self !== window.top;
+  } catch {
+    return true;
+  }
+})();
+
+if (typeof navigator !== "undefined" && "serviceWorker" in navigator && isPreviewOrIframe) {
+  navigator.serviceWorker
+    .getRegistrations()
+    .then((registrations) => registrations.forEach((registration) => registration.unregister()))
+    .catch(() => {
+      /* ignore */
+    });
+}
+
 // One-time purge of stale Workbox/media caches from older service-worker versions.
 // This fixes blank video/image previews caused by outdated cached media responses.
-const CACHE_PURGE_KEY = "cache-purge-v3";
+const CACHE_PURGE_KEY = "cache-purge-v4";
 if (typeof window !== "undefined" && "caches" in window) {
   if (localStorage.getItem(CACHE_PURGE_KEY) !== "done") {
     caches
