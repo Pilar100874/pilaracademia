@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  ArrowLeft, Plus, Trash2, ListOrdered, Loader2, GripVertical, Library, Pencil, Check, X, Search, Dumbbell, Clock, Layers, Play, Maximize2,
+  ArrowLeft, Plus, Trash2, ListOrdered, Loader2, GripVertical, Library, Pencil, Check, X, Search, Dumbbell, Clock, Layers, Play, Maximize2, PlayCircle, ChevronLeft, ChevronRight, CheckCircle2, Filter, Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
@@ -26,9 +26,13 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+const SKILL_LEVELS = ['Iniciante', 'Intermediário', 'Avançado'];
+const CATEGORIES = ['Reformer', 'Cadillac', 'Chair', 'Barrel', 'Mat', 'Bola', 'Faixa', 'Funcional', 'Outros'];
+
 type GlobalSequence = {
   id: string; name: string; description: string | null;
   estimated_minutes: number | null; equipment_type: string | null;
+  skill_level_label: string | null;
 };
 
 type GlobalItem = {
@@ -38,6 +42,13 @@ type GlobalItem = {
   exercise_library_id: string | null;
   video_url: string | null; video_type: string | null;
   video_start_seconds: number | null; video_end_seconds: number | null;
+};
+
+const levelColor = (lv?: string | null) => {
+  if (lv === 'Iniciante') return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200';
+  if (lv === 'Intermediário') return 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200';
+  if (lv === 'Avançado') return 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200';
+  return 'bg-muted text-muted-foreground';
 };
 
 function SortableRow({ item, idx, onRemove, onEdit, onZoomImages, onPlayVideo }: {
@@ -60,7 +71,7 @@ function SortableRow({ item, idx, onRemove, onEdit, onZoomImages, onPlayVideo }:
     <div
       ref={setNodeRef}
       style={style}
-      className="group flex items-stretch gap-3 rounded-xl border bg-card overflow-hidden hover:border-primary/50 transition-colors"
+      className="group flex items-stretch gap-3 rounded-2xl border-2 bg-card overflow-hidden hover:border-primary/60 hover:shadow-md transition-all"
     >
       <button
         {...attributes}
@@ -179,6 +190,136 @@ function SortableRow({ item, idx, onRemove, onEdit, onZoomImages, onPlayVideo }:
   );
 }
 
+/* ------------ Simulator Modal ------------ */
+function SimulateDialog({
+  sequence, items, open, onOpenChange,
+}: {
+  sequence: GlobalSequence | null;
+  items: GlobalItem[];
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const [index, setIndex] = useState(0);
+  const [done, setDone] = useState<Set<string>>(new Set());
+  const current = items[index];
+
+  const reset = () => { setIndex(0); setDone(new Set()); };
+
+  const next = () => {
+    if (!current) return;
+    setDone(prev => new Set(prev).add(current.id));
+    if (index < items.length - 1) setIndex(index + 1);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden">
+        <DialogHeader className="px-5 pt-5 pb-3 border-b">
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Simulação · {sequence?.name}
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground">
+            Pré-visualize como o aluno vai ver este template.
+          </p>
+        </DialogHeader>
+
+        {items.length === 0 ? (
+          <div className="p-12 text-center text-muted-foreground">
+            <Dumbbell className="h-10 w-10 mx-auto mb-2" />
+            <p className="text-sm">Adicione exercícios para simular.</p>
+          </div>
+        ) : current && (
+          <div className="grid md:grid-cols-[1.4fr_1fr]">
+            {/* media */}
+            <div className="bg-black flex items-center justify-center min-h-[260px] md:min-h-[420px] relative">
+              {current.video_url ? (
+                <ExerciseVideoPlayer
+                  videoUrl={current.video_url}
+                  videoType={(current.video_type as any) || undefined}
+                  startSeconds={current.video_start_seconds ?? undefined}
+                  endSeconds={current.video_end_seconds ?? undefined}
+                  autoPlay
+                />
+              ) : (current.image_urls?.length ?? 0) > 0 ? (
+                <img src={current.image_urls![0]} alt={current.name} className="max-h-[420px] w-full object-contain" />
+              ) : (
+                <Dumbbell className="h-16 w-16 text-white/40" />
+              )}
+              <div className="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-black/60 text-white text-xs font-semibold">
+                {index + 1} / {items.length}
+              </div>
+            </div>
+
+            {/* info */}
+            <div className="p-5 space-y-4 flex flex-col">
+              <div>
+                <h3 className="font-bold text-lg leading-tight">{current.name}</h3>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                    <Layers className="h-3 w-3" /> {current.sets} séries
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                    × {current.reps} reps
+                  </span>
+                </div>
+                {current.notes && (
+                  <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{current.notes}</p>
+                )}
+              </div>
+
+              {/* steps */}
+              <div className="flex-1 overflow-auto -mx-1 px-1">
+                <p className="text-[11px] uppercase font-semibold text-muted-foreground mb-2">Roteiro</p>
+                <div className="space-y-1.5">
+                  {items.map((it, i) => {
+                    const isCurrent = i === index;
+                    const isDone = done.has(it.id);
+                    return (
+                      <button
+                        key={it.id}
+                        onClick={() => setIndex(i)}
+                        className={`w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-colors ${
+                          isCurrent ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                        }`}
+                      >
+                        <span className={`h-5 w-5 rounded-full text-[10px] flex items-center justify-center font-bold ${
+                          isCurrent ? 'bg-primary-foreground text-primary' :
+                          isDone ? 'bg-emerald-500 text-white' : 'bg-muted-foreground/20'
+                        }`}>
+                          {isDone && !isCurrent ? <CheckCircle2 className="h-3 w-3" /> : i + 1}
+                        </span>
+                        <span className="flex-1 truncate font-medium">{it.name}</span>
+                        <span className="text-[10px] opacity-70">{it.sets}×{it.reps}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* nav */}
+              <div className="flex items-center justify-between gap-2 pt-2 border-t">
+                <Button variant="outline" size="sm" onClick={() => setIndex(Math.max(0, index - 1))} disabled={index === 0}>
+                  <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                </Button>
+                {index === items.length - 1 ? (
+                  <Button size="sm" onClick={() => { setDone(prev => new Set(prev).add(current.id)); }}>
+                    <CheckCircle2 className="h-4 w-4 mr-1" /> Finalizar
+                  </Button>
+                ) : (
+                  <Button size="sm" onClick={next}>
+                    Próximo <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function MasterSequencesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -187,10 +328,15 @@ export default function MasterSequencesPage() {
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  
+  const [simulateOpen, setSimulateOpen] = useState(false);
+
   const [search, setSearch] = useState('');
-  const [form, setForm] = useState({ name: '', description: '', estimated_minutes: '' });
-  const [editForm, setEditForm] = useState({ name: '', description: '', estimated_minutes: '' });
+  const [filterCategory, setFilterCategory] = useState('__all__');
+  const [filterLevel, setFilterLevel] = useState('__all__');
+
+  const emptyForm = { name: '', description: '', estimated_minutes: '', equipment_type: '', skill_level_label: '' };
+  const [form, setForm] = useState(emptyForm);
+  const [editForm, setEditForm] = useState(emptyForm);
   const [zoomImages, setZoomImages] = useState<string[]>([]);
   const [videoItem, setVideoItem] = useState<GlobalItem | null>(null);
 
@@ -199,7 +345,7 @@ export default function MasterSequencesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('exercise_sequences')
-        .select('id,name,description,estimated_minutes,equipment_type')
+        .select('id,name,description,estimated_minutes,equipment_type,skill_level_label')
         .eq('is_global', true)
         .order('name');
       if (error) throw error;
@@ -255,6 +401,8 @@ export default function MasterSequencesPage() {
         name,
         description: form.description.trim() || null,
         estimated_minutes: form.estimated_minutes ? parseInt(form.estimated_minutes) : null,
+        equipment_type: form.equipment_type || null,
+        skill_level_label: form.skill_level_label || null,
         is_global: true,
         clinic_id: null,
         created_by: user!.id,
@@ -262,11 +410,12 @@ export default function MasterSequencesPage() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success('Template criado');
       setOpen(false);
-      setForm({ name: '', description: '', estimated_minutes: '' });
+      setForm(emptyForm);
       qc.invalidateQueries({ queryKey: ['global-sequences'] });
+      if (data?.id) setSelected(data.id);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -284,7 +433,7 @@ export default function MasterSequencesPage() {
   });
 
   const updateSequence = useMutation({
-    mutationFn: async (patch: { name: string; description: string | null; estimated_minutes: number | null }) => {
+    mutationFn: async (patch: { name: string; description: string | null; estimated_minutes: number | null; equipment_type: string | null; skill_level_label: string | null }) => {
       if (!selected) throw new Error('Nenhum template selecionado');
       const { error } = await supabase.from('exercise_sequences').update(patch).eq('id', selected);
       if (error) throw error;
@@ -366,77 +515,132 @@ export default function MasterSequencesPage() {
     reorder.mutate(newOrder);
   };
 
-  const selectedSeq = sequences.find(s => s.id === selected);
+  const selectedSeq = sequences.find(s => s.id === selected) ?? null;
 
   const filteredSequences = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return sequences;
-    return sequences.filter(s => s.name.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q));
-  }, [sequences, search]);
+    return sequences.filter(s => {
+      if (q && !(s.name.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q))) return false;
+      if (filterCategory !== '__all__' && (s.equipment_type ?? '') !== filterCategory) return false;
+      if (filterLevel !== '__all__' && (s.skill_level_label ?? '') !== filterLevel) return false;
+      return true;
+    });
+  }, [sequences, search, filterCategory, filterLevel]);
 
-  
+  const hasFilters = filterCategory !== '__all__' || filterLevel !== '__all__' || !!search;
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/master')} className="shrink-0">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-              <ListOrdered className="h-6 w-6 text-primary" />
-              Templates de Treinos
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Crie sequências globais para que as clínicas possam importá-las.
-            </p>
-          </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-1.5" />
-                <span className="hidden sm:inline">Novo template</span>
-                <span className="sm:hidden">Novo</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Novo template global</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div>
-                  <Label>Nome *</Label>
-                  <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Ex: Reabilitação ombro - iniciante" />
-                </div>
-                <div>
-                  <Label>Descrição</Label>
-                  <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Duração estimada (min)</Label>
-                  <Input type="number" value={form.estimated_minutes} onChange={e => setForm({ ...form, estimated_minutes: e.target.value })} />
-                </div>
+        <div className="relative overflow-hidden rounded-3xl border-2 border-primary/30 bg-gradient-to-br from-brand/30 via-brand/10 to-background p-5 sm:p-7">
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-brand/30 blur-3xl" />
+          <div className="relative flex items-center gap-3 flex-wrap">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/master')} className="shrink-0 rounded-full">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex-1 min-w-0">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider mb-2">
+                <Sparkles className="h-3 w-3" /> Master
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button onClick={() => create.mutate()} disabled={create.isPending}>
-                  {create.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Criar
+              <h1 className="text-2xl sm:text-4xl font-black tracking-tight flex items-center gap-2 leading-none">
+                Templates de Treinos
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2 max-w-xl">
+                Sequências globais que todas as clínicas podem importar. Crie, categorize e simule antes de publicar.
+              </p>
+            </div>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="rounded-full shadow-lg">
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  Novo template
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Novo template global</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Nome *</Label>
+                    <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Ex: Reabilitação ombro - iniciante" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Categoria</Label>
+                      <Select value={form.equipment_type || '__none__'} onValueChange={(v) => setForm({ ...form, equipment_type: v === '__none__' ? '' : v })}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— Nenhuma —</SelectItem>
+                          {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Nível</Label>
+                      <Select value={form.skill_level_label || '__none__'} onValueChange={(v) => setForm({ ...form, skill_level_label: v === '__none__' ? '' : v })}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— Nenhum —</SelectItem>
+                          {SKILL_LEVELS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Descrição</Label>
+                    <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Duração estimada (min)</Label>
+                    <Input type="number" value={form.estimated_minutes} onChange={e => setForm({ ...form, estimated_minutes: e.target.value })} />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+                  <Button onClick={() => create.mutate()} disabled={create.isPending}>
+                    {create.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Criar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
-        {/* Search bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar templates..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
+        {/* Filters bar */}
+        <Card className="p-3 sm:p-4 flex flex-col sm:flex-row gap-2 sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar templates..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 border-0 bg-muted/40 focus-visible:bg-background"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="w-[150px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todas as categorias</SelectItem>
+                {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterLevel} onValueChange={setFilterLevel}>
+              <SelectTrigger className="w-[140px]"><SelectValue placeholder="Nível" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todos os níveis</SelectItem>
+                {SKILL_LEVELS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {hasFilters && (
+              <Button variant="ghost" size="icon" onClick={() => { setSearch(''); setFilterCategory('__all__'); setFilterLevel('__all__'); }}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </Card>
 
         {/* Templates grid */}
         {isLoading ? (
@@ -446,30 +650,34 @@ export default function MasterSequencesPage() {
         ) : filteredSequences.length === 0 ? (
           <Card className="p-12 text-center">
             <ListOrdered className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-            <p className="text-sm text-muted-foreground">Nenhum template criado ainda.</p>
-            <Button onClick={() => setOpen(true)} className="mt-4" size="sm">
-              <Plus className="h-4 w-4 mr-1.5" />
-              Criar primeiro template
-            </Button>
+            <p className="text-sm text-muted-foreground">
+              {hasFilters ? 'Nenhum template corresponde aos filtros.' : 'Nenhum template criado ainda.'}
+            </p>
+            {!hasFilters && (
+              <Button onClick={() => setOpen(true)} className="mt-4" size="sm">
+                <Plus className="h-4 w-4 mr-1.5" />
+                Criar primeiro template
+              </Button>
+            )}
           </Card>
         ) : (
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredSequences.map(s => {
               const isActive = selected === s.id;
               return (
                 <div
                   key={s.id}
                   onClick={() => setSelected(isActive ? null : s.id)}
-                  className={`group flex flex-col rounded-xl border bg-card overflow-hidden transition-all cursor-pointer hover:shadow-md ${
-                    isActive ? 'border-primary ring-2 ring-primary/40' : 'hover:border-primary/40'
+                  className={`group relative flex flex-col rounded-3xl border-2 bg-card overflow-hidden transition-all cursor-pointer hover:-translate-y-1 hover:shadow-xl ${
+                    isActive ? 'border-primary ring-4 ring-primary/20' : 'border-border hover:border-primary/40'
                   }`}
                 >
-                  <div className="relative h-28 bg-gradient-to-br from-primary/15 via-primary/5 to-background flex items-center justify-center">
-                    <ListOrdered className="h-10 w-10 text-primary/70" />
+                  <div className="relative h-32 bg-gradient-to-br from-brand/40 via-brand/15 to-primary/5 flex items-center justify-center overflow-hidden">
+                    <ListOrdered className="h-14 w-14 text-primary/60 group-hover:scale-110 transition-transform" />
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="absolute top-1.5 right-1.5 h-7 w-7 bg-background/70 hover:bg-background text-destructive hover:text-destructive"
+                      className="absolute top-2 right-2 h-8 w-8 bg-background/80 hover:bg-background text-destructive hover:text-destructive backdrop-blur"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (confirm(`Excluir "${s.name}"?`)) remove.mutate(s.id);
@@ -477,21 +685,28 @@ export default function MasterSequencesPage() {
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
-                  </div>
-                  <div className="p-3 space-y-1.5">
-                    <p className="font-semibold text-sm leading-tight line-clamp-2">{s.name}</p>
-                    {s.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">{s.description}</p>
+                    {s.skill_level_label && (
+                      <span className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full font-bold ${levelColor(s.skill_level_label)}`}>
+                        {s.skill_level_label}
+                      </span>
                     )}
-                    <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  </div>
+                  <div className="p-4 space-y-2 flex-1 flex flex-col">
+                    <p className="font-bold text-sm leading-tight line-clamp-2">{s.name}</p>
+                    {s.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-2 flex-1">{s.description}</p>
+                    )}
+                    <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+                      {s.equipment_type && (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                          <Dumbbell className="h-3 w-3" /> {s.equipment_type}
+                        </span>
+                      )}
                       {s.estimated_minutes && (
-                        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
                           <Clock className="h-3 w-3" /> {s.estimated_minutes}min
                         </span>
                       )}
-                      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
-                        Global
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -502,21 +717,40 @@ export default function MasterSequencesPage() {
 
         {/* Editor for selected template */}
         {selectedSeq && (
-          <Card className="p-4 sm:p-5 space-y-4 border-primary/40">
+          <Card className="p-4 sm:p-6 space-y-4 border-2 border-primary/40 shadow-lg">
             <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Layers className="h-5 w-5 text-primary" />
-                  <h2 className="font-bold text-lg truncate">{selectedSeq.name}</h2>
+                  <h2 className="font-black text-xl truncate">{selectedSeq.name}</h2>
+                  {selectedSeq.skill_level_label && (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${levelColor(selectedSeq.skill_level_label)}`}>
+                      {selectedSeq.skill_level_label}
+                    </span>
+                  )}
+                  {selectedSeq.equipment_type && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                      {selectedSeq.equipment_type}
+                    </span>
+                  )}
                 </div>
                 {selectedSeq.description && (
                   <p className="text-sm text-muted-foreground mt-1">{selectedSeq.description}</p>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
                   {items.length} exercício{items.length === 1 ? '' : 's'}
+                  {selectedSeq.estimated_minutes ? ` · ${selectedSeq.estimated_minutes} min estimados` : ''}
                 </p>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSimulateOpen(true)}
+                  disabled={items.length === 0}
+                >
+                  <PlayCircle className="h-4 w-4 mr-1.5" /> Simular
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
@@ -525,6 +759,8 @@ export default function MasterSequencesPage() {
                       name: selectedSeq.name ?? '',
                       description: selectedSeq.description ?? '',
                       estimated_minutes: selectedSeq.estimated_minutes ? String(selectedSeq.estimated_minutes) : '',
+                      equipment_type: selectedSeq.equipment_type ?? '',
+                      skill_level_label: selectedSeq.skill_level_label ?? '',
                     });
                     setEditOpen(true);
                   }}
@@ -546,6 +782,28 @@ export default function MasterSequencesPage() {
                     <Label>Nome *</Label>
                     <Input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Categoria</Label>
+                      <Select value={editForm.equipment_type || '__none__'} onValueChange={(v) => setEditForm({ ...editForm, equipment_type: v === '__none__' ? '' : v })}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— Nenhuma —</SelectItem>
+                          {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Nível</Label>
+                      <Select value={editForm.skill_level_label || '__none__'} onValueChange={(v) => setEditForm({ ...editForm, skill_level_label: v === '__none__' ? '' : v })}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— Nenhum —</SelectItem>
+                          {SKILL_LEVELS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <div>
                     <Label>Descrição</Label>
                     <Textarea value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
@@ -562,6 +820,8 @@ export default function MasterSequencesPage() {
                       name: editForm.name.trim(),
                       description: editForm.description.trim() || null,
                       estimated_minutes: editForm.estimated_minutes ? parseInt(editForm.estimated_minutes) : null,
+                      equipment_type: editForm.equipment_type || null,
+                      skill_level_label: editForm.skill_level_label || null,
                     })}
                     disabled={updateSequence.isPending || !editForm.name.trim()}
                   >
@@ -573,7 +833,7 @@ export default function MasterSequencesPage() {
             </Dialog>
 
             {items.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed rounded-xl">
+              <div className="text-center py-12 border-2 border-dashed rounded-2xl">
                 <Dumbbell className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">Nenhum exercício neste template ainda.</p>
                 <Button size="sm" variant="outline" className="mt-3" onClick={() => setPickerOpen(true)}>
@@ -637,6 +897,13 @@ export default function MasterSequencesPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <SimulateDialog
+        sequence={selectedSeq}
+        items={items}
+        open={simulateOpen}
+        onOpenChange={setSimulateOpen}
+      />
     </div>
   );
 }
