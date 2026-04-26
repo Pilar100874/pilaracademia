@@ -364,6 +364,16 @@ export default function StudentsPage() {
                     <Button variant="outline" size="sm" onClick={handleGenerateAccess} disabled={inviting || !current.email}>
                       <KeyRound className="h-3.5 w-3.5 mr-1" />{current.user_id ? 'Resetar senha' : 'Gerar acesso'}
                     </Button>
+                    {allowLoginAsStudent && current.user_id && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleImpersonateStudent(current.id, current.full_name)}
+                        className="bg-amber-600 hover:bg-amber-700 text-white"
+                      >
+                        <LogIn className="h-3.5 w-3.5 mr-1" />Entrar como aluno
+                      </Button>
+                    )}
                     <Select value={current.skill_level_id || ''} onValueChange={(v) => update.mutate({ id: current.id, skill_level_id: v })}>
                       <SelectTrigger className="w-40"><SelectValue placeholder="Nível" /></SelectTrigger>
                       <SelectContent>{levels.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}</SelectContent>
