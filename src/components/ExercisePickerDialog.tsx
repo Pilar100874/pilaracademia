@@ -243,7 +243,7 @@ export function ExercisePickerDialog({
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                {filtered.map((ex) => {
+                {filtered.map((ex, fIdx) => {
                   const isSelected = selected.has(ex.id);
                   const hasImg = (ex.image_urls?.length ?? 0) > 0;
                   const hasVideo = !!ex.video_url;
@@ -285,18 +285,20 @@ export function ExercisePickerDialog({
                         )}
 
                         {/* Action buttons (zoom & video) */}
-                        <div className="absolute top-1 right-1 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {hasImg && (
+                        <div className="absolute top-1 right-1 flex flex-col gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                          {(hasImg || hasVideo) && (
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setZoomImages(ex.image_urls as string[]);
+                                setZoomIdx(fIdx);
+                                setZoomImgIdx(0);
+                                setShowVideo(false);
                               }}
                               className="h-7 w-7 rounded-full bg-background/90 hover:bg-background flex items-center justify-center shadow"
-                              title="Ampliar imagem"
+                              title="Ampliar / Ver mídia"
                             >
-                              <Maximize2 className="h-3.5 w-3.5" />
+                              <ZoomIn className="h-3.5 w-3.5" />
                             </button>
                           )}
                           {hasVideo && (
@@ -304,7 +306,9 @@ export function ExercisePickerDialog({
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setVideoEx(ex);
+                                setZoomIdx(fIdx);
+                                setZoomImgIdx(0);
+                                setShowVideo(true);
                               }}
                               className="h-7 w-7 rounded-full bg-rose-500/90 hover:bg-rose-500 text-white flex items-center justify-center shadow"
                               title="Ver vídeo"
