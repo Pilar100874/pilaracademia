@@ -166,6 +166,45 @@ export type Database = {
           },
         ]
       }
+      clinic_global_categories: {
+        Row: {
+          category_id: string
+          clinic_id: string
+          created_at: string
+          created_by: string
+          id: string
+        }
+        Insert: {
+          category_id: string
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+        }
+        Update: {
+          category_id?: string
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_global_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinic_global_categories_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_invites: {
         Row: {
           accepted_at: string | null
