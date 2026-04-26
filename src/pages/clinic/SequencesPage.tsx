@@ -219,6 +219,8 @@ function ImportGlobalTemplateButton({ clinicId, onImported }: { clinicId: string
 
 export default function SequencesPage() {
   const { activeClinicId } = useUserRoles();
+  const { data: myPerms } = useMyClinicPermissions();
+  const canCreateSequences = myPerms?.can_create_sequences ?? false;
   const { user } = useAuth();
   const { data: sequences = [], create, update, remove } = useSequences(activeClinicId);
   const { data: equipment = [] } = useEquipment(activeClinicId);
@@ -331,6 +333,7 @@ export default function SequencesPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <ImportGlobalTemplateButton clinicId={activeClinicId} onImported={(id) => setSelected(id)} />
+          {canCreateSequences && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Nova sequência</Button></DialogTrigger>
           <DialogContent>
