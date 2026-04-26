@@ -520,6 +520,68 @@ export type Database = {
           },
         ]
       }
+      clinic_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          clinic_id: string
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          cycle: Database["public"]["Enums"]["billing_cycle"] | null
+          id: string
+          last_event_at: string | null
+          last_payment_at: string | null
+          paddle_customer_id: string | null
+          paddle_subscription_id: string | null
+          plan_id: string | null
+          status: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          clinic_id: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          cycle?: Database["public"]["Enums"]["billing_cycle"] | null
+          id?: string
+          last_event_at?: string | null
+          last_payment_at?: string | null
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
+          plan_id?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          clinic_id?: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          cycle?: Database["public"]["Enums"]["billing_cycle"] | null
+          id?: string
+          last_event_at?: string | null
+          last_payment_at?: string | null
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
+          plan_id?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_user_permissions: {
         Row: {
           can_create_exercises: boolean
@@ -557,6 +619,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_demo: boolean
           logo_url: string | null
           name: string
           owner_user_id: string
@@ -566,6 +629,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_demo?: boolean
           logo_url?: string | null
           name: string
           owner_user_id: string
@@ -575,6 +639,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_demo?: boolean
           logo_url?: string | null
           name?: string
           owner_user_id?: string
@@ -1385,6 +1450,27 @@ export type Database = {
           },
         ]
       }
+      master_settings: {
+        Row: {
+          id: number
+          payments_mode: string
+          trial_days: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          payments_mode?: string
+          trial_days?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          payments_mode?: string
+          trial_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -1680,6 +1766,54 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          max_students: number | null
+          name: string
+          paddle_price_id_monthly: string | null
+          paddle_price_id_yearly: string | null
+          price_monthly_cents: number
+          price_yearly_cents: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          max_students?: number | null
+          name: string
+          paddle_price_id_monthly?: string | null
+          paddle_price_id_yearly?: string | null
+          price_monthly_cents?: number
+          price_yearly_cents?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          max_students?: number | null
+          name?: string
+          paddle_price_id_monthly?: string | null
+          paddle_price_id_yearly?: string | null
+          price_monthly_cents?: number
+          price_yearly_cents?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           clinic_id: string | null
@@ -1879,6 +2013,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      clinic_has_access: { Args: { _clinic_id: string }; Returns: boolean }
       copy_global_sequence_to_clinic: {
         Args: { _clinic_id: string; _sequence_id: string }
         Returns: string
@@ -1933,6 +2068,7 @@ export type Database = {
         | "completed"
         | "no_show"
         | "cancelled"
+      billing_cycle: "monthly" | "yearly"
       invite_status: "pending" | "accepted" | "revoked"
       live_session_status:
         | "scheduled"
@@ -1946,6 +2082,12 @@ export type Database = {
         | "general"
       prescription_context: "in_class" | "at_home"
       prescription_status: "pending" | "in_progress" | "completed" | "skipped"
+      subscription_status:
+        | "trialing"
+        | "active"
+        | "past_due"
+        | "cancelled"
+        | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2090,6 +2232,7 @@ export const Constants = {
         "no_show",
         "cancelled",
       ],
+      billing_cycle: ["monthly", "yearly"],
       invite_status: ["pending", "accepted", "revoked"],
       live_session_status: [
         "scheduled",
@@ -2105,6 +2248,13 @@ export const Constants = {
       ],
       prescription_context: ["in_class", "at_home"],
       prescription_status: ["pending", "in_progress", "completed", "skipped"],
+      subscription_status: [
+        "trialing",
+        "active",
+        "past_due",
+        "cancelled",
+        "expired",
+      ],
     },
   },
 } as const
