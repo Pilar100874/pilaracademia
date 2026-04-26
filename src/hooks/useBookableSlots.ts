@@ -68,7 +68,7 @@ export function useBookableSlots(clinicId: string | null, fromISO?: string, toIS
     onSuccess: () => qc.invalidateQueries({ queryKey: ['bookable-slots'] }),
   });
 
-  return { ...query, create, remove };
+  return { ...query, create, update, remove };
 }
 
 export function useClinicSettings(clinicId: string | null) {
