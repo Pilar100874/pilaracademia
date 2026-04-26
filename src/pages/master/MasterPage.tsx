@@ -124,14 +124,14 @@ export default function MasterPage() {
   });
 
   const updateClinic = useMutation({
-    mutationFn: async (payload: { id: string; name: string; slug: string }) => {
+    mutationFn: async (payload: { id: string; name: string; slug: string; logo_url: string | null }) => {
       const cleanName = payload.name.trim();
       let cleanSlug = payload.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
       if (!cleanName) throw new Error("Informe o nome");
       if (!cleanSlug) cleanSlug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       const { error } = await supabase
         .from("clinics")
-        .update({ name: cleanName, slug: cleanSlug })
+        .update({ name: cleanName, slug: cleanSlug, logo_url: payload.logo_url })
         .eq("id", payload.id);
       if (error) {
         if (error.code === "23505") throw new Error("Já existe uma clínica com esse slug");
