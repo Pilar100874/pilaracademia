@@ -109,7 +109,10 @@ export function useSkillLevels(clinicId: string | null) {
       qc.invalidateQueries({ queryKey: ['skill-levels', clinicId] });
       toast.success('Nível criado');
     },
-    onError: () => toast.error('Erro ao criar nível'),
+    onError: (err: any) => {
+      if (err?.code === '23505') toast.error('Já existe um nível com esse nome');
+      else toast.error('Erro ao criar nível');
+    },
   });
   const remove = useMutation({
     mutationFn: async (id: string) => {
