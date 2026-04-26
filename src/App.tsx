@@ -25,6 +25,7 @@ import StaffPage from "@/pages/clinic/StaffPage";
 import PermissionsPage from "@/pages/clinic/PermissionsPage";
 import RoomsPage from "@/pages/clinic/RoomsPage";
 import EquipmentPage from "@/pages/clinic/EquipmentPage";
+import GradeEquipmentLinkPage from "@/pages/clinic/GradeEquipmentLinkPage";
 import SkillLevelsPage from "@/pages/clinic/SkillLevelsPage";
 import SequencesPage from "@/pages/clinic/SequencesPage";
 import LiveSessionPage from "@/pages/clinic/LiveSessionPage";
