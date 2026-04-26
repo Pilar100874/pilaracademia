@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useEquipment, type Equipment } from '@/hooks/useClinicData';
+import { useClinicRooms } from '@/hooks/useClinicRooms';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Dumbbell, Plus, Trash2, Copy, Wrench, CheckCircle2, Link2 } from 'lucide-react';
+import { Dumbbell, Plus, Trash2, Copy, Wrench, CheckCircle2, Link2, DoorOpen } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
-const TYPES = ['Reformer', 'Cadillac', 'Chair', 'Barrel', 'Mat', 'Outro'];
+const NO_ROOM = '__none__';
 
 const STATUS_META: Record<string, { label: string; className: string }> = {
   active: { label: 'Ativo', className: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30' },
