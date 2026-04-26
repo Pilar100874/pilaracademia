@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAppointments, type AppointmentStatus, type Appointment } from '@/hooks/useAppointments';
 import { useStudents, useEquipment, useSequences, usePrescriptions } from '@/hooks/useClinicData';
 import { useRecurringSchedules, expandRecurringForDay } from '@/hooks/useRecurringSchedules';
+import { useBookableSlots } from '@/hooks/useBookableSlots';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
