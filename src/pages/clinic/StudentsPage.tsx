@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy } from 'lucide-react';
+import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
@@ -113,6 +113,50 @@ export default function StudentsPage() {
     } finally {
       setInviting(false);
     }
+  };
+
+  // Upload de foto
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !current) return;
+    const ext = file.name.split('.').pop();
+    const path = `${current.clinic_id}/${current.id}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('student-avatars').upload(path, file, { upsert: true });
+    if (error) { toast.error(error.message); return; }
+    const { data } = supabase.storage.from('student-avatars').getPublicUrl(path);
+    update.mutate({ id: current.id, avatar_url: data.publicUrl } as any);
+    toast.success('Foto atualizada');
+  };
+
+  // Anamnese form
+  const [anamneseOpen, setAnamneseOpen] = useState(false);
+  const [anamnese, setAnamnese] = useState<any>({});
+  const openAnamnese = () => {
+    setAnamnese({
+      birth_date: current?.birth_date || '',
+      weight_kg: (current as any)?.weight_kg || '',
+      height_cm: (current as any)?.height_cm || '',
+      injuries: (current as any)?.injuries || '',
+      restrictions: (current as any)?.restrictions || '',
+      medical_conditions: (current as any)?.medical_conditions || '',
+      medications: (current as any)?.medications || '',
+      goals: (current as any)?.goals || '',
+      emergency_contact_name: (current as any)?.emergency_contact_name || '',
+      emergency_contact_phone: (current as any)?.emergency_contact_phone || '',
+      notes: current?.notes || '',
+    });
+    setAnamneseOpen(true);
+  };
+  const saveAnamnese = async () => {
+    if (!current) return;
+    const payload: any = { id: current.id, ...anamnese };
+    // Converter strings vazias em null para campos numéricos/data
+    payload.weight_kg = payload.weight_kg === '' ? null : Number(payload.weight_kg);
+    payload.height_cm = payload.height_cm === '' ? null : Number(payload.height_cm);
+    payload.birth_date = payload.birth_date || null;
+    await update.mutateAsync(payload);
+    setAnamneseOpen(false);
+    toast.success('Ficha atualizada');
   };
 
   return (
