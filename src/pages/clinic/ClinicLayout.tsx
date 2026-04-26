@@ -1,18 +1,19 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3, CalendarPlus, Library, LogOut } from 'lucide-react';
+import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3, CalendarPlus, Library, LogOut, GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { NotificationsBell } from '@/components/NotificationsBell';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const navItems = [
+const baseNavItems = [
   { to: '/clinica', icon: Activity, label: 'Visão', end: true },
   { to: '/clinica/agenda', icon: CalendarDays, label: 'Agenda' },
   { to: '/clinica/grades', icon: CalendarPlus, label: 'Grades' },
   { to: '/clinica/alunos', icon: Users, label: 'Alunos' },
+  { to: '/clinica/equipe', icon: GraduationCap, label: 'Equipe', adminOnly: true },
   { to: '/clinica/evolucao', icon: TrendingUp, label: 'Evolução' },
   { to: '/clinica/sequencias', icon: ListOrdered, label: 'Sequências' },
   { to: '/clinica/exercicios', icon: Library, label: 'Exercícios' },
