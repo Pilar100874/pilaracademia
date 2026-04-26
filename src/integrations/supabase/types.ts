@@ -263,18 +263,21 @@ export type Database = {
       }
       clinic_settings: {
         Row: {
+          allow_login_as_student: boolean
           booking_open_days_ahead: number
           cancellation_min_hours: number
           clinic_id: string
           updated_at: string
         }
         Insert: {
+          allow_login_as_student?: boolean
           booking_open_days_ahead?: number
           cancellation_min_hours?: number
           clinic_id: string
           updated_at?: string
         }
         Update: {
+          allow_login_as_student?: boolean
           booking_open_days_ahead?: number
           cancellation_min_hours?: number
           clinic_id?: string
