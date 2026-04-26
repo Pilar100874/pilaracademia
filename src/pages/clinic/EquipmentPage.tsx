@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useEquipment, type Equipment } from '@/hooks/useClinicData';
+import { useClinicRooms } from '@/hooks/useClinicRooms';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Dumbbell, Plus, Trash2, Copy, Wrench, CheckCircle2, Link2 } from 'lucide-react';
+import { Dumbbell, Plus, Trash2, Copy, Wrench, CheckCircle2, Link2, DoorOpen } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
-const TYPES = ['Reformer', 'Cadillac', 'Chair', 'Barrel', 'Mat', 'Outro'];
+const NO_ROOM = '__none__';
 
 const STATUS_META: Record<string, { label: string; className: string }> = {
   active: { label: 'Ativo', className: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30' },
@@ -23,22 +24,31 @@ const STATUS_META: Record<string, { label: string; className: string }> = {
 
 export default function EquipmentPage() {
   const { activeClinicId } = useUserRoles();
-  const { data: equipment = [], create, remove, setStatus } = useEquipment(activeClinicId);
+  const { data: equipment = [], create, update, remove, setStatus } = useEquipment(activeClinicId);
+  const { data: rooms = [] } = useClinicRooms(activeClinicId);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
-  const [type, setType] = useState('Reformer');
   const [identifier, setIdentifier] = useState('');
+  const [roomId, setRoomId] = useState<string>(NO_ROOM);
 
   const [maintEq, setMaintEq] = useState<Equipment | null>(null);
   const [maintNotes, setMaintNotes] = useState('');
   const [maintUntil, setMaintUntil] = useState('');
 
   const handleAdd = async () => {
-    await create.mutateAsync({ name, equipment_type: type, identifier });
+    await create.mutateAsync({
+      name,
+      identifier,
+      room_id: roomId === NO_ROOM ? null : roomId,
+    });
     setName('');
     setIdentifier('');
+    setRoomId(NO_ROOM);
     setOpen(false);
   };
+
+  const roomNameOf = (id: string | null) =>
+    id ? rooms.find((r) => r.id === id)?.name ?? '—' : null;
 
   const copyStationLink = (token: string) => {
     const url = `${window.location.origin}/estacao/${token}`;
@@ -78,6 +88,12 @@ export default function EquipmentPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" asChild>
+            <Link to="/clinica/equipamentos-salas">
+              <DoorOpen className="h-4 w-4 mr-1" />
+              Vincular a salas
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
             <Link to="/clinica/grade-equipamentos">
               <Link2 className="h-4 w-4 mr-1" />
               Vincular à grade
@@ -100,23 +116,22 @@ export default function EquipmentPage() {
                   <Input value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
                 <div>
-                  <Label>Tipo</Label>
-                  <Select value={type} onValueChange={setType}>
+                  <Label>Identificador (opcional)</Label>
+                  <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="Ex: R1" />
+                </div>
+                <div>
+                  <Label>Sala (opcional)</Label>
+                  <Select value={roomId} onValueChange={setRoomId}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Sem sala" />
                     </SelectTrigger>
                     <SelectContent>
-                      {TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
+                      <SelectItem value={NO_ROOM}>Sem sala</SelectItem>
+                      {rooms.map((r) => (
+                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div>
-                  <Label>Identificador (opcional)</Label>
-                  <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="Ex: R1" />
                 </div>
                 <Button onClick={handleAdd} disabled={!name.trim() || create.isPending} className="w-full">
                   Adicionar
@@ -143,8 +158,12 @@ export default function EquipmentPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="font-semibold truncate">{eq.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {eq.equipment_type}
+                    <div className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                      {eq.room_id ? (
+                        <><DoorOpen className="h-3 w-3" />{roomNameOf(eq.room_id)}</>
+                      ) : (
+                        <span className="italic">Sem sala</span>
+                      )}
                       {eq.identifier ? ` · ${eq.identifier}` : ''}
                     </div>
                   </div>

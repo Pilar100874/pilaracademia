@@ -14,10 +14,11 @@ export interface Equipment {
   id: string;
   clinic_id: string;
   name: string;
-  equipment_type: string;
+  equipment_type: string | null;
   identifier: string | null;
   station_token: string;
   active: boolean;
+  room_id: string | null;
   status?: 'active' | 'maintenance' | 'inactive';
   maintenance_notes?: string | null;
   maintenance_until?: string | null;
@@ -145,14 +146,15 @@ export function useEquipment(clinicId: string | null) {
     enabled: !!clinicId,
   });
   const create = useMutation({
-    mutationFn: async (input: { name: string; equipment_type: string; identifier?: string }) => {
+    mutationFn: async (input: { name: string; equipment_type?: string | null; identifier?: string | null; room_id?: string | null }) => {
       if (!clinicId) throw new Error('clinic missing');
       const { error } = await supabase.from('clinic_equipment').insert({
         clinic_id: clinicId,
         name: input.name.trim(),
-        equipment_type: input.equipment_type.trim(),
-        identifier: input.identifier ?? null,
-      });
+        equipment_type: input.equipment_type?.trim() || null,
+        identifier: input.identifier?.trim() || null,
+        room_id: input.room_id ?? null,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -160,6 +162,18 @@ export function useEquipment(clinicId: string | null) {
       toast.success('Equipamento adicionado');
     },
     onError: () => toast.error('Erro ao adicionar equipamento'),
+  });
+  const update = useMutation({
+    mutationFn: async (input: { id: string; room_id?: string | null; name?: string; identifier?: string | null }) => {
+      const { id, ...rest } = input;
+      const { error } = await (supabase.from('clinic_equipment') as any).update(rest).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['equipment', clinicId] });
+      toast.success('Equipamento atualizado');
+    },
+    onError: (e: any) => toast.error(e?.message || 'Erro ao atualizar'),
   });
   const remove = useMutation({
     mutationFn: async (id: string) => {
@@ -187,7 +201,7 @@ export function useEquipment(clinicId: string | null) {
     },
     onError: (e: any) => toast.error(e?.message || 'Erro ao atualizar status'),
   });
-  return { ...query, create, remove, setStatus };
+  return { ...query, create, update, remove, setStatus };
 }
 
 // ===== STUDENTS =====

@@ -25,6 +25,7 @@ import StaffPage from "@/pages/clinic/StaffPage";
 import PermissionsPage from "@/pages/clinic/PermissionsPage";
 import RoomsPage from "@/pages/clinic/RoomsPage";
 import EquipmentPage from "@/pages/clinic/EquipmentPage";
+import EquipmentRoomsPage from "@/pages/clinic/EquipmentRoomsPage";
 import GradeEquipmentLinkPage from "@/pages/clinic/GradeEquipmentLinkPage";
 import SkillLevelsPage from "@/pages/clinic/SkillLevelsPage";
 import SequencesPage from "@/pages/clinic/SequencesPage";
@@ -115,6 +116,7 @@ function AppRoutes() {
         <Route path="salas" element={<RoomsPage />} />
         <Route path="evolucao" element={<StudentEvolutionPage />} />
         <Route path="equipamentos" element={<EquipmentPage />} />
+        <Route path="equipamentos-salas" element={<EquipmentRoomsPage />} />
         <Route path="grade-equipamentos" element={<GradeEquipmentLinkPage />} />
         <Route path="niveis" element={<SkillLevelsPage />} />
         <Route path="sequencias" element={<SequencesPage />} />

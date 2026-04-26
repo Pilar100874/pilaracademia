@@ -181,6 +181,7 @@ export type Database = {
           maintenance_notes: string | null
           maintenance_until: string | null
           name: string
+          room_id: string | null
           station_token: string
           status: string
         }
@@ -194,6 +195,7 @@ export type Database = {
           maintenance_notes?: string | null
           maintenance_until?: string | null
           name: string
+          room_id?: string | null
           station_token?: string
           status?: string
         }
@@ -207,6 +209,7 @@ export type Database = {
           maintenance_notes?: string | null
           maintenance_until?: string | null
           name?: string
+          room_id?: string | null
           station_token?: string
           status?: string
         }
@@ -216,6 +219,13 @@ export type Database = {
             columns: ["clinic_id"]
             isOneToOne: false
             referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinic_equipment_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_rooms"
             referencedColumns: ["id"]
           },
         ]
