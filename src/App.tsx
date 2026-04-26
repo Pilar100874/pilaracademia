@@ -88,6 +88,9 @@ function AppRoutes() {
         <Route path="relatorios" element={<ReportsPage />} />
       </Route>
 
+      {/* Master admin panel */}
+      <Route path="/master" element={<ProtectedRoute><MasterPage /></ProtectedRoute>} />
+
       <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
