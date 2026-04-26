@@ -1,16 +1,20 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useUserRoles } from '@/hooks/useUserRoles';
-import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home } from 'lucide-react';
+import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { NotificationsBell } from '@/components/NotificationsBell';
 
 const navItems = [
-  { to: '/clinica', icon: Activity, label: 'Visão geral', end: true },
+  { to: '/clinica', icon: Activity, label: 'Visão', end: true },
+  { to: '/clinica/agenda', icon: CalendarDays, label: 'Agenda' },
   { to: '/clinica/alunos', icon: Users, label: 'Alunos' },
+  { to: '/clinica/evolucao', icon: TrendingUp, label: 'Evolução' },
+  { to: '/clinica/sequencias', icon: ListOrdered, label: 'Sequências' },
   { to: '/clinica/equipamentos', icon: Dumbbell, label: 'Equipamentos' },
   { to: '/clinica/niveis', icon: Layers, label: 'Níveis' },
-  { to: '/clinica/sequencias', icon: ListOrdered, label: 'Sequências' },
-  { to: '/clinica/aula', icon: Activity, label: 'Aula ao vivo' },
+  { to: '/clinica/aula', icon: Activity, label: 'Aula' },
+  { to: '/clinica/relatorios', icon: BarChart3, label: 'Relatórios' },
 ];
 
 export default function ClinicLayout() {
@@ -77,7 +81,10 @@ export default function ClinicLayout() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="font-semibold truncate">{activeClinic.name}</div>
-          <div className="w-10" />
+          <NotificationsBell />
+        </header>
+        <header className="hidden md:flex items-center justify-end p-3 border-b bg-card sticky top-0 z-30">
+          <NotificationsBell />
         </header>
 
         <div className="flex-1 overflow-y-auto pb-24 md:pb-8">

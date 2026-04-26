@@ -24,8 +24,12 @@ import SkillLevelsPage from "@/pages/clinic/SkillLevelsPage";
 import SequencesPage from "@/pages/clinic/SequencesPage";
 import LiveSessionPage from "@/pages/clinic/LiveSessionPage";
 import CreateClinicPage from "@/pages/clinic/CreateClinicPage";
+import AppointmentsPage from "@/pages/clinic/AppointmentsPage";
+import StudentEvolutionPage from "@/pages/clinic/StudentEvolutionPage";
+import ReportsPage from "@/pages/clinic/ReportsPage";
 import StationPage from "@/pages/StationPage";
 import MyPilatesPage from "@/pages/MyPilatesPage";
+import OnboardingPage from "@/pages/OnboardingPage";
 
 const queryClient = new QueryClient();
 
@@ -60,14 +64,18 @@ function AppRoutes() {
       <Route path="/meu-pilates" element={<ProtectedRoute><MyPilatesPage /></ProtectedRoute>} />
 
       {/* Clinic panel */}
+      <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
       <Route path="/clinica/criar" element={<ProtectedRoute><CreateClinicPage /></ProtectedRoute>} />
       <Route path="/clinica" element={<ProtectedRoute><ClinicLayout /></ProtectedRoute>}>
         <Route index element={<ClinicOverviewPage />} />
+        <Route path="agenda" element={<AppointmentsPage />} />
         <Route path="alunos" element={<StudentsPage />} />
+        <Route path="evolucao" element={<StudentEvolutionPage />} />
         <Route path="equipamentos" element={<EquipmentPage />} />
         <Route path="niveis" element={<SkillLevelsPage />} />
         <Route path="sequencias" element={<SequencesPage />} />
         <Route path="aula" element={<LiveSessionPage />} />
+        <Route path="relatorios" element={<ReportsPage />} />
       </Route>
 
       <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
