@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useLibraryScope } from './useLibraryScope';
 import { toast } from 'sonner';
 
 export interface LibraryExercise {
@@ -15,25 +16,35 @@ export interface LibraryExercise {
   video_start_seconds: number | null;
   video_end_seconds: number | null;
   category_id: string | null;
+  is_global?: boolean;
+  clinic_id?: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export function useExerciseLibrary() {
   const { user } = useAuth();
+  const scope = useLibraryScope();
   const queryClient = useQueryClient();
 
   const { data: exercises = [], isLoading } = useQuery({
-    queryKey: ['exercise-library', user?.id],
+    queryKey: ['exercise-library', user?.id, scope],
     queryFn: async () => {
       if (!user) return [];
 
-      const { data, error } = await supabase
-        .from('exercise_library')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('name', { ascending: true });
+      let query = supabase.from('exercise_library').select('*');
 
+      if (scope.kind === 'global') {
+        query = query.eq('is_global', true);
+      } else if (scope.kind === 'clinic') {
+        // Inclui exercícios da clínica + globais (read-only no client, RLS permite)
+        query = query.or(`clinic_id.eq.${scope.clinicId},is_global.eq.true`);
+      } else {
+        // personal: próprios + globais (master library) visíveis read-only
+        query = query.or(`user_id.eq.${user.id},is_global.eq.true`);
+      }
+
+      const { data, error } = await query.order('name', { ascending: true });
       if (error) throw error;
       return data as LibraryExercise[];
     },
@@ -54,6 +65,13 @@ export function useExerciseLibrary() {
     }) => {
       if (!user) throw new Error('User not authenticated');
 
+      const scopeFields =
+        scope.kind === 'global'
+          ? { is_global: true, clinic_id: null }
+          : scope.kind === 'clinic'
+          ? { is_global: false, clinic_id: scope.clinicId }
+          : { is_global: false, clinic_id: null };
+
       const { data: exercise, error } = await supabase
         .from('exercise_library')
         .insert({
@@ -67,6 +85,7 @@ export function useExerciseLibrary() {
           video_start_seconds: data.video_start_seconds ?? null,
           video_end_seconds: data.video_end_seconds ?? null,
           category_id: data.category_id ?? null,
+          ...scopeFields,
         })
         .select()
         .single();
@@ -174,5 +193,6 @@ export function useExerciseLibrary() {
     deleteExercise,
     moveExercises,
     uploadExerciseImage,
+    scope,
   };
 }
