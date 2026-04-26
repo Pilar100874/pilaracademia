@@ -14,7 +14,8 @@ export default function SkillLevelsPage() {
 
   const handleAdd = async () => {
     if (!name.trim()) return;
-    await create.mutateAsync({ name, rank: levels.length + 1, color });
+    const nextRank = (levels.reduce((max, l) => Math.max(max, l.rank ?? 0), 0)) + 1;
+    await create.mutateAsync({ name: name.trim(), rank: nextRank, color });
     setName('');
   };
 
