@@ -484,8 +484,8 @@ export default function GradeMasterPage() {
                       <div className="flex-1 min-w-[180px]">
                         <div className="font-medium truncate flex items-center gap-1.5">
                           {studentName(s.student_id)}
-                          {s.isVirtual && <Repeat className="h-3 w-3 text-muted-foreground" title="Horário fixo" />}
-                          {s.isProjected && <RefreshCw className="h-3 w-3 text-amber-600" title="Projeção pós-contrato" />}
+                          {s.isVirtual && <span title="Horário fixo"><Repeat className="h-3 w-3 text-muted-foreground" /></span>}
+                          {s.isProjected && <span title="Projeção pós-contrato"><RefreshCw className="h-3 w-3 text-amber-600" /></span>}
                           {expired && !s.appointment && (
                             <Badge variant="outline" className="text-[9px] py-0 h-4 border-amber-500 text-amber-700">contrato vencido</Badge>
                           )}
