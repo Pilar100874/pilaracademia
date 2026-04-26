@@ -2,19 +2,20 @@ import { useState, useEffect } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useSequences, useSequenceItems, useEquipment, useSkillLevels, type SequenceItem } from '@/hooks/useClinicData';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
+import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, ListOrdered, GripVertical, Library, Pencil, Check, X, MessageCircle, Play, Maximize2, Dumbbell } from 'lucide-react';
+import { Plus, Trash2, ListOrdered, GripVertical, Library, Pencil, Check, X, MessageCircle, Play, Maximize2, Dumbbell, LayoutTemplate } from 'lucide-react';
 import { ShareSequenceDialog } from '@/components/ShareSequenceDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { ExercisePickerDialog } from '@/components/ExercisePickerDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
