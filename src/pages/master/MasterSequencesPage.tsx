@@ -283,6 +283,20 @@ export default function MasterSequencesPage() {
     },
   });
 
+  const updateSequence = useMutation({
+    mutationFn: async (patch: { name: string; description: string | null; estimated_minutes: number | null }) => {
+      if (!selected) throw new Error('Nenhum template selecionado');
+      const { error } = await supabase.from('exercise_sequences').update(patch).eq('id', selected);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['global-sequences'] });
+      toast.success('Template atualizado');
+      setEditOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const addItems = useMutation({
     mutationFn: async (libIds: string[]) => {
       if (!selected) throw new Error('inválido');
