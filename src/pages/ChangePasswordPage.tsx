@@ -34,6 +34,8 @@ export default function ChangePasswordPage() {
         }, { onConflict: 'user_id' });
       }
       toast.success('Senha atualizada!');
+      await queryClient.invalidateQueries({ queryKey: ['must-change-password'] });
+      await queryClient.refetchQueries({ queryKey: ['must-change-password'] });
       navigate('/', { replace: true });
     } catch (e: any) {
       toast.error(e?.message || 'Erro ao trocar senha');
