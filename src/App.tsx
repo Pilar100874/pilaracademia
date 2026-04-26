@@ -111,6 +111,7 @@ function AppRoutes() {
         <Route path="salas" element={<RoomsPage />} />
         <Route path="evolucao" element={<StudentEvolutionPage />} />
         <Route path="equipamentos" element={<EquipmentPage />} />
+        <Route path="grade-equipamentos" element={<GradeEquipmentLinkPage />} />
         <Route path="niveis" element={<SkillLevelsPage />} />
         <Route path="sequencias" element={<SequencesPage />} />
         <Route path="aula" element={<LiveSessionPage />} />
