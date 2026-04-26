@@ -642,6 +642,7 @@ export default function StudentsPage() {
                       </div>
                     </DialogContent>
                   </Dialog>
+                  )}
                 </div>
                 {studentPrescs.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhuma prescrição.</p>
