@@ -1,0 +1,1 @@
+ALTER TABLE public.exercise_sequences ADD COLUMN IF NOT EXISTS skill_level_label text;

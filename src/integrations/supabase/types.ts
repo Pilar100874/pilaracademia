@@ -847,6 +847,7 @@ export type Database = {
           is_global: boolean
           name: string
           skill_level_id: string | null
+          skill_level_label: string | null
           updated_at: string
         }
         Insert: {
@@ -861,6 +862,7 @@ export type Database = {
           is_global?: boolean
           name: string
           skill_level_id?: string | null
+          skill_level_label?: string | null
           updated_at?: string
         }
         Update: {
@@ -875,6 +877,7 @@ export type Database = {
           is_global?: boolean
           name?: string
           skill_level_id?: string | null
+          skill_level_label?: string | null
           updated_at?: string
         }
         Relationships: [
