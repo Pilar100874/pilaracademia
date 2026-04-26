@@ -485,7 +485,7 @@ export default function GradeMasterPage() {
                         </Button>
                       )}
 
-                      <Button size="sm" variant={seqName ? 'outline' : 'default'} onClick={() => { setGradeOpen(s); setGradeSeq(seqId || ''); }}>
+                      <Button size="sm" variant={seqName ? 'outline' : 'default'} onClick={() => openSlotDialog(s)}>
                         <ListChecks className="h-3.5 w-3.5 mr-1" />{seqName ? 'Trocar grade' : 'Definir grade'}
                       </Button>
 
