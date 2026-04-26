@@ -240,27 +240,35 @@ export default function MasterSequencesPage() {
     },
   });
 
-  const addItem = useMutation({
-    mutationFn: async (libId: string) => {
-      const lib = library.find((l: any) => l.id === libId);
-      if (!lib || !selected) throw new Error('inválido');
-      const nextIdx = (items.reduce((m, i) => Math.max(m, i.order_index), -1)) + 1;
-      const { error } = await supabase.from('exercise_sequence_items').insert({
-        sequence_id: selected,
-        exercise_library_id: lib.id,
-        name: lib.name,
-        image_urls: lib.image_urls ?? [],
-        video_url: lib.video_url,
-        video_type: lib.video_type,
-        video_start_seconds: lib.video_start_seconds,
-        video_end_seconds: lib.video_end_seconds,
-        sets: lib.default_sets ?? 3,
-        reps: lib.default_reps ?? 12,
-        order_index: nextIdx,
-      });
+  const addItems = useMutation({
+    mutationFn: async (libIds: string[]) => {
+      if (!selected) throw new Error('inválido');
+      let nextIdx = (items.reduce((m, i) => Math.max(m, i.order_index), -1)) + 1;
+      const rows = libIds.map((id) => {
+        const lib = library.find((l: any) => l.id === id);
+        if (!lib) return null;
+        return {
+          sequence_id: selected,
+          exercise_library_id: lib.id,
+          name: lib.name,
+          image_urls: lib.image_urls ?? [],
+          video_url: lib.video_url,
+          video_type: lib.video_type,
+          video_start_seconds: lib.video_start_seconds,
+          video_end_seconds: lib.video_end_seconds,
+          sets: lib.default_sets ?? 3,
+          reps: lib.default_reps ?? 12,
+          order_index: nextIdx++,
+        };
+      }).filter(Boolean) as any[];
+      if (!rows.length) return;
+      const { error } = await supabase.from('exercise_sequence_items').insert(rows);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['global-sequence-items', selected] }),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ['global-sequence-items', selected] });
+      toast.success(`${vars.length} exercício${vars.length === 1 ? '' : 's'} adicionado${vars.length === 1 ? '' : 's'}`);
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
