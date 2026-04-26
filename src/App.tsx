@@ -35,6 +35,15 @@ import OnboardingPage from "@/pages/OnboardingPage";
 import ChangePasswordPage from "@/pages/ChangePasswordPage";
 import MasterPage from "@/pages/master/MasterPage";
 import { useMustChangePassword } from "@/hooks/useMustChangePassword";
+import { useUserClinicRole } from "@/hooks/useUserClinicRole";
+
+function HomeRedirect() {
+  const { data, isLoading } = useUserClinicRole();
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center gradient-hero"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (data?.isMasterAdmin) return <Navigate to="/master" replace />;
+  if (data?.hasClinicRole) return <Navigate to="/clinica" replace />;
+  return <Dashboard />;
+}
 
 const queryClient = new QueryClient();
 
@@ -64,7 +73,7 @@ function AppRoutes() {
       {/* Public station tablet route */}
       <Route path="/estacao/:token" element={<StationPage />} />
 
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
       <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
       <Route path="/projections" element={<ProtectedRoute><ProjectionsPage /></ProtectedRoute>} />
       <Route path="/health" element={<ProtectedRoute><HealthPage /></ProtectedRoute>} />
