@@ -172,7 +172,7 @@ export default function ClinicLayout() {
         </header>
 
         <div className="flex-1 overflow-y-auto pb-24 md:pb-8">
-          <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-5 max-w-7xl mx-auto w-full">
+          <div className="max-w-7xl mx-auto w-full">
             <Outlet />
           </div>
         </div>
