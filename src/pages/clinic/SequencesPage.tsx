@@ -346,39 +346,13 @@ export default function SequencesPage() {
               <Card className="p-5">
                 <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <h3 className="font-semibold">Exercícios ({localOrder.length}) <span className="text-xs text-muted-foreground font-normal">— arraste para reordenar</span></h3>
-                  <div className="flex gap-2">
-                    <Dialog open={libOpen} onOpenChange={setLibOpen}>
-                      <DialogTrigger asChild><Button size="sm" variant="outline"><Library className="h-3.5 w-3.5 mr-1" />Da biblioteca</Button></DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader><DialogTitle>Importar da biblioteca</DialogTitle></DialogHeader>
-                        <Input placeholder="Buscar exercício..." value={libSearch} onChange={(e) => setLibSearch(e.target.value)} />
-                        <ScrollArea className="h-96 mt-2">
-                          <div className="space-y-1">
-                            {filteredLib.length === 0 && <p className="text-sm text-muted-foreground text-center p-4">Nenhum exercício na biblioteca.</p>}
-                            {filteredLib.map((ex) => (
-                              <label key={ex.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted cursor-pointer">
-                                <Checkbox
-                                  checked={libSelected.has(ex.id)}
-                                  onCheckedChange={(v) => {
-                                    const next = new Set(libSelected);
-                                    if (v) next.add(ex.id); else next.delete(ex.id);
-                                    setLibSelected(next);
-                                  }}
-                                />
-                                {ex.image_urls?.[0] && <img src={ex.image_urls[0]} className="h-10 w-10 rounded object-cover" />}
-                                <div className="flex-1">
-                                  <div className="text-sm font-medium">{ex.name}</div>
-                                  <div className="text-xs text-muted-foreground">{ex.default_sets}×{ex.default_reps}</div>
-                                </div>
-                              </label>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                        <Button onClick={handleAddFromLibrary} disabled={libSelected.size === 0} className="w-full">
-                          Adicionar {libSelected.size} exercício(s)
-                        </Button>
-                      </DialogContent>
-                    </Dialog>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button size="sm" variant="outline" onClick={() => setTemplateOpen(true)}>
+                      <LayoutTemplate className="h-3.5 w-3.5 mr-1" />De template
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setLibOpen(true)}>
+                      <Library className="h-3.5 w-3.5 mr-1" />Da biblioteca
+                    </Button>
                     <Dialog open={itemOpen} onOpenChange={setItemOpen}>
                       <DialogTrigger asChild><Button size="sm"><Plus className="h-3.5 w-3.5 mr-1" />Manual</Button></DialogTrigger>
                       <DialogContent>
