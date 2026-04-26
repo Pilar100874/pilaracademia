@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      class_appointments: {
+        Row: {
+          checked_in_at: string | null
+          clinic_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          duration_minutes: number
+          equipment_id: string | null
+          id: string
+          instructor_id: string | null
+          notes: string | null
+          scheduled_at: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          checked_in_at?: string | null
+          clinic_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          duration_minutes?: number
+          equipment_id?: string | null
+          id?: string
+          instructor_id?: string | null
+          notes?: string | null
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          checked_in_at?: string | null
+          clinic_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          duration_minutes?: number
+          equipment_id?: string | null
+          id?: string
+          instructor_id?: string | null
+          notes?: string | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clinic_equipment: {
         Row: {
           active: boolean
@@ -973,6 +1024,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string | null
+          clinic_id: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read_at: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          clinic_id?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          clinic_id?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       prescriptions: {
         Row: {
           clinic_id: string
@@ -1315,12 +1402,24 @@ export type Database = {
         | "receptionist"
         | "student"
         | "station"
+      appointment_status:
+        | "scheduled"
+        | "checked_in"
+        | "in_progress"
+        | "completed"
+        | "no_show"
+        | "cancelled"
       invite_status: "pending" | "accepted" | "revoked"
       live_session_status:
         | "scheduled"
         | "in_progress"
         | "finished"
         | "cancelled"
+      notification_type:
+        | "appointment_reminder"
+        | "home_prescription"
+        | "progress"
+        | "general"
       prescription_context: "in_class" | "at_home"
       prescription_status: "pending" | "in_progress" | "completed" | "skipped"
     }
@@ -1458,12 +1557,26 @@ export const Constants = {
         "student",
         "station",
       ],
+      appointment_status: [
+        "scheduled",
+        "checked_in",
+        "in_progress",
+        "completed",
+        "no_show",
+        "cancelled",
+      ],
       invite_status: ["pending", "accepted", "revoked"],
       live_session_status: [
         "scheduled",
         "in_progress",
         "finished",
         "cancelled",
+      ],
+      notification_type: [
+        "appointment_reminder",
+        "home_prescription",
+        "progress",
+        "general",
       ],
       prescription_context: ["in_class", "at_home"],
       prescription_status: ["pending", "in_progress", "completed", "skipped"],
