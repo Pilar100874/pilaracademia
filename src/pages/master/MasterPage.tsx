@@ -35,7 +35,9 @@ export default function MasterPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
 
   const { data: clinics, isLoading } = useQuery({
     queryKey: ["master-clinics"],
@@ -64,50 +66,30 @@ export default function MasterPage() {
 
   const createClinic = useMutation({
     mutationFn: async () => {
-      const cleanName = name.trim();
-      let cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
-      if (!cleanName) throw new Error("Informe o nome da clínica");
-      if (!cleanSlug) cleanSlug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      if (!name.trim()) throw new Error("Informe o nome da clínica");
+      if (!adminEmail.trim()) throw new Error("Informe o e-mail do admin");
+      if (adminPassword.length < 6) throw new Error("Senha deve ter ao menos 6 caracteres");
 
-      let ownerId = user!.id;
-      if (adminEmail.trim()) {
-        const { data: prof, error: profErr } = await supabase
-          .from("profiles")
-          .select("user_id")
-          .eq("email", adminEmail.trim())
-          .maybeSingle();
-        if (profErr) throw profErr;
-        if (!prof) {
-          throw new Error(
-            `Nenhum usuário cadastrado com o e-mail "${adminEmail.trim()}". Peça para ele criar a conta primeiro, ou deixe em branco para você ser o admin.`
-          );
-        }
-        ownerId = prof.user_id;
-      }
-
-      const { data: clinic, error } = await supabase
-        .from("clinics")
-        .insert({ name: cleanName, slug: cleanSlug, owner_user_id: ownerId })
-        .select()
-        .single();
+      const { data, error } = await supabase.functions.invoke("admin-create-clinic", {
+        body: {
+          name: name.trim(),
+          slug: slug.trim(),
+          adminName: adminName.trim(),
+          adminEmail: adminEmail.trim(),
+          adminPassword,
+        },
+      });
       if (error) {
-        console.error("[master] insert clinic error", error);
-        if (error.code === "23505") throw new Error("Já existe uma clínica com esse slug. Escolha outro.");
-        throw error;
+        const msg = (data as any)?.error ?? error.message;
+        throw new Error(msg);
       }
-      const { error: roleErr } = await supabase
-        .from("user_roles")
-        .insert({ user_id: ownerId, clinic_id: clinic.id, role: "clinic_admin" });
-      if (roleErr) {
-        console.error("[master] insert role error", roleErr);
-        throw roleErr;
-      }
-      return clinic;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      return data;
     },
     onSuccess: () => {
-      toast.success("Clínica criada com sucesso");
+      toast.success("Clínica e admin criados com sucesso");
       setCreateOpen(false);
-      setName(""); setSlug(""); setAdminEmail("");
+      setName(""); setSlug(""); setAdminName(""); setAdminEmail(""); setAdminPassword("");
       qc.invalidateQueries({ queryKey: ["master-clinics"] });
       qc.invalidateQueries({ queryKey: ["master-roles"] });
     },
@@ -180,19 +162,33 @@ export default function MasterPage() {
               </DialogHeader>
               <div className="space-y-3">
                 <div>
-                  <Label>Nome</Label>
+                  <Label>Nome da clínica *</Label>
                   <Input value={name} onChange={e => setName(e.target.value)} placeholder="Studio Pilates" />
                 </div>
                 <div>
-                  <Label>Slug (identificador único)</Label>
+                  <Label>Slug (URL) — opcional</Label>
                   <Input value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} placeholder="studio-pilates" />
+                  <p className="text-xs text-muted-foreground mt-1">Se vazio, geramos a partir do nome.</p>
                 </div>
-                <div>
-                  <Label>E-mail do administrador (opcional)</Label>
-                  <Input value={adminEmail} onChange={e => setAdminEmail(e.target.value)} placeholder="admin@clinica.com" />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Se vazio, você mesmo será o admin. O usuário precisa já estar cadastrado.
-                  </p>
+                <div className="pt-2 border-t">
+                  <p className="text-sm font-semibold mb-2">Administrador da clínica</p>
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Nome do admin</Label>
+                      <Input value={adminName} onChange={e => setAdminName(e.target.value)} placeholder="Maria Silva" />
+                    </div>
+                    <div>
+                      <Label>E-mail *</Label>
+                      <Input type="email" value={adminEmail} onChange={e => setAdminEmail(e.target.value)} placeholder="admin@clinica.com" />
+                    </div>
+                    <div>
+                      <Label>Senha inicial *</Label>
+                      <Input type="text" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="mín. 6 caracteres" />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        O admin será obrigado a trocar a senha no primeiro login.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
