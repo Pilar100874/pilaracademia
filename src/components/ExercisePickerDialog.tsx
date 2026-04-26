@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Search, Dumbbell, Play, Maximize2, CheckCircle2, X, Filter } from 'lucide-react';
-import { ImageZoomDialog } from '@/components/ImageZoomDialog';
+import { Search, Dumbbell, Play, Maximize2, CheckCircle2, X, Filter, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { cn } from '@/lib/utils';
 
 export interface PickableExercise {
