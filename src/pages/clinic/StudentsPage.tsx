@@ -326,8 +326,8 @@ export default function StudentsPage() {
   };
 
   return (
-    <div className="p-6 space-y-4 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
+    <div className="p-3 sm:p-6 space-y-4 max-w-7xl mx-auto w-full overflow-x-hidden pb-24">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Alunos</h1>
           <p className="text-sm text-muted-foreground">Cadastre alunos e acompanhe sua evolução.</p>
