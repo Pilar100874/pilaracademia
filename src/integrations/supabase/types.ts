@@ -1614,6 +1614,7 @@ export type Database = {
         | "receptionist"
         | "student"
         | "station"
+        | "master_admin"
       appointment_status:
         | "scheduled"
         | "checked_in"
@@ -1768,6 +1769,7 @@ export const Constants = {
         "receptionist",
         "student",
         "station",
+        "master_admin",
       ],
       appointment_status: [
         "scheduled",
