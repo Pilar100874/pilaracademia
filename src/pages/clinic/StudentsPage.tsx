@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useStudents, useSkillLevels, usePrescriptions, useSequences, useEquipment } from '@/hooks/useClinicData';
+import { useMyClinicPermissions } from '@/hooks/useClinicPermissions';
 import { useRecurringSchedules } from '@/hooks/useRecurringSchedules';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,8 @@ const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 export default function StudentsPage() {
   const { activeClinicId, isAdmin, isInstructor } = useUserRoles();
+  const { data: myPerms } = useMyClinicPermissions();
+  const canPrescribe = myPerms?.can_prescribe_workouts ?? false;
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: students = [], create, remove, update } = useStudents(activeClinicId);
@@ -612,6 +615,7 @@ export default function StudentsPage() {
               <Card className="p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold flex items-center gap-2"><Activity className="h-4 w-4" />Prescrições</h3>
+                  {canPrescribe && (
                   <Dialog open={prescOpen} onOpenChange={setPrescOpen}>
                     <DialogTrigger asChild><Button size="sm"><Plus className="h-3.5 w-3.5 mr-1" />Prescrever</Button></DialogTrigger>
                     <DialogContent>

@@ -360,6 +360,7 @@ export default function SequencesPage() {
             </div>
           </DialogContent>
           </Dialog>
+          )}
         </div>
       </div>
 
