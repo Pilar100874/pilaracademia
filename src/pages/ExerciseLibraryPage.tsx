@@ -51,7 +51,8 @@ export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { exercises, isLoading, deleteExercise, createExercise, moveExercises } = useExerciseLibrary();
+  const { exercises, isLoading, deleteExercise, createExercise, moveExercises, scope } = useExerciseLibrary();
+  const isGlobalScope = scope.kind === 'global';
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
@@ -973,26 +974,38 @@ export default function ExerciseLibraryPage() {
                       </div>
                     </div>
 
-                    {!selectionMode && (
-                      <div className="flex flex-col -mr-1 -mt-1 shrink-0">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          onClick={(e) => { e.stopPropagation(); handleEdit(exercise); }}
-                        >
-                          <Edit className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={(e) => { e.stopPropagation(); handleDelete(exercise); }}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    )}
+                    {!selectionMode && (() => {
+                      const canEdit = isGlobalScope ? !!exercise.is_global : !exercise.is_global;
+                      if (!canEdit) {
+                        return (
+                          <div className="flex flex-col -mr-1 -mt-1 shrink-0 items-end">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200" title="Exercício da biblioteca global">
+                              Global
+                            </span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="flex flex-col -mr-1 -mt-1 shrink-0">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            onClick={(e) => { e.stopPropagation(); handleEdit(exercise); }}
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); handleDelete(exercise); }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               );

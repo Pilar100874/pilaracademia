@@ -34,6 +34,8 @@ import BookClassPage from "@/pages/BookClassPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import ChangePasswordPage from "@/pages/ChangePasswordPage";
 import MasterPage from "@/pages/master/MasterPage";
+import MasterExerciseLibraryPage from "@/pages/master/MasterExerciseLibraryPage";
+import ClinicExerciseLibraryPage from "@/pages/clinic/ClinicExerciseLibraryPage";
 import { useMustChangePassword } from "@/hooks/useMustChangePassword";
 import { useUserClinicRole } from "@/hooks/useUserClinicRole";
 
@@ -98,11 +100,13 @@ function AppRoutes() {
         <Route path="niveis" element={<SkillLevelsPage />} />
         <Route path="sequencias" element={<SequencesPage />} />
         <Route path="aula" element={<LiveSessionPage />} />
+        <Route path="exercicios" element={<ClinicExerciseLibraryPage />} />
         <Route path="relatorios" element={<ReportsPage />} />
       </Route>
 
       {/* Master admin panel */}
       <Route path="/master" element={<ProtectedRoute><MasterPage /></ProtectedRoute>} />
+      <Route path="/master/exercicios" element={<ProtectedRoute><MasterExerciseLibraryPage /></ProtectedRoute>} />
 
       <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
       <Route path="*" element={<NotFound />} />
