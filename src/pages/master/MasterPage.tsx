@@ -90,12 +90,18 @@ export default function MasterPage() {
         throw new Error(msg);
       }
       if ((data as any)?.error) throw new Error((data as any).error);
+
+      // Atualiza logo da clínica recém-criada (se houver)
+      const clinicId = (data as any)?.clinicId ?? (data as any)?.clinic?.id;
+      if (logoUrl && clinicId) {
+        await supabase.from("clinics").update({ logo_url: logoUrl }).eq("id", clinicId);
+      }
       return data;
     },
     onSuccess: () => {
       toast.success("Clínica e admin criados com sucesso");
       setCreateOpen(false);
-      setName(""); setSlug(""); setAdminName(""); setAdminEmail(""); setAdminPassword("");
+      setName(""); setSlug(""); setAdminName(""); setAdminEmail(""); setAdminPassword(""); setLogoUrl(null);
       qc.invalidateQueries({ queryKey: ["master-clinics"] });
       qc.invalidateQueries({ queryKey: ["master-roles"] });
     },
