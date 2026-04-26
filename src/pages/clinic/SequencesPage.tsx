@@ -196,14 +196,14 @@ export default function SequencesPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const { data: items = [], addItem, removeItem, updateItem, reorderItems, addFromLibrary } = useSequenceItems(selected);
   const { exercises: library } = useExerciseLibrary();
+  const { categories } = useExerciseCategories();
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', description: '', equipment_id: '', skill_level_id: '', estimated_minutes: '' });
   const [itemOpen, setItemOpen] = useState(false);
   const [itemForm, setItemForm] = useState({ name: '', sets: 3, reps: 12, notes: '' });
   const [libOpen, setLibOpen] = useState(false);
-  const [libSelected, setLibSelected] = useState<Set<string>>(new Set());
-  const [libSearch, setLibSearch] = useState('');
+  const [templateOpen, setTemplateOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [zoomImages, setZoomImages] = useState<string[]>([]);
   const [videoItem, setVideoItem] = useState<SequenceItem | null>(null);
