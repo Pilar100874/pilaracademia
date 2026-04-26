@@ -167,7 +167,8 @@ export default function SequencesPage() {
               <Button onClick={handleCreate} disabled={!form.name.trim()} className="w-full">Criar</Button>
             </div>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-[320px_1fr] gap-4">
