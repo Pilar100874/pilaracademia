@@ -177,10 +177,14 @@ export default function MasterPage() {
               <p className="text-sm text-muted-foreground">Gerencie todas as clínicas da plataforma</p>
             </div>
           </div>
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" /> Nova clínica</Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/master/exercicios")}>
+              <Library className="h-4 w-4 mr-2" /> Biblioteca global
+            </Button>
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+              <DialogTrigger asChild>
+                <Button><Plus className="h-4 w-4 mr-2" /> Nova clínica</Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Criar clínica</DialogTitle>
