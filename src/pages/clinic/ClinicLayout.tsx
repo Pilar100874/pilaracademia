@@ -56,9 +56,14 @@ export default function ClinicLayout() {
     <div className="min-h-screen bg-background flex">
       {/* Sidebar desktop */}
       <aside className="hidden md:flex w-64 flex-col border-r bg-card">
-        <div className="p-4 border-b">
-          <div className="text-xs text-muted-foreground uppercase tracking-wide">Clínica</div>
-          <div className="font-bold truncate">{activeClinic.name}</div>
+        <div className="p-4 border-b flex items-center gap-3">
+          {activeClinic.logo_url ? (
+            <img src={activeClinic.logo_url} alt={activeClinic.name} className="h-12 w-12 rounded-lg object-contain bg-muted/30 shrink-0" />
+          ) : null}
+          <div className="min-w-0">
+            <div className="text-xs text-muted-foreground uppercase tracking-wide">Clínica</div>
+            <div className="font-bold truncate">{activeClinic.name}</div>
+          </div>
         </div>
         <nav className="flex-1 p-3 space-y-1">
           {navItems.map((item) => (
