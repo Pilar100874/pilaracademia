@@ -516,10 +516,61 @@ export default function MasterSequencesPage() {
                   {items.length} exercício{items.length === 1 ? '' : 's'}
                 </p>
               </div>
-              <Button size="sm" onClick={() => setPickerOpen(true)}>
-                <Library className="h-4 w-4 mr-1.5" /> Adicionar exercícios
-              </Button>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setEditForm({
+                      name: selectedSeq.name ?? '',
+                      description: selectedSeq.description ?? '',
+                      estimated_minutes: selectedSeq.estimated_minutes ? String(selectedSeq.estimated_minutes) : '',
+                    });
+                    setEditOpen(true);
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
+                </Button>
+                <Button size="sm" onClick={() => setPickerOpen(true)}>
+                  <Library className="h-4 w-4 mr-1.5" /> Adicionar exercícios
+                </Button>
+              </div>
             </div>
+
+            {/* Edit template dialog */}
+            <Dialog open={editOpen} onOpenChange={setEditOpen}>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Editar template</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Nome *</Label>
+                    <Input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Descrição</Label>
+                    <Textarea value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Duração estimada (min)</Label>
+                    <Input type="number" value={editForm.estimated_minutes} onChange={e => setEditForm({ ...editForm, estimated_minutes: e.target.value })} />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+                  <Button
+                    onClick={() => updateSequence.mutate({
+                      name: editForm.name.trim(),
+                      description: editForm.description.trim() || null,
+                      estimated_minutes: editForm.estimated_minutes ? parseInt(editForm.estimated_minutes) : null,
+                    })}
+                    disabled={updateSequence.isPending || !editForm.name.trim()}
+                  >
+                    {updateSequence.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Salvar alterações
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {items.length === 0 ? (
               <div className="text-center py-12 border-2 border-dashed rounded-xl">
