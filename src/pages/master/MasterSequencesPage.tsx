@@ -476,54 +476,9 @@ export default function MasterSequencesPage() {
                   {items.length} exercício{items.length === 1 ? '' : 's'}
                 </p>
               </div>
-              <Dialog open={pickerOpen} onOpenChange={(o) => { setPickerOpen(o); if (!o) setPickerSearch(''); }}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Library className="h-4 w-4 mr-1.5" /> Adicionar exercício
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader><DialogTitle>Biblioteca global</DialogTitle></DialogHeader>
-                  <div className="relative mb-3">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar exercícios..."
-                      value={pickerSearch}
-                      onChange={(e) => setPickerSearch(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                  <ScrollArea className="max-h-[60vh] pr-3">
-                    <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
-                      {filteredLibrary.map((l: any) => (
-                        <button
-                          key={l.id}
-                          className="flex items-center gap-3 p-2 rounded-lg border bg-card hover:border-primary/50 hover:bg-muted/40 text-left transition-colors"
-                          onClick={() => { addItem.mutate(l.id); setPickerOpen(false); setPickerSearch(''); }}
-                        >
-                          <div className="h-12 w-12 rounded bg-muted/40 flex items-center justify-center shrink-0 overflow-hidden">
-                            {l.image_urls?.[0] ? (
-                              <img src={l.image_urls[0]} className="h-full w-full object-contain" />
-                            ) : (
-                              <Dumbbell className="h-5 w-5 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium truncate">{l.name}</div>
-                            <div className="text-xs text-muted-foreground">{l.default_sets}×{l.default_reps}</div>
-                          </div>
-                          <Plus className="h-4 w-4 text-primary shrink-0" />
-                        </button>
-                      ))}
-                      {filteredLibrary.length === 0 && (
-                        <div className="col-span-full text-center text-sm text-muted-foreground py-8">
-                          Nenhum exercício encontrado.
-                        </div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </DialogContent>
-              </Dialog>
+              <Button size="sm" onClick={() => setPickerOpen(true)}>
+                <Library className="h-4 w-4 mr-1.5" /> Adicionar exercícios
+              </Button>
             </div>
 
             {items.length === 0 ? (
