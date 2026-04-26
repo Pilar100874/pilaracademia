@@ -388,4 +388,65 @@
     background-image: radial-gradient(hsl(var(--brand-foreground) / 0.07) 1px, transparent 1px);
     background-size: 22px 22px;
   }
+
+  /* ============================================
+     Mobile-first polish (aplica a todas as telas)
+     ============================================ */
+
+  .page-container {
+    @apply w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6;
+  }
+
+  .page-header {
+    @apply flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between;
+  }
+  .page-title {
+    @apply text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground;
+  }
+  .page-subtitle {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .card-grid {
+    @apply grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .row-scroll {
+    @apply flex gap-2 overflow-x-auto pb-1;
+    scrollbar-width: none;
+  }
+  .row-scroll::-webkit-scrollbar { display: none; }
+  .row-scroll > * { @apply shrink-0; }
+
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+}
+
+@layer base {
+  @media (max-width: 767px) {
+    html { -webkit-tap-highlight-color: transparent; }
+    body { font-size: 15px; }
+
+    .card-feature { @apply p-4 rounded-2xl; }
+
+    input, select, textarea {
+      font-size: 16px;
+    }
+
+    table { display: block; overflow-x: auto; white-space: nowrap; }
+  }
+
+  @media (min-width: 768px) {
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb {
+      background: hsl(var(--muted-foreground) / 0.25);
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: hsl(var(--muted-foreground) / 0.45);
+    }
+  }
 }
