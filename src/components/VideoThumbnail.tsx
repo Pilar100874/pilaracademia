@@ -92,25 +92,28 @@ export function VideoThumbnail({
           autoPlay={isUploadAutoplay}
           playsInline
           loop={isUploadAutoplay}
-          preload="auto"
+          preload="metadata"
           onLoadedMetadata={(e) => {
             try {
               e.currentTarget.currentTime = Math.max(0.1, startSeconds ?? 0);
             } catch {
               // ignore
             }
+            setVideoReady(true);
           }}
           onLoadedData={() => setVideoReady(true)}
           onCanPlay={() => setVideoReady(true)}
           onError={() => setErrored(true)}
-          className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'} ${videoReady && !errored ? 'opacity-100' : 'opacity-0'}`}
+          className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'} ${errored ? 'opacity-0' : 'opacity-100'}`}
         />
-        {(!videoReady || errored) && <div className="absolute inset-0 bg-muted" />}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className={`${badgeSize} rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center`}>
-            <Play className={`${playSize} text-white fill-white`} />
+        {errored && <div className="absolute inset-0 bg-muted" />}
+        {!isUploadAutoplay && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className={`${badgeSize} rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center`}>
+              <Play className={`${playSize} text-white fill-white`} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
