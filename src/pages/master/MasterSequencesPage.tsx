@@ -161,6 +161,8 @@ export default function MasterSequencesPage() {
   const [pickerSearch, setPickerSearch] = useState('');
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ name: '', description: '', estimated_minutes: '' });
+  const [zoomImages, setZoomImages] = useState<string[]>([]);
+  const [videoItem, setVideoItem] = useState<GlobalItem | null>(null);
 
   const { data: sequences = [], isLoading } = useQuery({
     queryKey: ['global-sequences'],
