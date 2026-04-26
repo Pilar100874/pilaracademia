@@ -449,7 +449,13 @@ export default function StudentsPage() {
                   </div>
                 </div>
 
-                {/* Resumo de contrato */}
+                {/* Professores fixos */}
+                {activeClinicId && (
+                  <div className="mt-4 p-3 rounded-lg border bg-muted/30">
+                    <StudentInstructorsManager clinicId={activeClinicId} studentId={current.id} />
+                  </div>
+                )}
+
                 {(current as any).contract_type && (current as any).contract_type !== 'open' && (
                   <div className="mt-4 p-3 rounded-lg border bg-muted/40 text-sm flex items-center justify-between flex-wrap gap-2">
                     {(current as any).contract_type === 'classes' ? (
