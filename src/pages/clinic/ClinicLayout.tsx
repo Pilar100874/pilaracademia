@@ -26,6 +26,12 @@ export default function ClinicLayout() {
   const { isLoading, isStaff, activeClinic } = useUserRoles();
   const navigate = useNavigate();
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success('Sessão encerrada');
+    navigate('/auth');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
