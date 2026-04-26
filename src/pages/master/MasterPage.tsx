@@ -51,7 +51,7 @@ export default function MasterPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clinics")
-        .select("id,name,slug,created_at,owner_user_id")
+        .select("id,name,slug,logo_url,created_at,owner_user_id")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
