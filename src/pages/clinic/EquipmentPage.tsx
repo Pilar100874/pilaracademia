@@ -110,16 +110,19 @@ export default function EquipmentPage() {
                   <Input value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
                 <div>
-                  <Label>Tipo</Label>
-                  <Select value={type} onValueChange={setType}>
+                  <Label>Identificador (opcional)</Label>
+                  <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="Ex: R1" />
+                </div>
+                <div>
+                  <Label>Sala (opcional)</Label>
+                  <Select value={roomId} onValueChange={setRoomId}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Sem sala" />
                     </SelectTrigger>
                     <SelectContent>
-                      {TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
+                      <SelectItem value={NO_ROOM}>Sem sala</SelectItem>
+                      {rooms.map((r) => (
+                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
