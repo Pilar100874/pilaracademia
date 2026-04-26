@@ -164,6 +164,25 @@ export default function StudentsPage() {
     toast.success('Ficha atualizada');
   };
 
+  // Horários fixos
+  const [recOpen, setRecOpen] = useState(false);
+  const [recForm, setRecForm] = useState({ day_of_week: 1, start_time: '08:00', duration_minutes: 50, equipment_id: '' });
+  const studentRecs = recurring.filter((r) => r.student_id === selectedStudent);
+  const addRecurring = async () => {
+    if (!current || !activeClinicId || !user) return;
+    await createRec.mutateAsync({
+      clinic_id: activeClinicId,
+      student_id: current.id,
+      instructor_id: user.id,
+      equipment_id: recForm.equipment_id || null,
+      day_of_week: recForm.day_of_week,
+      start_time: recForm.start_time + ':00',
+      duration_minutes: recForm.duration_minutes,
+      created_by: user.id,
+    } as any);
+    setRecForm({ day_of_week: 1, start_time: '08:00', duration_minutes: 50, equipment_id: '' });
+  };
+
   return (
     <div className="p-6 space-y-4 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
@@ -257,6 +276,9 @@ export default function StudentsPage() {
                   <div className="flex gap-2 flex-wrap justify-end">
                     <Button variant="outline" size="sm" onClick={openAnamnese}>
                       <HeartPulse className="h-3.5 w-3.5 mr-1" />Ficha clínica
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setRecOpen(true)}>
+                      <Repeat className="h-3.5 w-3.5 mr-1" />Horários fixos {studentRecs.length > 0 && `(${studentRecs.length})`}
                     </Button>
                     <Button variant="outline" size="sm" onClick={handleGenerateAccess} disabled={inviting || !current.email}>
                       <KeyRound className="h-3.5 w-3.5 mr-1" />{current.user_id ? 'Resetar senha' : 'Gerar acesso'}
