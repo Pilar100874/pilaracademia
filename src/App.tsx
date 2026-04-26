@@ -13,6 +13,7 @@ import { WorkoutsPage } from "@/pages/WorkoutsPage";
 import ExerciseLibraryPage from "@/pages/ExerciseLibraryPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { SplashScreen } from "@/components/SplashScreen";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
@@ -129,6 +130,7 @@ const App = () => {
         {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
         <BrowserRouter>
           <AuthProvider>
+            <ImpersonationBanner />
             <AppRoutes />
             <InstallPrompt />
           </AuthProvider>

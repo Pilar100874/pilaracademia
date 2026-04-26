@@ -263,18 +263,21 @@ export type Database = {
       }
       clinic_settings: {
         Row: {
+          allow_login_as_student: boolean
           booking_open_days_ahead: number
           cancellation_min_hours: number
           clinic_id: string
           updated_at: string
         }
         Insert: {
+          allow_login_as_student?: boolean
           booking_open_days_ahead?: number
           cancellation_min_hours?: number
           clinic_id: string
           updated_at?: string
         }
         Update: {
+          allow_login_as_student?: boolean
           booking_open_days_ahead?: number
           cancellation_min_hours?: number
           clinic_id?: string
@@ -1080,6 +1083,36 @@ export type Database = {
           measurement_type?: string
           notes?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      impersonation_log: {
+        Row: {
+          actor_user_id: string
+          clinic_id: string | null
+          created_at: string
+          id: string
+          mode: string
+          student_id: string | null
+          target_user_id: string
+        }
+        Insert: {
+          actor_user_id: string
+          clinic_id?: string | null
+          created_at?: string
+          id?: string
+          mode: string
+          student_id?: string | null
+          target_user_id: string
+        }
+        Update: {
+          actor_user_id?: string
+          clinic_id?: string | null
+          created_at?: string
+          id?: string
+          mode?: string
+          student_id?: string | null
+          target_user_id?: string
         }
         Relationships: []
       }
