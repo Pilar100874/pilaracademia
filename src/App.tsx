@@ -30,13 +30,17 @@ import ReportsPage from "@/pages/clinic/ReportsPage";
 import StationPage from "@/pages/StationPage";
 import MyPilatesPage from "@/pages/MyPilatesPage";
 import OnboardingPage from "@/pages/OnboardingPage";
+import ChangePasswordPage from "@/pages/ChangePasswordPage";
+import { useMustChangePassword } from "@/hooks/useMustChangePassword";
 
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center gradient-hero"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  const { data: mustChange, isLoading: flagLoading } = useMustChangePassword();
+  if (isLoading || flagLoading) return <div className="min-h-screen flex items-center justify-center gradient-hero"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
+  if (mustChange && window.location.pathname !== '/trocar-senha') return <Navigate to="/trocar-senha" replace />;
   return <>{children}</>;
 }
 
@@ -62,6 +66,7 @@ function AppRoutes() {
       <Route path="/exercises" element={<ProtectedRoute><ExerciseLibraryPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/meu-pilates" element={<ProtectedRoute><MyPilatesPage /></ProtectedRoute>} />
+      <Route path="/trocar-senha" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
 
       {/* Clinic panel */}
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />

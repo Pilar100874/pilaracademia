@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy } from 'lucide-react';
+import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
@@ -115,6 +115,50 @@ export default function StudentsPage() {
     }
   };
 
+  // Upload de foto
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !current) return;
+    const ext = file.name.split('.').pop();
+    const path = `${current.clinic_id}/${current.id}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('student-avatars').upload(path, file, { upsert: true });
+    if (error) { toast.error(error.message); return; }
+    const { data } = supabase.storage.from('student-avatars').getPublicUrl(path);
+    update.mutate({ id: current.id, avatar_url: data.publicUrl } as any);
+    toast.success('Foto atualizada');
+  };
+
+  // Anamnese form
+  const [anamneseOpen, setAnamneseOpen] = useState(false);
+  const [anamnese, setAnamnese] = useState<any>({});
+  const openAnamnese = () => {
+    setAnamnese({
+      birth_date: current?.birth_date || '',
+      weight_kg: (current as any)?.weight_kg || '',
+      height_cm: (current as any)?.height_cm || '',
+      injuries: (current as any)?.injuries || '',
+      restrictions: (current as any)?.restrictions || '',
+      medical_conditions: (current as any)?.medical_conditions || '',
+      medications: (current as any)?.medications || '',
+      goals: (current as any)?.goals || '',
+      emergency_contact_name: (current as any)?.emergency_contact_name || '',
+      emergency_contact_phone: (current as any)?.emergency_contact_phone || '',
+      notes: current?.notes || '',
+    });
+    setAnamneseOpen(true);
+  };
+  const saveAnamnese = async () => {
+    if (!current) return;
+    const payload: any = { id: current.id, ...anamnese };
+    // Converter strings vazias em null para campos numéricos/data
+    payload.weight_kg = payload.weight_kg === '' ? null : Number(payload.weight_kg);
+    payload.height_cm = payload.height_cm === '' ? null : Number(payload.height_cm);
+    payload.birth_date = payload.birth_date || null;
+    await update.mutateAsync(payload);
+    setAnamneseOpen(false);
+    toast.success('Ficha atualizada');
+  };
+
   return (
     <div className="p-6 space-y-4 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
@@ -159,9 +203,13 @@ export default function StudentsPage() {
                   onClick={() => setSelectedStudent(s.id)}
                   className={`w-full text-left p-3 rounded-lg flex items-center gap-2 hover:bg-muted ${selectedStudent === s.id ? 'bg-muted' : ''}`}
                 >
-                  <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">
-                    {s.full_name.charAt(0).toUpperCase()}
-                  </div>
+                  {(s as any).avatar_url ? (
+                    <img src={(s as any).avatar_url} alt={s.full_name} className="h-9 w-9 rounded-full object-cover" />
+                  ) : (
+                    <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">
+                      {s.full_name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{s.full_name}</div>
                     {lv && <div className="text-xs text-muted-foreground">{lv.name}</div>}
@@ -180,13 +228,31 @@ export default function StudentsPage() {
           ) : (
             <>
               <Card className="p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold">{current.full_name}</h2>
-                    <p className="text-sm text-muted-foreground">{current.email || 'Sem email'} {current.phone ? `· ${current.phone}` : ''}</p>
-                    {currentLevel && <Badge className="mt-2" style={{ backgroundColor: currentLevel.color || undefined }}>{currentLevel.name}</Badge>}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <label className="relative cursor-pointer group">
+                      {(current as any).avatar_url ? (
+                        <img src={(current as any).avatar_url} alt={current.full_name} className="h-20 w-20 rounded-full object-cover" />
+                      ) : (
+                        <div className="h-20 w-20 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-2xl">
+                          {current.full_name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                        <Camera className="h-5 w-5 text-white" />
+                      </div>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                    </label>
+                    <div>
+                      <h2 className="text-xl font-bold">{current.full_name}</h2>
+                      <p className="text-sm text-muted-foreground">{current.email || 'Sem email'} {current.phone ? `· ${current.phone}` : ''}</p>
+                      {currentLevel && <Badge className="mt-2" style={{ backgroundColor: currentLevel.color || undefined }}>{currentLevel.name}</Badge>}
+                    </div>
                   </div>
-                  <div className="flex gap-2 flex-wrap">
+                  <div className="flex gap-2 flex-wrap justify-end">
+                    <Button variant="outline" size="sm" onClick={openAnamnese}>
+                      <HeartPulse className="h-3.5 w-3.5 mr-1" />Ficha clínica
+                    </Button>
                     <Button variant="outline" size="sm" onClick={handleGenerateAccess} disabled={inviting || !current.email}>
                       <KeyRound className="h-3.5 w-3.5 mr-1" />{current.user_id ? 'Resetar senha' : 'Gerar acesso'}
                     </Button>
@@ -197,11 +263,22 @@ export default function StudentsPage() {
                     <Button variant="ghost" size="icon" onClick={() => { remove.mutate(current.id); setSelectedStudent(null); }}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
+
+                {/* Resumo da ficha */}
+                {((current as any).injuries || (current as any).restrictions || (current as any).medical_conditions) && (
+                  <div className="mt-4 p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm space-y-1">
+                    {(current as any).injuries && <div><b>Lesões:</b> {(current as any).injuries}</div>}
+                    {(current as any).restrictions && <div><b>Restrições:</b> {(current as any).restrictions}</div>}
+                    {(current as any).medical_conditions && <div><b>Condições:</b> {(current as any).medical_conditions}</div>}
+                    {(current as any).medications && <div><b>Medicações:</b> {(current as any).medications}</div>}
+                  </div>
+                )}
+
                 <Dialog open={!!inviteResult} onOpenChange={(o) => !o && setInviteResult(null)}>
                   <DialogContent>
                     <DialogHeader><DialogTitle>Acesso gerado ✓</DialogTitle></DialogHeader>
                     <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground">Entregue estas credenciais ao aluno. Ele pode trocar a senha depois.</p>
+                      <p className="text-sm text-muted-foreground">Entregue estas credenciais ao aluno. Ele será obrigado a trocar a senha no primeiro acesso.</p>
                       <div className="p-3 rounded bg-muted font-mono text-sm space-y-1">
                         <div className="flex items-center justify-between gap-2"><span className="opacity-70">Email:</span><span className="font-bold">{inviteResult?.email}</span></div>
                         <div className="flex items-center justify-between gap-2"><span className="opacity-70">Senha:</span><span className="font-bold">{inviteResult?.password}</span></div>
@@ -212,7 +289,31 @@ export default function StudentsPage() {
                     </div>
                   </DialogContent>
                 </Dialog>
-                {current.notes && <p className="text-sm mt-3 p-3 bg-muted/50 rounded">{current.notes}</p>}
+
+                {/* Dialog Anamnese */}
+                <Dialog open={anamneseOpen} onOpenChange={setAnamneseOpen}>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader><DialogTitle>Ficha clínica · {current.full_name}</DialogTitle></DialogHeader>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div><label className="text-xs">Nascimento</label><Input type="date" value={anamnese.birth_date || ''} onChange={(e) => setAnamnese({ ...anamnese, birth_date: e.target.value })} /></div>
+                        <div><label className="text-xs">Peso (kg)</label><Input type="number" step="0.1" value={anamnese.weight_kg ?? ''} onChange={(e) => setAnamnese({ ...anamnese, weight_kg: e.target.value })} /></div>
+                        <div><label className="text-xs">Altura (cm)</label><Input type="number" value={anamnese.height_cm ?? ''} onChange={(e) => setAnamnese({ ...anamnese, height_cm: e.target.value })} /></div>
+                      </div>
+                      <div><label className="text-xs">Lesões / cirurgias</label><Textarea rows={2} value={anamnese.injuries || ''} onChange={(e) => setAnamnese({ ...anamnese, injuries: e.target.value })} placeholder="Hérnia de disco L4-L5, cirurgia de joelho 2022..." /></div>
+                      <div><label className="text-xs">Restrições / contraindicações</label><Textarea rows={2} value={anamnese.restrictions || ''} onChange={(e) => setAnamnese({ ...anamnese, restrictions: e.target.value })} placeholder="Não fazer flexão de coluna, evitar carga axial..." /></div>
+                      <div><label className="text-xs">Condições médicas</label><Textarea rows={2} value={anamnese.medical_conditions || ''} onChange={(e) => setAnamnese({ ...anamnese, medical_conditions: e.target.value })} placeholder="Hipertensão, diabetes tipo 2..." /></div>
+                      <div><label className="text-xs">Medicações em uso</label><Textarea rows={2} value={anamnese.medications || ''} onChange={(e) => setAnamnese({ ...anamnese, medications: e.target.value })} /></div>
+                      <div><label className="text-xs">Objetivos</label><Textarea rows={2} value={anamnese.goals || ''} onChange={(e) => setAnamnese({ ...anamnese, goals: e.target.value })} placeholder="Aliviar dor lombar, ganhar mobilidade..." /></div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div><label className="text-xs">Contato emergência</label><Input value={anamnese.emergency_contact_name || ''} onChange={(e) => setAnamnese({ ...anamnese, emergency_contact_name: e.target.value })} /></div>
+                        <div><label className="text-xs">Telefone emergência</label><Input value={anamnese.emergency_contact_phone || ''} onChange={(e) => setAnamnese({ ...anamnese, emergency_contact_phone: e.target.value })} /></div>
+                      </div>
+                      <div><label className="text-xs">Observações gerais</label><Textarea rows={2} value={anamnese.notes || ''} onChange={(e) => setAnamnese({ ...anamnese, notes: e.target.value })} /></div>
+                      <Button onClick={saveAnamnese} className="w-full"><Save className="h-4 w-4 mr-1" />Salvar ficha</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </Card>
 
               <Card className="p-5">
