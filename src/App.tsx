@@ -33,6 +33,7 @@ import MyPilatesPage from "@/pages/MyPilatesPage";
 import BookClassPage from "@/pages/BookClassPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import ChangePasswordPage from "@/pages/ChangePasswordPage";
+import MasterPage from "@/pages/master/MasterPage";
 import { useMustChangePassword } from "@/hooks/useMustChangePassword";
 
 const queryClient = new QueryClient();
@@ -86,6 +87,9 @@ function AppRoutes() {
         <Route path="aula" element={<LiveSessionPage />} />
         <Route path="relatorios" element={<ReportsPage />} />
       </Route>
+
+      {/* Master admin panel */}
+      <Route path="/master" element={<ProtectedRoute><MasterPage /></ProtectedRoute>} />
 
       <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
       <Route path="*" element={<NotFound />} />
