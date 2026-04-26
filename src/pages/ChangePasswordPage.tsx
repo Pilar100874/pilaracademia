@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import { KeyRound, Loader2 } from 'lucide-react';
 export default function ChangePasswordPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [pw1, setPw1] = useState('');
   const [pw2, setPw2] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,6 +34,8 @@ export default function ChangePasswordPage() {
         }, { onConflict: 'user_id' });
       }
       toast.success('Senha atualizada!');
+      await queryClient.invalidateQueries({ queryKey: ['must-change-password'] });
+      await queryClient.refetchQueries({ queryKey: ['must-change-password'] });
       navigate('/', { replace: true });
     } catch (e: any) {
       toast.error(e?.message || 'Erro ao trocar senha');
