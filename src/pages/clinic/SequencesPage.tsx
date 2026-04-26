@@ -246,16 +246,7 @@ export default function SequencesPage() {
     setItemOpen(false);
   };
 
-  const handleAddFromLibrary = async () => {
-    const picks = library.filter((e) => libSelected.has(e.id));
-    if (picks.length === 0) return;
-    await addFromLibrary.mutateAsync(picks);
-    setLibSelected(new Set());
-    setLibOpen(false);
-  };
-
   const currentSeq = sequences.find((s) => s.id === selected);
-  const filteredLib = library.filter((e) => e.name.toLowerCase().includes(libSearch.toLowerCase()));
 
   return (
     <div className="p-6 space-y-4 max-w-7xl mx-auto">
