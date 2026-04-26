@@ -76,10 +76,14 @@ export default function ClinicLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-3 border-t">
+        <div className="p-3 border-t space-y-1">
           <Button variant="ghost" className="w-full justify-start" onClick={() => navigate('/')}>
             <Home className="h-4 w-4 mr-2" />
             Meu app pessoal
+          </Button>
+          <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive" onClick={handleLogout}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair
           </Button>
         </div>
       </aside>
@@ -91,8 +95,13 @@ export default function ClinicLayout() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="font-semibold truncate">{activeClinic.name}</div>
-          <NotificationsBell />
+          <div className="font-semibold truncate flex-1 text-center px-2">{activeClinic.name}</div>
+          <div className="flex items-center">
+            <NotificationsBell />
+            <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair">
+              <LogOut className="h-5 w-5 text-destructive" />
+            </Button>
+          </div>
         </header>
         <header className="hidden md:flex items-center justify-end p-3 border-b bg-card sticky top-0 z-30">
           <NotificationsBell />
