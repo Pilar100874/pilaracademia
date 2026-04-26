@@ -376,9 +376,9 @@ export default function StudentsPage() {
         </Card>
       )}
 
-      <div className="grid md:grid-cols-[320px_1fr] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 min-w-0">
         {/* Lista */}
-        <Card className="p-2 max-h-[70vh] overflow-y-auto">
+        <Card className="p-2 max-h-[60vh] lg:max-h-[70vh] overflow-y-auto min-w-0">
           <div className="p-2 space-y-2 sticky top-0 bg-card z-10">
             <div className="relative">
               <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
