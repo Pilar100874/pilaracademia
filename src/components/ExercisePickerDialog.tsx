@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Search, Dumbbell, Play, Maximize2, CheckCircle2, X, Filter, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { cn } from '@/lib/utils';
 
@@ -288,8 +289,27 @@ export function ExercisePickerDialog({
                       onClick={() => toggle(ex.id)}
                     >
                       {/* Thumbnail */}
-                      <div className="relative aspect-square bg-muted/40 flex items-center justify-center">
-                        {hasImg ? (
+                      <div className="relative aspect-square bg-muted/40 flex items-center justify-center overflow-hidden">
+                        {hasVideo && ex.video_type === 'upload' ? (
+                          <VideoThumbnail
+                            videoType={ex.video_type}
+                            videoUrl={ex.video_url}
+                            startSeconds={ex.video_start_seconds ?? null}
+                            endSeconds={ex.video_end_seconds ?? null}
+                            autoplayPreview
+                            objectFit="contain"
+                            className="absolute inset-0 w-full h-full"
+                          />
+                        ) : hasVideo ? (
+                          <VideoThumbnail
+                            videoType={ex.video_type}
+                            videoUrl={ex.video_url}
+                            startSeconds={ex.video_start_seconds ?? null}
+                            endSeconds={ex.video_end_seconds ?? null}
+                            objectFit="contain"
+                            className="absolute inset-0 w-full h-full"
+                          />
+                        ) : hasImg ? (
                           <img
                             src={ex.image_urls![0]}
                             alt={ex.name}
@@ -301,7 +321,7 @@ export function ExercisePickerDialog({
 
                         {/* Selection overlay */}
                         {isSelected && (
-                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center pointer-events-none">
                             <CheckCircle2 className="h-10 w-10 text-primary fill-primary-foreground" />
                           </div>
                         )}
