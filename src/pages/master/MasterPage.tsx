@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, Shield, Plus, Trash2, Building2, Users, ArrowLeft, Pencil, Library, FolderTree, LogIn } from "lucide-react";
 import { impersonate } from "@/lib/impersonation";
-import { useNavigate as useNav2 } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
