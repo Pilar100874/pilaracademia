@@ -433,6 +433,39 @@ export type Database = {
           },
         ]
       }
+      clinic_user_permissions: {
+        Row: {
+          can_create_exercises: boolean
+          can_create_sequences: boolean
+          can_prescribe_workouts: boolean
+          clinic_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_create_exercises?: boolean
+          can_create_sequences?: boolean
+          can_prescribe_workouts?: boolean
+          clinic_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_create_exercises?: boolean
+          can_create_sequences?: boolean
+          can_prescribe_workouts?: boolean
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       clinics: {
         Row: {
           created_at: string
@@ -1762,6 +1795,10 @@ export type Database = {
       copy_global_sequence_to_clinic: {
         Args: { _clinic_id: string; _sequence_id: string }
         Returns: string
+      }
+      has_clinic_permission: {
+        Args: { _clinic_id: string; _permission: string; _user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
