@@ -81,8 +81,31 @@ export async function getCachedVideoUrl(url: string): Promise<string | null> {
 }
 
 /**
+ * Returns true if device storage looks low — in that case we should NOT
+ * prefetch videos in the background, since filling the cache can crash
+ * the tab on mobile devices ("Aw, snap! / Algo deu errado").
+ */
+async function isStorageLow(): Promise<boolean> {
+  try {
+    const nav: any = navigator;
+    if (nav?.storage?.estimate) {
+      const { quota = 0, usage = 0 } = await nav.storage.estimate();
+      if (!quota) return false;
+      const free = quota - usage;
+      // Less than 150MB free OR already using >85% of quota → skip prefetch
+      if (free < 150 * 1024 * 1024) return true;
+      if (usage / quota > 0.85) return true;
+    }
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
+
+/**
  * Schedules a list of video URLs to be downloaded into the cache in the
  * background, without blocking. Skips already-cached and already-queued URLs.
+ * Skips entirely when device storage is low to avoid crashing mobile browsers.
  */
 export function prefetchVideos(urls: Array<string | null | undefined>) {
   if (!('caches' in window)) return;
@@ -92,6 +115,7 @@ export function prefetchVideos(urls: Array<string | null | undefined>) {
 
   idle(async () => {
     try {
+      if (await isStorageLow()) return;
       const cache = await getCache();
       for (const url of urls) {
         if (!url || queued.has(url)) continue;
