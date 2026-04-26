@@ -88,6 +88,12 @@ export default function EquipmentPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" asChild>
+            <Link to="/clinica/equipamentos-salas">
+              <DoorOpen className="h-4 w-4 mr-1" />
+              Vincular a salas
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
             <Link to="/clinica/grade-equipamentos">
               <Link2 className="h-4 w-4 mr-1" />
               Vincular à grade
