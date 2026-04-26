@@ -1,15 +1,70 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
-import { useSequences, useSequenceItems, useEquipment, useSkillLevels } from '@/hooks/useClinicData';
+import { useSequences, useSequenceItems, useEquipment, useSkillLevels, type SequenceItem } from '@/hooks/useClinicData';
+import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, ListOrdered, GripVertical } from 'lucide-react';
+import { Plus, Trash2, ListOrdered, GripVertical, Library, Pencil, Check, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// ===== Sortable Row =====
+function SortableItemRow({ item, idx, onRemove, onEdit }: { item: SequenceItem; idx: number; onRemove: () => void; onEdit: (patch: Partial<SequenceItem>) => void; }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+
+  const [editing, setEditing] = useState(false);
+  const [sets, setSets] = useState(item.sets);
+  const [reps, setReps] = useState(item.reps);
+  const [notes, setNotes] = useState(item.notes ?? '');
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border">
+      <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none">
+        <GripVertical className="h-5 w-5 text-muted-foreground" />
+      </button>
+      <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">{idx + 1}</div>
+      {item.image_urls?.[0] && <img src={item.image_urls[0]} alt="" className="h-10 w-10 rounded object-cover" />}
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium truncate">{item.name}</div>
+        {editing ? (
+          <div className="flex items-center gap-1 mt-1">
+            <Input className="h-7 w-14 text-xs" type="number" value={sets} onChange={(e) => setSets(parseInt(e.target.value) || 0)} />
+            <span className="text-xs">×</span>
+            <Input className="h-7 w-14 text-xs" type="number" value={reps} onChange={(e) => setReps(parseInt(e.target.value) || 0)} />
+            <Input className="h-7 flex-1 text-xs" placeholder="Obs." value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+        ) : (
+          <div className="text-xs text-muted-foreground">{item.sets}×{item.reps}{item.notes ? ` · ${item.notes}` : ''}</div>
+        )}
+      </div>
+      {editing ? (
+        <>
+          <Button variant="ghost" size="icon" onClick={() => { onEdit({ sets, reps, notes }); setEditing(false); }}><Check className="h-4 w-4 text-emerald-500" /></Button>
+          <Button variant="ghost" size="icon" onClick={() => setEditing(false)}><X className="h-4 w-4" /></Button>
+        </>
+      ) : (
+        <>
+          <Button variant="ghost" size="icon" onClick={() => setEditing(true)}><Pencil className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={onRemove}><Trash2 className="h-4 w-4" /></Button>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function SequencesPage() {
   const { activeClinicId } = useUserRoles();
@@ -18,13 +73,32 @@ export default function SequencesPage() {
   const { data: equipment = [] } = useEquipment(activeClinicId);
   const { data: levels = [] } = useSkillLevels(activeClinicId);
   const [selected, setSelected] = useState<string | null>(null);
-  const { data: items = [], addItem, removeItem } = useSequenceItems(selected);
+  const { data: items = [], addItem, removeItem, updateItem, reorderItems, addFromLibrary } = useSequenceItems(selected);
+  const { exercises: library } = useExerciseLibrary();
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', description: '', equipment_id: '', skill_level_id: '', estimated_minutes: '' });
-
   const [itemOpen, setItemOpen] = useState(false);
   const [itemForm, setItemForm] = useState({ name: '', sets: 3, reps: 12, notes: '' });
+  const [libOpen, setLibOpen] = useState(false);
+  const [libSelected, setLibSelected] = useState<Set<string>>(new Set());
+  const [libSearch, setLibSearch] = useState('');
+
+  // Local order for optimistic dnd
+  const [localOrder, setLocalOrder] = useState<SequenceItem[]>([]);
+  useEffect(() => { setLocalOrder(items); }, [items]);
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIdx = localOrder.findIndex((i) => i.id === active.id);
+    const newIdx = localOrder.findIndex((i) => i.id === over.id);
+    const next = arrayMove(localOrder, oldIdx, newIdx);
+    setLocalOrder(next);
+    reorderItems.mutate(next.map((i) => i.id));
+  };
 
   const handleCreate = async () => {
     if (!user) return;
@@ -48,11 +122,20 @@ export default function SequencesPage() {
     setItemOpen(false);
   };
 
+  const handleAddFromLibrary = async () => {
+    const picks = library.filter((e) => libSelected.has(e.id));
+    if (picks.length === 0) return;
+    await addFromLibrary.mutateAsync(picks);
+    setLibSelected(new Set());
+    setLibOpen(false);
+  };
+
   const currentSeq = sequences.find((s) => s.id === selected);
+  const filteredLib = library.filter((e) => e.name.toLowerCase().includes(libSearch.toLowerCase()));
 
   return (
     <div className="p-6 space-y-4 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold">Sequências de exercícios</h1>
           <p className="text-sm text-muted-foreground">Monte grades por equipamento e nível.</p>
@@ -115,45 +198,81 @@ export default function SequencesPage() {
                     <h2 className="text-xl font-bold">{currentSeq.name}</h2>
                     {currentSeq.description && <p className="text-sm text-muted-foreground mt-1">{currentSeq.description}</p>}
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => { remove.mutate(currentSeq.id); setSelected(null); }}><Trash2 className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => { if (confirm('Excluir sequência?')) { remove.mutate(currentSeq.id); setSelected(null); } }}><Trash2 className="h-4 w-4" /></Button>
                 </div>
               </Card>
 
               <Card className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold">Exercícios ({items.length})</h3>
-                  <Dialog open={itemOpen} onOpenChange={setItemOpen}>
-                    <DialogTrigger asChild><Button size="sm"><Plus className="h-3.5 w-3.5 mr-1" />Adicionar</Button></DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader><DialogTitle>Novo exercício</DialogTitle></DialogHeader>
-                      <div className="space-y-3">
-                        <div><label className="text-sm">Nome</label><Input value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} placeholder="Ex: Footwork Toes" /></div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div><label className="text-sm">Séries</label><Input type="number" value={itemForm.sets} onChange={(e) => setItemForm({ ...itemForm, sets: parseInt(e.target.value) || 0 })} /></div>
-                          <div><label className="text-sm">Repetições</label><Input type="number" value={itemForm.reps} onChange={(e) => setItemForm({ ...itemForm, reps: parseInt(e.target.value) || 0 })} /></div>
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <h3 className="font-semibold">Exercícios ({localOrder.length}) <span className="text-xs text-muted-foreground font-normal">— arraste para reordenar</span></h3>
+                  <div className="flex gap-2">
+                    <Dialog open={libOpen} onOpenChange={setLibOpen}>
+                      <DialogTrigger asChild><Button size="sm" variant="outline"><Library className="h-3.5 w-3.5 mr-1" />Da biblioteca</Button></DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader><DialogTitle>Importar da biblioteca</DialogTitle></DialogHeader>
+                        <Input placeholder="Buscar exercício..." value={libSearch} onChange={(e) => setLibSearch(e.target.value)} />
+                        <ScrollArea className="h-96 mt-2">
+                          <div className="space-y-1">
+                            {filteredLib.length === 0 && <p className="text-sm text-muted-foreground text-center p-4">Nenhum exercício na biblioteca.</p>}
+                            {filteredLib.map((ex) => (
+                              <label key={ex.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted cursor-pointer">
+                                <Checkbox
+                                  checked={libSelected.has(ex.id)}
+                                  onCheckedChange={(v) => {
+                                    const next = new Set(libSelected);
+                                    if (v) next.add(ex.id); else next.delete(ex.id);
+                                    setLibSelected(next);
+                                  }}
+                                />
+                                {ex.image_urls?.[0] && <img src={ex.image_urls[0]} className="h-10 w-10 rounded object-cover" />}
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium">{ex.name}</div>
+                                  <div className="text-xs text-muted-foreground">{ex.default_sets}×{ex.default_reps}</div>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                        <Button onClick={handleAddFromLibrary} disabled={libSelected.size === 0} className="w-full">
+                          Adicionar {libSelected.size} exercício(s)
+                        </Button>
+                      </DialogContent>
+                    </Dialog>
+                    <Dialog open={itemOpen} onOpenChange={setItemOpen}>
+                      <DialogTrigger asChild><Button size="sm"><Plus className="h-3.5 w-3.5 mr-1" />Manual</Button></DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader><DialogTitle>Novo exercício</DialogTitle></DialogHeader>
+                        <div className="space-y-3">
+                          <div><label className="text-sm">Nome</label><Input value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} placeholder="Ex: Footwork Toes" /></div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div><label className="text-sm">Séries</label><Input type="number" value={itemForm.sets} onChange={(e) => setItemForm({ ...itemForm, sets: parseInt(e.target.value) || 0 })} /></div>
+                            <div><label className="text-sm">Repetições</label><Input type="number" value={itemForm.reps} onChange={(e) => setItemForm({ ...itemForm, reps: parseInt(e.target.value) || 0 })} /></div>
+                          </div>
+                          <div><label className="text-sm">Observações</label><Textarea value={itemForm.notes} onChange={(e) => setItemForm({ ...itemForm, notes: e.target.value })} /></div>
+                          <Button onClick={handleAddItem} disabled={!itemForm.name.trim()} className="w-full">Adicionar</Button>
                         </div>
-                        <div><label className="text-sm">Observações</label><Textarea value={itemForm.notes} onChange={(e) => setItemForm({ ...itemForm, notes: e.target.value })} /></div>
-                        <Button onClick={handleAddItem} disabled={!itemForm.name.trim()} className="w-full">Adicionar</Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-                {items.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">Adicione exercícios à sequência.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {items.map((it, idx) => (
-                      <div key={it.id} className="flex items-center gap-2 p-2 rounded bg-muted/50">
-                        <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">{idx + 1}</div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{it.name}</div>
-                          <div className="text-xs text-muted-foreground">{it.sets}x{it.reps}{it.notes ? ` · ${it.notes}` : ''}</div>
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={() => removeItem.mutate(it.id)}><Trash2 className="h-4 w-4" /></Button>
-                      </div>
-                    ))}
+                      </DialogContent>
+                    </Dialog>
                   </div>
+                </div>
+                {localOrder.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">Adicione exercícios à sequência.</p>
+                ) : (
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={localOrder.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+                      <div className="space-y-2">
+                        {localOrder.map((it, idx) => (
+                          <SortableItemRow
+                            key={it.id}
+                            item={it}
+                            idx={idx}
+                            onRemove={() => removeItem.mutate(it.id)}
+                            onEdit={(patch) => updateItem.mutate({ id: it.id, ...patch })}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 )}
               </Card>
             </>
