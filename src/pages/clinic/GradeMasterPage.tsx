@@ -522,38 +522,23 @@ export default function GradeMasterPage() {
         </Card>
       </div>
 
-      {/* Dialog: definir grade */}
-      <Dialog open={!!gradeOpen} onOpenChange={(o) => !o && setGradeOpen(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Grade · {gradeOpen ? studentName(gradeOpen.student_id) : ''} · {gradeOpen && format(parseISO(gradeOpen.scheduled_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            {gradeOpen?.isProjected && (
-              <div className="p-2 rounded bg-amber-500/10 border border-amber-500/30 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                <div>
-                  Esta aula é uma <strong>projeção pós-contrato</strong>. Ao salvar a grade, ela será materializada como aula real.
-                  Lembre-se de <strong>renovar o contrato</strong> do aluno.
-                </div>
-              </div>
-            )}
-            <div>
-              <label className="text-sm">Sequência de exercícios</label>
-              <Select value={gradeSeq} onValueChange={setGradeSeq}>
-                <SelectTrigger><SelectValue placeholder="Escolha uma sequência" /></SelectTrigger>
-                <SelectContent>
-                  {sequences.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-xs text-muted-foreground">A grade fica vinculada à aula. O aluno verá em "Meu Pilates" e a estação carrega automaticamente.</p>
-            <Button onClick={assignGrade} disabled={!gradeSeq} className="w-full">Salvar grade</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Dialog: alunos da aula + grade + propagação */}
+      {slotDialog && user && activeClinicId && (
+        <SlotGradeDialog
+          open={!!slotDialog}
+          onClose={() => setSlotDialog(null)}
+          slot={slotDialog.slot}
+          focusedStudentId={slotDialog.focusedStudentId}
+          clinicId={activeClinicId}
+          userId={user.id}
+          appointments={appointments as any}
+          recurring={recurring}
+          students={students}
+          equipment={equipment}
+          sequences={sequences}
+          onSaved={() => { /* react-query refetch via hooks */ }}
+        />
+      )}
     </div>
   );
 }
