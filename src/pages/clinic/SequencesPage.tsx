@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useSequences, useSequenceItems, useEquipment, useSkillLevels, type SequenceItem } from '@/hooks/useClinicData';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
