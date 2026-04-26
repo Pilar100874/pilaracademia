@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ClinicLogoUploader } from "@/components/ClinicLogoUploader";
 import { toast } from "sonner";
 
 function useIsMaster() {
@@ -40,8 +41,9 @@ export default function MasterPage() {
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
-  const [editing, setEditing] = useState<{ id: string; name: string; slug: string } | null>(null);
+  const [editing, setEditing] = useState<{ id: string; name: string; slug: string; logo_url: string | null } | null>(null);
   const [managingCats, setManagingCats] = useState<{ id: string; name: string } | null>(null);
 
   const { data: clinics, isLoading } = useQuery({
@@ -50,7 +52,7 @@ export default function MasterPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clinics")
-        .select("id,name,slug,created_at,owner_user_id")
+        .select("id,name,slug,logo_url,created_at,owner_user_id")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -89,12 +91,18 @@ export default function MasterPage() {
         throw new Error(msg);
       }
       if ((data as any)?.error) throw new Error((data as any).error);
+
+      // Atualiza logo da clínica recém-criada (se houver)
+      const clinicId = (data as any)?.clinicId ?? (data as any)?.clinic?.id;
+      if (logoUrl && clinicId) {
+        await supabase.from("clinics").update({ logo_url: logoUrl }).eq("id", clinicId);
+      }
       return data;
     },
     onSuccess: () => {
       toast.success("Clínica e admin criados com sucesso");
       setCreateOpen(false);
-      setName(""); setSlug(""); setAdminName(""); setAdminEmail(""); setAdminPassword("");
+      setName(""); setSlug(""); setAdminName(""); setAdminEmail(""); setAdminPassword(""); setLogoUrl(null);
       qc.invalidateQueries({ queryKey: ["master-clinics"] });
       qc.invalidateQueries({ queryKey: ["master-roles"] });
     },
@@ -117,14 +125,14 @@ export default function MasterPage() {
   });
 
   const updateClinic = useMutation({
-    mutationFn: async (payload: { id: string; name: string; slug: string }) => {
+    mutationFn: async (payload: { id: string; name: string; slug: string; logo_url: string | null }) => {
       const cleanName = payload.name.trim();
       let cleanSlug = payload.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
       if (!cleanName) throw new Error("Informe o nome");
       if (!cleanSlug) cleanSlug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       const { error } = await supabase
         .from("clinics")
-        .update({ name: cleanName, slug: cleanSlug })
+        .update({ name: cleanName, slug: cleanSlug, logo_url: payload.logo_url })
         .eq("id", payload.id);
       if (error) {
         if (error.code === "23505") throw new Error("Já existe uma clínica com esse slug");
@@ -220,9 +228,6 @@ export default function MasterPage() {
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Shield className="h-6 w-6 text-primary" /> Painel Master
@@ -254,6 +259,10 @@ export default function MasterPage() {
                   <Label>Slug (URL) — opcional</Label>
                   <Input value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} placeholder="studio-pilates" />
                   <p className="text-xs text-muted-foreground mt-1">Se vazio, geramos a partir do nome.</p>
+                </div>
+                <div>
+                  <Label>Logotipo da clínica</Label>
+                  <ClinicLogoUploader value={logoUrl} onChange={setLogoUrl} />
                 </div>
                 <div className="pt-2 border-t">
                   <p className="text-sm font-semibold mb-2">Administrador da clínica</p>
@@ -299,8 +308,12 @@ export default function MasterPage() {
           <div className="grid gap-3">
             {clinics.map(c => (
               <Card key={c.id} className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Building2 className="h-5 w-5 text-primary" />
+                <div className="flex items-center gap-3 min-w-0">
+                  {(c as any).logo_url ? (
+                    <img src={(c as any).logo_url} alt="" className="h-10 w-10 rounded-lg object-contain bg-muted/30" />
+                  ) : (
+                    <Building2 className="h-5 w-5 text-primary" />
+                  )}
                   <div>
                     <div className="font-semibold">{c.name}</div>
                     <div className="text-xs text-muted-foreground flex items-center gap-2">
@@ -322,7 +335,7 @@ export default function MasterPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setEditing({ id: c.id, name: c.name, slug: c.slug })}
+                    onClick={() => setEditing({ id: c.id, name: c.name, slug: c.slug, logo_url: (c as any).logo_url ?? null })}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -368,6 +381,13 @@ export default function MasterPage() {
                       slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
                     })
                   }
+                />
+              </div>
+              <div>
+                <Label>Logotipo</Label>
+                <ClinicLogoUploader
+                  value={editing.logo_url}
+                  onChange={(url) => setEditing({ ...editing, logo_url: url })}
                 />
               </div>
             </div>
