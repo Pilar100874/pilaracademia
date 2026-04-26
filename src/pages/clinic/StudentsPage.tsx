@@ -186,7 +186,10 @@ export default function StudentsPage() {
                     <p className="text-sm text-muted-foreground">{current.email || 'Sem email'} {current.phone ? `· ${current.phone}` : ''}</p>
                     {currentLevel && <Badge className="mt-2" style={{ backgroundColor: currentLevel.color || undefined }}>{currentLevel.name}</Badge>}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={handleGenerateAccess} disabled={inviting || !current.email}>
+                      <KeyRound className="h-3.5 w-3.5 mr-1" />{current.user_id ? 'Resetar senha' : 'Gerar acesso'}
+                    </Button>
                     <Select value={current.skill_level_id || ''} onValueChange={(v) => update.mutate({ id: current.id, skill_level_id: v })}>
                       <SelectTrigger className="w-40"><SelectValue placeholder="Nível" /></SelectTrigger>
                       <SelectContent>{levels.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}</SelectContent>
@@ -194,6 +197,21 @@ export default function StudentsPage() {
                     <Button variant="ghost" size="icon" onClick={() => { remove.mutate(current.id); setSelectedStudent(null); }}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
+                <Dialog open={!!inviteResult} onOpenChange={(o) => !o && setInviteResult(null)}>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Acesso gerado ✓</DialogTitle></DialogHeader>
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">Entregue estas credenciais ao aluno. Ele pode trocar a senha depois.</p>
+                      <div className="p-3 rounded bg-muted font-mono text-sm space-y-1">
+                        <div className="flex items-center justify-between gap-2"><span className="opacity-70">Email:</span><span className="font-bold">{inviteResult?.email}</span></div>
+                        <div className="flex items-center justify-between gap-2"><span className="opacity-70">Senha:</span><span className="font-bold">{inviteResult?.password}</span></div>
+                      </div>
+                      <Button className="w-full" onClick={() => { navigator.clipboard.writeText(`Email: ${inviteResult?.email}\nSenha: ${inviteResult?.password}`); toast.success('Copiado!'); }}>
+                        <Copy className="h-4 w-4 mr-1" />Copiar
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
                 {current.notes && <p className="text-sm mt-3 p-3 bg-muted/50 rounded">{current.notes}</p>}
               </Card>
 
