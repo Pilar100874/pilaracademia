@@ -113,7 +113,28 @@ export default function MasterPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  if (checkingRole) {
+  const updateClinic = useMutation({
+    mutationFn: async (payload: { id: string; name: string; slug: string }) => {
+      const cleanName = payload.name.trim();
+      let cleanSlug = payload.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
+      if (!cleanName) throw new Error("Informe o nome");
+      if (!cleanSlug) cleanSlug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const { error } = await supabase
+        .from("clinics")
+        .update({ name: cleanName, slug: cleanSlug })
+        .eq("id", payload.id);
+      if (error) {
+        if (error.code === "23505") throw new Error("Já existe uma clínica com esse slug");
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Clínica atualizada");
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["master-clinics"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao atualizar"),
+  });
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
