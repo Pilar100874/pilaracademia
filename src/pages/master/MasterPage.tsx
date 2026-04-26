@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Shield, Plus, Trash2, Building2, Users, ArrowLeft, Pencil, Library } from "lucide-react";
+import { Loader2, Shield, Plus, Trash2, Building2, Users, ArrowLeft, Pencil, Library, FolderTree } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -40,6 +42,7 @@ export default function MasterPage() {
   const [adminPassword, setAdminPassword] = useState("");
 
   const [editing, setEditing] = useState<{ id: string; name: string; slug: string } | null>(null);
+  const [managingCats, setManagingCats] = useState<{ id: string; name: string } | null>(null);
 
   const { data: clinics, isLoading } = useQuery({
     queryKey: ["master-clinics"],
@@ -132,6 +135,56 @@ export default function MasterPage() {
       toast.success("Clínica atualizada");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["master-clinics"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao atualizar"),
+  });
+
+  // ===== Categorias globais por clínica =====
+  const { data: globalCategories } = useQuery({
+    queryKey: ["master-global-categories"],
+    enabled: !!isMaster,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("exercise_categories")
+        .select("id,name,parent_id")
+        .eq("is_global", true)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: clinicGlobalCats, refetch: refetchClinicCats } = useQuery({
+    queryKey: ["clinic-global-cats", managingCats?.id],
+    enabled: !!managingCats?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clinic_global_categories")
+        .select("category_id")
+        .eq("clinic_id", managingCats!.id);
+      if (error) throw error;
+      return data.map(r => r.category_id);
+    },
+  });
+
+  const toggleClinicCategory = useMutation({
+    mutationFn: async (payload: { clinicId: string; categoryId: string; checked: boolean }) => {
+      if (payload.checked) {
+        const { error } = await supabase
+          .from("clinic_global_categories")
+          .insert({ clinic_id: payload.clinicId, category_id: payload.categoryId, created_by: user!.id });
+        if (error && error.code !== "23505") throw error;
+      } else {
+        const { error } = await supabase
+          .from("clinic_global_categories")
+          .delete()
+          .eq("clinic_id", payload.clinicId)
+          .eq("category_id", payload.categoryId);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      refetchClinicCats();
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao atualizar"),
   });
@@ -258,6 +311,14 @@ export default function MasterPage() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    title="Categorias globais visíveis"
+                    onClick={() => setManagingCats({ id: c.id, name: c.name })}
+                  >
+                    <FolderTree className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setEditing({ id: c.id, name: c.name, slug: c.slug })}
                   >
                     <Pencil className="h-4 w-4" />
@@ -317,6 +378,53 @@ export default function MasterPage() {
               {updateClinic.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Salvar
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!managingCats} onOpenChange={(o) => !o && setManagingCats(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Categorias globais visíveis</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Selecione quais categorias da biblioteca global aparecerão para{" "}
+              <span className="font-semibold">{managingCats?.name}</span>.
+            </p>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-3">
+            <div className="space-y-2 py-2">
+              {globalCategories?.length ? (
+                globalCategories.map((cat) => {
+                  const checked = clinicGlobalCats?.includes(cat.id) ?? false;
+                  return (
+                    <label
+                      key={cat.id}
+                      className="flex items-center gap-3 p-2 rounded-md hover:bg-muted cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) =>
+                          managingCats &&
+                          toggleClinicCategory.mutate({
+                            clinicId: managingCats.id,
+                            categoryId: cat.id,
+                            checked: v === true,
+                          })
+                        }
+                      />
+                      <span className="text-sm">{cat.name}</span>
+                    </label>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Nenhuma categoria global cadastrada ainda.
+                </p>
+              )}
+            </div>
+          </ScrollArea>
+          <DialogFooter>
+            <Button onClick={() => setManagingCats(null)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
