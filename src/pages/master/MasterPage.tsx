@@ -40,8 +40,9 @@ export default function MasterPage() {
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
-  const [editing, setEditing] = useState<{ id: string; name: string; slug: string } | null>(null);
+  const [editing, setEditing] = useState<{ id: string; name: string; slug: string; logo_url: string | null } | null>(null);
   const [managingCats, setManagingCats] = useState<{ id: string; name: string } | null>(null);
 
   const { data: clinics, isLoading } = useQuery({
