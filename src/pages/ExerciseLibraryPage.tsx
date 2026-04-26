@@ -53,6 +53,9 @@ export default function ExerciseLibraryPage() {
   const { user } = useAuth();
   const { exercises, isLoading, deleteExercise, createExercise, moveExercises, scope } = useExerciseLibrary();
   const isGlobalScope = scope.kind === 'global';
+  // Permission gating for clinic scope
+  const { data: myClinicPerms } = require('@/hooks/useClinicPermissions').useMyClinicPermissions();
+  const canCreateInScope = scope.kind === 'clinic' ? !!myClinicPerms?.can_create_exercises : true;
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
