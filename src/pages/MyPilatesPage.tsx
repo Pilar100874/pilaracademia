@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Activity, Check, ArrowLeft } from 'lucide-react';
+import { Activity, Check, ArrowLeft, CalendarPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -113,6 +113,10 @@ export default function MyPilatesPage() {
         <h1 className="text-2xl font-bold flex items-center gap-2"><Activity className="h-6 w-6 text-primary" />Meu Pilates</h1>
         <Button variant="ghost" size="sm" onClick={() => navigate('/')}>Início</Button>
       </div>
+
+      <Button className="w-full mb-6" size="lg" onClick={() => navigate('/meu-pilates/agendar')}>
+        <CalendarPlus className="h-5 w-5 mr-2" />Reservar uma aula
+      </Button>
 
       <h2 className="font-semibold mb-2">Pendentes</h2>
       <div className="space-y-2 mb-6">
