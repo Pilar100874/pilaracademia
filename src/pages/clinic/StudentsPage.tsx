@@ -20,6 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { materializeStudentRecurring } from '@/lib/materializeRecurring';
 
 const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -232,6 +233,32 @@ export default function StudentsPage() {
       created_by: user.id,
     } as any);
     setRecForm({ day_of_week: 1, start_time: '08:00', duration_minutes: 50, equipment_id: '' });
+
+    // Materializa este horário fixo dentro do período do contrato
+    try {
+      const created = await materializeStudentRecurring({
+        clinic_id: activeClinicId,
+        student: {
+          id: current.id,
+          contract_type: (current as any).contract_type,
+          contract_start_date: (current as any).contract_start_date,
+          contract_end_date: (current as any).contract_end_date,
+        },
+        recurring: [{
+          id: '', // será preenchido pelo banco; aqui só importa para o filtro de duplicatas
+          day_of_week: recForm.day_of_week,
+          start_time: recForm.start_time + ':00',
+          duration_minutes: recForm.duration_minutes,
+          equipment_id: recForm.equipment_id || null,
+          instructor_id: user.id,
+          notes: null,
+        }],
+        created_by: user.id,
+      });
+      if (created > 0) toast.success(`${created} aula(s) reservada(s) na agenda`);
+    } catch (e: any) {
+      console.error(e);
+    }
   };
 
   // Contrato
@@ -267,6 +294,35 @@ export default function StudentsPage() {
     await update.mutateAsync(payload);
     setContractOpen(false);
     toast.success('Contrato atualizado');
+
+    // Reserva automaticamente os horários fixos no período do contrato
+    if (activeClinicId && user && studentRecs.length > 0) {
+      try {
+        const merged = { ...current, ...payload };
+        const created = await materializeStudentRecurring({
+          clinic_id: activeClinicId,
+          student: {
+            id: current.id,
+            contract_type: merged.contract_type,
+            contract_start_date: merged.contract_start_date,
+            contract_end_date: merged.contract_end_date,
+          },
+          recurring: studentRecs.map((r) => ({
+            id: r.id,
+            day_of_week: r.day_of_week,
+            start_time: r.start_time,
+            duration_minutes: r.duration_minutes,
+            equipment_id: r.equipment_id,
+            instructor_id: r.instructor_id,
+            notes: r.notes,
+          })),
+          created_by: user.id,
+        });
+        if (created > 0) toast.success(`${created} aula(s) reservada(s) na agenda`);
+      } catch (e: any) {
+        console.error(e);
+      }
+    }
   };
 
   return (
