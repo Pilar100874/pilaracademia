@@ -27,8 +27,10 @@ import CreateClinicPage from "@/pages/clinic/CreateClinicPage";
 import AppointmentsPage from "@/pages/clinic/AppointmentsPage";
 import StudentEvolutionPage from "@/pages/clinic/StudentEvolutionPage";
 import ReportsPage from "@/pages/clinic/ReportsPage";
+import BookableSlotsPage from "@/pages/clinic/BookableSlotsPage";
 import StationPage from "@/pages/StationPage";
 import MyPilatesPage from "@/pages/MyPilatesPage";
+import BookClassPage from "@/pages/BookClassPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import ChangePasswordPage from "@/pages/ChangePasswordPage";
 import { useMustChangePassword } from "@/hooks/useMustChangePassword";
@@ -66,6 +68,7 @@ function AppRoutes() {
       <Route path="/exercises" element={<ProtectedRoute><ExerciseLibraryPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/meu-pilates" element={<ProtectedRoute><MyPilatesPage /></ProtectedRoute>} />
+      <Route path="/meu-pilates/agendar" element={<ProtectedRoute><BookClassPage /></ProtectedRoute>} />
       <Route path="/trocar-senha" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
 
       {/* Clinic panel */}
@@ -74,6 +77,7 @@ function AppRoutes() {
       <Route path="/clinica" element={<ProtectedRoute><ClinicLayout /></ProtectedRoute>}>
         <Route index element={<ClinicOverviewPage />} />
         <Route path="agenda" element={<AppointmentsPage />} />
+        <Route path="grades" element={<BookableSlotsPage />} />
         <Route path="alunos" element={<StudentsPage />} />
         <Route path="evolucao" element={<StudentEvolutionPage />} />
         <Route path="equipamentos" element={<EquipmentPage />} />
