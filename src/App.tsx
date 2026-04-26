@@ -42,8 +42,12 @@ import ChangePasswordPage from "@/pages/ChangePasswordPage";
 import MasterPage from "@/pages/master/MasterPage";
 import MasterExerciseLibraryPage from "@/pages/master/MasterExerciseLibraryPage";
 import MasterSequencesPage from "@/pages/master/MasterSequencesPage";
+import MasterPlansPage from "@/pages/master/MasterPlansPage";
+import MasterSettingsPage from "@/pages/master/MasterSettingsPage";
+import BillingPage from "@/pages/clinic/BillingPage";
 import ClinicExerciseLibraryPage from "@/pages/clinic/ClinicExerciseLibraryPage";
 import SharedSequencePage from "@/pages/SharedSequencePage";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { useMustChangePassword } from "@/hooks/useMustChangePassword";
 import { useUserClinicRole } from "@/hooks/useUserClinicRole";
 
@@ -117,12 +121,15 @@ function AppRoutes() {
         <Route path="aula" element={<LiveSessionPage />} />
         <Route path="exercicios" element={<ClinicExerciseLibraryPage />} />
         <Route path="relatorios" element={<ReportsPage />} />
+        <Route path="billing" element={<BillingPage />} />
       </Route>
 
       {/* Master admin panel */}
       <Route path="/master" element={<ProtectedRoute><MasterPage /></ProtectedRoute>} />
       <Route path="/master/exercicios" element={<ProtectedRoute><MasterExerciseLibraryPage /></ProtectedRoute>} />
       <Route path="/master/sequencias" element={<ProtectedRoute><MasterSequencesPage /></ProtectedRoute>} />
+      <Route path="/master/planos" element={<ProtectedRoute><MasterPlansPage /></ProtectedRoute>} />
+      <Route path="/master/configuracoes" element={<ProtectedRoute><MasterSettingsPage /></ProtectedRoute>} />
 
       <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
       <Route path="*" element={<NotFound />} />
@@ -140,6 +147,7 @@ const App = () => {
         {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
         <BrowserRouter>
           <AuthProvider>
+            <PaymentTestModeBanner />
             <ImpersonationBanner />
             <AppRoutes />
             <InstallPrompt />
