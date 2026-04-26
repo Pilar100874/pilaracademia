@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
-import { useStudents, useSkillLevels, usePrescriptions, useSequences } from '@/hooks/useClinicData';
+import { useStudents, useSkillLevels, usePrescriptions, useSequences, useEquipment } from '@/hooks/useClinicData';
+import { useRecurringSchedules } from '@/hooks/useRecurringSchedules';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save } from 'lucide-react';
+import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save, Repeat } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,6 +16,8 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
+const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
 export default function StudentsPage() {
   const { activeClinicId } = useUserRoles();
   const { user } = useAuth();
@@ -22,6 +25,8 @@ export default function StudentsPage() {
   const { data: levels = [] } = useSkillLevels(activeClinicId);
   const { data: sequences = [] } = useSequences(activeClinicId);
   const { create: createPresc } = usePrescriptions({ clinicId: activeClinicId });
+  const { data: equipment = [] } = useEquipment(activeClinicId);
+  const { data: recurring = [], create: createRec, remove: removeRec } = useRecurringSchedules(activeClinicId);
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', skill_level_id: '', notes: '' });
@@ -159,6 +164,25 @@ export default function StudentsPage() {
     toast.success('Ficha atualizada');
   };
 
+  // Horários fixos
+  const [recOpen, setRecOpen] = useState(false);
+  const [recForm, setRecForm] = useState({ day_of_week: 1, start_time: '08:00', duration_minutes: 50, equipment_id: '' });
+  const studentRecs = recurring.filter((r) => r.student_id === selectedStudent);
+  const addRecurring = async () => {
+    if (!current || !activeClinicId || !user) return;
+    await createRec.mutateAsync({
+      clinic_id: activeClinicId,
+      student_id: current.id,
+      instructor_id: user.id,
+      equipment_id: recForm.equipment_id || null,
+      day_of_week: recForm.day_of_week,
+      start_time: recForm.start_time + ':00',
+      duration_minutes: recForm.duration_minutes,
+      created_by: user.id,
+    } as any);
+    setRecForm({ day_of_week: 1, start_time: '08:00', duration_minutes: 50, equipment_id: '' });
+  };
+
   return (
     <div className="p-6 space-y-4 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
@@ -253,6 +277,9 @@ export default function StudentsPage() {
                     <Button variant="outline" size="sm" onClick={openAnamnese}>
                       <HeartPulse className="h-3.5 w-3.5 mr-1" />Ficha clínica
                     </Button>
+                    <Button variant="outline" size="sm" onClick={() => setRecOpen(true)}>
+                      <Repeat className="h-3.5 w-3.5 mr-1" />Horários fixos {studentRecs.length > 0 && `(${studentRecs.length})`}
+                    </Button>
                     <Button variant="outline" size="sm" onClick={handleGenerateAccess} disabled={inviting || !current.email}>
                       <KeyRound className="h-3.5 w-3.5 mr-1" />{current.user_id ? 'Resetar senha' : 'Gerar acesso'}
                     </Button>
@@ -311,6 +338,53 @@ export default function StudentsPage() {
                       </div>
                       <div><label className="text-xs">Observações gerais</label><Textarea rows={2} value={anamnese.notes || ''} onChange={(e) => setAnamnese({ ...anamnese, notes: e.target.value })} /></div>
                       <Button onClick={saveAnamnese} className="w-full"><Save className="h-4 w-4 mr-1" />Salvar ficha</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Dialog Horários fixos */}
+                <Dialog open={recOpen} onOpenChange={setRecOpen}>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader><DialogTitle>Horários fixos · {current.full_name}</DialogTitle></DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        {studentRecs.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">Nenhum horário fixo. Esse aluno é avulso.</p>
+                        ) : studentRecs.map((r) => {
+                          const eq = equipment.find((e) => e.id === r.equipment_id);
+                          return (
+                            <div key={r.id} className="flex items-center justify-between p-2 rounded border text-sm">
+                              <div>
+                                <span className="font-medium">{DAY_NAMES[r.day_of_week]}</span> · {r.start_time.slice(0, 5)} · {r.duration_minutes}min
+                                {eq && <span className="text-muted-foreground"> · {eq.name}</span>}
+                              </div>
+                              <Button size="icon" variant="ghost" onClick={() => removeRec.mutate(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="border-t pt-3 space-y-2">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">Adicionar horário</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="text-xs">Dia</label>
+                            <Select value={String(recForm.day_of_week)} onValueChange={(v) => setRecForm({ ...recForm, day_of_week: parseInt(v) })}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>{DAY_NAMES.map((d, i) => <SelectItem key={i} value={String(i)}>{d}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
+                          <div><label className="text-xs">Hora</label><Input type="time" value={recForm.start_time} onChange={(e) => setRecForm({ ...recForm, start_time: e.target.value })} /></div>
+                          <div><label className="text-xs">Min</label><Input type="number" value={recForm.duration_minutes} onChange={(e) => setRecForm({ ...recForm, duration_minutes: parseInt(e.target.value) || 50 })} /></div>
+                        </div>
+                        <div>
+                          <label className="text-xs">Equipamento (opcional)</label>
+                          <Select value={recForm.equipment_id} onValueChange={(v) => setRecForm({ ...recForm, equipment_id: v })}>
+                            <SelectTrigger><SelectValue placeholder="Qualquer" /></SelectTrigger>
+                            <SelectContent>{equipment.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <Button onClick={addRecurring} className="w-full"><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
+                      </div>
                     </div>
                   </DialogContent>
                 </Dialog>
