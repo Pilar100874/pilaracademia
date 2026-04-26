@@ -1528,23 +1528,24 @@ export default function ExerciseLibraryPage() {
                   </div>
                 )}
 
-                {/* Configuração do token Apify dentro do próprio diálogo */}
-                <Collapsible>
-                  <CollapsibleTrigger
-                    className="flex w-full items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
-                    disabled={igImporting}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      Configurar token Apify (avançado)
-                    </span>
-                    <ChevronDown className="h-4 w-4" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-3">
-                    <ApifySettingsCard />
-                  </CollapsibleContent>
-                </Collapsible>
-              </div>
+                {/* Configuração do token Apify — visível apenas no escopo Master (global) */}
+                {isGlobalScope && (
+                  <Collapsible>
+                    <CollapsibleTrigger
+                      className="flex w-full items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
+                      disabled={igImporting}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        Configurar token Apify (avançado)
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-3">
+                      <ApifySettingsCard />
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
 
               {/* Barra de progresso durante o import */}
               {igImporting && (
