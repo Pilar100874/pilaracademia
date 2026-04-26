@@ -437,6 +437,50 @@ export default function StudentsPage() {
                     </div>
                   </DialogContent>
                 </Dialog>
+
+                {/* Dialog Contrato */}
+                <Dialog open={contractOpen} onOpenChange={setContractOpen}>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Contrato · {current.full_name}</DialogTitle></DialogHeader>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm">Tipo de contrato</label>
+                        <Select value={contract.contract_type} onValueChange={(v) => setContract({ ...contract, contract_type: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="open">Aberto (sem limite)</SelectItem>
+                            <SelectItem value="classes">Pacote de aulas</SelectItem>
+                            <SelectItem value="period">Por período (mensal/trimestral)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {contract.contract_type === 'classes' && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs">Total de aulas</label>
+                            <Input type="number" min={0} value={contract.contract_classes_total ?? ''} onChange={(e) => setContract({ ...contract, contract_classes_total: e.target.value })} />
+                          </div>
+                          <div>
+                            <label className="text-xs">Já usadas</label>
+                            <Input type="number" min={0} value={contract.contract_classes_used ?? 0} onChange={(e) => setContract({ ...contract, contract_classes_used: e.target.value })} />
+                          </div>
+                          <p className="col-span-2 text-xs text-muted-foreground">O sistema desconta automaticamente a cada agendamento e devolve no cancelamento.</p>
+                        </div>
+                      )}
+
+                      {contract.contract_type === 'period' && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div><label className="text-xs">Início</label><Input type="date" value={contract.contract_start_date || ''} onChange={(e) => setContract({ ...contract, contract_start_date: e.target.value })} /></div>
+                          <div><label className="text-xs">Fim</label><Input type="date" value={contract.contract_end_date || ''} onChange={(e) => setContract({ ...contract, contract_end_date: e.target.value })} /></div>
+                          <p className="col-span-2 text-xs text-muted-foreground">Bloqueia agendamentos fora do intervalo.</p>
+                        </div>
+                      )}
+
+                      <Button onClick={saveContract} className="w-full"><Save className="h-4 w-4 mr-1" />Salvar contrato</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </Card>
 
               <Card className="p-5">
