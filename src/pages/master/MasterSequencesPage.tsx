@@ -331,11 +331,7 @@ export default function MasterSequencesPage() {
     return sequences.filter(s => s.name.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q));
   }, [sequences, search]);
 
-  const filteredLibrary = useMemo(() => {
-    const q = pickerSearch.trim().toLowerCase();
-    if (!q) return library;
-    return (library as any[]).filter(l => l.name.toLowerCase().includes(q));
-  }, [library, pickerSearch]);
+  
 
   return (
     <div className="min-h-screen bg-background">
