@@ -117,6 +117,7 @@ export type Database = {
           full_name: string
           id: string
           invite_token: string
+          must_change_password: boolean
           role: Database["public"]["Enums"]["app_role"]
           status: Database["public"]["Enums"]["invite_status"]
           temp_password: string | null
@@ -131,6 +132,7 @@ export type Database = {
           full_name: string
           id?: string
           invite_token?: string
+          must_change_password?: boolean
           role?: Database["public"]["Enums"]["app_role"]
           status?: Database["public"]["Enums"]["invite_status"]
           temp_password?: string | null
@@ -145,6 +147,7 @@ export type Database = {
           full_name?: string
           id?: string
           invite_token?: string
+          must_change_password?: boolean
           role?: Database["public"]["Enums"]["app_role"]
           status?: Database["public"]["Enums"]["invite_status"]
           temp_password?: string | null
@@ -197,45 +200,75 @@ export type Database = {
       clinic_students: {
         Row: {
           active: boolean
+          avatar_url: string | null
           birth_date: string | null
           clinic_id: string
           created_at: string
           email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
           full_name: string
+          goals: string | null
+          height_cm: number | null
           id: string
+          injuries: string | null
+          medical_conditions: string | null
+          medications: string | null
           notes: string | null
           phone: string | null
+          restrictions: string | null
           skill_level_id: string | null
           updated_at: string
           user_id: string | null
+          weight_kg: number | null
         }
         Insert: {
           active?: boolean
+          avatar_url?: string | null
           birth_date?: string | null
           clinic_id: string
           created_at?: string
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           full_name: string
+          goals?: string | null
+          height_cm?: number | null
           id?: string
+          injuries?: string | null
+          medical_conditions?: string | null
+          medications?: string | null
           notes?: string | null
           phone?: string | null
+          restrictions?: string | null
           skill_level_id?: string | null
           updated_at?: string
           user_id?: string | null
+          weight_kg?: number | null
         }
         Update: {
           active?: boolean
+          avatar_url?: string | null
           birth_date?: string | null
           clinic_id?: string
           created_at?: string
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           full_name?: string
+          goals?: string | null
+          height_cm?: number | null
           id?: string
+          injuries?: string | null
+          medical_conditions?: string | null
+          medications?: string | null
           notes?: string | null
           phone?: string | null
+          restrictions?: string | null
           skill_level_id?: string | null
           updated_at?: string
           user_id?: string | null
+          weight_kg?: number | null
         }
         Relationships: [
           {
@@ -1227,6 +1260,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_security_flags: {
+        Row: {
+          must_change_password: boolean
+          password_changed_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          must_change_password?: boolean
+          password_changed_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          must_change_password?: boolean
+          password_changed_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_settings: {
         Row: {
