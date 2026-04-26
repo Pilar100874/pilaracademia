@@ -225,6 +225,7 @@ export default function MasterPage() {
                 <Button onClick={() => createClinic.mutate()} disabled={createClinic.isPending}>
                   {createClinic.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Criar
+                </Button>
               </DialogFooter>
             </DialogContent>
             </Dialog>
