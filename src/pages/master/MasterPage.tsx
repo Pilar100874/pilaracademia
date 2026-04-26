@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Shield, Plus, Trash2, Building2, Users, ArrowLeft } from "lucide-react";
+import { Loader2, Shield, Plus, Trash2, Building2, Users, ArrowLeft, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,8 @@ export default function MasterPage() {
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
+
+  const [editing, setEditing] = useState<{ id: string; name: string; slug: string } | null>(null);
 
   const { data: clinics, isLoading } = useQuery({
     queryKey: ["master-clinics"],
@@ -109,6 +111,29 @@ export default function MasterPage() {
       qc.invalidateQueries({ queryKey: ["master-clinics"] });
     },
     onError: (e: any) => toast.error(e.message),
+  });
+
+  const updateClinic = useMutation({
+    mutationFn: async (payload: { id: string; name: string; slug: string }) => {
+      const cleanName = payload.name.trim();
+      let cleanSlug = payload.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
+      if (!cleanName) throw new Error("Informe o nome");
+      if (!cleanSlug) cleanSlug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const { error } = await supabase
+        .from("clinics")
+        .update({ name: cleanName, slug: cleanSlug })
+        .eq("id", payload.id);
+      if (error) {
+        if (error.code === "23505") throw new Error("Já existe uma clínica com esse slug");
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Clínica atualizada");
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["master-clinics"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao atualizar"),
   });
 
   if (checkingRole) {
@@ -224,22 +249,72 @@ export default function MasterPage() {
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    if (confirm(`Excluir "${c.name}"? Esta ação não pode ser desfeita.`)) {
-                      deleteClinic.mutate(c.id);
-                    }
-                  }}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setEditing({ id: c.id, name: c.name, slug: c.slug })}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      if (confirm(`Excluir "${c.name}"? Esta ação não pode ser desfeita.`)) {
+                        deleteClinic.mutate(c.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
         )}
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar clínica</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-3">
+              <div>
+                <Label>Nome</Label>
+                <Input
+                  value={editing.name}
+                  onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Slug (URL)</Label>
+                <Input
+                  value={editing.slug}
+                  onChange={(e) =>
+                    setEditing({
+                      ...editing,
+                      slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+                    })
+                  }
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
+            <Button
+              onClick={() => editing && updateClinic.mutate(editing)}
+              disabled={updateClinic.isPending}
+            >
+              {updateClinic.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
