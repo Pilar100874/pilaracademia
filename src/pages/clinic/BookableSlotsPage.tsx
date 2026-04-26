@@ -5,6 +5,7 @@ import { useBookableSlots, useClinicSettings } from '@/hooks/useBookableSlots';
 import { useEquipment } from '@/hooks/useClinicData';
 import { useAppointments } from '@/hooks/useAppointments';
 import { useClinicStaff } from '@/hooks/useStaff';
+import { useClinicRooms } from '@/hooks/useClinicRooms';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,9 +13,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Settings, Calendar as CalendarIcon, ChevronLeft, ChevronRight, User2, Repeat } from 'lucide-react';
+import { Plus, Trash2, Settings, Calendar as CalendarIcon, ChevronLeft, ChevronRight, User2, DoorOpen, Dumbbell, Users as UsersIcon, GraduationCap } from 'lucide-react';
 import { format, addDays, startOfWeek, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Link } from 'react-router-dom';
 
 const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -36,6 +38,7 @@ export default function BookableSlotsPage() {
 
   const { data: slots = [], create, remove } = useBookableSlots(activeClinicId, fromISO, toISO);
   const { data: equipment = [] } = useEquipment(activeClinicId);
+  const { data: rooms = [] } = useClinicRooms(activeClinicId);
   const { data: settings, upsert: upsertSettings } = useClinicSettings(activeClinicId);
   const { data: appointments = [] } = useAppointments(activeClinicId, day.toISOString());
   const { data: staff = [] } = useClinicStaff(activeClinicId);
@@ -45,6 +48,8 @@ export default function BookableSlotsPage() {
   );
   const instructorName = (id: string | null) =>
     id ? (staff.find((s) => s.user_id === id)?.name ?? 'Professor') : 'Sem professor';
+  const roomById = (id: string | null) => (id ? rooms.find((r) => r.id === id) ?? null : null);
+  const eqName = (id: string | null) => equipment.find((e) => e.id === id)?.name || 'Sem equipamento';
 
   const [openCreate, setOpenCreate] = useState(false);
   const [openSettings, setOpenSettings] = useState(false);
@@ -57,6 +62,7 @@ export default function BookableSlotsPage() {
     duration_minutes: 50,
     capacity: 1,
     equipment_id: '',
+    room_id: '',
     instructor_id: '',
     weeks: 1,
   });
@@ -68,6 +74,16 @@ export default function BookableSlotsPage() {
       booking_open_days_ahead: settings?.booking_open_days_ahead ?? 30,
     });
     setOpenSettings(true);
+  };
+
+  // Quando muda a sala, preenche capacidade default
+  const handleRoomChange = (room_id: string) => {
+    const room = rooms.find((r) => r.id === room_id);
+    setForm((f) => ({
+      ...f,
+      room_id,
+      capacity: room?.capacity ?? f.capacity,
+    }));
   };
 
   const handleCreate = async () => {
@@ -89,6 +105,7 @@ export default function BookableSlotsPage() {
             scheduled_at: d.toISOString(),
             duration_minutes: form.duration_minutes,
             equipment_id: form.equipment_id || null,
+            room_id: form.room_id || null,
             instructor_id: form.instructor_id || user.id,
             capacity: form.capacity,
             notes: null,
@@ -117,20 +134,25 @@ export default function BookableSlotsPage() {
     return m;
   }, [appointments]);
 
-  const eqName = (id: string | null) => equipment.find((e) => e.id === id)?.name || 'Qualquer equipamento';
-
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-4">
+    <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><CalendarIcon className="h-6 w-6 text-primary" />Grades disponíveis</h1>
-          <p className="text-sm text-muted-foreground">Crie horários abertos para os alunos reservarem pelo app.</p>
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+            <CalendarIcon className="h-7 w-7 text-primary" />Grade de aulas
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Defina horários, sala, professor, equipamento e número máximo de alunos.
+          </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/clinica/salas"><DoorOpen className="h-4 w-4 mr-1" />Salas</Link>
+          </Button>
           <Button variant="outline" onClick={openSettingsDialog}><Settings className="h-4 w-4 mr-1" />Regras</Button>
           <Dialog open={openCreate} onOpenChange={setOpenCreate}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Criar grade</Button></DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Criar grade reservável</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <div>
@@ -150,19 +172,41 @@ export default function BookableSlotsPage() {
                   <div><Label>Fim</Label><Input type="time" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} /></div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  <div><Label>Intervalo (min)</Label><Input type="number" value={form.interval_minutes} onChange={(e) => setForm({ ...form, interval_minutes: parseInt(e.target.value) || 60 })} /></div>
-                  <div><Label>Duração (min)</Label><Input type="number" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: parseInt(e.target.value) || 50 })} /></div>
-                  <div><Label>Vagas</Label><Input type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: parseInt(e.target.value) || 1 })} /></div>
+                  <div><Label>Intervalo</Label><Input type="number" value={form.interval_minutes} onChange={(e) => setForm({ ...form, interval_minutes: parseInt(e.target.value) || 60 })} /></div>
+                  <div><Label>Duração</Label><Input type="number" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: parseInt(e.target.value) || 50 })} /></div>
+                  <div><Label>Vagas máx</Label><Input type="number" min={1} value={form.capacity} onChange={(e) => setForm({ ...form, capacity: parseInt(e.target.value) || 1 })} /></div>
                 </div>
                 <div>
-                  <Label>Equipamento</Label>
+                  <Label className="flex items-center gap-1"><DoorOpen className="h-3.5 w-3.5" />Sala</Label>
+                  {rooms.length === 0 ? (
+                    <div className="text-xs text-muted-foreground p-3 bg-muted rounded-lg mt-1">
+                      Nenhuma sala cadastrada. <Link to="/clinica/salas" className="text-primary underline">Criar salas</Link>
+                    </div>
+                  ) : (
+                    <Select value={form.room_id} onValueChange={handleRoomChange}>
+                      <SelectTrigger><SelectValue placeholder="Selecione a sala" /></SelectTrigger>
+                      <SelectContent>
+                        {rooms.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>
+                            <span className="inline-flex items-center gap-2">
+                              <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color || '#3b82f6' }} />
+                              {r.name}{r.capacity ? ` (cap. ${r.capacity})` : ''}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                <div>
+                  <Label className="flex items-center gap-1"><Dumbbell className="h-3.5 w-3.5" />Equipamento</Label>
                   <Select value={form.equipment_id} onValueChange={(v) => setForm({ ...form, equipment_id: v })}>
                     <SelectTrigger><SelectValue placeholder="Qualquer" /></SelectTrigger>
                     <SelectContent>{equipment.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>Professor</Label>
+                  <Label className="flex items-center gap-1"><GraduationCap className="h-3.5 w-3.5" />Professor</Label>
                   <Select value={form.instructor_id} onValueChange={(v) => setForm({ ...form, instructor_id: v })}>
                     <SelectTrigger><SelectValue placeholder="Eu mesmo" /></SelectTrigger>
                     <SelectContent>{instructors.map((i) => <SelectItem key={i.user_id} value={i.user_id}>{i.name ?? i.email ?? 'Professor'}</SelectItem>)}</SelectContent>
@@ -209,20 +253,34 @@ export default function BookableSlotsPage() {
             {slotsToday.map((s) => {
               const booked = bookedCountBySlot.get(s.id) || 0;
               const full = booked >= s.capacity;
+              const room = roomById(s.room_id);
               return (
-                <div key={s.id} className="flex items-center gap-3 p-3 rounded-lg border">
-                  <div className="text-center min-w-[60px]">
-                    <div className="font-bold text-lg">{format(parseISO(s.scheduled_at), 'HH:mm')}</div>
+                <div
+                  key={s.id}
+                  className="flex items-center gap-3 p-3 rounded-xl border-l-4 border bg-card hover:bg-muted/30 transition"
+                  style={room?.color ? { borderLeftColor: room.color } : undefined}
+                >
+                  <div className="text-center min-w-[70px]">
+                    <div className="font-bold text-xl">{format(parseISO(s.scheduled_at), 'HH:mm')}</div>
                     <div className="text-[10px] text-muted-foreground">{s.duration_minutes}min</div>
                   </div>
-                  <div className="flex-1">
-                    <div className="text-sm">{eqName(s.equipment_id)}</div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-3 flex-wrap">
-                      <span className="flex items-center gap-1"><User2 className="h-3 w-3" /> {booked} / {s.capacity}</span>
-                      <span className="flex items-center gap-1 text-primary font-medium">👨‍🏫 {instructorName(s.instructor_id)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                      {room && (
+                        <Badge style={{ background: `${room.color}20`, color: room.color, borderColor: `${room.color}40` }} variant="outline" className="border">
+                          <DoorOpen className="h-3 w-3 mr-1" />{room.name}
+                        </Badge>
+                      )}
+                      <span className="text-muted-foreground inline-flex items-center gap-1">
+                        <Dumbbell className="h-3 w-3" />{eqName(s.equipment_id)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-3 flex-wrap mt-1">
+                      <span className="flex items-center gap-1"><GraduationCap className="h-3 w-3" />{instructorName(s.instructor_id)}</span>
+                      <span className="flex items-center gap-1"><UsersIcon className="h-3 w-3" />{booked} / {s.capacity}</span>
                     </div>
                   </div>
-                  <Badge variant={full ? 'destructive' : 'secondary'}>{full ? 'Lotado' : 'Aberto'}</Badge>
+                  <Badge variant={full ? 'destructive' : 'secondary'}>{full ? 'Lotado' : `${s.capacity - booked} vaga(s)`}</Badge>
                   <Button size="icon" variant="ghost" onClick={() => { if (confirm('Excluir slot?')) remove.mutate(s.id); }}><Trash2 className="h-4 w-4" /></Button>
                 </div>
               );
