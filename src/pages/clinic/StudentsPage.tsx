@@ -326,8 +326,8 @@ export default function StudentsPage() {
   };
 
   return (
-    <div className="p-6 space-y-4 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
+    <div className="p-3 sm:p-6 space-y-4 max-w-7xl mx-auto w-full overflow-x-hidden pb-24">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Alunos</h1>
           <p className="text-sm text-muted-foreground">Cadastre alunos e acompanhe sua evolução.</p>
@@ -376,9 +376,9 @@ export default function StudentsPage() {
         </Card>
       )}
 
-      <div className="grid md:grid-cols-[320px_1fr] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 min-w-0">
         {/* Lista */}
-        <Card className="p-2 max-h-[70vh] overflow-y-auto">
+        <Card className="p-2 max-h-[60vh] lg:max-h-[70vh] overflow-y-auto min-w-0">
           <div className="p-2 space-y-2 sticky top-0 bg-card z-10">
             <div className="relative">
               <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -450,19 +450,19 @@ export default function StudentsPage() {
         </Card>
 
         {/* Detalhe */}
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-0">
           {!current ? (
             <Card className="p-8 text-center text-muted-foreground">Selecione um aluno para ver detalhes.</Card>
           ) : (
             <>
-              <Card className="p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <label className="relative cursor-pointer group">
+              <Card className="p-4 sm:p-5 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                  <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+                    <label className="relative cursor-pointer group shrink-0">
                       {(current as any).avatar_url ? (
-                        <img src={(current as any).avatar_url} alt={current.full_name} className="h-20 w-20 rounded-full object-cover" />
+                        <img src={(current as any).avatar_url} alt={current.full_name} className="h-16 w-16 sm:h-20 sm:w-20 rounded-full object-cover" />
                       ) : (
-                        <div className="h-20 w-20 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-2xl">
+                        <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xl sm:text-2xl">
                           {current.full_name.charAt(0).toUpperCase()}
                         </div>
                       )}
@@ -471,41 +471,51 @@ export default function StudentsPage() {
                       </div>
                       <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
                     </label>
-                    <div>
-                      <h2 className="text-xl font-bold">{current.full_name}</h2>
-                      <p className="text-sm text-muted-foreground">{current.email || 'Sem email'} {current.phone ? `· ${current.phone}` : ''}</p>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-lg sm:text-xl font-bold truncate">{current.full_name}</h2>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">{current.email || 'Sem email'}</p>
+                      {current.phone && <p className="text-xs text-muted-foreground truncate">{current.phone}</p>}
                       {currentLevel && <Badge className="mt-2" style={{ backgroundColor: currentLevel.color || undefined }}>{currentLevel.name}</Badge>}
                     </div>
                   </div>
-                  <div className="flex gap-2 flex-wrap justify-end">
-                    <Button variant="outline" size="sm" onClick={openAnamnese}>
-                      <HeartPulse className="h-3.5 w-3.5 mr-1" />Ficha clínica
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="self-end sm:self-start shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => { remove.mutate(current.id); setSelectedStudent(null); }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Ações em grid responsivo */}
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                  <Button variant="outline" size="sm" onClick={openAnamnese} className="justify-start">
+                    <HeartPulse className="h-3.5 w-3.5 mr-1 shrink-0" /><span className="truncate">Ficha clínica</span>
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setRecOpen(true)} className="justify-start">
+                    <Repeat className="h-3.5 w-3.5 mr-1 shrink-0" /><span className="truncate">Horários{studentRecs.length > 0 ? ` (${studentRecs.length})` : ''}</span>
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={openContract} className="justify-start">
+                    <FileText className="h-3.5 w-3.5 mr-1 shrink-0" /><span className="truncate">Contrato</span>
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleGenerateAccess} disabled={inviting || !current.email} className="justify-start">
+                    <KeyRound className="h-3.5 w-3.5 mr-1 shrink-0" /><span className="truncate">{current.user_id ? 'Resetar senha' : 'Gerar acesso'}</span>
+                  </Button>
+                  {allowLoginAsStudent && current.user_id && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => handleImpersonateStudent(current.id, current.full_name)}
+                      className="bg-amber-600 hover:bg-amber-700 text-white justify-start col-span-2 sm:col-span-1"
+                    >
+                      <LogIn className="h-3.5 w-3.5 mr-1 shrink-0" /><span className="truncate">Entrar como aluno</span>
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setRecOpen(true)}>
-                      <Repeat className="h-3.5 w-3.5 mr-1" />Horários fixos {studentRecs.length > 0 && `(${studentRecs.length})`}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={openContract}>
-                      <FileText className="h-3.5 w-3.5 mr-1" />Contrato
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleGenerateAccess} disabled={inviting || !current.email}>
-                      <KeyRound className="h-3.5 w-3.5 mr-1" />{current.user_id ? 'Resetar senha' : 'Gerar acesso'}
-                    </Button>
-                    {allowLoginAsStudent && current.user_id && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleImpersonateStudent(current.id, current.full_name)}
-                        className="bg-amber-600 hover:bg-amber-700 text-white"
-                      >
-                        <LogIn className="h-3.5 w-3.5 mr-1" />Entrar como aluno
-                      </Button>
-                    )}
-                    <Select value={current.skill_level_id || ''} onValueChange={(v) => update.mutate({ id: current.id, skill_level_id: v })}>
-                      <SelectTrigger className="w-40"><SelectValue placeholder="Nível" /></SelectTrigger>
-                      <SelectContent>{levels.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}</SelectContent>
-                    </Select>
-                    <Button variant="ghost" size="icon" onClick={() => { remove.mutate(current.id); setSelectedStudent(null); }}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
+                  )}
+                  <Select value={current.skill_level_id || ''} onValueChange={(v) => update.mutate({ id: current.id, skill_level_id: v })}>
+                    <SelectTrigger className="h-9 col-span-2 sm:col-span-1"><SelectValue placeholder="Nível" /></SelectTrigger>
+                    <SelectContent>{levels.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}</SelectContent>
+                  </Select>
                 </div>
 
                 {/* Professores fixos */}
@@ -556,7 +566,7 @@ export default function StudentsPage() {
                   <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>Ficha clínica · {current.full_name}</DialogTitle></DialogHeader>
                     <div className="space-y-3">
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div><label className="text-xs">Nascimento</label><Input type="date" value={anamnese.birth_date || ''} onChange={(e) => setAnamnese({ ...anamnese, birth_date: e.target.value })} /></div>
                         <div><label className="text-xs">Peso (kg)</label><Input type="number" step="0.1" value={anamnese.weight_kg ?? ''} onChange={(e) => setAnamnese({ ...anamnese, weight_kg: e.target.value })} /></div>
                         <div><label className="text-xs">Altura (cm)</label><Input type="number" value={anamnese.height_cm ?? ''} onChange={(e) => setAnamnese({ ...anamnese, height_cm: e.target.value })} /></div>
@@ -668,7 +678,7 @@ export default function StudentsPage() {
                 </Dialog>
               </Card>
 
-              <Card className="p-5">
+              <Card className="p-4 sm:p-5 min-w-0">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold flex items-center gap-2"><Activity className="h-4 w-4" />Prescrições</h3>
                   {canPrescribe && (
@@ -717,7 +727,7 @@ export default function StudentsPage() {
                 )}
               </Card>
 
-              <Card className="p-5">
+              <Card className="p-4 sm:p-5 min-w-0">
                 <h3 className="font-semibold mb-3 flex items-center gap-2"><Calendar className="h-4 w-4" />Evolução (últimas execuções)</h3>
                 {log.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhum exercício executado ainda.</p>
