@@ -250,19 +250,33 @@ export default function AppointmentsPage() {
                   <SelectContent>{students.map((s) => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><label className="text-sm">Hora</label><Input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} /></div>
-                <div><label className="text-sm">Duração (min)</label><Input type="number" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: parseInt(e.target.value) || 50 })} /></div>
-              </div>
               <div>
-                <label className="text-sm">Equipamento</label>
-                <Select value={form.equipment_id} onValueChange={(v) => setForm({ ...form, equipment_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Opcional" /></SelectTrigger>
-                  <SelectContent>{equipment.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}</SelectContent>
+                <label className="text-sm">Horário disponível na grade</label>
+                <Select value={form.bookable_slot_id} onValueChange={(v) => setForm({ ...form, bookable_slot_id: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={availableSlots.length ? 'Selecione um horário' : 'Sem horários na grade deste dia'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSlots.map((s) => {
+                      const used = slotOccupancy.get(s.id) || 0;
+                      const free = (s.capacity || 1) - used;
+                      const eqName = equipment.find((e) => e.id === s.equipment_id)?.name;
+                      return (
+                        <SelectItem key={s.id} value={s.id}>
+                          {format(parseISO(s.scheduled_at), 'HH:mm')} · {s.duration_minutes}min{eqName ? ` · ${eqName}` : ''} · {free} vaga{free !== 1 ? 's' : ''}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
                 </Select>
+                {availableSlots.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Configure os horários em <span className="font-medium">Grade Master</span> para esta data.
+                  </p>
+                )}
               </div>
               <div><label className="text-sm">Observações</label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-              <Button onClick={handleCreate} disabled={!form.student_id} className="w-full">Agendar</Button>
+              <Button onClick={handleCreate} disabled={!form.student_id || !form.bookable_slot_id} className="w-full">Agendar</Button>
             </div>
           </DialogContent>
         </Dialog>
