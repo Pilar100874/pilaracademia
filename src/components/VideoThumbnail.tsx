@@ -15,14 +15,11 @@ interface Props {
   autoplayPreview?: boolean;
 }
 
-// Module-level cache so re-mounts (scrolling) reuse already captured frames.
-const frameCache = new Map<string, string>();
-
 /**
  * Renders a thumbnail for an exercise video at the configured start time.
  * - YouTube: uses the official thumbnail.
- * - Upload: captures the frame at video_start_seconds via a hidden <video>,
- *   cached in-memory for instant reuse.
+ * - Upload: renders the real video element paused at the start frame so browser
+ *   cache/canvas issues cannot leave the preview blank.
  */
 export function VideoThumbnail({
   videoType,
@@ -35,12 +32,7 @@ export function VideoThumbnail({
   autoplayPreview = false,
 }: Props) {
   const freshVideoUrl = getFreshMediaUrl(videoUrl);
-  const cacheKey = freshVideoUrl ? `${freshVideoUrl}@${startSeconds ?? 0}` : '';
-  const [frameUrl, setFrameUrl] = useState<string | null>(
-    cacheKey ? frameCache.get(cacheKey) ?? null : null
-  );
   const [errored, setErrored] = useState(false);
-  const videoElRef = useRef<HTMLVideoElement | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
 
   const isUploadAutoplay = autoplayPreview && videoType === 'upload' && !!videoUrl;
@@ -74,72 +66,6 @@ export function VideoThumbnail({
     };
   }, [isUploadAutoplay, startSeconds, endSeconds, videoUrl]);
 
-  // Capture frame for uploaded videos (when not autoplaying)
-  useEffect(() => {
-    if (videoType !== 'upload' || !freshVideoUrl) return;
-    if (frameCache.has(cacheKey)) {
-      setFrameUrl(frameCache.get(cacheKey)!);
-      return;
-    }
-    setErrored(false);
-
-    const video = document.createElement('video');
-    videoElRef.current = video;
-    video.crossOrigin = 'anonymous';
-    video.preload = 'metadata';
-    video.muted = true;
-    video.playsInline = true;
-    video.src = freshVideoUrl;
-
-    const target = Math.max(0, startSeconds ?? 0);
-
-    const onLoaded = () => {
-      try {
-        video.currentTime = target;
-      } catch {
-        setErrored(true);
-      }
-    };
-
-    const onSeeked = () => {
-      try {
-        // Downscale captured frame to ~360px wide for fast rendering & low memory.
-        const maxW = 360;
-        const vw = video.videoWidth || 320;
-        const vh = video.videoHeight || 180;
-        const scale = Math.min(1, maxW / vw);
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(vw * scale);
-        canvas.height = Math.round(vh * scale);
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          setErrored(true);
-          return;
-        }
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const data = canvas.toDataURL('image/jpeg', 0.6);
-        frameCache.set(cacheKey, data);
-        setFrameUrl(data);
-      } catch {
-        setErrored(true);
-      }
-    };
-
-    const onError = () => setErrored(true);
-
-    video.addEventListener('loadedmetadata', onLoaded);
-    video.addEventListener('seeked', onSeeked);
-    video.addEventListener('error', onError);
-
-    return () => {
-      video.removeEventListener('loadedmetadata', onLoaded);
-      video.removeEventListener('seeked', onSeeked);
-      video.removeEventListener('error', onError);
-      video.src = '';
-      videoElRef.current = null;
-    };
-  }, [videoType, freshVideoUrl, startSeconds, cacheKey]);
-
   if (!freshVideoUrl || !videoType) return null;
 
   let thumbSrc: string | null = null;
@@ -147,8 +73,6 @@ export function VideoThumbnail({
     const id = parseYouTubeId(videoUrl);
     // mqdefault (320x180) loads much faster than hqdefault (480x360)
     if (id) thumbSrc = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
-  } else if (videoType === 'upload' && frameUrl) {
-    thumbSrc = frameUrl;
   }
 
   const playSize = iconSize === 'sm' ? 'h-3.5 w-3.5' : 'h-5 w-5';
@@ -156,22 +80,34 @@ export function VideoThumbnail({
 
   const isInstagram = videoType === 'instagram';
 
-  // Live autoplay preview for uploaded videos — show captured frame as poster
-  // so the area is never blank while the video downloads.
-  if (isUploadAutoplay) {
+  if (videoType === 'upload') {
     return (
       <div className={`relative bg-black ${className ?? ''}`}>
         <video
           ref={previewRef}
+          key={freshVideoUrl}
           src={freshVideoUrl}
-          poster={frameUrl ?? undefined}
           muted
-          autoPlay
+          autoPlay={isUploadAutoplay}
           playsInline
-          loop
+          loop={isUploadAutoplay}
           preload="metadata"
+          onLoadedMetadata={(e) => {
+            try {
+              e.currentTarget.currentTime = Math.max(0, startSeconds ?? 0);
+            } catch {
+              // ignore
+            }
+          }}
+          onError={() => setErrored(true)}
           className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'}`}
         />
+        {errored && <div className="absolute inset-0 bg-muted" />}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className={`${badgeSize} rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center`}>
+            <Play className={`${playSize} text-white fill-white`} />
+          </div>
+        </div>
       </div>
     );
   }
