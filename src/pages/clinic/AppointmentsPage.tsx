@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAppointments, type AppointmentStatus, type Appointment } from '@/hooks/useAppointments';
 import { useStudents, useEquipment, useSequences, usePrescriptions } from '@/hooks/useClinicData';
 import { useRecurringSchedules, expandRecurringForDay } from '@/hooks/useRecurringSchedules';
+import { useBookableSlots } from '@/hooks/useBookableSlots';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,31 +47,55 @@ export default function AppointmentsPage() {
   const [day, setDay] = useState(() => new Date());
   const dayISO = day.toISOString();
 
+  // Janela do dia para buscar slots da grade
+  const dayStart = useMemo(() => { const d = new Date(day); d.setHours(0,0,0,0); return d.toISOString(); }, [day]);
+  const dayEnd = useMemo(() => { const d = new Date(day); d.setHours(23,59,59,999); return d.toISOString(); }, [day]);
+
   const { data: appointments = [], create, updateStatus, remove } = useAppointments(activeClinicId, dayISO);
   const { data: students = [] } = useStudents(activeClinicId);
   const { data: equipment = [] } = useEquipment(activeClinicId);
   const { data: sequences = [] } = useSequences(activeClinicId);
   const { data: recurring = [] } = useRecurringSchedules(activeClinicId);
+  const { data: daySlots = [] } = useBookableSlots(activeClinicId, dayStart, dayEnd);
   const { create: createPresc } = usePrescriptions({ clinicId: activeClinicId });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ student_id: '', equipment_id: '', time: '08:00', duration_minutes: 50, notes: '' });
+  const [form, setForm] = useState<{ student_id: string; bookable_slot_id: string; notes: string }>({
+    student_id: '', bookable_slot_id: '', notes: '',
+  });
+
+  // Vagas livres por slot (capacity - appointments já criados nesse slot)
+  const slotOccupancy = useMemo(() => {
+    const map = new Map<string, number>();
+    appointments.forEach((a: any) => {
+      if (a.bookable_slot_id && a.status !== 'cancelled') {
+        map.set(a.bookable_slot_id, (map.get(a.bookable_slot_id) || 0) + 1);
+      }
+    });
+    return map;
+  }, [appointments]);
+
+  const availableSlots = useMemo(() => {
+    return daySlots
+      .filter((s) => (slotOccupancy.get(s.id) || 0) < (s.capacity || 1))
+      .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at));
+  }, [daySlots, slotOccupancy]);
 
   const handleCreate = async () => {
-    if (!user || !activeClinicId || !form.student_id) return;
-    const [h, m] = form.time.split(':').map(Number);
-    const sched = new Date(day);
-    sched.setHours(h, m, 0, 0);
+    if (!user || !activeClinicId || !form.student_id || !form.bookable_slot_id) return;
+    const slot = daySlots.find((s) => s.id === form.bookable_slot_id);
+    if (!slot) { toast.error('Horário não encontrado na grade'); return; }
     await create.mutateAsync({
       clinic_id: activeClinicId,
       student_id: form.student_id,
-      equipment_id: form.equipment_id || null,
-      instructor_id: user.id,
-      scheduled_at: sched.toISOString(),
-      duration_minutes: form.duration_minutes,
+      equipment_id: slot.equipment_id,
+      instructor_id: slot.instructor_id || user.id,
+      scheduled_at: slot.scheduled_at,
+      duration_minutes: slot.duration_minutes,
       notes: form.notes || null,
       created_by: user.id,
-    });
+      bookable_slot_id: slot.id,
+    } as any);
     const stu = students.find((s) => s.id === form.student_id);
     if (stu?.user_id) {
       await supabase.from('notifications').insert({
@@ -78,11 +103,11 @@ export default function AppointmentsPage() {
         clinic_id: activeClinicId,
         type: 'appointment_reminder',
         title: 'Nova aula agendada',
-        body: `${format(sched, "dd/MM 'às' HH:mm", { locale: ptBR })}`,
+        body: `${format(parseISO(slot.scheduled_at), "dd/MM 'às' HH:mm", { locale: ptBR })}`,
         link: '/meu-pilates',
       });
     }
-    setForm({ student_id: '', equipment_id: '', time: '08:00', duration_minutes: 50, notes: '' });
+    setForm({ student_id: '', bookable_slot_id: '', notes: '' });
     setOpen(false);
   };
 
@@ -225,19 +250,33 @@ export default function AppointmentsPage() {
                   <SelectContent>{students.map((s) => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><label className="text-sm">Hora</label><Input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} /></div>
-                <div><label className="text-sm">Duração (min)</label><Input type="number" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: parseInt(e.target.value) || 50 })} /></div>
-              </div>
               <div>
-                <label className="text-sm">Equipamento</label>
-                <Select value={form.equipment_id} onValueChange={(v) => setForm({ ...form, equipment_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Opcional" /></SelectTrigger>
-                  <SelectContent>{equipment.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}</SelectContent>
+                <label className="text-sm">Horário disponível na grade</label>
+                <Select value={form.bookable_slot_id} onValueChange={(v) => setForm({ ...form, bookable_slot_id: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={availableSlots.length ? 'Selecione um horário' : 'Sem horários na grade deste dia'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSlots.map((s) => {
+                      const used = slotOccupancy.get(s.id) || 0;
+                      const free = (s.capacity || 1) - used;
+                      const eqName = equipment.find((e) => e.id === s.equipment_id)?.name;
+                      return (
+                        <SelectItem key={s.id} value={s.id}>
+                          {format(parseISO(s.scheduled_at), 'HH:mm')} · {s.duration_minutes}min{eqName ? ` · ${eqName}` : ''} · {free} vaga{free !== 1 ? 's' : ''}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
                 </Select>
+                {availableSlots.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Configure os horários em <span className="font-medium">Grade Master</span> para esta data.
+                  </p>
+                )}
               </div>
               <div><label className="text-sm">Observações</label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-              <Button onClick={handleCreate} disabled={!form.student_id} className="w-full">Agendar</Button>
+              <Button onClick={handleCreate} disabled={!form.student_id || !form.bookable_slot_id} className="w-full">Agendar</Button>
             </div>
           </DialogContent>
         </Dialog>
