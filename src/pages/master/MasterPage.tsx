@@ -379,6 +379,13 @@ export default function MasterPage() {
                   }
                 />
               </div>
+              <div>
+                <Label>Logotipo</Label>
+                <ClinicLogoUploader
+                  value={editing.logo_url}
+                  onChange={(url) => setEditing({ ...editing, logo_url: url })}
+                />
+              </div>
             </div>
           )}
           <DialogFooter>
