@@ -42,6 +42,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { useMyClinicPermissions } from '@/hooks/useClinicPermissions';
 
 const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
@@ -53,6 +54,9 @@ export default function ExerciseLibraryPage() {
   const { user } = useAuth();
   const { exercises, isLoading, deleteExercise, createExercise, moveExercises, scope } = useExerciseLibrary();
   const isGlobalScope = scope.kind === 'global';
+  // Permission gating for clinic scope
+  const { data: myClinicPerms } = useMyClinicPermissions();
+  const canCreateInScope = scope.kind === 'clinic' ? !!myClinicPerms?.can_create_exercises : true;
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
@@ -724,6 +728,7 @@ export default function ExerciseLibraryPage() {
                 <Instagram className="h-4 w-4 mr-1" />
                 Instagram
               </Button>
+              {canCreateInScope && (
               <Button onClick={() => {
                 setEditingExercise(null);
                 setDialogOpen(true);
@@ -731,6 +736,7 @@ export default function ExerciseLibraryPage() {
                 <Plus className="h-4 w-4 mr-1" />
                 Novo
               </Button>
+              )}
             </>
           )}
           <input
@@ -872,7 +878,7 @@ export default function ExerciseLibraryPage() {
                   : 'Crie seus exercícios para usar nos treinos'}
               </p>
             </div>
-            {!search && filterCategory === ALL_CATEGORIES && (
+            {!search && filterCategory === ALL_CATEGORIES && canCreateInScope && (
               <Button onClick={() => {
                 setEditingExercise(null);
                 setDialogOpen(true);
