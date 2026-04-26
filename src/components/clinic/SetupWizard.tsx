@@ -388,7 +388,7 @@ function StepStaff({ clinicId, hook }: { clinicId: string; hook: ReturnType<type
       )}
 
       <ItemList
-        items={hook.data ?? []}
+        items={(hook.data ?? []).map((m) => ({ ...m, id: `${m.user_id}-${m.role}` }))}
         empty="Nenhum membro convidado ainda"
         render={(m) => (
           <>
