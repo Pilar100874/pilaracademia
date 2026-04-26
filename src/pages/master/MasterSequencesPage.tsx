@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { ExercisePickerDialog } from '@/components/ExercisePickerDialog';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from '@dnd-kit/core';
