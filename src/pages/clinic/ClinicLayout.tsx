@@ -255,6 +255,14 @@ export default function ClinicLayout() {
           </div>
         </nav>
       </main>
+
+      {wizardOpen && activeClinicId && (
+        <SetupWizard
+          clinicId={activeClinicId}
+          onClose={() => setWizardOpen(false)}
+          onCompleted={() => setWizardOpen(false)}
+        />
+      )}
     </div>
   );
 }
