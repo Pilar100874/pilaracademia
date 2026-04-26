@@ -320,7 +320,7 @@ export default function MasterPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setEditing({ id: c.id, name: c.name, slug: c.slug })}
+                    onClick={() => setEditing({ id: c.id, name: c.name, slug: c.slug, logo_url: (c as any).logo_url ?? null })}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
