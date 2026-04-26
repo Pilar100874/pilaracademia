@@ -48,7 +48,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
               transition={{ delay: 0.5, duration: 0.5 }}
               className="text-4xl font-bold text-foreground tracking-tight"
             >
-              Pilar Caloria
+              Pilar Academia
             </motion.h1>
 
             {/* Tagline */}
@@ -58,7 +58,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
               transition={{ delay: 0.7, duration: 0.5 }}
               className="text-muted-foreground text-lg"
             >
-              Sua saúde em primeiro lugar
+              Gestão inteligente para sua clínica
             </motion.p>
           </motion.div>
 
