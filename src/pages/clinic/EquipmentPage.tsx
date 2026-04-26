@@ -152,8 +152,12 @@ export default function EquipmentPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="font-semibold truncate">{eq.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {eq.equipment_type}
+                    <div className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                      {eq.room_id ? (
+                        <><DoorOpen className="h-3 w-3" />{roomNameOf(eq.room_id)}</>
+                      ) : (
+                        <span className="italic">Sem sala</span>
+                      )}
                       {eq.identifier ? ` · ${eq.identifier}` : ''}
                     </div>
                   </div>
