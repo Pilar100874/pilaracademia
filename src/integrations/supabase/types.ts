@@ -1455,6 +1455,48 @@ export type Database = {
         }
         Relationships: []
       }
+      sequence_share_links: {
+        Row: {
+          active: boolean
+          clinic_id: string
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          last_viewed_at: string | null
+          sequence_id: string
+          student_id: string | null
+          token: string
+          view_count: number
+        }
+        Insert: {
+          active?: boolean
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          last_viewed_at?: string | null
+          sequence_id: string
+          student_id?: string | null
+          token?: string
+          view_count?: number
+        }
+        Update: {
+          active?: boolean
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          last_viewed_at?: string | null
+          sequence_id?: string
+          student_id?: string | null
+          token?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           clinic_id: string | null
@@ -1682,6 +1724,7 @@ export type Database = {
         Returns: boolean
       }
       is_master_admin: { Args: { _user_id: string }; Returns: boolean }
+      register_share_link_view: { Args: { _token: string }; Returns: undefined }
     }
     Enums: {
       app_role:
