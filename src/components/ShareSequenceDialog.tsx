@@ -31,6 +31,8 @@ interface Props {
   clinicId: string;
   sequenceId: string;
   sequenceName: string;
+  /** Pre-select a student in the picker (used from "live session" flow). */
+  initialStudentId?: string | null;
 }
 
 function buildShareUrl(token: string) {
@@ -43,18 +45,18 @@ function buildWhatsAppUrl(phone: string | null, message: string) {
   return `${base}?text=${encodeURIComponent(message)}`;
 }
 
-export function ShareSequenceDialog({ open, onOpenChange, clinicId, sequenceId, sequenceName }: Props) {
+export function ShareSequenceDialog({ open, onOpenChange, clinicId, sequenceId, sequenceName, initialStudentId }: Props) {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [studentId, setStudentId] = useState<string>(NO_STUDENT);
+  const [studentId, setStudentId] = useState<string>(initialStudentId || NO_STUDENT);
   const [days, setDays] = useState<string>('30');
 
   useEffect(() => {
-    if (!open) {
-      setStudentId(NO_STUDENT);
+    if (open) {
+      setStudentId(initialStudentId || NO_STUDENT);
       setDays('30');
     }
-  }, [open]);
+  }, [open, initialStudentId]);
 
   const { data: students = [] } = useQuery<Student[]>({
     queryKey: ['clinic-students-for-share', clinicId],
