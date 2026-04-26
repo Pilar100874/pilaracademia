@@ -185,10 +185,12 @@ export default function MasterSequencesPage() {
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ name: '', description: '', estimated_minutes: '' });
+  const [editForm, setEditForm] = useState({ name: '', description: '', estimated_minutes: '' });
   const [zoomImages, setZoomImages] = useState<string[]>([]);
   const [videoItem, setVideoItem] = useState<GlobalItem | null>(null);
 
