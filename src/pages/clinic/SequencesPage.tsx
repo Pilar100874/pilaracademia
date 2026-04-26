@@ -11,6 +11,7 @@ import { Plus, Trash2, ListOrdered, GripVertical, Library, Pencil, Check, X, Mes
 import { ShareSequenceDialog } from '@/components/ShareSequenceDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { ExercisePickerDialog } from '@/components/ExercisePickerDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -50,15 +51,33 @@ function SortableItemRow({ item, idx, onRemove, onEdit, onZoomImages, onPlayVide
       </button>
       <button
         type="button"
-        onClick={() => hasImages && onZoomImages(item.image_urls as string[])}
-        className={`relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 bg-muted/40 flex items-center justify-center ${hasImages ? 'cursor-zoom-in group/img' : ''}`}
-        title={hasImages ? 'Ampliar imagem' : undefined}
+        onClick={() => {
+          if (hasVideo) onPlayVideo(item);
+          else if (hasImages) onZoomImages(item.image_urls as string[]);
+        }}
+        className={`relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 bg-muted/40 flex items-center justify-center overflow-hidden ${hasImages || hasVideo ? 'cursor-pointer group/img' : ''}`}
+        title={hasVideo ? 'Reproduzir vídeo' : hasImages ? 'Ampliar imagem' : undefined}
       >
-        {hasImages ? (
+        {hasVideo && item.video_type === 'upload' ? (
+          <VideoThumbnail
+            videoType={item.video_type}
+            videoUrl={item.video_url}
+            startSeconds={item.video_start_seconds ?? null}
+            endSeconds={item.video_end_seconds ?? null}
+            className="w-full h-full"
+            objectFit="contain"
+            iconSize="sm"
+            autoplayPreview
+          />
+        ) : hasImages ? (
           <>
             <img src={item.image_urls![0]} alt={item.name} className="h-full w-full object-contain" />
             <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/30 transition-colors flex items-center justify-center">
-              <Maximize2 className="h-4 w-4 text-white opacity-0 group-hover/img:opacity-100 transition-opacity" />
+              {hasVideo ? (
+                <Play className="h-5 w-5 text-white drop-shadow opacity-90" />
+              ) : (
+                <Maximize2 className="h-4 w-4 text-white opacity-0 group-hover/img:opacity-100 transition-opacity" />
+              )}
             </div>
             {(item.image_urls?.length ?? 0) > 1 && (
               <span className="absolute bottom-0.5 right-0.5 text-[9px] bg-black/60 text-white px-1 rounded">
@@ -66,10 +85,20 @@ function SortableItemRow({ item, idx, onRemove, onEdit, onZoomImages, onPlayVide
               </span>
             )}
           </>
+        ) : hasVideo ? (
+          <VideoThumbnail
+            videoType={item.video_type}
+            videoUrl={item.video_url}
+            startSeconds={item.video_start_seconds ?? null}
+            endSeconds={item.video_end_seconds ?? null}
+            className="w-full h-full"
+            objectFit="contain"
+            iconSize="sm"
+          />
         ) : (
           <Dumbbell className="h-5 w-5 text-muted-foreground" />
         )}
-        <div className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow">
+        <div className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow z-10">
           {idx + 1}
         </div>
       </button>
