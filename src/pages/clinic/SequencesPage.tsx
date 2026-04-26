@@ -397,6 +397,28 @@ export default function SequencesPage() {
         </div>
       </div>
 
+      {/* Library picker (visual, multi-select, filters) */}
+      <ExercisePickerDialog
+        open={libOpen}
+        onOpenChange={setLibOpen}
+        exercises={library as any}
+        categories={categories as any}
+        showOriginFilter
+        title="Adicionar da biblioteca"
+        onConfirm={async (picks) => {
+          await addFromLibrary.mutateAsync(picks as any);
+        }}
+      />
+
+      {/* Template picker — loads exercises from a global template into this sequence */}
+      <TemplateExercisesPicker
+        open={templateOpen}
+        onOpenChange={setTemplateOpen}
+        onAdd={async (picks) => {
+          await addFromLibrary.mutateAsync(picks as any);
+        }}
+      />
+
       <ImageZoomDialog
         images={zoomImages}
         open={zoomImages.length > 0}
@@ -420,5 +442,139 @@ export default function SequencesPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// ============= Template picker =============
+// Lets the clinic browse global templates, pick one, and choose which
+// exercises from it to append to the currently open clinic sequence.
+function TemplateExercisesPicker({
+  open,
+  onOpenChange,
+  onAdd,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  onAdd: (picks: any[]) => Promise<void>;
+}) {
+  const [templateId, setTemplateId] = useState<string | null>(null);
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['global-templates-for-picker'],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('exercise_sequences')
+        .select('id,name,description,estimated_minutes')
+        .eq('is_global', true)
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: tplItems = [] } = useQuery({
+    queryKey: ['global-template-items', templateId],
+    enabled: !!templateId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('exercise_sequence_items')
+        .select('id,name,image_urls,sets,reps,video_url,video_type,video_start_seconds,video_end_seconds,exercise_library_id')
+        .eq('sequence_id', templateId!)
+        .order('order_index');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Reset when closed
+  useEffect(() => { if (!open) setTemplateId(null); }, [open]);
+
+  // Map template items to PickableExercise shape (default_sets/reps from item)
+  const pickable = (tplItems as any[]).map((it) => ({
+    id: it.id,
+    name: it.name,
+    image_urls: it.image_urls,
+    default_sets: it.sets,
+    default_reps: it.reps,
+    video_url: it.video_url,
+    video_type: it.video_type,
+    video_start_seconds: it.video_start_seconds,
+    video_end_seconds: it.video_end_seconds,
+    is_global: true,
+    // keep reference for insertion
+    __ref_library_id: it.exercise_library_id,
+  }));
+
+  if (!open) return null;
+
+  // Step 1: pick template
+  if (!templateId) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LayoutTemplate className="h-5 w-5 text-primary" />
+              Escolha um template
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            <div className="grid sm:grid-cols-2 gap-2 p-1">
+              {templates.length === 0 && (
+                <p className="col-span-full text-sm text-muted-foreground text-center py-8">
+                  Nenhum template global disponível.
+                </p>
+              )}
+              {(templates as any[]).map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTemplateId(t.id)}
+                  className="text-left rounded-xl border bg-card p-3 hover:border-primary/50 hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-center gap-2 font-semibold text-sm">
+                    <LayoutTemplate className="h-4 w-4 text-primary" />
+                    {t.name}
+                  </div>
+                  {t.description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.description}</p>
+                  )}
+                  {t.estimated_minutes && (
+                    <p className="text-[10px] text-muted-foreground mt-1">~{t.estimated_minutes} min</p>
+                  )}
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Step 2: pick exercises from chosen template
+  return (
+    <ExercisePickerDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      exercises={pickable as any}
+      categories={[]}
+      title="Selecione exercícios do template"
+      confirmLabel={(c) => `Adicionar ${c || ''} à sequência`}
+      onConfirm={async (picks) => {
+        // Map back to addFromLibrary shape, preferring the original library_id when available
+        const mapped = picks.map((p: any) => ({
+          id: p.__ref_library_id ?? p.id,
+          name: p.name,
+          default_sets: p.default_sets,
+          default_reps: p.default_reps,
+          image_urls: p.image_urls ?? [],
+          video_url: p.video_url,
+          video_type: p.video_type,
+          video_start_seconds: p.video_start_seconds,
+          video_end_seconds: p.video_end_seconds,
+        }));
+        await onAdd(mapped);
+      }}
+    />
   );
 }
