@@ -3,7 +3,8 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 import { useStudents, useSequences, useEquipment, useSkillLevels } from '@/hooks/useClinicData';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Activity, Play, Square, ChevronRight, Sparkles, Plus, X } from 'lucide-react';
+import { Activity, Play, Square, ChevronRight, Sparkles, Plus, X, MessageCircle } from 'lucide-react';
+import { ShareSequenceDialog } from '@/components/ShareSequenceDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -66,6 +67,7 @@ export default function LiveSessionPage() {
   }, [session?.id, refetchLive]);
 
   const [selectedLive, setSelectedLive] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const startSession = async () => {
     if (!user || !activeClinicId) return;
@@ -324,12 +326,26 @@ export default function LiveSessionPage() {
             <Card className="p-8 text-center text-muted-foreground">Selecione um aluno para focar.</Card>
           ) : (
             <Card className="p-5">
-              <div className="flex items-start justify-between mb-4">
-                <div>
+              <div className="flex items-start justify-between mb-4 gap-2">
+                <div className="min-w-0">
                   <div className="text-xs text-muted-foreground uppercase">{(selectedLiveStudent as any).clinic_equipment?.name}</div>
-                  <h2 className="text-2xl font-bold">{(selectedLiveStudent as any).clinic_students?.full_name}</h2>
+                  <h2 className="text-2xl font-bold truncate">{(selectedLiveStudent as any).clinic_students?.full_name}</h2>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => removeFromSession(selectedLiveStudent.id)}><X className="h-4 w-4" /></Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  {focusItems.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShareOpen(true)}
+                      className="gap-1.5 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-900/40 dark:hover:bg-emerald-950/30"
+                      title="Enviar sequência por WhatsApp"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      <span className="hidden sm:inline">WhatsApp</span>
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" onClick={() => removeFromSession(selectedLiveStudent.id)} title="Remover da aula"><X className="h-4 w-4" /></Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
@@ -362,6 +378,22 @@ export default function LiveSessionPage() {
           )}
         </div>
       </div>
+
+      {/* Enviar sequência por WhatsApp */}
+      {activeClinicId && selectedLiveStudent && focusItems.length > 0 && (() => {
+        const seqId = (focusItems[0] as any).sequence_id as string;
+        const seqName = sequences.find((s: any) => s.id === seqId)?.name || 'Sequência';
+        return (
+          <ShareSequenceDialog
+            open={shareOpen}
+            onOpenChange={setShareOpen}
+            clinicId={activeClinicId}
+            sequenceId={seqId}
+            sequenceName={seqName}
+            initialStudentId={(selectedLiveStudent as any).student_id}
+          />
+        );
+      })()}
     </div>
   );
 }
