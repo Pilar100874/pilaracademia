@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Search, Dumbbell, Play, Maximize2, CheckCircle2, X, Filter, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { cn } from '@/lib/utils';
 
