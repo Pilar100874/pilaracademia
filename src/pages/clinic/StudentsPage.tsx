@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
-import { useStudents, useSkillLevels, usePrescriptions, useSequences } from '@/hooks/useClinicData';
+import { useStudents, useSkillLevels, usePrescriptions, useSequences, useEquipment } from '@/hooks/useClinicData';
+import { useRecurringSchedules } from '@/hooks/useRecurringSchedules';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save } from 'lucide-react';
+import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save, Repeat } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,6 +15,8 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+
+const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 export default function StudentsPage() {
   const { activeClinicId } = useUserRoles();
