@@ -18,15 +18,11 @@ function useIsMaster() {
     queryKey: ["is-master", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("id")
-        .eq("user_id", user!.id)
-        .eq("role", "master_admin")
-        .is("clinic_id", null)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("is_master_admin", {
+        _user_id: user!.id,
+      });
       if (error) throw error;
-      return !!data;
+      return data === true;
     },
   });
 }

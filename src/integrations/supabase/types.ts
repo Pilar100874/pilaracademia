@@ -1593,6 +1593,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_clinic_admin: {
+        Args: { _clinic_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_clinic_admin_or_instructor: {
         Args: { _clinic_id: string; _user_id: string }
         Returns: boolean
