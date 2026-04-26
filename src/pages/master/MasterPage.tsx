@@ -249,17 +249,26 @@ export default function MasterPage() {
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    if (confirm(`Excluir "${c.name}"? Esta ação não pode ser desfeita.`)) {
-                      deleteClinic.mutate(c.id);
-                    }
-                  }}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setEditing({ id: c.id, name: c.name, slug: c.slug })}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      if (confirm(`Excluir "${c.name}"? Esta ação não pode ser desfeita.`)) {
+                        deleteClinic.mutate(c.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
