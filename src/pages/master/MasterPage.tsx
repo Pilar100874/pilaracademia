@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Shield, Plus, Trash2, Building2, Users, ArrowLeft, Pencil, Library, FolderTree } from "lucide-react";
+import { Loader2, Shield, Plus, Trash2, Building2, Users, ArrowLeft, Pencil, Library, FolderTree, LogIn } from "lucide-react";
+import { impersonate } from "@/lib/impersonation";
+import { useNavigate as useNav2 } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -324,6 +326,26 @@ export default function MasterPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    title="Entrar como dono desta clínica"
+                    onClick={async () => {
+                      try {
+                        toast.loading('Entrando na clínica...', { id: 'imp' });
+                        await impersonate(
+                          { mode: 'master_to_clinic_owner', clinicId: c.id },
+                          `Você está logado como dono de ${c.name}`,
+                        );
+                        toast.success('Logado como dono da clínica', { id: 'imp' });
+                        navigate('/clinica');
+                      } catch (e: any) {
+                        toast.error(e?.message || 'Falha ao entrar', { id: 'imp' });
+                      }
+                    }}
+                  >
+                    <LogIn className="h-4 w-4 mr-1.5" /> Entrar
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
