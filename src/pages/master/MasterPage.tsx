@@ -308,8 +308,12 @@ export default function MasterPage() {
           <div className="grid gap-3">
             {clinics.map(c => (
               <Card key={c.id} className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Building2 className="h-5 w-5 text-primary" />
+                <div className="flex items-center gap-3 min-w-0">
+                  {(c as any).logo_url ? (
+                    <img src={(c as any).logo_url} alt="" className="h-10 w-10 rounded-lg object-contain bg-muted/30" />
+                  ) : (
+                    <Building2 className="h-5 w-5 text-primary" />
+                  )}
                   <div>
                     <div className="font-semibold">{c.name}</div>
                     <div className="text-xs text-muted-foreground flex items-center gap-2">
