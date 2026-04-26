@@ -6,7 +6,9 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save, Repeat, FileText } from 'lucide-react';
+import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save, Repeat, FileText, LogIn, Settings } from 'lucide-react';
+import { impersonate } from '@/lib/impersonation';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,14 +21,55 @@ import { toast } from 'sonner';
 const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 export default function StudentsPage() {
-  const { activeClinicId } = useUserRoles();
+  const { activeClinicId, isAdmin } = useUserRoles();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { data: students = [], create, remove, update } = useStudents(activeClinicId);
   const { data: levels = [] } = useSkillLevels(activeClinicId);
   const { data: sequences = [] } = useSequences(activeClinicId);
   const { create: createPresc } = usePrescriptions({ clinicId: activeClinicId });
   const { data: equipment = [] } = useEquipment(activeClinicId);
   const { data: recurring = [], create: createRec, remove: removeRec } = useRecurringSchedules(activeClinicId);
+
+  // Setting: allow_login_as_student (clinic admin only can toggle)
+  const { data: clinicSettings, refetch: refetchSettings } = useQuery({
+    queryKey: ['clinic-settings', activeClinicId],
+    enabled: !!activeClinicId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clinic_settings')
+        .select('clinic_id, allow_login_as_student')
+        .eq('clinic_id', activeClinicId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { clinic_id: string; allow_login_as_student: boolean } | null;
+    },
+  });
+  const allowLoginAsStudent = clinicSettings?.allow_login_as_student === true;
+
+  const toggleAllowLoginAsStudent = async (next: boolean) => {
+    if (!activeClinicId || !user) return;
+    const { error } = await supabase
+      .from('clinic_settings')
+      .upsert({ clinic_id: activeClinicId, allow_login_as_student: next }, { onConflict: 'clinic_id' });
+    if (error) { toast.error(error.message); return; }
+    toast.success(next ? 'Recurso ativado' : 'Recurso desativado');
+    refetchSettings();
+  };
+
+  const handleImpersonateStudent = async (studentId: string, name: string) => {
+    try {
+      toast.loading('Entrando como aluno...', { id: 'imp-st' });
+      await impersonate(
+        { mode: 'clinic_to_student', studentId },
+        `Você está logado como ${name}`,
+      );
+      toast.success('Logado como aluno', { id: 'imp-st' });
+      navigate('/');
+    } catch (e: any) {
+      toast.error(e?.message || 'Falha ao entrar como aluno', { id: 'imp-st' });
+    }
+  };
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', skill_level_id: '', notes: '' });
