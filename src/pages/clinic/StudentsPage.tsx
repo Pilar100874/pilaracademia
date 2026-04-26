@@ -23,7 +23,7 @@ import { toast } from 'sonner';
 const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 export default function StudentsPage() {
-  const { activeClinicId, isAdmin } = useUserRoles();
+  const { activeClinicId, isAdmin, isInstructor } = useUserRoles();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: students = [], create, remove, update } = useStudents(activeClinicId);
