@@ -73,15 +73,32 @@ function SortableRow({ item, idx, onRemove, onEdit, onZoomImages, onPlayVideo }:
 
       <button
         type="button"
-        onClick={() => hasImages && onZoomImages(item.image_urls as string[])}
-        className={`relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 bg-muted/40 flex items-center justify-center ${hasImages ? 'cursor-zoom-in group/img' : ''}`}
-        title={hasImages ? 'Ampliar imagem' : undefined}
+        onClick={() => {
+          if (hasVideo) onPlayVideo(item);
+          else if (hasImages) onZoomImages(item.image_urls as string[]);
+        }}
+        className={`relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 bg-muted/40 flex items-center justify-center overflow-hidden ${hasImages || hasVideo ? 'cursor-pointer group/img' : ''}`}
+        title={hasVideo ? 'Reproduzir vídeo' : hasImages ? 'Ampliar imagem' : undefined}
       >
-        {hasImages ? (
+        {hasVideo && item.video_type === 'upload' ? (
+          <VideoThumbnail
+            videoType={item.video_type}
+            videoUrl={item.video_url}
+            startSeconds={item.video_start_seconds}
+            endSeconds={item.video_end_seconds}
+            className="w-full h-full"
+            objectFit="contain"
+            autoplayPreview
+          />
+        ) : hasImages ? (
           <>
             <img src={item.image_urls![0]} alt={item.name} className="h-full w-full object-contain" />
             <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/30 transition-colors flex items-center justify-center">
-              <Maximize2 className="h-5 w-5 text-white opacity-0 group-hover/img:opacity-100 transition-opacity" />
+              {hasVideo ? (
+                <Play className="h-6 w-6 text-white drop-shadow opacity-90" />
+              ) : (
+                <Maximize2 className="h-5 w-5 text-white opacity-0 group-hover/img:opacity-100 transition-opacity" />
+              )}
             </div>
             {(item.image_urls?.length ?? 0) > 1 && (
               <span className="absolute bottom-1 right-1 text-[10px] bg-black/60 text-white px-1.5 rounded">
@@ -89,10 +106,19 @@ function SortableRow({ item, idx, onRemove, onEdit, onZoomImages, onPlayVideo }:
               </span>
             )}
           </>
+        ) : hasVideo ? (
+          <VideoThumbnail
+            videoType={item.video_type}
+            videoUrl={item.video_url}
+            startSeconds={item.video_start_seconds}
+            endSeconds={item.video_end_seconds}
+            className="w-full h-full"
+            objectFit="contain"
+          />
         ) : (
           <Dumbbell className="h-8 w-8 text-muted-foreground" />
         )}
-        <div className="absolute top-1 left-1 h-6 w-6 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center shadow">
+        <div className="absolute top-1 left-1 h-6 w-6 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center shadow z-10">
           {idx + 1}
         </div>
       </button>
