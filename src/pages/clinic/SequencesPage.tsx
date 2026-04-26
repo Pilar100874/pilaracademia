@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useMyClinicPermissions } from '@/hooks/useClinicPermissions';
 import { useSequences, useSequenceItems, useEquipment, useSkillLevels, type SequenceItem } from '@/hooks/useClinicData';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
