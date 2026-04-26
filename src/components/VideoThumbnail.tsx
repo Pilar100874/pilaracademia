@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Play, Instagram } from 'lucide-react';
 import { parseYouTubeId } from '@/lib/youtubeUtils';
-import { useCachedVideoUrl } from '@/hooks/useCachedVideoUrl';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
 interface Props {
@@ -45,12 +44,6 @@ export function VideoThumbnail({
   const previewRef = useRef<HTMLVideoElement | null>(null);
 
   const isUploadAutoplay = autoplayPreview && videoType === 'upload' && !!videoUrl;
-  // Resolve a cached blob URL when the video is going to autoplay; falls back
-  // to the original URL while the cache fills.
-  const playableUrl = useCachedVideoUrl(
-    videoType === 'upload' ? freshVideoUrl : null,
-    isUploadAutoplay
-  );
 
   // Loop the upload preview between start/end seconds
   useEffect(() => {
@@ -170,7 +163,7 @@ export function VideoThumbnail({
       <div className={`relative bg-black ${className ?? ''}`}>
         <video
           ref={previewRef}
-          src={playableUrl ?? freshVideoUrl}
+          src={freshVideoUrl}
           poster={frameUrl ?? undefined}
           muted
           autoPlay
