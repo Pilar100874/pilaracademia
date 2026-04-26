@@ -33,6 +33,7 @@ export function VideoThumbnail({
 }: Props) {
   const freshVideoUrl = getFreshMediaUrl(videoUrl);
   const [errored, setErrored] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   const previewRef = useRef<HTMLVideoElement | null>(null);
 
   const isUploadAutoplay = autoplayPreview && videoType === 'upload' && !!videoUrl;
@@ -82,7 +83,7 @@ export function VideoThumbnail({
 
   if (videoType === 'upload') {
     return (
-      <div className={`relative bg-black ${className ?? ''}`}>
+      <div className={`relative bg-muted ${className ?? ''}`}>
         <video
           ref={previewRef}
           key={freshVideoUrl}
@@ -91,18 +92,20 @@ export function VideoThumbnail({
           autoPlay={isUploadAutoplay}
           playsInline
           loop={isUploadAutoplay}
-          preload="metadata"
+          preload="auto"
           onLoadedMetadata={(e) => {
             try {
-              e.currentTarget.currentTime = Math.max(0, startSeconds ?? 0);
+              e.currentTarget.currentTime = Math.max(0.1, startSeconds ?? 0);
             } catch {
               // ignore
             }
           }}
+          onLoadedData={() => setVideoReady(true)}
+          onCanPlay={() => setVideoReady(true)}
           onError={() => setErrored(true)}
-          className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'}`}
+          className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'} ${videoReady && !errored ? 'opacity-100' : 'opacity-0'}`}
         />
-        {errored && <div className="absolute inset-0 bg-muted" />}
+        {(!videoReady || errored) && <div className="absolute inset-0 bg-muted" />}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className={`${badgeSize} rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center`}>
             <Play className={`${playSize} text-white fill-white`} />
