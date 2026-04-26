@@ -378,6 +378,22 @@ export default function LiveSessionPage() {
           )}
         </div>
       </div>
+
+      {/* Enviar sequência por WhatsApp */}
+      {activeClinicId && selectedLiveStudent && focusItems.length > 0 && (() => {
+        const seqId = (focusItems[0] as any).sequence_id as string;
+        const seqName = sequences.find((s: any) => s.id === seqId)?.name || 'Sequência';
+        return (
+          <ShareSequenceDialog
+            open={shareOpen}
+            onOpenChange={setShareOpen}
+            clinicId={activeClinicId}
+            sequenceId={seqId}
+            sequenceName={seqName}
+            initialStudentId={(selectedLiveStudent as any).student_id}
+          />
+        );
+      })()}
     </div>
   );
 }
