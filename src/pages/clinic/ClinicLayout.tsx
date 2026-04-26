@@ -172,7 +172,12 @@ export default function ClinicLayout() {
             {activeClinic.logo_url && <img src={activeClinic.logo_url} alt="" className="h-7 w-7 rounded object-contain" />}
             <span className="truncate text-sm">{activeClinic.name}</span>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-1">
+            {isAdmin && (
+              <Button variant="ghost" size="icon" onClick={() => setWizardOpen(true)} title="Assistente de configuração">
+                <Sparkles className="h-5 w-5" />
+              </Button>
+            )}
             <NotificationsBell />
           </div>
         </header>
