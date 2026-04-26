@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Play, Instagram } from 'lucide-react';
 import { parseYouTubeId } from '@/lib/youtubeUtils';
 import { useCachedVideoUrl } from '@/hooks/useCachedVideoUrl';
+import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
 interface Props {
   videoType: 'youtube' | 'upload' | 'instagram' | string | null;
@@ -34,7 +35,8 @@ export function VideoThumbnail({
   objectFit = 'cover',
   autoplayPreview = false,
 }: Props) {
-  const cacheKey = videoUrl ? `${videoUrl}@${startSeconds ?? 0}` : '';
+  const freshVideoUrl = getFreshMediaUrl(videoUrl);
+  const cacheKey = freshVideoUrl ? `${freshVideoUrl}@${startSeconds ?? 0}` : '';
   const [frameUrl, setFrameUrl] = useState<string | null>(
     cacheKey ? frameCache.get(cacheKey) ?? null : null
   );
@@ -46,7 +48,7 @@ export function VideoThumbnail({
   // Resolve a cached blob URL when the video is going to autoplay; falls back
   // to the original URL while the cache fills.
   const playableUrl = useCachedVideoUrl(
-    videoType === 'upload' ? videoUrl : null,
+    videoType === 'upload' ? freshVideoUrl : null,
     isUploadAutoplay
   );
 
@@ -81,7 +83,7 @@ export function VideoThumbnail({
 
   // Capture frame for uploaded videos (when not autoplaying)
   useEffect(() => {
-    if (videoType !== 'upload' || !videoUrl) return;
+    if (videoType !== 'upload' || !freshVideoUrl) return;
     if (frameCache.has(cacheKey)) {
       setFrameUrl(frameCache.get(cacheKey)!);
       return;
@@ -94,7 +96,7 @@ export function VideoThumbnail({
     video.preload = 'metadata';
     video.muted = true;
     video.playsInline = true;
-    video.src = videoUrl;
+    video.src = freshVideoUrl;
 
     const target = Math.max(0, startSeconds ?? 0);
 
@@ -143,9 +145,9 @@ export function VideoThumbnail({
       video.src = '';
       videoElRef.current = null;
     };
-  }, [videoType, videoUrl, startSeconds, cacheKey]);
+  }, [videoType, freshVideoUrl, startSeconds, cacheKey]);
 
-  if (!videoUrl || !videoType) return null;
+  if (!freshVideoUrl || !videoType) return null;
 
   let thumbSrc: string | null = null;
   if (videoType === 'youtube') {
@@ -168,7 +170,7 @@ export function VideoThumbnail({
       <div className={`relative bg-black ${className ?? ''}`}>
         <video
           ref={previewRef}
-          src={playableUrl ?? videoUrl}
+          src={playableUrl ?? freshVideoUrl}
           poster={frameUrl ?? undefined}
           muted
           autoPlay
