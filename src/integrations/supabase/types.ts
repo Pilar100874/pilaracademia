@@ -579,30 +579,43 @@ export type Database = {
       }
       exercise_categories: {
         Row: {
+          clinic_id: string | null
           created_at: string
           id: string
+          is_global: boolean
           name: string
           parent_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          clinic_id?: string | null
           created_at?: string
           id?: string
+          is_global?: boolean
           name: string
           parent_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          clinic_id?: string | null
           created_at?: string
           id?: string
+          is_global?: boolean
           name?: string
           parent_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "exercise_categories_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "exercise_categories_parent_id_fkey"
             columns: ["parent_id"]
@@ -648,11 +661,13 @@ export type Database = {
       exercise_library: {
         Row: {
           category_id: string | null
+          clinic_id: string | null
           created_at: string
           default_reps: number
           default_sets: number
           id: string
           image_urls: string[] | null
+          is_global: boolean
           name: string
           updated_at: string
           user_id: string
@@ -663,11 +678,13 @@ export type Database = {
         }
         Insert: {
           category_id?: string | null
+          clinic_id?: string | null
           created_at?: string
           default_reps?: number
           default_sets?: number
           id?: string
           image_urls?: string[] | null
+          is_global?: boolean
           name: string
           updated_at?: string
           user_id: string
@@ -678,11 +695,13 @@ export type Database = {
         }
         Update: {
           category_id?: string | null
+          clinic_id?: string | null
           created_at?: string
           default_reps?: number
           default_sets?: number
           id?: string
           image_urls?: string[] | null
+          is_global?: boolean
           name?: string
           updated_at?: string
           user_id?: string
@@ -697,6 +716,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "exercise_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercise_library_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
             referencedColumns: ["id"]
           },
         ]
