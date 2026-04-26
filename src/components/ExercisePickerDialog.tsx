@@ -125,6 +125,35 @@ export function ExercisePickerDialog({
     }
   };
 
+  // Zoom navigator helpers
+  const zoomEx = zoomIdx !== null ? filtered[zoomIdx] ?? null : null;
+  const closeZoom = () => { setZoomIdx(null); setShowVideo(false); setZoomImgIdx(0); };
+  const goPrevEx = () => {
+    if (zoomIdx === null || filtered.length === 0) return;
+    setZoomIdx((zoomIdx - 1 + filtered.length) % filtered.length);
+    setZoomImgIdx(0);
+    setShowVideo(false);
+  };
+  const goNextEx = () => {
+    if (zoomIdx === null || filtered.length === 0) return;
+    setZoomIdx((zoomIdx + 1) % filtered.length);
+    setZoomImgIdx(0);
+    setShowVideo(false);
+  };
+
+  useEffect(() => {
+    if (zoomIdx === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { closeZoom(); }
+      else if (e.key === 'ArrowRight') { goNextEx(); }
+      else if (e.key === 'ArrowLeft') { goPrevEx(); }
+      else if (e.key === ' ' && zoomEx) { e.preventDefault(); toggle(zoomEx.id); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoomIdx, filtered.length, zoomEx?.id]);
+
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
