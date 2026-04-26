@@ -64,36 +64,57 @@ export default function MasterPage() {
 
   const createClinic = useMutation({
     mutationFn: async () => {
-      if (!name.trim() || !slug.trim()) throw new Error("Preencha nome e slug");
+      const cleanName = name.trim();
+      let cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
+      if (!cleanName) throw new Error("Informe o nome da clínica");
+      if (!cleanSlug) cleanSlug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
       let ownerId = user!.id;
       if (adminEmail.trim()) {
-        const { data: prof } = await supabase
+        const { data: prof, error: profErr } = await supabase
           .from("profiles")
           .select("user_id")
           .eq("email", adminEmail.trim())
           .maybeSingle();
-        if (!prof) throw new Error("Usuário com esse e-mail não encontrado (precisa estar cadastrado).");
+        if (profErr) throw profErr;
+        if (!prof) {
+          throw new Error(
+            `Nenhum usuário cadastrado com o e-mail "${adminEmail.trim()}". Peça para ele criar a conta primeiro, ou deixe em branco para você ser o admin.`
+          );
+        }
         ownerId = prof.user_id;
       }
+
       const { data: clinic, error } = await supabase
         .from("clinics")
-        .insert({ name: name.trim(), slug: slug.trim(), owner_user_id: ownerId })
+        .insert({ name: cleanName, slug: cleanSlug, owner_user_id: ownerId })
         .select()
         .single();
-      if (error) throw error;
+      if (error) {
+        console.error("[master] insert clinic error", error);
+        if (error.code === "23505") throw new Error("Já existe uma clínica com esse slug. Escolha outro.");
+        throw error;
+      }
       const { error: roleErr } = await supabase
         .from("user_roles")
         .insert({ user_id: ownerId, clinic_id: clinic.id, role: "clinic_admin" });
-      if (roleErr) throw roleErr;
+      if (roleErr) {
+        console.error("[master] insert role error", roleErr);
+        throw roleErr;
+      }
+      return clinic;
     },
     onSuccess: () => {
-      toast.success("Clínica criada");
+      toast.success("Clínica criada com sucesso");
       setCreateOpen(false);
       setName(""); setSlug(""); setAdminEmail("");
       qc.invalidateQueries({ queryKey: ["master-clinics"] });
       qc.invalidateQueries({ queryKey: ["master-roles"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      console.error("[master] createClinic failed", e);
+      toast.error(e?.message ?? "Erro ao criar clínica");
+    },
   });
 
   const deleteClinic = useMutation({
