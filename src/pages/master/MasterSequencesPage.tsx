@@ -510,6 +510,17 @@ export default function MasterSequencesPage() {
         )}
       </div>
 
+      <ExercisePickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        exercises={library as any}
+        categories={globalCategories as any}
+        title="Adicionar exercícios da biblioteca global"
+        onConfirm={async (picks) => {
+          await addItems.mutateAsync(picks.map((p) => p.id));
+        }}
+      />
+
       <ImageZoomDialog
         images={zoomImages}
         open={zoomImages.length > 0}
