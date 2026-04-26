@@ -87,6 +87,13 @@ Deno.serve(async (req) => {
       await admin.from('clinic_students').update({ user_id: userId }).eq('id', student_id);
       // ensure student role
       await admin.from('user_roles').insert({ user_id: userId, clinic_id, role: 'student' });
+      // mark must change password on first login
+      await admin.from('user_security_flags').upsert({
+        user_id: userId,
+        must_change_password: true,
+        password_changed_at: null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
     }
 
     // record invite
