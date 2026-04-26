@@ -25,7 +25,13 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 // ===== Sortable Row =====
-function SortableItemRow({ item, idx, onRemove, onEdit }: { item: SequenceItem; idx: number; onRemove: () => void; onEdit: (patch: Partial<SequenceItem>) => void; }) {
+function SortableItemRow({ item, idx, onRemove, onEdit, onZoomImages, onPlayVideo }: {
+  item: SequenceItem; idx: number;
+  onRemove: () => void;
+  onEdit: (patch: Partial<SequenceItem>) => void;
+  onZoomImages: (images: string[]) => void;
+  onPlayVideo: (item: SequenceItem) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
 
@@ -33,15 +39,40 @@ function SortableItemRow({ item, idx, onRemove, onEdit }: { item: SequenceItem; 
   const [sets, setSets] = useState(item.sets);
   const [reps, setReps] = useState(item.reps);
   const [notes, setNotes] = useState(item.notes ?? '');
+  const hasImages = (item.image_urls?.length ?? 0) > 0;
+  const hasVideo = !!item.video_url;
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border">
-      <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none">
-        <GripVertical className="h-5 w-5 text-muted-foreground" />
+    <div ref={setNodeRef} style={style} className="group flex items-stretch gap-2 rounded-xl bg-card border overflow-hidden hover:border-primary/50 transition-colors">
+      <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none flex items-center justify-center px-1.5 bg-muted/40 hover:bg-muted text-muted-foreground">
+        <GripVertical className="h-5 w-5" />
       </button>
-      <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">{idx + 1}</div>
-      {item.image_urls?.[0] && <img src={item.image_urls[0]} alt="" className="h-10 w-10 rounded object-cover" />}
-      <div className="flex-1 min-w-0">
+      <button
+        type="button"
+        onClick={() => hasImages && onZoomImages(item.image_urls as string[])}
+        className={`relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 bg-muted/40 flex items-center justify-center ${hasImages ? 'cursor-zoom-in group/img' : ''}`}
+        title={hasImages ? 'Ampliar imagem' : undefined}
+      >
+        {hasImages ? (
+          <>
+            <img src={item.image_urls![0]} alt={item.name} className="h-full w-full object-contain" />
+            <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/30 transition-colors flex items-center justify-center">
+              <Maximize2 className="h-4 w-4 text-white opacity-0 group-hover/img:opacity-100 transition-opacity" />
+            </div>
+            {(item.image_urls?.length ?? 0) > 1 && (
+              <span className="absolute bottom-0.5 right-0.5 text-[9px] bg-black/60 text-white px-1 rounded">
+                +{(item.image_urls?.length ?? 1) - 1}
+              </span>
+            )}
+          </>
+        ) : (
+          <Dumbbell className="h-5 w-5 text-muted-foreground" />
+        )}
+        <div className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow">
+          {idx + 1}
+        </div>
+      </button>
+      <div className="flex-1 min-w-0 py-1.5 pr-1 flex flex-col justify-center">
         <div className="text-sm font-medium truncate">{item.name}</div>
         {editing ? (
           <div className="flex items-center gap-1 mt-1">
@@ -51,19 +82,34 @@ function SortableItemRow({ item, idx, onRemove, onEdit }: { item: SequenceItem; 
             <Input className="h-7 flex-1 text-xs" placeholder="Obs." value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground">{item.sets}×{item.reps}{item.notes ? ` · ${item.notes}` : ''}</div>
+          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+            <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+              {item.sets}×{item.reps}
+            </span>
+            {hasVideo && (
+              <button
+                type="button"
+                onClick={() => onPlayVideo(item)}
+                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 font-medium hover:bg-rose-500/20"
+              >
+                <Play className="h-2.5 w-2.5 fill-current" />
+                Vídeo
+              </button>
+            )}
+            {item.notes && <span className="text-[10px] text-muted-foreground line-clamp-1">{item.notes}</span>}
+          </div>
         )}
       </div>
       {editing ? (
-        <>
-          <Button variant="ghost" size="icon" onClick={() => { onEdit({ sets, reps, notes }); setEditing(false); }}><Check className="h-4 w-4 text-emerald-500" /></Button>
-          <Button variant="ghost" size="icon" onClick={() => setEditing(false)}><X className="h-4 w-4" /></Button>
-        </>
+        <div className="flex flex-col items-center justify-center pr-1">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { onEdit({ sets, reps, notes }); setEditing(false); }}><Check className="h-4 w-4 text-emerald-500" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(false)}><X className="h-4 w-4" /></Button>
+        </div>
       ) : (
-        <>
-          <Button variant="ghost" size="icon" onClick={() => setEditing(true)}><Pencil className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" onClick={onRemove}><Trash2 className="h-4 w-4" /></Button>
-        </>
+        <div className="flex flex-col items-center justify-center pr-1">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(true)}><Pencil className="h-3.5 w-3.5" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={onRemove}><Trash2 className="h-3.5 w-3.5" /></Button>
+        </div>
       )}
     </div>
   );
