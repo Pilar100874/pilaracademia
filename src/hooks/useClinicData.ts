@@ -14,10 +14,11 @@ export interface Equipment {
   id: string;
   clinic_id: string;
   name: string;
-  equipment_type: string;
+  equipment_type: string | null;
   identifier: string | null;
   station_token: string;
   active: boolean;
+  room_id: string | null;
   status?: 'active' | 'maintenance' | 'inactive';
   maintenance_notes?: string | null;
   maintenance_until?: string | null;
