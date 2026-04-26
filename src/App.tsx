@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 import ClinicLayout from "@/pages/clinic/ClinicLayout";
 import ClinicOverviewPage from "@/pages/clinic/ClinicOverviewPage";
+import GradeMasterPage from "@/pages/clinic/GradeMasterPage";
 import StudentsPage from "@/pages/clinic/StudentsPage";
 import StaffPage from "@/pages/clinic/StaffPage";
 import PermissionsPage from "@/pages/clinic/PermissionsPage";
@@ -99,7 +100,8 @@ function AppRoutes() {
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
       <Route path="/clinica/criar" element={<ProtectedRoute><CreateClinicPage /></ProtectedRoute>} />
       <Route path="/clinica" element={<ProtectedRoute><ClinicLayout /></ProtectedRoute>}>
-        <Route index element={<ClinicOverviewPage />} />
+        <Route index element={<GradeMasterPage />} />
+        <Route path="visao" element={<ClinicOverviewPage />} />
         <Route path="agenda" element={<AppointmentsPage />} />
         <Route path="grades" element={<BookableSlotsPage />} />
         <Route path="alunos" element={<StudentsPage />} />
