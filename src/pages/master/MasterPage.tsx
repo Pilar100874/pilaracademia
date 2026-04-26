@@ -230,9 +230,12 @@ export default function MasterPage() {
               <p className="text-sm text-muted-foreground">Gerencie todas as clínicas da plataforma</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => navigate("/master/exercicios")}>
               <Library className="h-4 w-4 mr-2" /> Biblioteca global
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/master/sequencias")}>
+              <FolderTree className="h-4 w-4 mr-2" /> Templates de treinos
             </Button>
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
               <DialogTrigger asChild>

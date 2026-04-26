@@ -35,6 +35,7 @@ import OnboardingPage from "@/pages/OnboardingPage";
 import ChangePasswordPage from "@/pages/ChangePasswordPage";
 import MasterPage from "@/pages/master/MasterPage";
 import MasterExerciseLibraryPage from "@/pages/master/MasterExerciseLibraryPage";
+import MasterSequencesPage from "@/pages/master/MasterSequencesPage";
 import ClinicExerciseLibraryPage from "@/pages/clinic/ClinicExerciseLibraryPage";
 import { useMustChangePassword } from "@/hooks/useMustChangePassword";
 import { useUserClinicRole } from "@/hooks/useUserClinicRole";
@@ -107,6 +108,7 @@ function AppRoutes() {
       {/* Master admin panel */}
       <Route path="/master" element={<ProtectedRoute><MasterPage /></ProtectedRoute>} />
       <Route path="/master/exercicios" element={<ProtectedRoute><MasterExerciseLibraryPage /></ProtectedRoute>} />
+      <Route path="/master/sequencias" element={<ProtectedRoute><MasterSequencesPage /></ProtectedRoute>} />
 
       <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
       <Route path="*" element={<NotFound />} />

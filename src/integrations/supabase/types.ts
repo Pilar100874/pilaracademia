@@ -833,7 +833,7 @@ export type Database = {
       }
       exercise_sequences: {
         Row: {
-          clinic_id: string
+          clinic_id: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -841,12 +841,13 @@ export type Database = {
           equipment_type: string | null
           estimated_minutes: number | null
           id: string
+          is_global: boolean
           name: string
           skill_level_id: string | null
           updated_at: string
         }
         Insert: {
-          clinic_id: string
+          clinic_id?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -854,12 +855,13 @@ export type Database = {
           equipment_type?: string | null
           estimated_minutes?: number | null
           id?: string
+          is_global?: boolean
           name: string
           skill_level_id?: string | null
           updated_at?: string
         }
         Update: {
-          clinic_id?: string
+          clinic_id?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -867,6 +869,7 @@ export type Database = {
           equipment_type?: string | null
           estimated_minutes?: number | null
           id?: string
+          is_global?: boolean
           name?: string
           skill_level_id?: string | null
           updated_at?: string
@@ -1651,6 +1654,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      copy_global_sequence_to_clinic: {
+        Args: { _clinic_id: string; _sequence_id: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
