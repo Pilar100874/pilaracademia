@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useAuth } from '@/hooks/useAuth';
 
 export type PermissionKey = 'can_create_exercises' | 'can_create_sequences' | 'can_prescribe_workouts';
 
@@ -15,7 +16,8 @@ export interface ClinicUserPermission {
 
 /** Permissões do usuário logado na clínica ativa. Admin sempre = true. */
 export function useMyClinicPermissions() {
-  const { user, activeClinicId, isAdmin, roles } = useUserRoles();
+  const { user } = useAuth();
+  const { activeClinicId, isAdmin, roles } = useUserRoles();
 
   return useQuery({
     queryKey: ['my-clinic-permissions', user?.id, activeClinicId],
