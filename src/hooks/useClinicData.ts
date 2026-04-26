@@ -18,6 +18,9 @@ export interface Equipment {
   identifier: string | null;
   station_token: string;
   active: boolean;
+  status?: 'active' | 'maintenance' | 'inactive';
+  maintenance_notes?: string | null;
+  maintenance_until?: string | null;
 }
 
 export interface Student {
