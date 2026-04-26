@@ -387,6 +387,21 @@ export default function ExerciseLibraryPage() {
       return;
     }
 
+    // Bloqueia importação quando o armazenamento do dispositivo está cheio —
+    // o navegador pode travar ("Algo deu errado") ao baixar o vídeo.
+    const storage = await getStorageStatus();
+    if (storage.low) {
+      const detalhe =
+        storage.freeMB !== null
+          ? ` Restam apenas ~${storage.freeMB}MB livres no navegador.`
+          : '';
+      toast.error(
+        `Espaço insuficiente no dispositivo para baixar o vídeo.${detalhe} Libere espaço no celular (apague fotos/apps ou limpe o cache do navegador) e tente novamente.`,
+        { duration: 8000 }
+      );
+      return;
+    }
+
     let targetCategoryId: string | null = null;
     if (igCategoryChoice === NEW_CATEGORY) {
       const name = igNewCategoryName.trim();
