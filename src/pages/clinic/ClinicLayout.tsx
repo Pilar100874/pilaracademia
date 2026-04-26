@@ -177,6 +177,12 @@ export default function ClinicLayout() {
           </div>
         </header>
         <header className="hidden md:flex items-center justify-end gap-2 p-3 border-b bg-card sticky top-0 z-30">
+          {isAdmin && (
+            <Button variant="outline" size="sm" onClick={() => setWizardOpen(true)} className="gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              Assistente
+            </Button>
+          )}
           <NotificationsBell />
         </header>
 
