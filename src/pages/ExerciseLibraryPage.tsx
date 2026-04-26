@@ -25,6 +25,7 @@ import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
+import { getStorageStatus } from '@/lib/videoCache';
 import {
   Dialog,
   DialogContent,
