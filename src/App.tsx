@@ -37,6 +37,7 @@ import MasterPage from "@/pages/master/MasterPage";
 import MasterExerciseLibraryPage from "@/pages/master/MasterExerciseLibraryPage";
 import MasterSequencesPage from "@/pages/master/MasterSequencesPage";
 import ClinicExerciseLibraryPage from "@/pages/clinic/ClinicExerciseLibraryPage";
+import SharedSequencePage from "@/pages/SharedSequencePage";
 import { useMustChangePassword } from "@/hooks/useMustChangePassword";
 import { useUserClinicRole } from "@/hooks/useUserClinicRole";
 
@@ -75,6 +76,8 @@ function AppRoutes() {
     <Routes>
       {/* Public station tablet route */}
       <Route path="/estacao/:token" element={<StationPage />} />
+      {/* Public shared sequence (link sent via WhatsApp) */}
+      <Route path="/s/:token" element={<SharedSequencePage />} />
 
       <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
       <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
