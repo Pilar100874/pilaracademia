@@ -139,7 +139,55 @@ export default function MasterPage() {
     onError: (e: any) => toast.error(e?.message ?? "Erro ao atualizar"),
   });
 
-  if (checkingRole) {
+  // ===== Categorias globais por clínica =====
+  const { data: globalCategories } = useQuery({
+    queryKey: ["master-global-categories"],
+    enabled: !!isMaster,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("exercise_categories")
+        .select("id,name,parent_id")
+        .eq("is_global", true)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: clinicGlobalCats, refetch: refetchClinicCats } = useQuery({
+    queryKey: ["clinic-global-cats", managingCats?.id],
+    enabled: !!managingCats?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clinic_global_categories")
+        .select("category_id")
+        .eq("clinic_id", managingCats!.id);
+      if (error) throw error;
+      return data.map(r => r.category_id);
+    },
+  });
+
+  const toggleClinicCategory = useMutation({
+    mutationFn: async (payload: { clinicId: string; categoryId: string; checked: boolean }) => {
+      if (payload.checked) {
+        const { error } = await supabase
+          .from("clinic_global_categories")
+          .insert({ clinic_id: payload.clinicId, category_id: payload.categoryId, created_by: user!.id });
+        if (error && error.code !== "23505") throw error;
+      } else {
+        const { error } = await supabase
+          .from("clinic_global_categories")
+          .delete()
+          .eq("clinic_id", payload.clinicId)
+          .eq("category_id", payload.categoryId);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      refetchClinicCats();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao atualizar"),
+  });
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
