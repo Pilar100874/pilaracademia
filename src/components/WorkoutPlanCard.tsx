@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { Edit, ChevronRight, ChevronLeft, Dumbbell, Play } from 'lucide-react';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
+import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
 const DAYS_SHORT = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
@@ -112,7 +113,7 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
                   className="flex gap-2 overflow-x-auto pb-1 scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 >
                   {plan.exercises.map((exercise) => {
-                    const firstImg = exercise.image_urls?.[0] ?? exercise.image_url;
+                    const firstImg = getFreshMediaUrl(exercise.image_urls?.[0] ?? exercise.image_url);
                     return (
                       <div
                         key={exercise.id}

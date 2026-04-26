@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { parseYouTubeId, parseInstagramShortcode, buildInstagramEmbedUrl, isInstagramReel } from '@/lib/youtubeUtils';
+import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
 interface Props {
   videoType: 'youtube' | 'upload' | 'instagram' | string | null;
@@ -54,6 +55,7 @@ export function ExerciseVideoPlayer({
   const ytPlayerRef = useRef<any>(null);
   const ytIntervalRef = useRef<number | null>(null);
   const [igReloadKey, setIgReloadKey] = useState(0);
+  const freshVideoUrl = getFreshMediaUrl(videoUrl);
 
   const start = startSeconds ?? 0;
   const end = endSeconds ?? 0;
@@ -110,8 +112,8 @@ export function ExerciseVideoPlayer({
 
   // YouTube IFrame API handling
   useEffect(() => {
-    if (videoType !== 'youtube' || !videoUrl) return;
-    const id = parseYouTubeId(videoUrl);
+    if (videoType !== 'youtube' || !freshVideoUrl) return;
+    const id = parseYouTubeId(freshVideoUrl);
     if (!id || !ytContainerRef.current) return;
 
     let cancelled = false;
@@ -199,12 +201,12 @@ export function ExerciseVideoPlayer({
         ytContainerRef.current.innerHTML = '';
       }
     };
-  }, [videoType, videoUrl, start, end, autoPlay, loop]);
+  }, [videoType, freshVideoUrl, start, end, autoPlay, loop]);
 
-  if (!videoUrl || !videoType) return null;
+  if (!freshVideoUrl || !videoType) return null;
 
   if (videoType === 'youtube') {
-    const id = parseYouTubeId(videoUrl);
+    const id = parseYouTubeId(freshVideoUrl);
     if (!id) return null;
     return (
       <div className={`${className ?? ''} relative bg-black`}>
@@ -215,13 +217,13 @@ export function ExerciseVideoPlayer({
   }
 
   if (videoType === 'instagram') {
-    const shortcode = parseInstagramShortcode(videoUrl);
+    const shortcode = parseInstagramShortcode(freshVideoUrl);
     if (!shortcode) return null;
     return (
       <div className={`${className ?? ''} relative flex items-center justify-center bg-black overflow-hidden`}>
         <iframe
           key={igReloadKey}
-          src={buildInstagramEmbedUrl(shortcode, isInstagramReel(videoUrl))}
+          src={buildInstagramEmbedUrl(shortcode, isInstagramReel(freshVideoUrl))}
           title="Instagram"
           className="bg-black"
           style={{ width: '100%', maxWidth: 540, height: '100%', minHeight: 640, border: 0 }}
@@ -245,7 +247,7 @@ export function ExerciseVideoPlayer({
     <div className={`${className ?? ''} bg-black`}>
       <video
         ref={videoRef}
-        src={videoUrl}
+        src={freshVideoUrl}
         autoPlay={autoPlay}
         muted
         playsInline

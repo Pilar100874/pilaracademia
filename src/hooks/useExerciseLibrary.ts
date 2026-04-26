@@ -1,9 +1,7 @@
-import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-import { prefetchVideos } from '@/lib/videoCache';
 
 export interface LibraryExercise {
   id: string;
@@ -41,17 +39,6 @@ export function useExerciseLibrary() {
     },
     enabled: !!user,
   });
-
-  // Background-cache uploaded videos in the browser's Cache Storage so the
-  // next view is instant (and works offline on mobile after first load).
-  useEffect(() => {
-    if (!exercises.length) return;
-    prefetchVideos(
-      exercises
-        .filter((e) => e.video_type === 'upload')
-        .map((e) => e.video_url)
-    );
-  }, [exercises]);
 
   const createExercise = useMutation({
     mutationFn: async (data: {

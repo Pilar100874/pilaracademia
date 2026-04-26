@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
 interface ImageZoomDialogProps {
   images: string[];
@@ -47,6 +48,7 @@ export function ImageZoomDialog({
   };
 
   const showNavigation = images.length > 1;
+  const currentImage = getFreshMediaUrl(images[currentIndex]) ?? images[currentIndex];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -69,7 +71,7 @@ export function ImageZoomDialog({
 
           {/* Image */}
           <img
-            src={images[currentIndex]}
+            src={currentImage}
             alt={`${alt} ${currentIndex + 1}`}
             className="max-w-full max-h-[75vh] object-contain rounded-lg"
           />

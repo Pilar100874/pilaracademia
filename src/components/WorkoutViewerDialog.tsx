@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
 interface WorkoutViewerDialogProps {
   open: boolean;
@@ -117,7 +118,7 @@ export function WorkoutViewerDialog({
             />
           ) : currentImages.length > 0 ? (
             <img
-              src={currentImages[currentPhotoIndex]}
+              src={getFreshMediaUrl(currentImages[currentPhotoIndex]) ?? currentImages[currentPhotoIndex]}
               alt={`${currentExercise.name} - Foto ${currentPhotoIndex + 1}`}
               className="w-full h-full object-contain"
             />

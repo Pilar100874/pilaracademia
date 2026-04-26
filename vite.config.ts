@@ -54,14 +54,16 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/~oauth/],
         runtimeCaching: [
           {
-            // Storage assets (images/videos) — cache aggressively, they are immutable per URL
+            // Storage assets (images/videos) must come from the network first;
+            // stale media cache was causing blank exercise previews on mobile.
             urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
-            handler: 'CacheFirst',
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-storage-cache',
+              networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 30,
+                maxAgeSeconds: 60 * 60 * 24 * 7,
               },
               cacheableResponse: { statuses: [0, 200] },
             },
