@@ -6,7 +6,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, ListOrdered, GripVertical, Library, Pencil, Check, X } from 'lucide-react';
+import { Plus, Trash2, ListOrdered, GripVertical, Library, Pencil, Check, X, MessageCircle } from 'lucide-react';
+import { ShareSequenceDialog } from '@/components/ShareSequenceDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -154,6 +155,7 @@ export default function SequencesPage() {
   const [libOpen, setLibOpen] = useState(false);
   const [libSelected, setLibSelected] = useState<Set<string>>(new Set());
   const [libSearch, setLibSearch] = useState('');
+  const [shareOpen, setShareOpen] = useState(false);
 
   // Local order for optimistic dnd
   const [localOrder, setLocalOrder] = useState<SequenceItem[]>([]);
@@ -267,14 +269,37 @@ export default function SequencesPage() {
           ) : (
             <>
               <Card className="p-5">
-                <div className="flex items-start justify-between">
-                  <div>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
                     <h2 className="text-xl font-bold">{currentSeq.name}</h2>
                     {currentSeq.description && <p className="text-sm text-muted-foreground mt-1">{currentSeq.description}</p>}
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => { if (confirm('Excluir sequência?')) { remove.mutate(currentSeq.id); setSelected(null); } }}><Trash2 className="h-4 w-4" /></Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {activeClinicId && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setShareOpen(true)}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        <MessageCircle className="h-4 w-4 mr-1.5" />
+                        Enviar por WhatsApp
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => { if (confirm('Excluir sequência?')) { remove.mutate(currentSeq.id); setSelected(null); } }}><Trash2 className="h-4 w-4" /></Button>
+                  </div>
                 </div>
               </Card>
+
+              {activeClinicId && currentSeq && (
+                <ShareSequenceDialog
+                  open={shareOpen}
+                  onOpenChange={setShareOpen}
+                  clinicId={activeClinicId}
+                  sequenceId={currentSeq.id}
+                  sequenceName={currentSeq.name}
+                />
+              )}
 
               <Card className="p-5">
                 <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
