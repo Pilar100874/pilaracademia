@@ -396,26 +396,179 @@ export function ExercisePickerDialog({
         </DialogContent>
       </Dialog>
 
-      <ImageZoomDialog
-        images={zoomImages}
-        open={zoomImages.length > 0}
-        onOpenChange={(o) => !o && setZoomImages([])}
-      />
+      {/* Fullscreen exercise zoom navigator */}
+      <Dialog open={zoomIdx !== null} onOpenChange={(o) => !o && closeZoom()}>
+        <DialogContent className="max-w-[98vw] sm:max-w-6xl w-[98vw] h-[95vh] p-0 gap-0 bg-black/95 border-none flex flex-col [&>button]:text-white [&>button]:hover:bg-white/20 [&>button]:z-30">
+          {zoomEx && (() => {
+            const imgs = zoomEx.image_urls ?? [];
+            const hasImg = imgs.length > 0;
+            const hasVideo = !!zoomEx.video_url;
+            const isSelected = selected.has(zoomEx.id);
+            const safeImgIdx = Math.min(zoomImgIdx, Math.max(imgs.length - 1, 0));
+            const currentImage = hasImg ? (getFreshMediaUrl(imgs[safeImgIdx]) ?? imgs[safeImgIdx]) : null;
+            return (
+              <>
+                {/* Top bar */}
+                <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-b from-black/80 to-transparent text-white">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold truncate text-sm sm:text-base">{zoomEx.name}</p>
+                    <p className="text-[11px] opacity-70">
+                      {(zoomIdx ?? 0) + 1} / {filtered.length} · {zoomEx.default_sets}×{zoomEx.default_reps}
+                      {zoomEx.is_global && ' · 🌐 Global'}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="bg-white/15 text-white border-white/20 hidden sm:inline-flex">
+                    {selected.size} selecionado{selected.size === 1 ? '' : 's'}
+                  </Badge>
+                </div>
 
-      <Dialog open={!!videoEx} onOpenChange={(o) => !o && setVideoEx(null)}>
-        <DialogContent className="max-w-3xl p-2 sm:p-4">
-          <DialogHeader>
-            <DialogTitle className="text-base">{videoEx?.name}</DialogTitle>
-          </DialogHeader>
-          {videoEx?.video_url && (
-            <ExerciseVideoPlayer
-              videoUrl={videoEx.video_url}
-              videoType={(videoEx.video_type as any) || undefined}
-              startSeconds={videoEx.video_start_seconds ?? undefined}
-              endSeconds={videoEx.video_end_seconds ?? undefined}
-              autoPlay
-            />
-          )}
+                {/* Media area */}
+                <div className="relative flex-1 flex items-center justify-center min-h-0 px-2 sm:px-12">
+                  {/* Prev exercise */}
+                  {filtered.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={goPrevEx}
+                      className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-20 h-12 w-12 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center"
+                      title="Exercício anterior (←)"
+                    >
+                      <ChevronLeft className="h-7 w-7" />
+                    </button>
+                  )}
+
+                  <div className="w-full h-full flex items-center justify-center">
+                    {showVideo && hasVideo ? (
+                      <div className="w-full max-w-4xl">
+                        <ExerciseVideoPlayer
+                          key={zoomEx.id}
+                          videoUrl={zoomEx.video_url!}
+                          videoType={(zoomEx.video_type as any) || undefined}
+                          startSeconds={zoomEx.video_start_seconds ?? undefined}
+                          endSeconds={zoomEx.video_end_seconds ?? undefined}
+                          autoPlay
+                        />
+                      </div>
+                    ) : currentImage ? (
+                      <img
+                        src={currentImage}
+                        alt={zoomEx.name}
+                        className="max-w-full max-h-full object-contain select-none"
+                        draggable={false}
+                      />
+                    ) : (
+                      <div className="text-white/60 text-center">
+                        <Dumbbell className="h-20 w-20 mx-auto mb-3 opacity-40" />
+                        <p>Sem mídia disponível</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Next exercise */}
+                  {filtered.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={goNextEx}
+                      className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-20 h-12 w-12 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center"
+                      title="Próximo exercício (→)"
+                    >
+                      <ChevronRight className="h-7 w-7" />
+                    </button>
+                  )}
+
+                  {/* Image carousel controls (within same exercise) */}
+                  {!showVideo && imgs.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setZoomImgIdx((i) => (i - 1 + imgs.length) % imgs.length)}
+                        className="absolute left-16 sm:left-20 bottom-4 z-20 h-9 w-9 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center backdrop-blur"
+                        title="Imagem anterior"
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setZoomImgIdx((i) => (i + 1) % imgs.length)}
+                        className="absolute right-16 sm:right-20 bottom-4 z-20 h-9 w-9 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center backdrop-blur"
+                        title="Próxima imagem"
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
+                      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                        {imgs.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setZoomImgIdx(idx)}
+                            className={cn(
+                              'h-2 rounded-full transition-all',
+                              idx === safeImgIdx ? 'bg-white w-5' : 'bg-white/40 hover:bg-white/60 w-2',
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Bottom bar: selection + media toggles */}
+                <div className="flex flex-wrap items-center gap-2 px-4 py-3 bg-gradient-to-t from-black/80 to-transparent">
+                  <Button
+                    onClick={() => toggle(zoomEx.id)}
+                    variant={isSelected ? 'default' : 'secondary'}
+                    className={cn(
+                      'flex-1 sm:flex-none min-w-[180px]',
+                      isSelected
+                        ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                        : 'bg-white text-black hover:bg-white/90',
+                    )}
+                  >
+                    {isSelected ? (
+                      <><CheckCircle2 className="h-4 w-4 mr-1.5" /> Selecionado</>
+                    ) : (
+                      <><CheckCircle2 className="h-4 w-4 mr-1.5 opacity-50" /> Selecionar</>
+                    )}
+                  </Button>
+
+                  <Badge variant="secondary" className="bg-white/15 text-white border-white/20 sm:hidden">
+                    {selected.size} sel.
+                  </Badge>
+
+                  <div className="flex-1" />
+
+                  {hasImg && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={!showVideo ? 'default' : 'ghost'}
+                      onClick={() => setShowVideo(false)}
+                      className={!showVideo ? '' : 'text-white hover:bg-white/15'}
+                    >
+                      <Maximize2 className="h-4 w-4 mr-1.5" /> Imagem
+                    </Button>
+                  )}
+                  {hasVideo && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={showVideo ? 'default' : 'ghost'}
+                      onClick={() => setShowVideo(true)}
+                      className={showVideo ? 'bg-rose-600 hover:bg-rose-600/90' : 'text-white hover:bg-white/15'}
+                    >
+                      <Play className="h-4 w-4 mr-1.5 fill-current" /> Vídeo
+                    </Button>
+                  )}
+
+                  <Button
+                    onClick={() => { closeZoom(); handleConfirm(); }}
+                    disabled={selected.size === 0 || submitting}
+                    className="ml-auto sm:ml-2"
+                  >
+                    Adicionar {selected.size > 0 ? `(${selected.size})` : ''}
+                  </Button>
+                </div>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </>
