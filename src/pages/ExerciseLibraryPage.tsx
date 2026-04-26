@@ -26,6 +26,7 @@ import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
 import { getStorageStatus } from '@/lib/videoCache';
+import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import {
   Dialog,
   DialogContent,
@@ -883,7 +884,7 @@ export default function ExerciseLibraryPage() {
         ) : (
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {filteredExercises.map((exercise) => {
-              const firstImage = exercise.image_urls?.[0];
+              const firstImage = getFreshMediaUrl(exercise.image_urls?.[0]);
               const imageCount = exercise.image_urls?.length || 0;
               const hasVideo = !!exercise.video_url && !!exercise.video_type;
               const categoryName = exercise.category_id
