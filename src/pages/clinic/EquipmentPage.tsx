@@ -24,22 +24,31 @@ const STATUS_META: Record<string, { label: string; className: string }> = {
 
 export default function EquipmentPage() {
   const { activeClinicId } = useUserRoles();
-  const { data: equipment = [], create, remove, setStatus } = useEquipment(activeClinicId);
+  const { data: equipment = [], create, update, remove, setStatus } = useEquipment(activeClinicId);
+  const { data: rooms = [] } = useClinicRooms(activeClinicId);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
-  const [type, setType] = useState('Reformer');
   const [identifier, setIdentifier] = useState('');
+  const [roomId, setRoomId] = useState<string>(NO_ROOM);
 
   const [maintEq, setMaintEq] = useState<Equipment | null>(null);
   const [maintNotes, setMaintNotes] = useState('');
   const [maintUntil, setMaintUntil] = useState('');
 
   const handleAdd = async () => {
-    await create.mutateAsync({ name, equipment_type: type, identifier });
+    await create.mutateAsync({
+      name,
+      identifier,
+      room_id: roomId === NO_ROOM ? null : roomId,
+    });
     setName('');
     setIdentifier('');
+    setRoomId(NO_ROOM);
     setOpen(false);
   };
+
+  const roomNameOf = (id: string | null) =>
+    id ? rooms.find((r) => r.id === id)?.name ?? '—' : null;
 
   const copyStationLink = (token: string) => {
     const url = `${window.location.origin}/estacao/${token}`;
