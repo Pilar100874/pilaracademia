@@ -1,24 +1,26 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3, CalendarPlus, Library, LogOut, GraduationCap, ShieldCheck, DoorOpen } from 'lucide-react';
+import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3, CalendarPlus, Library, LogOut, GraduationCap, ShieldCheck, DoorOpen, MoreHorizontal, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { NotificationsBell } from '@/components/NotificationsBell';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 const baseNavItems = [
-  { to: '/clinica', icon: CalendarDays, label: 'Grade Master', end: true },
+  { to: '/clinica', icon: CalendarDays, label: 'Grade Master', end: true, primary: true },
   { to: '/clinica/visao', icon: Activity, label: 'Visão' },
-  { to: '/clinica/agenda', icon: CalendarPlus, label: 'Agenda' },
+  { to: '/clinica/agenda', icon: CalendarPlus, label: 'Agenda', primary: true },
   { to: '/clinica/grades', icon: CalendarPlus, label: 'Horários' },
   { to: '/clinica/salas', icon: DoorOpen, label: 'Salas' },
-  { to: '/clinica/alunos', icon: Users, label: 'Alunos' },
+  { to: '/clinica/alunos', icon: Users, label: 'Alunos', primary: true },
   { to: '/clinica/equipe', icon: GraduationCap, label: 'Equipe', adminOnly: true },
   { to: '/clinica/permissoes', icon: ShieldCheck, label: 'Permissões', adminOnly: true },
   { to: '/clinica/evolucao', icon: TrendingUp, label: 'Evolução' },
-  { to: '/clinica/sequencias', icon: ListOrdered, label: 'Sequências' },
+  { to: '/clinica/sequencias', icon: ListOrdered, label: 'Sequências', primary: true },
   { to: '/clinica/exercicios', icon: Library, label: 'Exercícios' },
   { to: '/clinica/equipamentos', icon: Dumbbell, label: 'Equipamentos' },
   { to: '/clinica/niveis', icon: Layers, label: 'Níveis' },
