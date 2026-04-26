@@ -135,6 +135,8 @@ export default function MasterPage() {
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao atualizar"),
   });
+
+  if (checkingRole) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
