@@ -219,7 +219,7 @@ function ImportGlobalTemplateButton({ clinicId, onImported }: { clinicId: string
 export default function SequencesPage() {
   const { activeClinicId } = useUserRoles();
   const { user } = useAuth();
-  const { data: sequences = [], create, remove } = useSequences(activeClinicId);
+  const { data: sequences = [], create, update, remove } = useSequences(activeClinicId);
   const { data: equipment = [] } = useEquipment(activeClinicId);
   const { data: levels = [] } = useSkillLevels(activeClinicId);
   const [selected, setSelected] = useState<string | null>(null);
@@ -228,7 +228,10 @@ export default function SequencesPage() {
   const { categories } = useExerciseCategories();
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', description: '', equipment_id: '', skill_level_id: '', estimated_minutes: '' });
+  const [editOpen, setEditOpen] = useState(false);
+  const emptyForm = { name: '', description: '', equipment_id: '', skill_level_id: '', estimated_minutes: '' };
+  const [form, setForm] = useState(emptyForm);
+  const [editForm, setEditForm] = useState(emptyForm);
   const [itemOpen, setItemOpen] = useState(false);
   const [itemForm, setItemForm] = useState({ name: '', sets: 3, reps: 12, notes: '' });
   const [libOpen, setLibOpen] = useState(false);
@@ -236,6 +239,21 @@ export default function SequencesPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [zoomImages, setZoomImages] = useState<string[]>([]);
   const [videoItem, setVideoItem] = useState<SequenceItem | null>(null);
+
+  // Filters for the sidebar list
+  const [search, setSearch] = useState('');
+  const [filterEquip, setFilterEquip] = useState<string>('__all__');
+  const [filterLevel, setFilterLevel] = useState<string>('__all__');
+
+  const filteredSequences = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return sequences.filter((s) => {
+      if (q && !s.name.toLowerCase().includes(q) && !(s.description ?? '').toLowerCase().includes(q)) return false;
+      if (filterEquip !== '__all__' && s.equipment_id !== filterEquip) return false;
+      if (filterLevel !== '__all__' && s.skill_level_id !== filterLevel) return false;
+      return true;
+    });
+  }, [sequences, search, filterEquip, filterLevel]);
 
   // Local order for optimistic dnd
   const [localOrder, setLocalOrder] = useState<SequenceItem[]>([]);
@@ -264,9 +282,35 @@ export default function SequencesPage() {
       estimated_minutes: form.estimated_minutes ? parseInt(form.estimated_minutes) : null,
       created_by: user.id,
     });
-    setForm({ name: '', description: '', equipment_id: '', skill_level_id: '', estimated_minutes: '' });
+    setForm(emptyForm);
     setOpen(false);
     setSelected(created.id);
+  };
+
+  const openEditDialog = () => {
+    if (!currentSeq) return;
+    setEditForm({
+      name: currentSeq.name ?? '',
+      description: currentSeq.description ?? '',
+      equipment_id: currentSeq.equipment_id ?? '',
+      skill_level_id: currentSeq.skill_level_id ?? '',
+      estimated_minutes: currentSeq.estimated_minutes ? String(currentSeq.estimated_minutes) : '',
+    });
+    setEditOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!currentSeq) return;
+    await update.mutateAsync({
+      id: currentSeq.id,
+      name: editForm.name,
+      description: editForm.description || null,
+      equipment_id: editForm.equipment_id || null,
+      equipment_type: equipment.find((e) => e.id === editForm.equipment_id)?.equipment_type || null,
+      skill_level_id: editForm.skill_level_id || null,
+      estimated_minutes: editForm.estimated_minutes ? parseInt(editForm.estimated_minutes) : null,
+    } as any);
+    setEditOpen(false);
   };
 
   const handleAddItem = async () => {
