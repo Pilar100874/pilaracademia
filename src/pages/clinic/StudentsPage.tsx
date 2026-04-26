@@ -76,6 +76,9 @@ export default function StudentsPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', skill_level_id: '', notes: '' });
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [onlyMine, setOnlyMine] = useState(false);
+  const { data: myStudentIds } = useMyStudentIds(activeClinicId, user?.id);
 
   // Prescriptions for selected
   const { data: studentPrescs = [] } = useQuery({
