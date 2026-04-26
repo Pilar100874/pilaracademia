@@ -22,6 +22,7 @@ import ClinicOverviewPage from "@/pages/clinic/ClinicOverviewPage";
 import StudentsPage from "@/pages/clinic/StudentsPage";
 import StaffPage from "@/pages/clinic/StaffPage";
 import PermissionsPage from "@/pages/clinic/PermissionsPage";
+import RoomsPage from "@/pages/clinic/RoomsPage";
 import EquipmentPage from "@/pages/clinic/EquipmentPage";
 import SkillLevelsPage from "@/pages/clinic/SkillLevelsPage";
 import SequencesPage from "@/pages/clinic/SequencesPage";
@@ -104,6 +105,7 @@ function AppRoutes() {
         <Route path="alunos" element={<StudentsPage />} />
         <Route path="equipe" element={<StaffPage />} />
         <Route path="permissoes" element={<PermissionsPage />} />
+        <Route path="salas" element={<RoomsPage />} />
         <Route path="evolucao" element={<StudentEvolutionPage />} />
         <Route path="equipamentos" element={<EquipmentPage />} />
         <Route path="niveis" element={<SkillLevelsPage />} />

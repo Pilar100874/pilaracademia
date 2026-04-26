@@ -25,6 +25,7 @@ export type Database = {
           id: string
           instructor_id: string | null
           notes: string | null
+          room_id: string | null
           scheduled_at: string
         }
         Insert: {
@@ -37,6 +38,7 @@ export type Database = {
           id?: string
           instructor_id?: string | null
           notes?: string | null
+          room_id?: string | null
           scheduled_at: string
         }
         Update: {
@@ -49,6 +51,7 @@ export type Database = {
           id?: string
           instructor_id?: string | null
           notes?: string | null
+          room_id?: string | null
           scheduled_at?: string
         }
         Relationships: []
@@ -260,6 +263,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      clinic_rooms: {
+        Row: {
+          active: boolean
+          capacity: number | null
+          clinic_id: string
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          capacity?: number | null
+          clinic_id: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          capacity?: number | null
+          clinic_id?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       clinic_settings: {
         Row: {

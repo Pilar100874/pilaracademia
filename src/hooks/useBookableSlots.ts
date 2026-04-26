@@ -9,6 +9,7 @@ export interface BookableSlot {
   duration_minutes: number;
   equipment_id: string | null;
   instructor_id: string | null;
+  room_id: string | null;
   capacity: number;
   notes: string | null;
   created_by: string;
