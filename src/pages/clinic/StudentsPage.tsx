@@ -315,6 +315,9 @@ export default function StudentsPage() {
                     <Button variant="outline" size="sm" onClick={() => setRecOpen(true)}>
                       <Repeat className="h-3.5 w-3.5 mr-1" />Horários fixos {studentRecs.length > 0 && `(${studentRecs.length})`}
                     </Button>
+                    <Button variant="outline" size="sm" onClick={openContract}>
+                      <FileText className="h-3.5 w-3.5 mr-1" />Contrato
+                    </Button>
                     <Button variant="outline" size="sm" onClick={handleGenerateAccess} disabled={inviting || !current.email}>
                       <KeyRound className="h-3.5 w-3.5 mr-1" />{current.user_id ? 'Resetar senha' : 'Gerar acesso'}
                     </Button>
@@ -325,6 +328,17 @@ export default function StudentsPage() {
                     <Button variant="ghost" size="icon" onClick={() => { remove.mutate(current.id); setSelectedStudent(null); }}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
+
+                {/* Resumo de contrato */}
+                {(current as any).contract_type && (current as any).contract_type !== 'open' && (
+                  <div className="mt-4 p-3 rounded-lg border bg-muted/40 text-sm flex items-center justify-between flex-wrap gap-2">
+                    {(current as any).contract_type === 'classes' ? (
+                      <span><b>Pacote:</b> {(current as any).contract_classes_used || 0} / {(current as any).contract_classes_total || 0} aulas usadas</span>
+                    ) : (
+                      <span><b>Período:</b> {(current as any).contract_start_date || '—'} → {(current as any).contract_end_date || '—'}</span>
+                    )}
+                  </div>
+                )}
 
                 {/* Resumo da ficha */}
                 {((current as any).injuries || (current as any).restrictions || (current as any).medical_conditions) && (
