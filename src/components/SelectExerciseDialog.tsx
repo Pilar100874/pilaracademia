@@ -20,6 +20,7 @@ import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { LazyVideoPreview } from '@/components/LazyVideoPreview';
 import { Dumbbell, Search, Plus, Check, ImageIcon, Tag } from 'lucide-react';
+import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
 interface SelectExerciseDialogProps {
   open: boolean;
@@ -176,7 +177,7 @@ export function SelectExerciseDialog({
                 {filteredExercises.map((exercise) => {
                   const selectionIdx = selectedIds.indexOf(exercise.id);
                   const isSelected = selectionIdx !== -1;
-                  const firstImage = exercise.image_urls?.[0];
+                      const firstImage = getFreshMediaUrl(exercise.image_urls?.[0]);
                   const imageCount = exercise.image_urls?.length || 0;
                   const hasVideo = !!exercise.video_url && !!exercise.video_type;
                   const categoryName = exercise.category_id
