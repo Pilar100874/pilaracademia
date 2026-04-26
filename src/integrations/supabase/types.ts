@@ -14,6 +14,225 @@ export type Database = {
   }
   public: {
     Tables: {
+      clinic_equipment: {
+        Row: {
+          active: boolean
+          clinic_id: string
+          created_at: string
+          equipment_type: string
+          id: string
+          identifier: string | null
+          name: string
+          station_token: string
+        }
+        Insert: {
+          active?: boolean
+          clinic_id: string
+          created_at?: string
+          equipment_type: string
+          id?: string
+          identifier?: string | null
+          name: string
+          station_token?: string
+        }
+        Update: {
+          active?: boolean
+          clinic_id?: string
+          created_at?: string
+          equipment_type?: string
+          id?: string
+          identifier?: string | null
+          name?: string
+          station_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_equipment_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_user_id: string | null
+          clinic_id: string
+          created_at: string
+          created_by: string
+          email: string
+          full_name: string
+          id: string
+          invite_token: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: Database["public"]["Enums"]["invite_status"]
+          temp_password: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          email: string
+          full_name: string
+          id?: string
+          invite_token?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: Database["public"]["Enums"]["invite_status"]
+          temp_password?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          email?: string
+          full_name?: string
+          id?: string
+          invite_token?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: Database["public"]["Enums"]["invite_status"]
+          temp_password?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_invites_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_skill_levels: {
+        Row: {
+          clinic_id: string
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          rank: number
+        }
+        Insert: {
+          clinic_id: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          rank?: number
+        }
+        Update: {
+          clinic_id?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          rank?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_skill_levels_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_students: {
+        Row: {
+          active: boolean
+          birth_date: string | null
+          clinic_id: string
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          phone: string | null
+          skill_level_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          birth_date?: string | null
+          clinic_id: string
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          skill_level_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          birth_date?: string | null
+          clinic_id?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          skill_level_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_students_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinic_students_skill_level_id_fkey"
+            columns: ["skill_level_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_skill_levels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinics: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          owner_user_id: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          owner_user_id: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          owner_user_id?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       custom_products: {
         Row: {
           barcode: string
@@ -91,6 +310,84 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      execution_log: {
+        Row: {
+          clinic_id: string
+          context: Database["public"]["Enums"]["prescription_context"]
+          created_at: string
+          exercise_name: string
+          id: string
+          notes: string | null
+          performed_at: string
+          prescription_id: string | null
+          sequence_id: string | null
+          sequence_item_id: string | null
+          student_id: string
+        }
+        Insert: {
+          clinic_id: string
+          context?: Database["public"]["Enums"]["prescription_context"]
+          created_at?: string
+          exercise_name: string
+          id?: string
+          notes?: string | null
+          performed_at?: string
+          prescription_id?: string | null
+          sequence_id?: string | null
+          sequence_item_id?: string | null
+          student_id: string
+        }
+        Update: {
+          clinic_id?: string
+          context?: Database["public"]["Enums"]["prescription_context"]
+          created_at?: string
+          exercise_name?: string
+          id?: string
+          notes?: string | null
+          performed_at?: string
+          prescription_id?: string | null
+          sequence_id?: string | null
+          sequence_item_id?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_log_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execution_log_prescription_id_fkey"
+            columns: ["prescription_id"]
+            isOneToOne: false
+            referencedRelation: "prescriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execution_log_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_sequences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execution_log_sequence_item_id_fkey"
+            columns: ["sequence_item_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_sequence_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execution_log_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       exercise_categories: {
         Row: {
@@ -212,6 +509,135 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "exercise_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercise_sequence_items: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          exercise_library_id: string | null
+          id: string
+          image_urls: string[] | null
+          name: string
+          notes: string | null
+          order_index: number
+          reps: number
+          rest_seconds: number | null
+          sequence_id: string
+          sets: number
+          video_end_seconds: number | null
+          video_start_seconds: number | null
+          video_type: string | null
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          exercise_library_id?: string | null
+          id?: string
+          image_urls?: string[] | null
+          name: string
+          notes?: string | null
+          order_index?: number
+          reps?: number
+          rest_seconds?: number | null
+          sequence_id: string
+          sets?: number
+          video_end_seconds?: number | null
+          video_start_seconds?: number | null
+          video_type?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          exercise_library_id?: string | null
+          id?: string
+          image_urls?: string[] | null
+          name?: string
+          notes?: string | null
+          order_index?: number
+          reps?: number
+          rest_seconds?: number | null
+          sequence_id?: string
+          sets?: number
+          video_end_seconds?: number | null
+          video_start_seconds?: number | null
+          video_type?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_sequence_items_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercise_sequences: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          equipment_id: string | null
+          equipment_type: string | null
+          estimated_minutes: number | null
+          id: string
+          name: string
+          skill_level_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          equipment_id?: string | null
+          equipment_type?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          name: string
+          skill_level_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          equipment_id?: string | null
+          equipment_type?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          name?: string
+          skill_level_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_sequences_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercise_sequences_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercise_sequences_skill_level_id_fkey"
+            columns: ["skill_level_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_skill_levels"
             referencedColumns: ["id"]
           },
         ]
@@ -428,6 +854,189 @@ export type Database = {
         }
         Relationships: []
       }
+      live_session_students: {
+        Row: {
+          current_item_id: string | null
+          current_item_index: number
+          equipment_id: string | null
+          finished_at: string | null
+          id: string
+          joined_at: string
+          live_session_id: string
+          prescription_id: string | null
+          student_id: string
+          total_items: number
+        }
+        Insert: {
+          current_item_id?: string | null
+          current_item_index?: number
+          equipment_id?: string | null
+          finished_at?: string | null
+          id?: string
+          joined_at?: string
+          live_session_id: string
+          prescription_id?: string | null
+          student_id: string
+          total_items?: number
+        }
+        Update: {
+          current_item_id?: string | null
+          current_item_index?: number
+          equipment_id?: string | null
+          finished_at?: string | null
+          id?: string
+          joined_at?: string
+          live_session_id?: string
+          prescription_id?: string | null
+          student_id?: string
+          total_items?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_session_students_current_item_id_fkey"
+            columns: ["current_item_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_sequence_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_session_students_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_session_students_live_session_id_fkey"
+            columns: ["live_session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_session_students_prescription_id_fkey"
+            columns: ["prescription_id"]
+            isOneToOne: false
+            referencedRelation: "prescriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_session_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_sessions: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          finished_at: string | null
+          id: string
+          instructor_id: string
+          notes: string | null
+          scheduled_at: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["live_session_status"]
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          instructor_id: string
+          notes?: string | null
+          scheduled_at?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["live_session_status"]
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          instructor_id?: string
+          notes?: string | null
+          scheduled_at?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["live_session_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_sessions_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prescriptions: {
+        Row: {
+          clinic_id: string
+          completed_at: string | null
+          context: Database["public"]["Enums"]["prescription_context"]
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          scheduled_for: string | null
+          sequence_id: string
+          status: Database["public"]["Enums"]["prescription_status"]
+          student_id: string
+        }
+        Insert: {
+          clinic_id: string
+          completed_at?: string | null
+          context?: Database["public"]["Enums"]["prescription_context"]
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string | null
+          scheduled_for?: string | null
+          sequence_id: string
+          status?: Database["public"]["Enums"]["prescription_status"]
+          student_id: string
+        }
+        Update: {
+          clinic_id?: string
+          completed_at?: string | null
+          context?: Database["public"]["Enums"]["prescription_context"]
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          scheduled_for?: string | null
+          sequence_id?: string
+          status?: Database["public"]["Enums"]["prescription_status"]
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescriptions_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_sequences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           activity_level: string | null
@@ -499,6 +1108,38 @@ export type Database = {
           weight_kg?: number | null
         }
         Relationships: []
+      }
+      user_roles: {
+        Row: {
+          clinic_id: string | null
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          clinic_id?: string | null
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          clinic_id?: string | null
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_settings: {
         Row: {
@@ -646,10 +1287,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_clinic_admin_or_instructor: {
+        Args: { _clinic_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_clinic_member: {
+        Args: { _clinic_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_clinic_staff: {
+        Args: { _clinic_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "super_admin"
+        | "clinic_admin"
+        | "instructor"
+        | "receptionist"
+        | "student"
+        | "station"
+      invite_status: "pending" | "accepted" | "revoked"
+      live_session_status:
+        | "scheduled"
+        | "in_progress"
+        | "finished"
+        | "cancelled"
+      prescription_context: "in_class" | "at_home"
+      prescription_status: "pending" | "in_progress" | "completed" | "skipped"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -776,6 +1449,24 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "super_admin",
+        "clinic_admin",
+        "instructor",
+        "receptionist",
+        "student",
+        "station",
+      ],
+      invite_status: ["pending", "accepted", "revoked"],
+      live_session_status: [
+        "scheduled",
+        "in_progress",
+        "finished",
+        "cancelled",
+      ],
+      prescription_context: ["in_class", "at_home"],
+      prescription_status: ["pending", "in_progress", "completed", "skipped"],
+    },
   },
 } as const
