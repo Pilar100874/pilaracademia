@@ -11,6 +11,7 @@ import { Plus, Trash2, ListOrdered, GripVertical, Library, Pencil, Check, X, Mes
 import { ShareSequenceDialog } from '@/components/ShareSequenceDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { ExercisePickerDialog } from '@/components/ExercisePickerDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
