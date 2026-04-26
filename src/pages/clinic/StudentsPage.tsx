@@ -566,7 +566,7 @@ export default function StudentsPage() {
                   <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>Ficha clínica · {current.full_name}</DialogTitle></DialogHeader>
                     <div className="space-y-3">
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div><label className="text-xs">Nascimento</label><Input type="date" value={anamnese.birth_date || ''} onChange={(e) => setAnamnese({ ...anamnese, birth_date: e.target.value })} /></div>
                         <div><label className="text-xs">Peso (kg)</label><Input type="number" step="0.1" value={anamnese.weight_kg ?? ''} onChange={(e) => setAnamnese({ ...anamnese, weight_kg: e.target.value })} /></div>
                         <div><label className="text-xs">Altura (cm)</label><Input type="number" value={anamnese.height_cm ?? ''} onChange={(e) => setAnamnese({ ...anamnese, height_cm: e.target.value })} /></div>
@@ -678,7 +678,7 @@ export default function StudentsPage() {
                 </Dialog>
               </Card>
 
-              <Card className="p-5">
+              <Card className="p-4 sm:p-5 min-w-0">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold flex items-center gap-2"><Activity className="h-4 w-4" />Prescrições</h3>
                   {canPrescribe && (
@@ -727,7 +727,7 @@ export default function StudentsPage() {
                 )}
               </Card>
 
-              <Card className="p-5">
+              <Card className="p-4 sm:p-5 min-w-0">
                 <h3 className="font-semibold mb-3 flex items-center gap-2"><Calendar className="h-4 w-4" />Evolução (últimas execuções)</h3>
                 {log.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhum exercício executado ainda.</p>
