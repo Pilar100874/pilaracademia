@@ -66,6 +66,77 @@ function SortableItemRow({ item, idx, onRemove, onEdit }: { item: SequenceItem; 
   );
 }
 
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Download } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+function ImportGlobalTemplateButton({ clinicId, onImported }: { clinicId: string | null; onImported: (newId: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
+  const { data: templates = [], isLoading } = useQuery({
+    queryKey: ['global-templates-list'],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('exercise_sequences')
+        .select('id,name,description,estimated_minutes')
+        .eq('is_global', true)
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+  const importIt = useMutation({
+    mutationFn: async (sequenceId: string) => {
+      if (!clinicId) throw new Error('clínica');
+      const { data, error } = await supabase.rpc('copy_global_sequence_to_clinic', {
+        _sequence_id: sequenceId, _clinic_id: clinicId,
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: (newId) => {
+      toast.success('Template importado');
+      qc.invalidateQueries({ queryKey: ['sequences', clinicId] });
+      setOpen(false);
+      if (newId) onImported(newId);
+    },
+    onError: (e: any) => toast.error(e?.message || 'Erro ao importar'),
+  });
+  if (!clinicId) return null;
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline"><Download className="h-4 w-4 mr-1" />Importar template</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Templates globais</DialogTitle></DialogHeader>
+        <ScrollArea className="max-h-[60vh] pr-3">
+          <div className="space-y-1 py-2">
+            {isLoading ? (
+              <div className="text-sm text-muted-foreground text-center py-6">Carregando...</div>
+            ) : templates.length === 0 ? (
+              <div className="text-sm text-muted-foreground text-center py-6">Nenhum template global disponível.</div>
+            ) : templates.map((t: any) => (
+              <button
+                key={t.id}
+                disabled={importIt.isPending}
+                className="w-full text-left p-3 rounded-lg border hover:bg-muted transition disabled:opacity-50"
+                onClick={() => importIt.mutate(t.id)}
+              >
+                <div className="font-medium">{t.name}</div>
+                {t.description && <div className="text-xs text-muted-foreground line-clamp-2">{t.description}</div>}
+                {t.estimated_minutes && <div className="text-xs text-muted-foreground mt-1">~{t.estimated_minutes} min</div>}
+              </button>
+            ))}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function SequencesPage() {
   const { activeClinicId } = useUserRoles();
   const { user } = useAuth();
