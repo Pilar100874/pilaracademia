@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { ExercisePickerDialog } from '@/components/ExercisePickerDialog';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from '@dnd-kit/core';
@@ -158,7 +159,7 @@ export default function MasterSequencesPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerSearch, setPickerSearch] = useState('');
+  
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ name: '', description: '', estimated_minutes: '' });
   const [zoomImages, setZoomImages] = useState<string[]>([]);
@@ -196,7 +197,20 @@ export default function MasterSequencesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('exercise_library')
-        .select('id,name,image_urls,default_sets,default_reps,video_url,video_type,video_start_seconds,video_end_seconds')
+        .select('id,name,image_urls,default_sets,default_reps,video_url,video_type,video_start_seconds,video_end_seconds,category_id,is_global')
+        .eq('is_global', true)
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: globalCategories = [] } = useQuery({
+    queryKey: ['global-categories-for-pick'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('exercise_categories')
+        .select('id,name,is_global')
         .eq('is_global', true)
         .order('name');
       if (error) throw error;
@@ -240,27 +254,35 @@ export default function MasterSequencesPage() {
     },
   });
 
-  const addItem = useMutation({
-    mutationFn: async (libId: string) => {
-      const lib = library.find((l: any) => l.id === libId);
-      if (!lib || !selected) throw new Error('inválido');
-      const nextIdx = (items.reduce((m, i) => Math.max(m, i.order_index), -1)) + 1;
-      const { error } = await supabase.from('exercise_sequence_items').insert({
-        sequence_id: selected,
-        exercise_library_id: lib.id,
-        name: lib.name,
-        image_urls: lib.image_urls ?? [],
-        video_url: lib.video_url,
-        video_type: lib.video_type,
-        video_start_seconds: lib.video_start_seconds,
-        video_end_seconds: lib.video_end_seconds,
-        sets: lib.default_sets ?? 3,
-        reps: lib.default_reps ?? 12,
-        order_index: nextIdx,
-      });
+  const addItems = useMutation({
+    mutationFn: async (libIds: string[]) => {
+      if (!selected) throw new Error('inválido');
+      let nextIdx = (items.reduce((m, i) => Math.max(m, i.order_index), -1)) + 1;
+      const rows = libIds.map((id) => {
+        const lib = library.find((l: any) => l.id === id);
+        if (!lib) return null;
+        return {
+          sequence_id: selected,
+          exercise_library_id: lib.id,
+          name: lib.name,
+          image_urls: lib.image_urls ?? [],
+          video_url: lib.video_url,
+          video_type: lib.video_type,
+          video_start_seconds: lib.video_start_seconds,
+          video_end_seconds: lib.video_end_seconds,
+          sets: lib.default_sets ?? 3,
+          reps: lib.default_reps ?? 12,
+          order_index: nextIdx++,
+        };
+      }).filter(Boolean) as any[];
+      if (!rows.length) return;
+      const { error } = await supabase.from('exercise_sequence_items').insert(rows);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['global-sequence-items', selected] }),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ['global-sequence-items', selected] });
+      toast.success(`${vars.length} exercício${vars.length === 1 ? '' : 's'} adicionado${vars.length === 1 ? '' : 's'}`);
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -309,11 +331,7 @@ export default function MasterSequencesPage() {
     return sequences.filter(s => s.name.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q));
   }, [sequences, search]);
 
-  const filteredLibrary = useMemo(() => {
-    const q = pickerSearch.trim().toLowerCase();
-    if (!q) return library;
-    return (library as any[]).filter(l => l.name.toLowerCase().includes(q));
-  }, [library, pickerSearch]);
+  
 
   return (
     <div className="min-h-screen bg-background">
@@ -455,54 +473,9 @@ export default function MasterSequencesPage() {
                   {items.length} exercício{items.length === 1 ? '' : 's'}
                 </p>
               </div>
-              <Dialog open={pickerOpen} onOpenChange={(o) => { setPickerOpen(o); if (!o) setPickerSearch(''); }}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Library className="h-4 w-4 mr-1.5" /> Adicionar exercício
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader><DialogTitle>Biblioteca global</DialogTitle></DialogHeader>
-                  <div className="relative mb-3">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar exercícios..."
-                      value={pickerSearch}
-                      onChange={(e) => setPickerSearch(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                  <ScrollArea className="max-h-[60vh] pr-3">
-                    <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
-                      {filteredLibrary.map((l: any) => (
-                        <button
-                          key={l.id}
-                          className="flex items-center gap-3 p-2 rounded-lg border bg-card hover:border-primary/50 hover:bg-muted/40 text-left transition-colors"
-                          onClick={() => { addItem.mutate(l.id); setPickerOpen(false); setPickerSearch(''); }}
-                        >
-                          <div className="h-12 w-12 rounded bg-muted/40 flex items-center justify-center shrink-0 overflow-hidden">
-                            {l.image_urls?.[0] ? (
-                              <img src={l.image_urls[0]} className="h-full w-full object-contain" />
-                            ) : (
-                              <Dumbbell className="h-5 w-5 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium truncate">{l.name}</div>
-                            <div className="text-xs text-muted-foreground">{l.default_sets}×{l.default_reps}</div>
-                          </div>
-                          <Plus className="h-4 w-4 text-primary shrink-0" />
-                        </button>
-                      ))}
-                      {filteredLibrary.length === 0 && (
-                        <div className="col-span-full text-center text-sm text-muted-foreground py-8">
-                          Nenhum exercício encontrado.
-                        </div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </DialogContent>
-              </Dialog>
+              <Button size="sm" onClick={() => setPickerOpen(true)}>
+                <Library className="h-4 w-4 mr-1.5" /> Adicionar exercícios
+              </Button>
             </div>
 
             {items.length === 0 ? (
@@ -536,6 +509,17 @@ export default function MasterSequencesPage() {
           </Card>
         )}
       </div>
+
+      <ExercisePickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        exercises={library as any}
+        categories={globalCategories as any}
+        title="Adicionar exercícios da biblioteca global"
+        onConfirm={async (picks) => {
+          await addItems.mutateAsync(picks.map((p) => p.id));
+        }}
+      />
 
       <ImageZoomDialog
         images={zoomImages}

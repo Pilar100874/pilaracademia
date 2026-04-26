@@ -2,19 +2,20 @@ import { useState, useEffect } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useSequences, useSequenceItems, useEquipment, useSkillLevels, type SequenceItem } from '@/hooks/useClinicData';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
+import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, ListOrdered, GripVertical, Library, Pencil, Check, X, MessageCircle, Play, Maximize2, Dumbbell } from 'lucide-react';
+import { Plus, Trash2, ListOrdered, GripVertical, Library, Pencil, Check, X, MessageCircle, Play, Maximize2, Dumbbell, LayoutTemplate } from 'lucide-react';
 import { ShareSequenceDialog } from '@/components/ShareSequenceDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { ExercisePickerDialog } from '@/components/ExercisePickerDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
@@ -195,14 +196,14 @@ export default function SequencesPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const { data: items = [], addItem, removeItem, updateItem, reorderItems, addFromLibrary } = useSequenceItems(selected);
   const { exercises: library } = useExerciseLibrary();
+  const { categories } = useExerciseCategories();
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', description: '', equipment_id: '', skill_level_id: '', estimated_minutes: '' });
   const [itemOpen, setItemOpen] = useState(false);
   const [itemForm, setItemForm] = useState({ name: '', sets: 3, reps: 12, notes: '' });
   const [libOpen, setLibOpen] = useState(false);
-  const [libSelected, setLibSelected] = useState<Set<string>>(new Set());
-  const [libSearch, setLibSearch] = useState('');
+  const [templateOpen, setTemplateOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [zoomImages, setZoomImages] = useState<string[]>([]);
   const [videoItem, setVideoItem] = useState<SequenceItem | null>(null);
@@ -245,16 +246,7 @@ export default function SequencesPage() {
     setItemOpen(false);
   };
 
-  const handleAddFromLibrary = async () => {
-    const picks = library.filter((e) => libSelected.has(e.id));
-    if (picks.length === 0) return;
-    await addFromLibrary.mutateAsync(picks);
-    setLibSelected(new Set());
-    setLibOpen(false);
-  };
-
   const currentSeq = sequences.find((s) => s.id === selected);
-  const filteredLib = library.filter((e) => e.name.toLowerCase().includes(libSearch.toLowerCase()));
 
   return (
     <div className="p-6 space-y-4 max-w-7xl mx-auto">
@@ -354,39 +346,13 @@ export default function SequencesPage() {
               <Card className="p-5">
                 <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <h3 className="font-semibold">Exercícios ({localOrder.length}) <span className="text-xs text-muted-foreground font-normal">— arraste para reordenar</span></h3>
-                  <div className="flex gap-2">
-                    <Dialog open={libOpen} onOpenChange={setLibOpen}>
-                      <DialogTrigger asChild><Button size="sm" variant="outline"><Library className="h-3.5 w-3.5 mr-1" />Da biblioteca</Button></DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader><DialogTitle>Importar da biblioteca</DialogTitle></DialogHeader>
-                        <Input placeholder="Buscar exercício..." value={libSearch} onChange={(e) => setLibSearch(e.target.value)} />
-                        <ScrollArea className="h-96 mt-2">
-                          <div className="space-y-1">
-                            {filteredLib.length === 0 && <p className="text-sm text-muted-foreground text-center p-4">Nenhum exercício na biblioteca.</p>}
-                            {filteredLib.map((ex) => (
-                              <label key={ex.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted cursor-pointer">
-                                <Checkbox
-                                  checked={libSelected.has(ex.id)}
-                                  onCheckedChange={(v) => {
-                                    const next = new Set(libSelected);
-                                    if (v) next.add(ex.id); else next.delete(ex.id);
-                                    setLibSelected(next);
-                                  }}
-                                />
-                                {ex.image_urls?.[0] && <img src={ex.image_urls[0]} className="h-10 w-10 rounded object-cover" />}
-                                <div className="flex-1">
-                                  <div className="text-sm font-medium">{ex.name}</div>
-                                  <div className="text-xs text-muted-foreground">{ex.default_sets}×{ex.default_reps}</div>
-                                </div>
-                              </label>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                        <Button onClick={handleAddFromLibrary} disabled={libSelected.size === 0} className="w-full">
-                          Adicionar {libSelected.size} exercício(s)
-                        </Button>
-                      </DialogContent>
-                    </Dialog>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button size="sm" variant="outline" onClick={() => setTemplateOpen(true)}>
+                      <LayoutTemplate className="h-3.5 w-3.5 mr-1" />De template
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setLibOpen(true)}>
+                      <Library className="h-3.5 w-3.5 mr-1" />Da biblioteca
+                    </Button>
                     <Dialog open={itemOpen} onOpenChange={setItemOpen}>
                       <DialogTrigger asChild><Button size="sm"><Plus className="h-3.5 w-3.5 mr-1" />Manual</Button></DialogTrigger>
                       <DialogContent>
@@ -431,6 +397,28 @@ export default function SequencesPage() {
         </div>
       </div>
 
+      {/* Library picker (visual, multi-select, filters) */}
+      <ExercisePickerDialog
+        open={libOpen}
+        onOpenChange={setLibOpen}
+        exercises={library as any}
+        categories={categories as any}
+        showOriginFilter
+        title="Adicionar da biblioteca"
+        onConfirm={async (picks) => {
+          await addFromLibrary.mutateAsync(picks as any);
+        }}
+      />
+
+      {/* Template picker — loads exercises from a global template into this sequence */}
+      <TemplateExercisesPicker
+        open={templateOpen}
+        onOpenChange={setTemplateOpen}
+        onAdd={async (picks) => {
+          await addFromLibrary.mutateAsync(picks as any);
+        }}
+      />
+
       <ImageZoomDialog
         images={zoomImages}
         open={zoomImages.length > 0}
@@ -454,5 +442,139 @@ export default function SequencesPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// ============= Template picker =============
+// Lets the clinic browse global templates, pick one, and choose which
+// exercises from it to append to the currently open clinic sequence.
+function TemplateExercisesPicker({
+  open,
+  onOpenChange,
+  onAdd,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  onAdd: (picks: any[]) => Promise<void>;
+}) {
+  const [templateId, setTemplateId] = useState<string | null>(null);
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['global-templates-for-picker'],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('exercise_sequences')
+        .select('id,name,description,estimated_minutes')
+        .eq('is_global', true)
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: tplItems = [] } = useQuery({
+    queryKey: ['global-template-items', templateId],
+    enabled: !!templateId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('exercise_sequence_items')
+        .select('id,name,image_urls,sets,reps,video_url,video_type,video_start_seconds,video_end_seconds,exercise_library_id')
+        .eq('sequence_id', templateId!)
+        .order('order_index');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Reset when closed
+  useEffect(() => { if (!open) setTemplateId(null); }, [open]);
+
+  // Map template items to PickableExercise shape (default_sets/reps from item)
+  const pickable = (tplItems as any[]).map((it) => ({
+    id: it.id,
+    name: it.name,
+    image_urls: it.image_urls,
+    default_sets: it.sets,
+    default_reps: it.reps,
+    video_url: it.video_url,
+    video_type: it.video_type,
+    video_start_seconds: it.video_start_seconds,
+    video_end_seconds: it.video_end_seconds,
+    is_global: true,
+    // keep reference for insertion
+    __ref_library_id: it.exercise_library_id,
+  }));
+
+  if (!open) return null;
+
+  // Step 1: pick template
+  if (!templateId) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LayoutTemplate className="h-5 w-5 text-primary" />
+              Escolha um template
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            <div className="grid sm:grid-cols-2 gap-2 p-1">
+              {templates.length === 0 && (
+                <p className="col-span-full text-sm text-muted-foreground text-center py-8">
+                  Nenhum template global disponível.
+                </p>
+              )}
+              {(templates as any[]).map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTemplateId(t.id)}
+                  className="text-left rounded-xl border bg-card p-3 hover:border-primary/50 hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-center gap-2 font-semibold text-sm">
+                    <LayoutTemplate className="h-4 w-4 text-primary" />
+                    {t.name}
+                  </div>
+                  {t.description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.description}</p>
+                  )}
+                  {t.estimated_minutes && (
+                    <p className="text-[10px] text-muted-foreground mt-1">~{t.estimated_minutes} min</p>
+                  )}
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Step 2: pick exercises from chosen template
+  return (
+    <ExercisePickerDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      exercises={pickable as any}
+      categories={[]}
+      title="Selecione exercícios do template"
+      confirmLabel={(c) => `Adicionar ${c || ''} à sequência`}
+      onConfirm={async (picks) => {
+        // Map back to addFromLibrary shape, preferring the original library_id when available
+        const mapped = picks.map((p: any) => ({
+          id: p.__ref_library_id ?? p.id,
+          name: p.name,
+          default_sets: p.default_sets,
+          default_reps: p.default_reps,
+          image_urls: p.image_urls ?? [],
+          video_url: p.video_url,
+          video_type: p.video_type,
+          video_start_seconds: p.video_start_seconds,
+          video_end_seconds: p.video_end_seconds,
+        }));
+        await onAdd(mapped);
+      }}
+    />
   );
 }
