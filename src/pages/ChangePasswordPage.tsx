@@ -13,6 +13,7 @@ import { KeyRound, Loader2 } from 'lucide-react';
 export default function ChangePasswordPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [pw1, setPw1] = useState('');
   const [pw2, setPw2] = useState('');
   const [loading, setLoading] = useState(false);
