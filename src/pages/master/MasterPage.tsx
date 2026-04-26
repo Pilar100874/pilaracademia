@@ -311,6 +311,14 @@ export default function MasterPage() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    title="Categorias globais visíveis"
+                    onClick={() => setManagingCats({ id: c.id, name: c.name })}
+                  >
+                    <FolderTree className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setEditing({ id: c.id, name: c.name, slug: c.slug })}
                   >
                     <Pencil className="h-4 w-4" />
