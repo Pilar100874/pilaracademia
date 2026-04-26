@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useBookableSlots, useClinicSettings } from '@/hooks/useBookableSlots';
 import { useEquipment } from '@/hooks/useClinicData';
 import { useAppointments } from '@/hooks/useAppointments';
+import { useClinicStaff } from '@/hooks/useStaff';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +38,13 @@ export default function BookableSlotsPage() {
   const { data: equipment = [] } = useEquipment(activeClinicId);
   const { data: settings, upsert: upsertSettings } = useClinicSettings(activeClinicId);
   const { data: appointments = [] } = useAppointments(activeClinicId, day.toISOString());
+  const { data: staff = [] } = useClinicStaff(activeClinicId);
+  const instructors = useMemo(
+    () => staff.filter((s) => s.role === 'instructor' || s.role === 'clinic_admin'),
+    [staff]
+  );
+  const instructorName = (id: string | null) =>
+    id ? (staff.find((s) => s.user_id === id)?.name ?? 'Professor') : 'Sem professor';
 
   const [openCreate, setOpenCreate] = useState(false);
   const [openSettings, setOpenSettings] = useState(false);
@@ -49,6 +57,7 @@ export default function BookableSlotsPage() {
     duration_minutes: 50,
     capacity: 1,
     equipment_id: '',
+    instructor_id: '',
     weeks: 1,
   });
 
@@ -80,7 +89,7 @@ export default function BookableSlotsPage() {
             scheduled_at: d.toISOString(),
             duration_minutes: form.duration_minutes,
             equipment_id: form.equipment_id || null,
-            instructor_id: user.id,
+            instructor_id: form.instructor_id || user.id,
             capacity: form.capacity,
             notes: null,
             created_by: user.id,
@@ -153,6 +162,13 @@ export default function BookableSlotsPage() {
                   </Select>
                 </div>
                 <div>
+                  <Label>Professor</Label>
+                  <Select value={form.instructor_id} onValueChange={(v) => setForm({ ...form, instructor_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Eu mesmo" /></SelectTrigger>
+                    <SelectContent>{instructors.map((i) => <SelectItem key={i.user_id} value={i.user_id}>{i.name ?? i.email ?? 'Professor'}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label>Repetir por quantas semanas</Label>
                   <Input type="number" min={1} max={12} value={form.weeks} onChange={(e) => setForm({ ...form, weeks: parseInt(e.target.value) || 1 })} />
                 </div>
@@ -201,7 +217,10 @@ export default function BookableSlotsPage() {
                   </div>
                   <div className="flex-1">
                     <div className="text-sm">{eqName(s.equipment_id)}</div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-1"><User2 className="h-3 w-3" /> {booked} / {s.capacity} reservado(s)</div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-3 flex-wrap">
+                      <span className="flex items-center gap-1"><User2 className="h-3 w-3" /> {booked} / {s.capacity}</span>
+                      <span className="flex items-center gap-1 text-primary font-medium">👨‍🏫 {instructorName(s.instructor_id)}</span>
+                    </div>
                   </div>
                   <Badge variant={full ? 'destructive' : 'secondary'}>{full ? 'Lotado' : 'Aberto'}</Badge>
                   <Button size="icon" variant="ghost" onClick={() => { if (confirm('Excluir slot?')) remove.mutate(s.id); }}><Trash2 className="h-4 w-4" /></Button>
