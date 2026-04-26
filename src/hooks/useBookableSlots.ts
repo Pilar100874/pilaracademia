@@ -35,14 +35,29 @@ export function useBookableSlots(clinicId: string | null, fromISO?: string, toIS
 
   const create = useMutation({
     mutationFn: async (input: Omit<BookableSlot, 'id' | 'created_at'>) => {
-      const { error } = await supabase.from('bookable_slots' as any).insert(input as any);
+      const { data, error } = await supabase
+        .from('bookable_slots' as any)
+        .insert(input as any)
+        .select('id')
+        .single();
+      if (error) throw error;
+      return (data as any)?.id as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+    },
+    onError: (e: any) => toast.error(e?.message || 'Erro ao criar slot'),
+  });
+
+  const update = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<BookableSlot> }) => {
+      const { error } = await supabase.from('bookable_slots' as any).update(patch as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookable-slots'] });
-      toast.success('Slot criado');
     },
-    onError: (e: any) => toast.error(e?.message || 'Erro ao criar slot'),
+    onError: (e: any) => toast.error(e?.message || 'Erro ao atualizar slot'),
   });
 
   const remove = useMutation({
@@ -53,7 +68,7 @@ export function useBookableSlots(clinicId: string | null, fromISO?: string, toIS
     onSuccess: () => qc.invalidateQueries({ queryKey: ['bookable-slots'] }),
   });
 
-  return { ...query, create, remove };
+  return { ...query, create, update, remove };
 }
 
 export function useClinicSettings(clinicId: string | null) {
