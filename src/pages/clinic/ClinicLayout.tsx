@@ -24,8 +24,9 @@ const baseNavItems = [
 ];
 
 export default function ClinicLayout() {
-  const { isLoading, isStaff, activeClinic } = useUserRoles();
+  const { isLoading, isStaff, isAdmin, activeClinic } = useUserRoles();
   const navigate = useNavigate();
+  const navItems = baseNavItems.filter((item) => !item.adminOnly || isAdmin);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
