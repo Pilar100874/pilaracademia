@@ -25,6 +25,7 @@ import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
+import { getStorageStatus } from '@/lib/videoCache';
 import {
   Dialog,
   DialogContent,
@@ -383,6 +384,21 @@ export default function ExerciseLibraryPage() {
     const url = igUrl.trim();
     if (!url) {
       toast.error('Cole a URL do post do Instagram');
+      return;
+    }
+
+    // Bloqueia importação quando o armazenamento do dispositivo está cheio —
+    // o navegador pode travar ("Algo deu errado") ao baixar o vídeo.
+    const storage = await getStorageStatus();
+    if (storage.low) {
+      const detalhe =
+        storage.freeMB !== null
+          ? ` Restam apenas ~${storage.freeMB}MB livres no navegador.`
+          : '';
+      toast.error(
+        `Espaço insuficiente no dispositivo para baixar o vídeo.${detalhe} Libere espaço no celular (apague fotos/apps ou limpe o cache do navegador) e tente novamente.`,
+        { duration: 8000 }
+      );
       return;
     }
 

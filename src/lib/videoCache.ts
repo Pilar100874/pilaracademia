@@ -81,25 +81,36 @@ export async function getCachedVideoUrl(url: string): Promise<string | null> {
 }
 
 /**
- * Returns true if device storage looks low — in that case we should NOT
- * prefetch videos in the background, since filling the cache can crash
- * the tab on mobile devices ("Aw, snap! / Algo deu errado").
+ * Returns storage info for the device. `low` is true when free space is
+ * critically small — in that case we should NOT prefetch or download new
+ * videos, since filling the cache can crash the tab on mobile devices
+ * ("Aw, snap! / Algo deu errado").
  */
-async function isStorageLow(): Promise<boolean> {
+export async function getStorageStatus(): Promise<{
+  low: boolean;
+  freeMB: number | null;
+  usedPercent: number | null;
+}> {
   try {
     const nav: any = navigator;
     if (nav?.storage?.estimate) {
       const { quota = 0, usage = 0 } = await nav.storage.estimate();
-      if (!quota) return false;
+      if (!quota) return { low: false, freeMB: null, usedPercent: null };
       const free = quota - usage;
-      // Less than 150MB free OR already using >85% of quota → skip prefetch
-      if (free < 150 * 1024 * 1024) return true;
-      if (usage / quota > 0.85) return true;
+      const freeMB = Math.round(free / (1024 * 1024));
+      const usedPercent = Math.round((usage / quota) * 100);
+      const low = free < 150 * 1024 * 1024 || usage / quota > 0.85;
+      return { low, freeMB, usedPercent };
     }
   } catch {
     /* ignore */
   }
-  return false;
+  return { low: false, freeMB: null, usedPercent: null };
+}
+
+async function isStorageLow(): Promise<boolean> {
+  const { low } = await getStorageStatus();
+  return low;
 }
 
 /**
