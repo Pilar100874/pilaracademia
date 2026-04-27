@@ -172,11 +172,13 @@ export function SlotGradeDialog({
       return d.toISOString().slice(0, 10) === dayISO && d.getHours() === hh && d.getMinutes() === mm;
     });
     if (!roomId && bs?.room_id) roomId = bs.room_id;
-    if (bs?.capacity != null) capacity = bs.capacity;
 
-    // 3) capacidade da sala
+    // 3) capacidade efetiva = MAIOR entre slot e sala (sala manda no limite real)
     const room = roomId ? rooms.find((r) => r.id === roomId) : null;
-    if (capacity == null && room?.capacity != null) capacity = room.capacity;
+    const slotCap = bs?.capacity ?? null;
+    const roomCap = room?.capacity ?? null;
+    if (roomCap != null && slotCap != null) capacity = Math.max(roomCap, slotCap);
+    else capacity = roomCap ?? slotCap;
 
     return { roomId, capacity, roomName: room?.name ?? null };
   }, [slot, slotDate, dayISO, hh, mm, appointments, bookableSlots, rooms]);
