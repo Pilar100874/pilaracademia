@@ -135,9 +135,11 @@ Deno.serve(async (req) => {
       });
     }
     if (targetUserId === callerId) {
-      return new Response(JSON.stringify({ error: 'já está logado como o destino' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      // Already logged in as the target — no impersonation needed.
+      return new Response(
+        JSON.stringify({ same_user: true, targetUserId }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Fetch target user email
