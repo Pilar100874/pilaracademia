@@ -844,15 +844,7 @@ export default function GradeMasterPage() {
       <div ref={fullscreenRef} className={cn(focusMode ? 'w-full h-full overflow-auto bg-background px-2 sm:px-3 py-2 space-y-2' : 'max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4')}>
         {/* TOP BAR: stats + view + filters */}
         <Card className={cn(focusMode ? 'p-2 space-y-2' : 'p-4 space-y-4')}>
-          {!focusMode && (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <Stat label="Total" value={stats.total} icon={CalendarDays} />
-              <Stat label="Aulas marcadas" value={stats.classes} icon={CheckCircle2} tone="success" />
-              <Stat label="Sem professor" value={stats.uncovered} icon={AlertTriangle} tone={stats.uncovered > 0 ? 'danger' : 'muted'} />
-              <Stat label="Horários livres" value={stats.open} icon={Plus} tone="warn" />
-              <Stat label="Projeções" value={stats.projected} icon={RefreshCw} tone="muted" />
-            </div>
-          )}
+          {/* Stats movidos para a linha de filtros (compactos) */}
 
           <div className="flex flex-wrap items-center gap-3 pt-2 border-t">
             <Tabs value={view} onValueChange={(v) => setView(v as 'day' | 'week' | 'month')}>
@@ -943,6 +935,15 @@ export default function GradeMasterPage() {
                   </SelectContent>
                 </Select>
               )}
+
+              {/* Stats compactos inline */}
+              <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                <StatChip label="Total" value={stats.total} icon={CalendarDays} />
+                <StatChip label="Aulas" value={stats.classes} icon={CheckCircle2} tone="success" />
+                <StatChip label="Sem prof." value={stats.uncovered} icon={AlertTriangle} tone={stats.uncovered > 0 ? 'danger' : 'muted'} />
+                <StatChip label="Livres" value={stats.open} icon={Plus} tone="warn" />
+                <StatChip label="Projeções" value={stats.projected} icon={RefreshCw} tone="muted" />
+              </div>
             </div>
           )}
         </Card>
@@ -1300,6 +1301,23 @@ function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; v
         <div className="text-2xl font-bold leading-none">{value}</div>
         <div className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium mt-1">{label}</div>
       </div>
+    </div>
+  );
+}
+
+function StatChip({ label, value, icon: Icon, tone = 'default' }: { label: string; value: number; icon: any; tone?: 'default' | 'success' | 'warn' | 'muted' | 'danger' }) {
+  const toneCls = {
+    default: 'bg-primary/10 text-primary border-primary/20',
+    success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    warn: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+    muted: 'bg-muted text-muted-foreground border-border',
+    danger: 'bg-destructive/15 text-destructive border-destructive/20',
+  }[tone];
+  return (
+    <div className={cn('inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border text-xs', toneCls)} title={label}>
+      <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+      <span className="font-semibold tabular-nums">{value}</span>
+      <span className="text-[11px] opacity-80 hidden md:inline">{label}</span>
     </div>
   );
 }
