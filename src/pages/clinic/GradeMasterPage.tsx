@@ -1237,7 +1237,7 @@ export default function GradeMasterPage() {
               studentName={studentName}
               instructorName={instructorName}
               colorOf={colorOf}
-              onCellClick={(d, hour, roomId) => openNewClassAt(d, `${String(hour).padStart(2, '0')}:00`, roomId)}
+              onCellClick={(d, hour, roomId) => tryOpenNewClassAt(d, `${String(hour).padStart(2, '0')}:00`, roomId)}
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
               renderInstructorPicker={renderTimelineInstructorPicker}
