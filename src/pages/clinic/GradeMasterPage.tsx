@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { SlotGradeDialog } from '@/components/clinic/SlotGradeDialog';
 import { NewClassDialog } from '@/components/clinic/NewClassDialog';
+import { AvailableSlotsPickerDialog } from '@/components/clinic/AvailableSlotsPickerDialog';
 import { InstructorAvailabilityDialog } from '@/components/clinic/InstructorAvailabilityDialog';
 import { InstructorPicker } from '@/components/clinic/InstructorPicker';
 import { CalendarTimeline, type TimelineSlot, makeWeekEmptyKey, parseWeekEmptyKey, type WeekEmptyKey } from '@/components/clinic/CalendarTimeline';
@@ -445,6 +446,7 @@ export default function GradeMasterPage() {
   const [newClassOpen, setNewClassOpen] = useState(false);
   const [newClassTime, setNewClassTime] = useState<string | undefined>(undefined);
   const [newClassRoomId, setNewClassRoomId] = useState<string | null | undefined>(undefined);
+  const [availPickerOpen, setAvailPickerOpen] = useState(false);
   const openNewClassAt = (d: Date, time?: string, roomId?: string | null) => {
     setDay(d);
     setNewClassTime(time);
@@ -963,7 +965,7 @@ export default function GradeMasterPage() {
                   {selectionMode ? 'Cancelar seleção' : 'Selecionar'}
                 </Button>
               )}
-              <Button size="sm" onClick={() => openNewClassAt(day)}>
+              <Button size="sm" onClick={() => setAvailPickerOpen(true)}>
                 <Plus className="h-4 w-4 mr-1" />Nova aula
               </Button>
 
@@ -1308,6 +1310,20 @@ export default function GradeMasterPage() {
           equipment={equipment as any}
           rooms={rooms as any}
           instructors={instructors}
+        />
+      )}
+
+      {/* Dialog: seletor de horários disponíveis (passo 1 do botão Nova aula) */}
+      {activeClinicId && (
+        <AvailableSlotsPickerDialog
+          open={availPickerOpen}
+          onClose={() => setAvailPickerOpen(false)}
+          clinicId={activeClinicId}
+          rooms={rooms as any}
+          instructors={instructors}
+          onPick={(p) => {
+            openNewClassAt(p.date, p.time, p.roomId);
+          }}
         />
       )}
 
