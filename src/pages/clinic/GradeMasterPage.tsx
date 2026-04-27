@@ -142,16 +142,21 @@ export default function GradeMasterPage() {
   /** Slots por dia (real + virtuais + projetados), com filtros */
   const slotsForDay = (d: Date): MergedSlot[] => {
     const dayApps = appointments.filter((a) => isSameDay(parseISO(a.scheduled_at), d));
-    const merged: MergedSlot[] = dayApps.map((a) => ({
-      key: `real-${a.id}`,
-      scheduled_at: a.scheduled_at,
-      duration_minutes: a.duration_minutes,
-      student_id: a.student_id,
-      equipment_id: a.equipment_id,
-      instructor_id: a.instructor_id,
-      notes: a.notes,
-      appointment: a as any,
-    }));
+    const recById = new Map(recurring.map((r) => [r.id, r]));
+    const merged: MergedSlot[] = dayApps.map((a) => {
+      const fromRec = (a as any).recurring_schedule_id ? recById.get((a as any).recurring_schedule_id) : null;
+      return {
+        key: `real-${a.id}`,
+        scheduled_at: a.scheduled_at,
+        duration_minutes: a.duration_minutes,
+        student_id: a.student_id,
+        equipment_id: a.equipment_id,
+        instructor_id: a.instructor_id,
+        room_id: (fromRec as any)?.room_id ?? null,
+        notes: a.notes,
+        appointment: a as any,
+      };
+    });
     const realKeys = new Set(
       dayApps.map((a) => `${a.student_id}-${parseISO(a.scheduled_at).getHours()}:${parseISO(a.scheduled_at).getMinutes()}`)
     );
@@ -160,6 +165,7 @@ export default function GradeMasterPage() {
       const t = new Date(v.scheduled_at);
       const k = `${v.student_id}-${t.getHours()}:${t.getMinutes()}`;
       if (realKeys.has(k)) return;
+      const rec = recById.get(v.recurring_id);
       merged.push({
         key: `virt-${v.recurring_id}-${v.scheduled_at}`,
         scheduled_at: v.scheduled_at,
@@ -167,6 +173,7 @@ export default function GradeMasterPage() {
         student_id: v.student_id,
         equipment_id: v.equipment_id,
         instructor_id: v.instructor_id,
+        room_id: (rec as any)?.room_id ?? null,
         notes: v.notes,
         recurring_id: v.recurring_id,
         isVirtual: !v.projected,
