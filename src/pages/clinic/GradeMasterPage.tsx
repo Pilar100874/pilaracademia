@@ -795,18 +795,19 @@ export default function GradeMasterPage() {
               days={weekDays}
               startHour={6}
               endHour={22}
+              rooms={rooms as any[]}
               slotsForDay={(d) => slotsForDay(d).map(toTimelineSlot)}
               studentName={studentName}
               instructorName={instructorName}
               roomName={roomName}
               roomColorOf={roomColorOf}
               colorOf={colorOf}
-              onCellClick={handleCellClick}
+              onCellClick={(d, h, roomId) => openNewClassAt(d, `${String(h).padStart(2, '0')}:00`, roomId ?? null)}
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
               renderInstructorPicker={renderTimelineInstructorPicker}
               dragActive={draggingInstructorId !== null}
-              onDropInstructorOnCell={(id, d, h) => dropInstructorOnCell(id, d, h, null)}
+              onDropInstructorOnCell={(id, d, h, roomId) => dropInstructorOnCell(id, d, h, roomId ?? null)}
               onDropInstructorOnSlot={dropInstructorOnSlot}
               selectedSlotKeys={selectedSlotKeys}
               selectedEmptyKeys={selectedEmptyKeys}

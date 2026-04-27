@@ -7,14 +7,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
 import { useMarqueeSelection, type MarqueeRect } from '@/hooks/useMarqueeSelection';
 
-/** Empty-cell key for week view (compatible with day format): `${ISODate}|${hour}|none`. */
+/** Empty-cell key for week view. Compatible with RoomsTimeline format: `${ISODate}|${hour}|${roomId ?? 'none'}`. */
 export type WeekEmptyKey = string;
-export const makeWeekEmptyKey = (d: Date, hour: number) =>
-  `${d.toISOString().slice(0, 10)}|${hour}|none`;
+export const makeWeekEmptyKey = (d: Date, hour: number, roomId: string | null = null) =>
+  `${d.toISOString().slice(0, 10)}|${hour}|${roomId ?? 'none'}`;
 export const parseWeekEmptyKey = (k: WeekEmptyKey) => {
-  const [date, h] = k.split('|');
-  return { date, hour: parseInt(h, 10) };
+  const [date, h, roomId] = k.split('|');
+  return { date, hour: parseInt(h, 10), roomId: roomId === 'none' ? null : roomId };
 };
+
+interface RoomLite { id: string; name: string }
 
 export interface TimelineSlot {
   key: string;
@@ -45,13 +47,13 @@ interface Props {
   /** Cor associada à sala (usado para chip visual de sala). */
   roomColorOf?: (id: string | null | undefined) => string | null;
   colorOf: (id: string | null | undefined) => string;
-  onCellClick: (d: Date, hour: number) => void;
+  onCellClick: (d: Date, hour: number, roomId?: string | null) => void;
   onSlotClick: (s: TimelineSlot) => void;
   onDelete?: (s: TimelineSlot) => void;
   renderInstructorPicker?: (s: TimelineSlot) => React.ReactNode;
   // Drag & drop de professor
   dragActive?: boolean;
-  onDropInstructorOnCell?: (instructorId: string, day: Date, hour: number) => void;
+  onDropInstructorOnCell?: (instructorId: string, day: Date, hour: number, roomId?: string | null) => void;
   onDropInstructorOnSlot?: (instructorId: string, slot: TimelineSlot) => void;
   // Seleção múltipla (marquee + Shift/Ctrl)
   selectedSlotKeys?: Set<string>;
@@ -59,6 +61,8 @@ interface Props {
   onReplaceSelection?: (slotKeys: Set<string>, emptyKeys: Set<WeekEmptyKey>) => void;
   onAddSelection?: (slotKeys: Set<string>, emptyKeys: Set<WeekEmptyKey>) => void;
   onMarqueeEnd?: (info: { slotCount: number; emptyCount: number; additive: boolean }) => void;
+  /** Quando informado e com pelo menos 1 sala, cada dia ganha sub-colunas por sala. */
+  rooms?: RoomLite[];
 }
 
 export function CalendarTimeline({
@@ -68,7 +72,12 @@ export function CalendarTimeline({
   dragActive = false, onDropInstructorOnCell, onDropInstructorOnSlot,
   selectedSlotKeys, selectedEmptyKeys,
   onReplaceSelection, onAddSelection, onMarqueeEnd,
+  rooms,
 }: Props) {
+  const splitByRoom = !!rooms && rooms.length > 0;
+  // Sub-colunas: se houver salas, cada dia tem N colunas (1 por sala). Caso contrário, 1.
+  const subCols: (RoomLite | null)[] = splitByRoom ? (rooms as RoomLite[]) : [null];
+  const colsPerDay = subCols.length;
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const readInstructor = (e: React.DragEvent) =>
     e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain') || '';
@@ -132,20 +141,45 @@ export function CalendarTimeline({
   const now = new Date();
 
   return (
-    <div className="border rounded-md overflow-hidden bg-card">
+    <div className="border rounded-md overflow-hidden bg-card overflow-x-auto">
       {/* Header dos dias */}
-      <div className="grid border-b bg-muted/30" style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(0, 1fr))` }}>
+      <div
+        className="grid border-b bg-muted/30"
+        style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(${splitByRoom ? colsPerDay * 90 : 0}px, 1fr))` }}
+      >
         <div />
         {days.map((d) => {
           const isToday = isSameDay(d, now);
           return (
-            <div key={d.toISOString()} className={cn('px-2 py-2 text-center border-l', isToday && 'bg-primary/5')}>
-              <div className="text-[10px] uppercase font-bold text-muted-foreground">
-                {format(d, 'EEE', { locale: ptBR })}
+            <div key={d.toISOString()} className={cn('border-l', isToday && 'bg-primary/5')}>
+              <div className="px-2 pt-2 pb-1 text-center">
+                <div className="text-[10px] uppercase font-bold text-muted-foreground">
+                  {format(d, 'EEE', { locale: ptBR })}
+                </div>
+                <div className={cn('text-base font-bold', isToday && 'text-primary')}>
+                  {format(d, 'd/MM')}
+                </div>
               </div>
-              <div className={cn('text-base font-bold', isToday && 'text-primary')}>
-                {format(d, 'd/MM')}
-              </div>
+              {splitByRoom && (
+                <div className="grid border-t border-border/40" style={{ gridTemplateColumns: `repeat(${colsPerDay}, minmax(0, 1fr))` }}>
+                  {subCols.map((r, i) => (
+                    <div
+                      key={r?.id ?? i}
+                      className={cn(
+                        'px-1 py-1 text-[9px] font-semibold truncate text-center flex items-center justify-center gap-1',
+                        i > 0 && 'border-l border-border/40',
+                      )}
+                      title={r?.name}
+                    >
+                      <span
+                        className="h-1.5 w-1.5 rounded-sm shrink-0 border"
+                        style={{ background: roomColorOf?.(r?.id ?? null) || 'hsl(var(--muted))' }}
+                      />
+                      <span className="truncate">{r?.name ?? '—'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
@@ -156,7 +190,7 @@ export function CalendarTimeline({
         ref={marquee.containerRef}
         onPointerDown={handlePointerDown}
         className="grid relative select-none"
-        style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(0, 1fr))`, height: totalHeight }}
+        style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(${splitByRoom ? colsPerDay * 90 : 0}px, 1fr))`, height: totalHeight }}
       >
         {/* Coluna de horas */}
         <div className="relative">
@@ -174,201 +208,225 @@ export function CalendarTimeline({
         {/* Colunas de dias */}
         {days.map((d) => {
           const isToday = isSameDay(d, now);
-          const slots = slotsForDay(d);
-          // current time line
+          const allSlots = slotsForDay(d);
           const showNow = isToday && now.getHours() >= startHour && now.getHours() < endHour;
-          return (
-            <div key={d.toISOString()} className={cn('relative border-l', isToday && 'bg-primary/[0.02]')}>
-              {/* linhas de hora clicáveis */}
-              {hours.map((h) => {
-                const cellKey = `cell-${d.toISOString()}-${h}`;
-                const weekKey = makeWeekEmptyKey(d, h);
-                const isHover = hoverKey === cellKey;
-                const isSelected = selectedEmptyKeys?.has(weekKey);
-                return (
-                  <button
-                    key={h}
-                    data-cell-key={weekKey}
-                    onClick={(e) => {
-                      if (marquee.didDrag()) return;
-                      const additive = e.shiftKey || e.metaKey || e.ctrlKey;
-                      if (additive) {
-                        onAddSelection?.(new Set(), new Set([weekKey]));
-                      } else {
-                        onCellClick(d, h);
-                      }
-                    }}
-                    onDragOver={(e) => {
-                      if (!onDropInstructorOnCell) return;
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = 'copy';
-                      if (hoverKey !== cellKey) setHoverKey(cellKey);
-                    }}
-                    onDragLeave={() => { if (hoverKey === cellKey) setHoverKey(null); }}
-                    onDrop={(e) => {
-                      if (!onDropInstructorOnCell) return;
-                      e.preventDefault();
-                      const id = readInstructor(e);
-                      setHoverKey(null);
-                      if (id) onDropInstructorOnCell(id, d, h);
-                    }}
-                    title={dragActive ? `Soltar professor às ${String(h).padStart(2, '0')}:00` : `Adicionar aula às ${String(h).padStart(2, '0')}:00`}
-                    className={cn(
-                      'absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group',
-                      dragActive && 'bg-primary/[0.03]',
-                      isHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
-                      isSelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
-                    )}
-                    style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
+
+          // Sub-colunas: filtra slots por sala. Slots sem sala vão para a 1ª sub-coluna quando dividindo.
+          const renderSubCol = (subRoom: RoomLite | null, subIdx: number) => {
+            const subRoomId: string | null = subRoom?.id ?? null;
+            const slots = splitByRoom
+              ? allSlots.filter((s) => (s.room_id ?? null) === subRoomId || (subIdx === 0 && !s.room_id && !subRoomId))
+              : allSlots;
+
+            return (
+              <div
+                key={subRoom?.id ?? `sub-${subIdx}`}
+                className={cn('relative', subIdx > 0 && 'border-l border-border/40')}
+                style={{ height: totalHeight }}
+              >
+                {/* linhas de hora clicáveis */}
+                {hours.map((h) => {
+                  const cellKey = `cell-${d.toISOString()}-${h}-${subRoomId ?? 'none'}`;
+                  const weekKey = makeWeekEmptyKey(d, h, subRoomId);
+                  const isHover = hoverKey === cellKey;
+                  const isSelected = selectedEmptyKeys?.has(weekKey);
+                  return (
+                    <button
+                      key={h}
+                      data-cell-key={weekKey}
+                      onClick={(e) => {
+                        if (marquee.didDrag()) return;
+                        const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+                        if (additive) {
+                          onAddSelection?.(new Set(), new Set([weekKey]));
+                        } else {
+                          onCellClick(d, h, subRoomId);
+                        }
+                      }}
+                      onDragOver={(e) => {
+                        if (!onDropInstructorOnCell) return;
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'copy';
+                        if (hoverKey !== cellKey) setHoverKey(cellKey);
+                      }}
+                      onDragLeave={() => { if (hoverKey === cellKey) setHoverKey(null); }}
+                      onDrop={(e) => {
+                        if (!onDropInstructorOnCell) return;
+                        e.preventDefault();
+                        const id = readInstructor(e);
+                        setHoverKey(null);
+                        if (id) onDropInstructorOnCell(id, d, h, subRoomId);
+                      }}
+                      title={dragActive
+                        ? `Soltar professor às ${String(h).padStart(2, '0')}:00${subRoom ? ` · ${subRoom.name}` : ''}`
+                        : `Adicionar aula às ${String(h).padStart(2, '0')}:00${subRoom ? ` · ${subRoom.name}` : ''}`}
+                      className={cn(
+                        'absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group',
+                        dragActive && 'bg-primary/[0.03]',
+                        isHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
+                        isSelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
+                      )}
+                      style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
+                    >
+                      {isSelected ? (
+                        <Check className="h-3.5 w-3.5 text-primary absolute top-1 right-1" />
+                      ) : (
+                        <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
+                      )}
+                    </button>
+                  );
+                })}
+
+                {/* now indicator (apenas na primeira sub-coluna) */}
+                {showNow && subIdx === 0 && (
+                  <div
+                    className="absolute left-0 right-0 z-20 pointer-events-none"
+                    style={{ top: minutesToTop(now) }}
                   >
-                    {isSelected ? (
-                      <Check className="h-3.5 w-3.5 text-primary absolute top-1 right-1" />
-                    ) : (
-                      <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
-                    )}
-                  </button>
-                );
-              })}
+                    <div className="h-px bg-destructive" />
+                    <div className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-destructive" />
+                  </div>
+                )}
 
-
-              {/* now indicator */}
-              {showNow && (
-                <div
-                  className="absolute left-0 right-0 z-20 pointer-events-none"
-                  style={{ top: minutesToTop(now) }}
-                >
-                  <div className="h-px bg-destructive" />
-                  <div className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-destructive" />
-                </div>
-              )}
-
-              {/* eventos */}
-              {slots.map((s) => {
-                const t = parseISO(s.scheduled_at);
-                const top = minutesToTop(t);
-                const height = Math.max(22, (s.duration_minutes / 60) * hourHeight - 2);
-                if (top < 0 || top >= totalHeight) return null;
-                const color = colorOf(s.instructor_id);
-                const instr = instructorName(s.instructor_id);
-                const room = roomName(s.room_id);
-                const slotKey = `slot-${s.key}`;
-                const isSlotHover = hoverKey === slotKey;
-                const isSelected = selectedSlotKeys?.has(s.key);
-                return (
-                  <Popover key={s.key}>
-                    <PopoverTrigger asChild>
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        data-slot-key={s.key}
-                        data-selectable={(s.appointment_id || s.bookable_slot_id) ? 'true' : 'false'}
-                        onClick={(e) => {
-                          if ((e.shiftKey || e.metaKey || e.ctrlKey) && (s.appointment_id || s.bookable_slot_id)) {
+                {/* eventos */}
+                {slots.map((s) => {
+                  const t = parseISO(s.scheduled_at);
+                  const top = minutesToTop(t);
+                  const height = Math.max(22, (s.duration_minutes / 60) * hourHeight - 2);
+                  if (top < 0 || top >= totalHeight) return null;
+                  const color = colorOf(s.instructor_id);
+                  const instr = instructorName(s.instructor_id);
+                  const room = roomName(s.room_id);
+                  const slotKey = `slot-${s.key}`;
+                  const isSlotHover = hoverKey === slotKey;
+                  const isSelected = selectedSlotKeys?.has(s.key);
+                  return (
+                    <Popover key={s.key}>
+                      <PopoverTrigger asChild>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          data-slot-key={s.key}
+                          data-selectable={(s.appointment_id || s.bookable_slot_id) ? 'true' : 'false'}
+                          onClick={(e) => {
+                            if ((e.shiftKey || e.metaKey || e.ctrlKey) && (s.appointment_id || s.bookable_slot_id)) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onAddSelection?.(new Set([s.key]), new Set());
+                            }
+                          }}
+                          onDragOver={(e) => {
+                            if (!onDropInstructorOnSlot) return;
                             e.preventDefault();
                             e.stopPropagation();
-                            onAddSelection?.(new Set([s.key]), new Set());
-                          }
-                        }}
-                        onDragOver={(e) => {
-                          if (!onDropInstructorOnSlot) return;
-                          e.preventDefault();
-                          e.stopPropagation();
-                          e.dataTransfer.dropEffect = 'copy';
-                          if (hoverKey !== slotKey) setHoverKey(slotKey);
-                        }}
-                        onDragLeave={() => { if (hoverKey === slotKey) setHoverKey(null); }}
-                        onDrop={(e) => {
-                          if (!onDropInstructorOnSlot) return;
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const id = readInstructor(e);
-                          setHoverKey(null);
-                          if (id) onDropInstructorOnSlot(id, s);
-                        }}
-                        style={{
-                          top: top + 1,
-                          height,
-                          borderLeftColor: s.uncovered ? 'hsl(var(--destructive))' : (color || 'hsl(var(--primary))'),
-                        }}
-                        className={cn(
-                          'absolute left-1 right-1 z-10 rounded border border-l-4 px-1.5 py-1 text-[10px] cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary/30 transition shadow-sm',
-                          s.isOpen
-                            ? 'bg-emerald-500/10 border-emerald-500/30 border-dashed'
-                            : s.isProjected
-                              ? 'bg-amber-500/10 border-amber-500/40 border-dashed'
-                              : s.isVirtual
-                                ? 'bg-card border-dashed'
-                                : 'bg-card',
-                          s.uncovered && !s.isOpen && 'bg-destructive/5',
-                          isSlotHover && 'ring-2 ring-primary bg-primary/15',
-                          isSelected && 'ring-2 ring-primary bg-primary/15',
-                        )}
-                      >
-
-                        <div className="flex items-center justify-between gap-1 leading-tight">
-                          <span className="font-bold">{format(t, 'HH:mm')}</span>
-                          <div className="flex items-center gap-0.5">
-                            {s.uncovered && <AlertTriangle className="h-2.5 w-2.5 text-destructive" />}
-                            {s.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
-                            {s.isVirtual && !s.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
-                            {s.hasGrade && <Sparkles className="h-2.5 w-2.5 text-primary" />}
-                          </div>
-                        </div>
-                        <div className="truncate font-medium">
-                          {s.isOpen ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span> : studentName(s.student_id)}
-                        </div>
-                        {room && (
-                          <div className="flex items-center gap-1 truncate">
-                            <span
-                              className="h-2 w-2 rounded-sm shrink-0 border"
-                              style={{ background: roomColorOf?.(s.room_id) || 'hsl(var(--muted))' }}
-                            />
-                            <span className="truncate text-[9px] font-semibold text-foreground/80">{room}</span>
-                          </div>
-                        )}
-                        {instr && height > 48 && (
-                          <div className="truncate text-muted-foreground">{instr}</div>
-                        )}
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-64 p-2 text-xs space-y-2" onClick={(e) => e.stopPropagation()}>
-                      <div>
-                        <div className="font-semibold text-sm">
-                          {s.isOpen ? 'Horário disponível' : studentName(s.student_id)}
-                        </div>
-                        <div className="text-muted-foreground text-[11px]">
-                          {format(t, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} · {s.duration_minutes}min
-                        </div>
-                        {room && <div className="text-[11px]">📍 {room}</div>}
-                        {instr && (
-                          <div className="text-[11px] flex items-center gap-1">
-                            <span className="h-2 w-2 rounded-full" style={{ background: color }} />
-                            {instr}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-1 flex-wrap pt-1 border-t">
-                        <button
-                          onClick={() => onSlotClick(s)}
-                          className="flex-1 px-2 py-1.5 rounded border text-[11px] hover:bg-muted text-center"
+                            e.dataTransfer.dropEffect = 'copy';
+                            if (hoverKey !== slotKey) setHoverKey(slotKey);
+                          }}
+                          onDragLeave={() => { if (hoverKey === slotKey) setHoverKey(null); }}
+                          onDrop={(e) => {
+                            if (!onDropInstructorOnSlot) return;
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const id = readInstructor(e);
+                            setHoverKey(null);
+                            if (id) onDropInstructorOnSlot(id, s);
+                          }}
+                          style={{
+                            top: top + 1,
+                            height,
+                            borderLeftColor: s.uncovered ? 'hsl(var(--destructive))' : (color || 'hsl(var(--primary))'),
+                          }}
+                          className={cn(
+                            'absolute left-1 right-1 z-10 rounded border border-l-4 px-1.5 py-1 text-[10px] cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary/30 transition shadow-sm',
+                            s.isOpen
+                              ? 'bg-emerald-500/10 border-emerald-500/30 border-dashed'
+                              : s.isProjected
+                                ? 'bg-amber-500/10 border-amber-500/40 border-dashed'
+                                : s.isVirtual
+                                  ? 'bg-card border-dashed'
+                                  : 'bg-card',
+                            s.uncovered && !s.isOpen && 'bg-destructive/5',
+                            isSlotHover && 'ring-2 ring-primary bg-primary/15',
+                            isSelected && 'ring-2 ring-primary bg-primary/15',
+                          )}
                         >
-                          Abrir
-                        </button>
-                        {renderInstructorPicker?.(s)}
-                        {onDelete && (s.appointment_id || s.bookable_slot_id) && (
+                          <div className="flex items-center justify-between gap-1 leading-tight">
+                            <span className="font-bold">{format(t, 'HH:mm')}</span>
+                            <div className="flex items-center gap-0.5">
+                              {s.uncovered && <AlertTriangle className="h-2.5 w-2.5 text-destructive" />}
+                              {s.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
+                              {s.isVirtual && !s.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
+                              {s.hasGrade && <Sparkles className="h-2.5 w-2.5 text-primary" />}
+                            </div>
+                          </div>
+                          <div className="truncate font-medium">
+                            {s.isOpen ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span> : studentName(s.student_id)}
+                          </div>
+                          {!splitByRoom && room && (
+                            <div className="flex items-center gap-1 truncate">
+                              <span
+                                className="h-2 w-2 rounded-sm shrink-0 border"
+                                style={{ background: roomColorOf?.(s.room_id) || 'hsl(var(--muted))' }}
+                              />
+                              <span className="truncate text-[9px] font-semibold text-foreground/80">{room}</span>
+                            </div>
+                          )}
+                          {instr && height > 48 && (
+                            <div className="truncate text-muted-foreground">{instr}</div>
+                          )}
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 p-2 text-xs space-y-2" onClick={(e) => e.stopPropagation()}>
+                        <div>
+                          <div className="font-semibold text-sm">
+                            {s.isOpen ? 'Horário disponível' : studentName(s.student_id)}
+                          </div>
+                          <div className="text-muted-foreground text-[11px]">
+                            {format(t, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} · {s.duration_minutes}min
+                          </div>
+                          {room && <div className="text-[11px]">📍 {room}</div>}
+                          {instr && (
+                            <div className="text-[11px] flex items-center gap-1">
+                              <span className="h-2 w-2 rounded-full" style={{ background: color }} />
+                              {instr}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-1 flex-wrap pt-1 border-t">
                           <button
-                            onClick={() => { if (confirm('Excluir este horário?')) onDelete(s); }}
-                            className="px-2 py-1.5 rounded border border-destructive/30 text-destructive hover:bg-destructive/5 inline-flex items-center gap-1"
-                            title="Excluir"
+                            onClick={() => onSlotClick(s)}
+                            className="flex-1 px-2 py-1.5 rounded border text-[11px] hover:bg-muted text-center"
                           >
-                            <X className="h-3 w-3" />Excluir
+                            Abrir
                           </button>
-                        )}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                );
-              })}
+                          {renderInstructorPicker?.(s)}
+                          {onDelete && (s.appointment_id || s.bookable_slot_id) && (
+                            <button
+                              onClick={() => { if (confirm('Excluir este horário?')) onDelete(s); }}
+                              className="px-2 py-1.5 rounded border border-destructive/30 text-destructive hover:bg-destructive/5 inline-flex items-center gap-1"
+                              title="Excluir"
+                            >
+                              <X className="h-3 w-3" />Excluir
+                            </button>
+                          )}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  );
+                })}
+              </div>
+            );
+          };
+
+          return (
+            <div key={d.toISOString()} className={cn('relative border-l', isToday && 'bg-primary/[0.02]')}>
+              {splitByRoom ? (
+                <div className="grid h-full" style={{ gridTemplateColumns: `repeat(${colsPerDay}, minmax(0, 1fr))` }}>
+                  {subCols.map((r, i) => renderSubCol(r, i))}
+                </div>
+              ) : (
+                renderSubCol(null, 0)
+              )}
             </div>
           );
         })}
