@@ -581,6 +581,16 @@ export default function GradeMasterPage() {
               <Button size="sm" variant="outline" onClick={() => setAvailOpen(true)}>
                 <UserCog className="h-4 w-4 mr-1" />Disponibilidade
               </Button>
+              {view === 'day' && (
+                <Button
+                  size="sm"
+                  variant={selectionMode ? 'default' : 'outline'}
+                  onClick={() => (selectionMode ? exitSelection() : setSelectionMode(true))}
+                >
+                  <ListChecks className="h-4 w-4 mr-1" />
+                  {selectionMode ? 'Cancelar seleção' : 'Selecionar'}
+                </Button>
+              )}
               <Button size="sm" onClick={() => openNewClassAt(day)}>
                 <Plus className="h-4 w-4 mr-1" />Nova aula
               </Button>
