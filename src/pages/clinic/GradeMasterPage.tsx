@@ -223,33 +223,13 @@ export default function GradeMasterPage() {
     if (apptId) updateStatus.mutate({ id: apptId, status: 'checked_in' });
   };
 
-  // ===== Aluno avulso =====
-  const [avulsoOpen, setAvulsoOpen] = useState(false);
-  const [avulso, setAvulso] = useState({ student_id: '', time: '08:00', duration_minutes: 50, equipment_id: '', notes: '' });
-  const openAvulsoAt = (d: Date, time?: string) => {
+  // ===== Nova aula (avulsa ou fixa) =====
+  const [newClassOpen, setNewClassOpen] = useState(false);
+  const [newClassTime, setNewClassTime] = useState<string | undefined>(undefined);
+  const openNewClassAt = (d: Date, time?: string) => {
     setDay(d);
-    setAvulso((prev) => ({ ...prev, time: time ?? prev.time }));
-    setAvulsoOpen(true);
-  };
-  const handleAvulso = async () => {
-    if (!user || !activeClinicId || !avulso.student_id) return;
-    const [h, m] = avulso.time.split(':').map(Number);
-    const sched = new Date(day);
-    sched.setHours(h, m, 0, 0);
-    const { error } = await supabase.from('class_appointments').insert({
-      clinic_id: activeClinicId,
-      student_id: avulso.student_id,
-      equipment_id: avulso.equipment_id || null,
-      instructor_id: user.id,
-      scheduled_at: sched.toISOString(),
-      duration_minutes: avulso.duration_minutes,
-      notes: avulso.notes || null,
-      created_by: user.id,
-    });
-    if (error) { toast.error(error.message); return; }
-    toast.success('Aula avulsa adicionada');
-    setAvulso({ student_id: '', time: '08:00', duration_minutes: 50, equipment_id: '', notes: '' });
-    setAvulsoOpen(false);
+    setNewClassTime(time);
+    setNewClassOpen(true);
   };
 
 
