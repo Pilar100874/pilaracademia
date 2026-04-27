@@ -446,6 +446,7 @@ export default function GradeMasterPage() {
   const [newClassOpen, setNewClassOpen] = useState(false);
   const [newClassTime, setNewClassTime] = useState<string | undefined>(undefined);
   const [newClassRoomId, setNewClassRoomId] = useState<string | null | undefined>(undefined);
+  const [availPickerOpen, setAvailPickerOpen] = useState(false);
   const openNewClassAt = (d: Date, time?: string, roomId?: string | null) => {
     setDay(d);
     setNewClassTime(time);
