@@ -607,6 +607,70 @@ export default function GradeMasterPage() {
               </div>
             </div>
 
+            {/* Cobertura por hora — bate o olho e vê quem está e quantos alunos */}
+            <div className="mb-4 p-3 rounded-lg border bg-card">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[10px] uppercase tracking-wide font-bold text-muted-foreground">
+                  Cobertura do dia
+                </div>
+                <div className="text-[10px] text-muted-foreground flex items-center gap-3">
+                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-emerald-500/70" />com prof.</span>
+                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-destructive/70" />sem prof.</span>
+                  <span className="flex items-center gap-1"><Users className="h-3 w-3" />alunos</span>
+                </div>
+              </div>
+              <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' }}>
+                {dayCoverage.map((c) => {
+                  const covered = c.shifts.length > 0;
+                  const danger = c.hasAnyClass && !covered;
+                  return (
+                    <button
+                      key={c.hour}
+                      onClick={() => openNewClassAt(day, `${String(c.hour).padStart(2, '0')}:00`)}
+                      className={cn(
+                        'group flex flex-col items-stretch rounded border p-1 text-[10px] transition hover:ring-2 hover:ring-primary/30',
+                        danger && 'bg-destructive/10 border-destructive/40',
+                        !danger && covered && 'bg-emerald-500/5 border-emerald-500/30',
+                        !covered && !danger && 'bg-muted/30 border-dashed',
+                      )}
+                      title={
+                        covered
+                          ? `${c.shifts.map((s: any) => instructorName(s.instructor_id)).filter(Boolean).join(', ')}\n${c.studentsCount} aluno(s)`
+                          : c.hasAnyClass
+                            ? `⚠ ${c.studentsCount} aula(s) sem professor de plantão`
+                            : 'Sem professor / sem aulas'
+                      }
+                    >
+                      <div className="font-bold text-center">{String(c.hour).padStart(2, '0')}h</div>
+                      <div className="flex gap-px h-1.5 mt-0.5">
+                        {covered ? (
+                          c.shifts.slice(0, 4).map((s: any, i: number) => (
+                            <span key={i} className="flex-1 rounded-sm" style={{ background: colorOf(s.instructor_id) }} />
+                          ))
+                        ) : (
+                          <span className={cn('flex-1 rounded-sm', danger ? 'bg-destructive/60' : 'bg-muted-foreground/20')} />
+                        )}
+                      </div>
+                      <div className="flex items-center justify-center gap-0.5 mt-1 text-muted-foreground">
+                        <Users className="h-2.5 w-2.5" />
+                        <span className={cn('font-semibold', danger && 'text-destructive', c.studentsCount === 0 && 'opacity-40')}>
+                          {c.studentsCount}
+                        </span>
+                      </div>
+                      {danger && <AlertTriangle className="h-2.5 w-2.5 text-destructive mx-auto mt-0.5" />}
+                    </button>
+                  );
+                })}
+              </div>
+              {stats.uncovered > 0 && (
+                <div className="mt-2 text-[11px] text-destructive flex items-center gap-1.5">
+                  <AlertTriangle className="h-3 w-3" />
+                  {stats.uncovered} aula{stats.uncovered !== 1 ? 's' : ''} sem professor de plantão neste dia.
+                  <button onClick={() => setAvailOpen(true)} className="underline ml-1">cadastrar disponibilidade</button>
+                </div>
+              )}
+            </div>
+
             {/* Faixa de horários clicáveis para criar aula */}
             <div className="mb-4 p-2 rounded-lg border bg-muted/30">
               <div className="text-[10px] uppercase tracking-wide font-bold text-muted-foreground mb-1.5 px-1">
