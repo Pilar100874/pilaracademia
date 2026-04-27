@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import {
   Plus, Trash2, Settings, Calendar as CalendarIcon, ChevronLeft, ChevronRight,
   DoorOpen, Dumbbell, Users as UsersIcon, GraduationCap, MoveHorizontal, X,
