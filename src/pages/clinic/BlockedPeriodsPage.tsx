@@ -291,7 +291,7 @@ function BlockedForm({
 
       <div className="flex gap-2 pt-2 border-t">
         <Button variant="outline" className="flex-1" onClick={onCancel}>Cancelar</Button>
-        <Button className="flex-1" onClick={() => onSave(form)} disabled={form.start_time >= form.end_time}>
+        <Button className="flex-1" onClick={() => onSave(form)} disabled={form.start_time >= form.end_time || form.days_of_week.length === 0}>
           Salvar
         </Button>
       </div>
