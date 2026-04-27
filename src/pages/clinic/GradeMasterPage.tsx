@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';
@@ -122,6 +122,36 @@ export default function GradeMasterPage() {
   const [filterInstructor, setFilterInstructor] = useState<string>('all');
   const [filterRoom, setFilterRoom] = useState<string>('all');
   const [focusMode, setFocusMode] = useState(false);
+  const fullscreenRef = useRef<HTMLDivElement>(null);
+
+  const toggleFocusMode = useCallback(async () => {
+    const el = fullscreenRef.current;
+    try {
+      if (!document.fullscreenElement) {
+        if (el?.requestFullscreen) {
+          await el.requestFullscreen();
+        }
+        setFocusMode(true);
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        }
+        setFocusMode(false);
+      }
+    } catch {
+      // Fallback: alterna apenas o layout caso a Fullscreen API falhe
+      setFocusMode((v) => !v);
+    }
+  }, []);
+
+  // Sincroniza estado quando o usuário sai do fullscreen via ESC
+  useEffect(() => {
+    const handler = () => {
+      if (!document.fullscreenElement) setFocusMode(false);
+    };
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
 
   const horizonDate = useMemo(() => addMonths(new Date(), renewalMonths), [renewalMonths]);
 
