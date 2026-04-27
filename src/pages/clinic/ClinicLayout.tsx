@@ -15,8 +15,6 @@ import { SetupWizard, setupWizardCompleted, markWizardCompleted, isWizardComplet
 const baseNavItems = [
   { to: '/clinica', icon: CalendarDays, label: 'Grade Master', end: true, primary: true },
   { to: '/clinica/visao', icon: Activity, label: 'Visão' },
-  { to: '/clinica/agenda', icon: CalendarPlus, label: 'Agenda', primary: true },
-  { to: '/clinica/grades', icon: CalendarPlus, label: 'Horários' },
   { to: '/clinica/salas', icon: DoorOpen, label: 'Salas' },
   { to: '/clinica/alunos', icon: Users, label: 'Alunos', primary: true },
   { to: '/clinica/equipe', icon: GraduationCap, label: 'Equipe', adminOnly: true },
