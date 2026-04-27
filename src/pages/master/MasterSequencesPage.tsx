@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
+import { useConfirm } from '@/components/ConfirmProvider';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { ExercisePickerDialog } from '@/components/ExercisePickerDialog';
@@ -678,9 +679,9 @@ export default function MasterSequencesPage() {
                       size="icon"
                       variant="ghost"
                       className="absolute top-2 right-2 h-8 w-8 bg-background/80 hover:bg-background text-destructive hover:text-destructive backdrop-blur"
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        if (confirm(`Excluir "${s.name}"?`)) remove.mutate(s.id);
+                        if (await confirm({ title: 'Excluir sequência', description: `Excluir "${s.name}"?`, destructive: true })) remove.mutate(s.id);
                       }}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
