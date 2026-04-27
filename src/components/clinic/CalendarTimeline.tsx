@@ -442,16 +442,16 @@ export function CalendarTimeline({
                           )}
                         >
                           <div className="flex items-center justify-between gap-1 leading-tight">
-                            <span className="font-bold">{format(t, 'HH:mm')}</span>
+                            <span className="font-bold tabular-nums text-[11px]">{format(t, 'HH:mm')}</span>
                             <div className="flex items-center gap-0.5">
-                              {s.isBlocked && <Lock className="h-2.5 w-2.5 text-muted-foreground" />}
-                              {s.uncovered && !s.isBlocked && <AlertTriangle className="h-2.5 w-2.5 text-destructive" />}
-                              {s.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
-                              {s.isVirtual && !s.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
-                              {s.hasGrade && <Sparkles className="h-2.5 w-2.5 text-primary" />}
+                              {s.isBlocked && <Lock className="h-3 w-3 text-muted-foreground" />}
+                              {s.uncovered && !s.isBlocked && <AlertTriangle className="h-3 w-3 text-destructive" />}
+                              {s.isProjected && <RefreshCw className="h-3 w-3 text-amber-600" />}
+                              {s.isVirtual && !s.isProjected && <Repeat className="h-3 w-3 text-muted-foreground" />}
+                              {s.hasGrade && <Sparkles className="h-3 w-3 text-primary" />}
                             </div>
                           </div>
-                          <div className="truncate font-medium">
+                          <div className="truncate font-semibold text-[12px] mt-0.5 leading-snug">
                             {s.blockedPeriodId
                               ? <span className="italic text-destructive/90">{s.blockedPeriodName || 'Bloqueado'}</span>
                               : s.isBlocked
@@ -461,16 +461,16 @@ export function CalendarTimeline({
                                   : studentName(s.student_id)}
                           </div>
                           {!splitByRoom && room && (
-                            <div className="flex items-center gap-1 truncate">
+                            <div className="flex items-center gap-1 truncate mt-0.5">
                               <span
                                 className="h-2 w-2 rounded-sm shrink-0 border"
                                 style={{ background: roomColorOf?.(s.room_id) || 'hsl(var(--muted))' }}
                               />
-                              <span className="truncate text-[9px] font-semibold text-foreground/80">{room}</span>
+                              <span className="truncate text-[10px] font-semibold text-foreground/80">{room}</span>
                             </div>
                           )}
                           {instr && height > 48 && !s.isBlocked && (
-                            <div className="truncate text-muted-foreground">{instr}</div>
+                            <div className="truncate text-muted-foreground text-[10px] mt-0.5">{instr}</div>
                           )}
                         </div>
                       </PopoverTrigger>
