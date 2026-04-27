@@ -89,11 +89,9 @@ export default function ReportsPage() {
   }, [appts, equipment]);
 
   return (
-    <div className="p-6 space-y-4 max-w-6xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2"><BarChart3 className="h-6 w-6 text-primary" />Relatórios</h1>
-        <p className="text-sm text-muted-foreground">Últimos 30 dias.</p>
-      </div>
+    <>
+      <ClinicPageHeader icon={BarChart3} title="Relatórios" subtitle="Últimos 30 dias" />
+      <div className="p-6 space-y-4 max-w-6xl mx-auto">
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="p-4"><Users className="h-4 w-4 text-muted-foreground" /><div className="text-2xl font-bold mt-2">{students.filter((s) => s.active).length}</div><div className="text-xs text-muted-foreground">Alunos ativos</div></Card>
