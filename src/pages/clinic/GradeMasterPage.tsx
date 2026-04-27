@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppointments, type AppointmentStatus, type Appointment } from '@/hooks/useAppointments';
