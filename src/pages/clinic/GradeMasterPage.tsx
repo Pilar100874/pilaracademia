@@ -251,6 +251,7 @@ export default function GradeMasterPage() {
   // ===== Materializar virtual =====
   const materialize = async (slot: MergedSlot): Promise<string | null> => {
     if (slot.appointment) return slot.appointment.id;
+    if (!slot.student_id) return null;
     if (!user || !activeClinicId) return null;
     const { data, error } = await supabase.from('class_appointments').insert({
       clinic_id: activeClinicId,
@@ -273,7 +274,24 @@ export default function GradeMasterPage() {
     focusedStudentId: string;
   } | null>(null);
 
+  // ===== Nova aula (avulsa ou fixa) =====
+  const [newClassOpen, setNewClassOpen] = useState(false);
+  const [newClassTime, setNewClassTime] = useState<string | undefined>(undefined);
+  const openNewClassAt = (d: Date, time?: string) => {
+    setDay(d);
+    setNewClassTime(time);
+    setNewClassOpen(true);
+  };
+
   const openSlotDialog = (slot: MergedSlot) => {
+    // Slot livre da grade → abre Nova aula com horário pré-preenchido
+    if (slot.isOpen || !slot.student_id) {
+      const t = parseISO(slot.scheduled_at);
+      const hh = String(t.getHours()).padStart(2, '0');
+      const mm = String(t.getMinutes()).padStart(2, '0');
+      openNewClassAt(t, `${hh}:${mm}`);
+      return;
+    }
     setSlotDialog({
       slot: { scheduled_at: slot.scheduled_at, duration_minutes: slot.duration_minutes },
       focusedStudentId: slot.student_id,
@@ -283,15 +301,6 @@ export default function GradeMasterPage() {
   const handleCheckIn = async (slot: MergedSlot) => {
     const apptId = await materialize(slot);
     if (apptId) updateStatus.mutate({ id: apptId, status: 'checked_in' });
-  };
-
-  // ===== Nova aula (avulsa ou fixa) =====
-  const [newClassOpen, setNewClassOpen] = useState(false);
-  const [newClassTime, setNewClassTime] = useState<string | undefined>(undefined);
-  const openNewClassAt = (d: Date, time?: string) => {
-    setDay(d);
-    setNewClassTime(time);
-    setNewClassOpen(true);
   };
 
 
