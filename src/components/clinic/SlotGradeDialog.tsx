@@ -405,44 +405,52 @@ export function SlotGradeDialog({
                 {rows.length}
                 {slotRoomInfo.capacity != null ? ` / ${slotRoomInfo.capacity}` : ''}
               </Badge>
-              <Popover open={addOpen} onOpenChange={setAddOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={isFull || availableStudents.length === 0}
-                    title={isFull ? 'Sala lotada' : 'Adicionar aluno a esta aula'}
-                  >
-                    <UserPlus className="h-4 w-4 mr-1" />
-                    Adicionar aluno
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 p-0" align="end" onOpenAutoFocus={(e) => e.preventDefault()}>
-                  <Command>
-                    <CommandInput placeholder="Buscar aluno…" />
-                    <CommandList>
-                      <CommandEmpty>Nenhum aluno disponível.</CommandEmpty>
-                      <CommandGroup>
-                        {availableStudents.map((s) => (
-                          <CommandItem
-                            key={s.id}
-                            value={s.full_name || s.id}
-                            onPointerDown={(e) => {
-                              e.preventDefault();
-                              addStudent(s.id);
-                            }}
-                            onSelect={() => addStudent(s.id)}
-                          >
-                            {s.full_name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <Button
+                size="sm"
+                variant={addOpen ? 'default' : 'outline'}
+                disabled={isFull || availableStudents.length === 0}
+                title={isFull ? 'Sala lotada' : 'Adicionar aluno a esta aula'}
+                onClick={() => setAddOpen((v) => !v)}
+              >
+                <UserPlus className="h-4 w-4 mr-1" />
+                Adicionar aluno
+              </Button>
             </div>
           </div>
+
+          {addOpen && !isFull && (
+            <div className="rounded-md border border-border bg-card p-3 space-y-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={studentSearch}
+                  onChange={(e) => setStudentSearch(e.target.value)}
+                  placeholder="Buscar aluno…"
+                  className="pl-8"
+                  autoFocus={false}
+                />
+              </div>
+              <div className="max-h-56 overflow-y-auto rounded-md border border-border/70 divide-y divide-border/70">
+                {filteredStudents.length === 0 ? (
+                  <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+                    Nenhum aluno disponível.
+                  </div>
+                ) : (
+                  filteredStudents.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      className="w-full px-3 py-2.5 text-left text-sm hover:bg-muted/70 transition flex items-center justify-between gap-3"
+                      onClick={() => addStudent(s.id)}
+                    >
+                      <span className="font-medium truncate">{s.full_name}</span>
+                      <UserPlus className="h-4 w-4 text-primary shrink-0" />
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
 
           {isFull && (
             <div className="text-[11px] text-destructive flex items-center gap-1">
