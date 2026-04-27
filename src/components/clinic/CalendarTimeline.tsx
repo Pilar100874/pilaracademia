@@ -30,6 +30,8 @@ interface Props {
   studentName: (id: string | null) => string;
   instructorName: (id: string | null | undefined) => string | null;
   roomName: (id: string | null | undefined) => string | null;
+  /** Cor associada à sala (usado para chip visual de sala). */
+  roomColorOf?: (id: string | null | undefined) => string | null;
   colorOf: (id: string | null | undefined) => string;
   onCellClick: (d: Date, hour: number) => void;
   onSlotClick: (s: TimelineSlot) => void;
@@ -39,7 +41,7 @@ interface Props {
 
 export function CalendarTimeline({
   days, startHour, endHour, hourHeight = 56,
-  slotsForDay, studentName, instructorName, roomName, colorOf,
+  slotsForDay, studentName, instructorName, roomName, roomColorOf, colorOf,
   onCellClick, onSlotClick, onDelete, renderInstructorPicker,
 }: Props) {
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
@@ -161,10 +163,17 @@ export function CalendarTimeline({
                         <div className="truncate font-medium">
                           {s.isOpen ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span> : studentName(s.student_id)}
                         </div>
-                        {(room || instr) && height > 36 && (
-                          <div className="truncate text-muted-foreground">
-                            {[room, instr].filter(Boolean).join(' · ')}
+                        {room && (
+                          <div className="flex items-center gap-1 truncate">
+                            <span
+                              className="h-2 w-2 rounded-sm shrink-0 border"
+                              style={{ background: roomColorOf?.(s.room_id) || 'hsl(var(--muted))' }}
+                            />
+                            <span className="truncate text-[9px] font-semibold text-foreground/80">{room}</span>
                           </div>
+                        )}
+                        {instr && height > 48 && (
+                          <div className="truncate text-muted-foreground">{instr}</div>
                         )}
                       </div>
                     </PopoverTrigger>
