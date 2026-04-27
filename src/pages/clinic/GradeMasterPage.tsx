@@ -1209,6 +1209,7 @@ export default function GradeMasterPage() {
               onDelete={handleTimelineDelete}
               onPermanentDelete={handleTimelinePermanentDelete}
               onPlanClick={handlePlanClick}
+              onAddStudent={handleTimelineAddStudent}
               renderInstructorPicker={renderTimelineInstructorPicker}
               selectionMode={selectionMode}
               selectedSlotKeys={selectedSlotKeys}
