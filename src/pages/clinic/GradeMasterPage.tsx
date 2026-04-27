@@ -760,20 +760,24 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, o
         'w-full text-left p-1.5 rounded border text-[11px] hover:bg-muted/50 transition group block',
         slot.isVirtual && 'border-dashed',
         slot.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
+        slot.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/10',
         status === 'completed' && 'opacity-60',
       )}
     >
       <div className="flex items-center justify-between gap-1">
         <span className="font-bold">{time}</span>
+        {slot.isOpen && <Plus className="h-2.5 w-2.5 text-emerald-600" />}
         {slot.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
         {slot.isVirtual && !slot.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
-        {hasGrade ? (
+        {!slot.isOpen && (hasGrade ? (
           <Sparkles className="h-2.5 w-2.5 text-primary" />
         ) : (
           <AlertTriangle className="h-2.5 w-2.5 text-amber-500" />
-        )}
+        ))}
       </div>
-      <div className="truncate font-medium">{studentName}</div>
+      <div className="truncate font-medium">
+        {slot.isOpen ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span> : studentName}
+      </div>
       {(roomName || instructorName) && (
         <div className="truncate text-muted-foreground text-[10px]">
           {[roomName, instructorName].filter(Boolean).join(' · ')}
