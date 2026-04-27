@@ -275,6 +275,12 @@ export function SlotGradeDialog({
   const saveAll = async () => {
     setSaving(true);
     try {
+      // Valida capacidade da sala
+      if (slotRoomInfo.capacity != null && rows.length > slotRoomInfo.capacity) {
+        toast.error(`Sala lotada: ${rows.length} alunos para capacidade de ${slotRoomInfo.capacity}. Remova alguém antes de salvar.`);
+        setSaving(false);
+        return;
+      }
       // valida conflito de bloqueio: dois alunos com lock no mesmo equipamento → bloqueia
       const lockMap = new Map<string, string>();
       for (const r of rows) {
@@ -293,7 +299,7 @@ export function SlotGradeDialog({
       // salva cada linha
       let lastSavedRow: RowState | null = null;
       for (const r of rows) {
-        if (!r.equipment_id && !r.sequence_id) continue;
+        // Materializa o appointment se ainda não existe (mesmo sem equip/seq, pra reservar a vaga)
         const apptId = await materializeRow(r);
         if (!apptId) continue;
 
