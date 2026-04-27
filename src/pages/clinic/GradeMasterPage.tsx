@@ -773,12 +773,14 @@ function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; v
   );
 }
 
-function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, onClick }: {
+function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, instructorColor, occupancy, onClick }: {
   slot: MergedSlot;
   studentName: string;
   sequenceName: string | null | undefined;
   roomName?: string | null;
   instructorName?: string | null;
+  instructorColor?: string;
+  occupancy?: { used: number; cap: number } | null;
   onClick: () => void;
 }) {
   const time = format(parseISO(slot.scheduled_at), 'HH:mm');
@@ -787,6 +789,7 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, o
   return (
     <button
       onClick={onClick}
+      style={instructorColor && !slot.isOpen ? { borderLeftColor: instructorColor, borderLeftWidth: 3 } : undefined}
       className={cn(
         'w-full text-left p-1.5 rounded border text-[11px] hover:bg-muted/50 transition group block',
         slot.isVirtual && 'border-dashed',
@@ -797,14 +800,27 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, o
     >
       <div className="flex items-center justify-between gap-1">
         <span className="font-bold">{time}</span>
-        {slot.isOpen && <Plus className="h-2.5 w-2.5 text-emerald-600" />}
-        {slot.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
-        {slot.isVirtual && !slot.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
-        {!slot.isOpen && (hasGrade ? (
-          <Sparkles className="h-2.5 w-2.5 text-primary" />
-        ) : (
-          <AlertTriangle className="h-2.5 w-2.5 text-amber-500" />
-        ))}
+        <div className="flex items-center gap-0.5">
+          {occupancy && (
+            <span
+              className={cn(
+                'text-[9px] font-bold px-1 rounded',
+                occupancy.used >= occupancy.cap ? 'bg-destructive/15 text-destructive' : 'bg-primary/10 text-primary',
+              )}
+              title={`${occupancy.used} de ${occupancy.cap} alunos na sala`}
+            >
+              {occupancy.used}/{occupancy.cap}
+            </span>
+          )}
+          {slot.isOpen && <Plus className="h-2.5 w-2.5 text-emerald-600" />}
+          {slot.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
+          {slot.isVirtual && !slot.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
+          {!slot.isOpen && (hasGrade ? (
+            <Sparkles className="h-2.5 w-2.5 text-primary" />
+          ) : (
+            <AlertTriangle className="h-2.5 w-2.5 text-amber-500" />
+          ))}
+        </div>
       </div>
       <div className="truncate font-medium">
         {slot.isOpen ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span> : studentName}
