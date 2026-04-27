@@ -495,6 +495,23 @@ export function RoomsTimeline({
                             </button>
                           )
                         )}
+                        {onPermanentDelete && s.bookable_slot_id && !s.appointment_id && (
+                          <button
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: 'Excluir horário',
+                                description: 'Excluir definitivamente este horário disponível da grade? Esta ação não pode ser desfeita.',
+                                destructive: true,
+                                confirmText: 'Excluir',
+                              });
+                              if (ok) onPermanentDelete(s);
+                            }}
+                            className="px-2 py-1.5 rounded border border-destructive/40 text-destructive hover:bg-destructive/5 inline-flex items-center gap-1"
+                            title="Excluir horário definitivamente"
+                          >
+                            <Trash2 className="h-3 w-3" />Excluir
+                          </button>
+                        )}
                       </div>
                     </PopoverContent>
                   </Popover>
