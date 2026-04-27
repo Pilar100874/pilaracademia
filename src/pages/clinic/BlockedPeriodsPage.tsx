@@ -173,7 +173,7 @@ export default function BlockedPeriodsPage() {
 
 interface BlockedFormState {
   name: string;
-  day_of_week: number;
+  days_of_week: number[];
   start_time: string;
   end_time: string;
   room_id: string;
