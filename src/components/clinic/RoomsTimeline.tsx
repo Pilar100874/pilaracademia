@@ -81,6 +81,7 @@ export function RoomsTimeline({
   dragActive = false,
   onDropInstructorOnCell,
   onDropInstructorOnSlot,
+  onRoomHeaderClick,
 }: Props) {
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const readInstructor = (e: React.DragEvent) =>
