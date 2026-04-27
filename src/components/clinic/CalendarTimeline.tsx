@@ -182,11 +182,22 @@ export function CalendarTimeline({
               {/* linhas de hora clicáveis */}
               {hours.map((h) => {
                 const cellKey = `cell-${d.toISOString()}-${h}`;
+                const weekKey = makeWeekEmptyKey(d, h);
                 const isHover = hoverKey === cellKey;
+                const isSelected = selectedEmptyKeys?.has(weekKey);
                 return (
                   <button
                     key={h}
-                    onClick={() => onCellClick(d, h)}
+                    data-cell-key={weekKey}
+                    onClick={(e) => {
+                      if (marquee.didDrag()) return;
+                      const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+                      if (additive) {
+                        onAddSelection?.(new Set(), new Set([weekKey]));
+                      } else {
+                        onCellClick(d, h);
+                      }
+                    }}
                     onDragOver={(e) => {
                       if (!onDropInstructorOnCell) return;
                       e.preventDefault();
@@ -206,10 +217,15 @@ export function CalendarTimeline({
                       'absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group',
                       dragActive && 'bg-primary/[0.03]',
                       isHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
+                      isSelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
                     )}
                     style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
                   >
-                    <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
+                    {isSelected ? (
+                      <Check className="h-3.5 w-3.5 text-primary absolute top-1 right-1" />
+                    ) : (
+                      <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
+                    )}
                   </button>
                 );
               })}
