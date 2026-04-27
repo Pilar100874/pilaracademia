@@ -36,6 +36,7 @@ export default function MasterPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { confirm } = useConfirm();
   const { data: isMaster, isLoading: checkingRole } = useIsMaster();
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
@@ -369,8 +370,8 @@ export default function MasterPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => {
-                      if (confirm(`Excluir "${c.name}"? Esta ação não pode ser desfeita.`)) {
+                    onClick={async () => {
+                      if (await confirm({ title: 'Excluir clínica', description: `Excluir "${c.name}"? Esta ação não pode ser desfeita.`, destructive: true })) {
                         deleteClinic.mutate(c.id);
                       }
                     }}

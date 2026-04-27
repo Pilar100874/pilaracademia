@@ -45,6 +45,7 @@ const ROLE_ORDER = ['clinic_admin', 'instructor', 'receptionist'] as const;
 export default function StaffPage() {
   const { activeClinicId, isAdmin } = useUserRoles();
   const { data: staff = [], isLoading, removeStaff } = useClinicStaff(activeClinicId);
+  const { confirm } = useConfirm();
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');

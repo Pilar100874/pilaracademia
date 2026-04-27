@@ -46,6 +46,7 @@ interface MergedSlot {
 export default function AppointmentsPage() {
   const { activeClinicId } = useUserRoles();
   const { user } = useAuth();
+  const { confirm } = useConfirm();
   const [day, setDay] = useState(() => new Date());
   const dayISO = day.toISOString();
 

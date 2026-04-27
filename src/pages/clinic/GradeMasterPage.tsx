@@ -113,6 +113,7 @@ export default function GradeMasterPage() {
   const { activeClinicId } = useUserRoles();
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { confirm } = useConfirm();
   const [view, setView] = useState<'day' | 'week' | 'month'>('week');
   const [day, setDay] = useState(() => new Date());
   const [simulateRenewal, setSimulateRenewal] = useState(true);

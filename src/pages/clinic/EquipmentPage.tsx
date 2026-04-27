@@ -28,6 +28,7 @@ export default function EquipmentPage() {
   const { activeClinicId } = useUserRoles();
   const { data: equipment = [], create, update, remove, setStatus } = useEquipment(activeClinicId);
   const { data: rooms = [] } = useClinicRooms(activeClinicId);
+  const { confirm } = useConfirm();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [identifier, setIdentifier] = useState('');

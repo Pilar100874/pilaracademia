@@ -33,6 +33,7 @@ const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 export default function BookableSlotsPage() {
   const { activeClinicId } = useUserRoles();
   const { user } = useAuth();
+  const { confirm } = useConfirm();
   const [day, setDay] = useState(() => new Date());
   const fromISO = useMemo(() => {
     const d = startOfWeek(day, { weekStartsOn: 1 });
@@ -384,7 +385,7 @@ export default function BookableSlotsPage() {
                         </div>
                       </div>
                       <Badge variant={full ? 'destructive' : 'secondary'}>{full ? 'Lotado' : `${s.capacity - booked} vaga(s)`}</Badge>
-                      <Button size="icon" variant="ghost" onClick={() => { if (confirm('Excluir slot?')) remove.mutate(s.id); }}><Trash2 className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={async () => { if (await confirm({ title: 'Excluir slot', description: 'Excluir slot?', destructive: true })) remove.mutate(s.id); }}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   );
                 })}

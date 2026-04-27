@@ -224,6 +224,7 @@ export default function SequencesPage() {
   const { data: myPerms } = useMyClinicPermissions();
   const canCreateSequences = myPerms?.can_create_sequences ?? false;
   const { user } = useAuth();
+  const { confirm } = useConfirm();
   const { data: sequences = [], create, update, remove } = useSequences(activeClinicId);
   const { data: equipment = [] } = useEquipment(activeClinicId);
   const { data: levels = [] } = useSkillLevels(activeClinicId);
