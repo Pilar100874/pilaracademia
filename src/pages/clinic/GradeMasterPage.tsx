@@ -1305,6 +1305,23 @@ function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; v
   );
 }
 
+function StatChip({ label, value, icon: Icon, tone = 'default' }: { label: string; value: number; icon: any; tone?: 'default' | 'success' | 'warn' | 'muted' | 'danger' }) {
+  const toneCls = {
+    default: 'bg-primary/10 text-primary border-primary/20',
+    success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    warn: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+    muted: 'bg-muted text-muted-foreground border-border',
+    danger: 'bg-destructive/15 text-destructive border-destructive/20',
+  }[tone];
+  return (
+    <div className={cn('inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border text-xs', toneCls)} title={label}>
+      <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+      <span className="font-semibold tabular-nums">{value}</span>
+      <span className="text-[11px] opacity-80 hidden md:inline">{label}</span>
+    </div>
+  );
+}
+
 function RoomsLegend({ rooms, roomColorOf }: { rooms: any[]; roomColorOf: (id: string | null | undefined) => string | null }) {
   if (!rooms || rooms.length === 0) return null;
   return (
