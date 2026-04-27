@@ -454,6 +454,53 @@ export default function GradeMasterPage() {
     setNewClassOpen(true);
   };
 
+  /** Verifica se há ao menos um professor alocado na grade naquele dia/hora.
+   *  Considera disponibilidade recorrente (instructor_availability) e bookable_slots. */
+  const hasInstructorAt = (d: Date, hour: number, minute = 0, durationMin = 60, roomId?: string | null) => {
+    const dow = d.getDay();
+    const startMin = hour * 60 + minute;
+    const endMin = startMin + durationMin;
+    const toMin = (t: string) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + (m || 0);
+    };
+    // 1) Disponibilidade recorrente
+    const hasAvail = (availability as any[]).some((a) => {
+      if (!a.active) return false;
+      if (a.day_of_week !== dow) return false;
+      if (roomId && a.room_id && a.room_id !== roomId) return false;
+      const s = toMin(a.start_time);
+      const e = toMin(a.end_time);
+      return s < endMin && e > startMin;
+    });
+    if (hasAvail) return true;
+    // 2) Bookable slots ativos com instrutor cobrindo o intervalo
+    const dayStart = new Date(d); dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(d); dayEnd.setHours(23, 59, 59, 999);
+    const targetStart = new Date(d); targetStart.setHours(hour, minute, 0, 0);
+    const targetEnd = new Date(targetStart.getTime() + durationMin * 60 * 1000);
+    return (bookableSlots as any[]).some((s) => {
+      if (!s.instructor_id) return false;
+      if (s.active === false || s.blocked === true) return false;
+      if (roomId && s.room_id && s.room_id !== roomId) return false;
+      const sStart = new Date(s.scheduled_at).getTime();
+      if (sStart < dayStart.getTime() || sStart > dayEnd.getTime()) return false;
+      const sEnd = sStart + (s.duration_minutes || 50) * 60 * 1000;
+      return sStart < targetEnd.getTime() && sEnd > targetStart.getTime();
+    });
+  };
+
+  const tryOpenNewClassAt = (d: Date, time?: string, roomId?: string | null) => {
+    if (time) {
+      const [h, m] = time.split(':').map(Number);
+      if (!hasInstructorAt(d, h, m || 0, 60, roomId)) {
+        toast.error('Sem professor alocado nesse horário. Defina a disponibilidade do professor antes de criar uma aula aqui.');
+        return;
+      }
+    }
+    openNewClassAt(d, time, roomId);
+  };
+
   // ===== Seleção múltipla na timeline do dia =====
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedSlotKeys, setSelectedSlotKeys] = useState<Set<string>>(new Set());
@@ -871,7 +918,7 @@ export default function GradeMasterPage() {
   };
 
   const handleCellClick = (d: Date, hour: number) => {
-    openNewClassAt(d, `${String(hour).padStart(2, '0')}:00`);
+    tryOpenNewClassAt(d, `${String(hour).padStart(2, '0')}:00`);
   };
 
   const renderTimelineInstructorPicker = (ts: TimelineSlot) => (
@@ -1040,7 +1087,7 @@ export default function GradeMasterPage() {
               roomName={roomName}
               roomColorOf={roomColorOf}
               colorOf={colorOf}
-              onCellClick={(d, h, roomId) => openNewClassAt(d, `${String(h).padStart(2, '0')}:00`, roomId ?? null)}
+              onCellClick={(d, h, roomId) => tryOpenNewClassAt(d, `${String(h).padStart(2, '0')}:00`, roomId ?? null)}
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
               renderInstructorPicker={renderTimelineInstructorPicker}
@@ -1119,7 +1166,7 @@ export default function GradeMasterPage() {
                   return (
                     <button
                       key={c.hour}
-                      onClick={() => openNewClassAt(day, `${String(c.hour).padStart(2, '0')}:00`)}
+                      onClick={() => tryOpenNewClassAt(day, `${String(c.hour).padStart(2, '0')}:00`)}
                       className={cn(
                         'group flex flex-col items-stretch rounded border p-1 text-[10px] transition hover:ring-2 hover:ring-primary/30',
                         danger && 'bg-destructive/10 border-destructive/40',
@@ -1190,7 +1237,7 @@ export default function GradeMasterPage() {
               studentName={studentName}
               instructorName={instructorName}
               colorOf={colorOf}
-              onCellClick={(d, hour, roomId) => openNewClassAt(d, `${String(hour).padStart(2, '0')}:00`, roomId)}
+              onCellClick={(d, hour, roomId) => tryOpenNewClassAt(d, `${String(hour).padStart(2, '0')}:00`, roomId)}
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
               renderInstructorPicker={renderTimelineInstructorPicker}
