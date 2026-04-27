@@ -542,6 +542,151 @@ function StepGrade({
   const [equipmentIds, setEquipmentIds] = useState<string[]>([]);
   const [equipmentSearch, setEquipmentSearch] = useState('');
   const [creating, setCreating] = useState(false);
+  // Período da grade
+  const [noEndDate, setNoEndDate] = useState(false);
+  const [endDate, setEndDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 28); // default 4 semanas
+    return d.toISOString().slice(0, 10);
+  });
+  // Lista de séries existentes
+  const [series, setSeries] = useState<Array<{
+    series_id: string;
+    count: number;
+    active_count: number;
+    first: string;
+    last: string;
+    active: boolean;
+  }>>([]);
+  const [loadingSeries, setLoadingSeries] = useState(false);
+
+  const loadSeries = async () => {
+    setLoadingSeries(true);
+    const { data } = await supabase
+      .from('bookable_slots' as any)
+      .select('series_id, scheduled_at, active')
+      .eq('clinic_id', clinicId)
+      .not('series_id', 'is', null)
+      .order('scheduled_at', { ascending: true });
+    const map = new Map<string, { count: number; active_count: number; first: string; last: string }>();
+    (data ?? []).forEach((r: any) => {
+      const k = r.series_id as string;
+      const cur = map.get(k) ?? { count: 0, active_count: 0, first: r.scheduled_at, last: r.scheduled_at };
+      cur.count += 1;
+      if (r.active) cur.active_count += 1;
+      if (r.scheduled_at < cur.first) cur.first = r.scheduled_at;
+      if (r.scheduled_at > cur.last) cur.last = r.scheduled_at;
+      map.set(k, cur);
+    });
+    setSeries(
+      Array.from(map.entries()).map(([series_id, v]) => ({
+        series_id, ...v, active: v.active_count > 0,
+      })).sort((a, b) => b.last.localeCompare(a.last))
+    );
+    setLoadingSeries(false);
+  };
+
+  useEffect(() => { loadSeries(); }, [clinicId, hook.data?.length]);
+
+  const suspendSeries = async (sid: string) => {
+    const todayISO = new Date().toISOString();
+    const { error } = await supabase
+      .from('bookable_slots' as any)
+      .update({ active: false })
+      .eq('series_id', sid)
+      .gte('scheduled_at', todayISO);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Grade suspensa (futuras desativadas)');
+    hook.refetch?.();
+    loadSeries();
+  };
+
+  const reactivateSeries = async (sid: string) => {
+    const todayISO = new Date().toISOString();
+    const { error } = await supabase
+      .from('bookable_slots' as any)
+      .update({ active: true })
+      .eq('series_id', sid)
+      .gte('scheduled_at', todayISO);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Grade reativada');
+    hook.refetch?.();
+    loadSeries();
+  };
+
+  const deleteSeries = async (sid: string) => {
+    if (!confirm('Excluir todos os horários FUTUROS desta série? Os passados serão mantidos.')) return;
+    const todayISO = new Date().toISOString();
+    const { error } = await supabase
+      .from('bookable_slots' as any)
+      .delete()
+      .eq('series_id', sid)
+      .gte('scheduled_at', todayISO);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Horários futuros excluídos');
+    hook.refetch?.();
+    loadSeries();
+  };
+
+  const extendSeries = async (sid: string) => {
+    const ans = prompt('Estender até qual data? (YYYY-MM-DD)');
+    if (!ans || !/^\d{4}-\d{2}-\d{2}$/.test(ans)) return;
+    // Pega o template a partir do último slot da série
+    const { data: lastSlots } = await supabase
+      .from('bookable_slots' as any)
+      .select('*')
+      .eq('series_id', sid)
+      .order('scheduled_at', { ascending: false })
+      .limit(50);
+    if (!lastSlots?.length || !user) return;
+    // Reconstroi o padrão dia/hora a partir dos slots existentes da série
+    const { data: allSlots } = await supabase
+      .from('bookable_slots' as any)
+      .select('scheduled_at, duration_minutes, room_id, equipment_id')
+      .eq('series_id', sid)
+      .order('scheduled_at', { ascending: true });
+    if (!allSlots?.length) return;
+    const lastDate = new Date((allSlots as any[])[allSlots.length - 1].scheduled_at);
+    const targetEnd = new Date(ans + 'T23:59:59');
+    if (targetEnd <= lastDate) { toast.error('Data deve ser depois do último slot atual'); return; }
+    // Identifica o "padrão semanal": (dow, hh:mm, duration, room, equipment)
+    const patterns = new Map<string, any>();
+    (allSlots as any[]).slice(-50).forEach((s) => {
+      const d = new Date(s.scheduled_at);
+      const k = `${d.getDay()}|${d.getHours()}:${d.getMinutes()}`;
+      if (!patterns.has(k)) patterns.set(k, { dow: d.getDay(), hh: d.getHours(), mm: d.getMinutes(), duration_minutes: s.duration_minutes, room_id: s.room_id, equipment_id: s.equipment_id });
+    });
+    const rows: any[] = [];
+    const cursor = new Date(lastDate); cursor.setDate(cursor.getDate() + 1); cursor.setHours(0,0,0,0);
+    while (cursor <= targetEnd) {
+      patterns.forEach((p) => {
+        if (p.dow === cursor.getDay()) {
+          const sched = new Date(cursor);
+          sched.setHours(p.hh, p.mm, 0, 0);
+          rows.push({
+            clinic_id: clinicId,
+            scheduled_at: sched.toISOString(),
+            duration_minutes: p.duration_minutes,
+            room_id: p.room_id,
+            equipment_id: p.equipment_id,
+            instructor_id: null,
+            capacity: 1,
+            notes: null,
+            created_by: user.id,
+            series_id: sid,
+            active: true,
+          });
+        }
+      });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    if (rows.length === 0) { toast.error('Nada a estender'); return; }
+    const { error } = await supabase.from('bookable_slots' as any).insert(rows);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${rows.length} horários adicionados`);
+    hook.refetch?.();
+    loadSeries();
+  };
 
   const toggleEquipment = (id: string) =>
     setEquipmentIds((cur) => cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]);
@@ -565,21 +710,31 @@ function StepGrade({
     const brk = Math.max(0, Number(breakMinutes) || 0);
     if (eh <= sh) { toast.error('Hora final deve ser maior que a inicial'); return; }
     if (dur <= 0) { toast.error('Duração inválida'); return; }
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    let lastDate: Date;
+    if (noEndDate) {
+      lastDate = new Date(today);
+      lastDate.setDate(lastDate.getDate() + 7 * 12); // 12 semanas, estende depois
+    } else {
+      if (!endDate) { toast.error('Defina a data final ou marque "sem data final"'); return; }
+      lastDate = new Date(endDate + 'T23:59:59');
+      if (lastDate < today) { toast.error('Data final deve ser hoje ou no futuro'); return; }
+    }
+
     setCreating(true);
     try {
-      // Generate next 4 weeks of slots
-      const today = new Date(); today.setHours(0, 0, 0, 0);
       const rows: any[] = [];
       const primaryEquipmentId = equipmentIds[0] ?? null;
       const stepMinutes = dur + brk;
       const dayMinutes = (eh - sh) * 60;
-      for (let week = 0; week < 4; week++) {
-        for (const dow of days) {
-          const date = new Date(today);
-          const diff = (dow - today.getDay() + 7) % 7 + week * 7;
-          date.setDate(today.getDate() + diff);
+      const seriesId = (crypto as any)?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+
+      const cursor = new Date(today);
+      while (cursor <= lastDate) {
+        if (days.includes(cursor.getDay())) {
           for (let offset = 0; offset + dur <= dayMinutes; offset += stepMinutes) {
-            const sched = new Date(date);
+            const sched = new Date(cursor);
             sched.setHours(sh, 0, 0, 0);
             sched.setMinutes(sched.getMinutes() + offset);
             rows.push({
@@ -592,17 +747,22 @@ function StepGrade({
               capacity: Math.max(1, equipmentIds.length || 1),
               notes: null,
               created_by: user.id,
+              series_id: seriesId,
+              active: true,
             });
           }
         }
+        cursor.setDate(cursor.getDate() + 1);
       }
+
+      if (rows.length === 0) { toast.error('Nenhum horário para este período'); setCreating(false); return; }
+
       const { data: insertedSlots, error } = await supabase
         .from('bookable_slots' as any)
         .insert(rows)
         .select('id');
       if (error) throw error;
 
-      // Link multiple equipments per slot
       if (equipmentIds.length > 1 && insertedSlots?.length) {
         const links = (insertedSlots as any[]).flatMap((s) =>
           equipmentIds.map((eid) => ({
@@ -616,8 +776,9 @@ function StepGrade({
         if (linkErr) throw linkErr;
       }
 
-      toast.success(`${rows.length} horários criados`);
+      toast.success(`${rows.length} horários criados${noEndDate ? ' (12 semanas — estenda depois)' : ''}`);
       hook.refetch?.();
+      loadSeries();
     } catch (e: any) {
       toast.error(e?.message || 'Erro ao gerar grade');
     } finally { setCreating(false); }
@@ -627,7 +788,7 @@ function StepGrade({
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-muted-foreground">Gere automaticamente horários fixos da semana (próximas 4 semanas). Você pode editar depois em <em>Horários</em>.</p>
+      <p className="text-sm text-muted-foreground">Defina os horários fixos da semana e até quando devem ser gerados. Você pode suspender, estender ou excluir uma grade depois.</p>
 
       <div className="rounded-xl border p-4 space-y-4 bg-muted/20">
         <div>
@@ -668,6 +829,28 @@ function StepGrade({
             <Label className="text-xs">Intervalo (min)</Label>
             <Input type="number" min={0} max={60} value={breakMinutes} onChange={(e) => setBreakMinutes(e.target.value)} />
           </div>
+        </div>
+
+        {/* Período da grade */}
+        <div className="rounded-lg border bg-card p-3 space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <Label className="text-xs uppercase tracking-wide">Período</Label>
+            <label className="flex items-center gap-2 text-xs cursor-pointer">
+              <Switch checked={noEndDate} onCheckedChange={setNoEndDate} />
+              <span>Sem data de término</span>
+            </label>
+          </div>
+          {!noEndDate ? (
+            <div>
+              <Label className="text-xs text-muted-foreground">Gerar até</Label>
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <p className="text-[11px] text-muted-foreground mt-1">A grade será criada de hoje até esta data.</p>
+            </div>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">
+              Serão gerados horários para as próximas <strong>12 semanas</strong>. Use "Estender" abaixo quando precisar de mais.
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -784,7 +967,7 @@ function StepGrade({
 
         <Button onClick={handleGenerate} disabled={creating} className="w-full">
           {creating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CalendarDays className="h-4 w-4 mr-1" />}
-          Gerar grade (4 semanas)
+          Gerar grade
         </Button>
       </div>
 
@@ -796,6 +979,58 @@ function StepGrade({
         </div>
         {totalSlots > 0 && <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"><Check className="h-3 w-3" /></Badge>}
       </div>
+
+      {/* Séries existentes */}
+      {series.length > 0 && (
+        <div className="rounded-xl border p-3 space-y-2 bg-card">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-semibold">Grades geradas</div>
+            <span className="text-[11px] text-muted-foreground">{series.length} série(s)</span>
+          </div>
+          <div className="space-y-1.5">
+            {series.map((s) => {
+              const first = new Date(s.first);
+              const last = new Date(s.last);
+              return (
+                <div key={s.series_id} className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-xs">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium">
+                      {first.toLocaleDateString('pt-BR')} → {last.toLocaleDateString('pt-BR')}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {s.active_count} de {s.count} ativos
+                    </div>
+                  </div>
+                  {s.active ? (
+                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">Ativa</Badge>
+                  ) : (
+                    <Badge variant="secondary">Suspensa</Badge>
+                  )}
+                  <div className="flex gap-1 ml-auto">
+                    <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={() => extendSeries(s.series_id)}>
+                      Estender
+                    </Button>
+                    {s.active ? (
+                      <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={() => suspendSeries(s.series_id)}>
+                        Suspender
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={() => reactivateSeries(s.series_id)}>
+                        Reativar
+                      </Button>
+                    )}
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteSeries(s.series_id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {loadingSeries && <div className="text-[11px] text-muted-foreground">Carregando…</div>}
+        </div>
+      )}
     </div>
   );
 }
