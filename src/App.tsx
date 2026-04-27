@@ -48,6 +48,7 @@ import MasterPlansPage from "@/pages/master/MasterPlansPage";
 import MasterSettingsPage from "@/pages/master/MasterSettingsPage";
 import BillingPage from "@/pages/clinic/BillingPage";
 import ClinicExerciseLibraryPage from "@/pages/clinic/ClinicExerciseLibraryPage";
+import PlanClassPage from "@/pages/clinic/PlanClassPage";
 import SharedSequencePage from "@/pages/SharedSequencePage";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { ConfirmProvider } from "@/components/ConfirmProvider";
