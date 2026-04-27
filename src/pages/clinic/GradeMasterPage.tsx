@@ -65,6 +65,8 @@ interface MergedSlot {
   isProjected?: boolean;
   /** Slot livre da Grade Master (bookable_slot) sem aluno marcado */
   isOpen?: boolean;
+  /** Slot bloqueado (mantido na grade, sem prof, ninguém agenda) */
+  isBlocked?: boolean;
   bookable_slot_id?: string;
 }
 
@@ -153,7 +155,7 @@ export default function GradeMasterPage() {
   const { data: sequences = [] } = useSequences(activeClinicId);
   const { data: rooms = [] } = useClinicRooms(activeClinicId);
   const { data: staff = [] } = useClinicStaff(activeClinicId);
-  const { data: bookableSlots = [], create: createBookable, remove: removeBookable } = useBookableSlots(activeClinicId, rangeFromISO, rangeToISO);
+  const { data: bookableSlots = [], create: createBookable, remove: removeBookable, block: blockBookable, unblock: unblockBookable } = useBookableSlots(activeClinicId, rangeFromISO, rangeToISO);
   const instructors = useMemo(
     () => staff.filter((s) => s.role === 'instructor' || s.role === 'clinic_admin').map((s) => ({ user_id: s.user_id, name: s.name })),
     [staff],
@@ -240,22 +242,25 @@ export default function GradeMasterPage() {
     dayBookable.forEach((b) => {
       const t = parseISO(b.scheduled_at);
       const k = `${t.getHours()}:${t.getMinutes()}|${b.room_id ?? ''}|${b.equipment_id ?? ''}`;
+      const isBlocked = b.blocked === true;
       // também considera ocupado se já existe aula no mesmo horário+sala (mesmo sem equipamento)
       const sameTimeRoom = merged.some((m) => {
         const mt = parseISO(m.scheduled_at);
         return mt.getHours() === t.getHours() && mt.getMinutes() === t.getMinutes() && (m.room_id ?? '') === (b.room_id ?? '');
       });
-      if (occupiedKeys.has(k) || sameTimeRoom) return;
+      // Slots bloqueados sempre aparecem (mesmo se houver outra aula no mesmo horário)
+      if (!isBlocked && (occupiedKeys.has(k) || sameTimeRoom)) return;
       merged.push({
         key: `open-${b.id}`,
         scheduled_at: b.scheduled_at,
         duration_minutes: b.duration_minutes,
         student_id: null,
         equipment_id: b.equipment_id,
-        instructor_id: b.instructor_id,
+        instructor_id: isBlocked ? null : b.instructor_id,
         room_id: b.room_id,
         notes: b.notes,
-        isOpen: true,
+        isOpen: !isBlocked,
+        isBlocked,
         bookable_slot_id: b.id,
       });
     });
@@ -419,13 +424,15 @@ export default function GradeMasterPage() {
 
   const deleteSelected = async () => {
     if (selectedSlotKeys.size === 0) return;
-    if (!confirm(`Excluir ${selectedSlotKeys.size} horário(s) selecionado(s)?`)) return;
+    if (!confirm(`Bloquear ${selectedSlotKeys.size} horário(s) selecionado(s)? (aulas serão canceladas)`)) return;
     const tsList = visibleSlotsForSelection().map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
     for (const t of tsList) {
       if (t.appointment_id) await remove.mutateAsync(t.appointment_id);
-      else if (t.bookable_slot_id) await removeBookable.mutateAsync(t.bookable_slot_id);
+      else if (t.bookable_slot_id) await blockBookable.mutateAsync(t.bookable_slot_id);
     }
-    toast.success(`${tsList.length} horário(s) excluído(s)`);
+    await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+    await qc.invalidateQueries({ queryKey: ['appointments'] });
+    toast.success(`${tsList.length} horário(s) bloqueado(s)`);
     exitSelection();
   };
 
@@ -530,7 +537,10 @@ export default function GradeMasterPage() {
         }
       }
     });
-    if (newEmpty.size === 0 && newSlots.size === 0) return;
+    if (newEmpty.size === 0 && newSlots.size === 0) {
+      toast.info('Nenhum horário disponível nessa coluna.');
+      return;
+    }
     replaceSelection(newSlots, newEmpty);
     // Prioriza criar horários vazios; se só houver existentes, vai para reassign
     if (newEmpty.size > 0) setBulkOpen('create');
@@ -612,6 +622,11 @@ export default function GradeMasterPage() {
 
 
   const openSlotDialog = (slot: MergedSlot) => {
+    // Slot bloqueado → ignora clique de "abrir"
+    if (slot.isBlocked) {
+      toast.info('Horário bloqueado. Desbloqueie para usar.');
+      return;
+    }
     // Slot livre da grade → abre Nova aula com horário pré-preenchido
     if (slot.isOpen || !slot.student_id) {
       const t = parseISO(slot.scheduled_at);
@@ -674,6 +689,7 @@ export default function GradeMasterPage() {
     isOpen: s.isOpen,
     isVirtual: s.isVirtual,
     isProjected: s.isProjected,
+    isBlocked: s.isBlocked,
     hasGrade: !!s.appointment?.sequence_id,
     uncovered: isUncovered(s),
     appointment_id: s.appointment?.id,
@@ -681,9 +697,21 @@ export default function GradeMasterPage() {
     recurring_id: s.recurring_id,
   });
 
+  /**
+   * "Excluir" um horário NUNCA remove de fato.
+   * - Aulas reais (class_appointments) → cancelamento.
+   * - Slots livres (bookable_slots)    → bloqueio (blocked=true).
+   */
   const handleTimelineDelete = (ts: TimelineSlot) => {
-    if (ts.appointment_id) remove.mutate(ts.appointment_id);
-    else if (ts.bookable_slot_id) removeBookable.mutate(ts.bookable_slot_id);
+    if (ts.appointment_id) {
+      remove.mutate(ts.appointment_id);
+    } else if (ts.bookable_slot_id) {
+      if (ts.isBlocked) {
+        unblockBookable.mutate(ts.bookable_slot_id);
+      } else {
+        blockBookable.mutate(ts.bookable_slot_id);
+      }
+    }
   };
 
   const handleTimelineSlotClick = (ts: TimelineSlot) => {

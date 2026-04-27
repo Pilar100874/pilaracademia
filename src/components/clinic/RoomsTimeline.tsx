@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Plus, X, AlertTriangle, Repeat, Sparkles, RefreshCw, DoorOpen, Users, Check } from 'lucide-react';
+import { Plus, X, AlertTriangle, Repeat, Sparkles, RefreshCw, DoorOpen, Users, Check, Lock, Unlock } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { TimelineSlot } from './CalendarTimeline';
 import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
@@ -354,14 +354,16 @@ export function RoomsTimeline({
                     }}
                     className={cn(
                       'absolute left-1 right-1 z-10 rounded border border-l-4 px-1.5 py-1 text-[10px] cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary/30 transition shadow-sm',
-                      s.isOpen
-                        ? 'bg-emerald-500/10 border-emerald-500/30 border-dashed'
-                        : s.isProjected
-                          ? 'bg-amber-500/10 border-amber-500/40 border-dashed'
-                          : s.isVirtual
-                            ? 'bg-card border-dashed'
-                            : 'bg-card',
-                      s.uncovered && !s.isOpen && 'bg-destructive/5',
+                      s.isBlocked
+                        ? 'bg-muted/60 border-muted-foreground/40 border-dashed opacity-80'
+                        : s.isOpen
+                          ? 'bg-emerald-500/10 border-emerald-500/30 border-dashed'
+                          : s.isProjected
+                            ? 'bg-amber-500/10 border-amber-500/40 border-dashed'
+                            : s.isVirtual
+                              ? 'bg-card border-dashed'
+                              : 'bg-card',
+                      s.uncovered && !s.isOpen && !s.isBlocked && 'bg-destructive/5',
                       isSelected && 'ring-2 ring-primary bg-primary/10',
                       selectionMode && !canSelect && 'opacity-50',
                       isSlotDropHover && 'ring-2 ring-primary bg-primary/15',
@@ -371,16 +373,21 @@ export function RoomsTimeline({
                       <span className="font-bold">{format(t, 'HH:mm')}</span>
                       <div className="flex items-center gap-0.5">
                         {isSelected && <Check className="h-2.5 w-2.5 text-primary" />}
-                        {s.uncovered && <AlertTriangle className="h-2.5 w-2.5 text-destructive" />}
+                        {s.isBlocked && <Lock className="h-2.5 w-2.5 text-muted-foreground" />}
+                        {s.uncovered && !s.isBlocked && <AlertTriangle className="h-2.5 w-2.5 text-destructive" />}
                         {s.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
                         {s.isVirtual && !s.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
                         {s.hasGrade && <Sparkles className="h-2.5 w-2.5 text-primary" />}
                       </div>
                     </div>
                     <div className="truncate font-medium">
-                      {s.isOpen ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span> : studentName(s.student_id)}
+                      {s.isBlocked
+                        ? <span className="italic text-muted-foreground">Bloqueado</span>
+                        : s.isOpen
+                          ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span>
+                          : studentName(s.student_id)}
                     </div>
-                    {instr && height > 36 && (
+                    {instr && height > 36 && !s.isBlocked && (
                       <div className="truncate text-muted-foreground">{instr}</div>
                     )}
                   </div>
@@ -405,13 +412,17 @@ export function RoomsTimeline({
                     <PopoverContent className="w-64 p-2 text-xs space-y-2" onClick={(e) => e.stopPropagation()}>
                       <div>
                         <div className="font-semibold text-sm">
-                          {s.isOpen ? 'Horário disponível' : studentName(s.student_id)}
+                          {s.isBlocked
+                            ? 'Horário bloqueado'
+                            : s.isOpen
+                              ? 'Horário disponível'
+                              : studentName(s.student_id)}
                         </div>
                         <div className="text-muted-foreground text-[11px]">
                           {format(t, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} · {s.duration_minutes}min
                         </div>
                         <div className="text-[11px]">📍 {r.name}</div>
-                        {instr && (
+                        {instr && !s.isBlocked && (
                           <div className="text-[11px] flex items-center gap-1">
                             <span className="h-2 w-2 rounded-full" style={{ background: color }} />
                             {instr}
@@ -419,21 +430,38 @@ export function RoomsTimeline({
                         )}
                       </div>
                       <div className="flex gap-1 flex-wrap pt-1 border-t">
-                        <button
-                          onClick={() => onSlotClick(s)}
-                          className="flex-1 px-2 py-1.5 rounded border text-[11px] hover:bg-muted text-center"
-                        >
-                          Abrir
-                        </button>
-                        {renderInstructorPicker?.(s)}
-                        {onDelete && (s.appointment_id || s.bookable_slot_id) && (
+                        {!s.isBlocked && (
                           <button
-                            onClick={() => { if (confirm('Excluir este horário?')) onDelete(s); }}
-                            className="px-2 py-1.5 rounded border border-destructive/30 text-destructive hover:bg-destructive/5 inline-flex items-center gap-1"
-                            title="Excluir"
+                            onClick={() => onSlotClick(s)}
+                            className="flex-1 px-2 py-1.5 rounded border text-[11px] hover:bg-muted text-center"
                           >
-                            <X className="h-3 w-3" />Excluir
+                            Abrir
                           </button>
+                        )}
+                        {!s.isBlocked && renderInstructorPicker?.(s)}
+                        {onDelete && (s.appointment_id || s.bookable_slot_id) && (
+                          s.isBlocked ? (
+                            <button
+                              onClick={() => onDelete(s)}
+                              className="flex-1 px-2 py-1.5 rounded border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/5 inline-flex items-center justify-center gap-1"
+                              title="Desbloquear"
+                            >
+                              <Unlock className="h-3 w-3" />Desbloquear
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                const msg = s.appointment_id
+                                  ? 'Cancelar esta aula?'
+                                  : 'Bloquear este horário? Ele continuará na grade mas ninguém poderá agendar.';
+                                if (confirm(msg)) onDelete(s);
+                              }}
+                              className="px-2 py-1.5 rounded border border-muted-foreground/30 text-muted-foreground hover:bg-muted inline-flex items-center gap-1"
+                              title={s.appointment_id ? 'Cancelar aula' : 'Bloquear horário'}
+                            >
+                              <Lock className="h-3 w-3" />{s.appointment_id ? 'Cancelar' : 'Bloquear'}
+                            </button>
+                          )
                         )}
                       </div>
                     </PopoverContent>

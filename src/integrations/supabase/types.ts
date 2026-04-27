@@ -59,6 +59,7 @@ export type Database = {
       bookable_slots: {
         Row: {
           active: boolean
+          blocked: boolean
           capacity: number
           clinic_id: string
           created_at: string
@@ -74,6 +75,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          blocked?: boolean
           capacity?: number
           clinic_id: string
           created_at?: string
@@ -89,6 +91,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          blocked?: boolean
           capacity?: number
           clinic_id?: string
           created_at?: string
