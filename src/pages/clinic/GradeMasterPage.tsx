@@ -498,7 +498,8 @@ export default function GradeMasterPage() {
     if (selectedSlotKeys.size === 0) return;
     const tsList = visibleSlotsForSelection().map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
     let updated = 0;
-    let lastError: string | null = null;
+    const conflicts: string[] = [];
+    const otherErrors: string[] = [];
     for (const t of tsList) {
       const patch: any = {};
       if (values.instructorId !== null) patch.instructor_id = values.instructorId;
@@ -520,14 +521,27 @@ export default function GradeMasterPage() {
         }
         updated++;
       } catch (e: any) {
-        lastError = e?.message || 'Erro ao atualizar';
+        const msg = e?.message || 'Erro ao atualizar';
+        const label = t.scheduled_at ? format(new Date(t.scheduled_at), 'dd/MM HH:mm') : '';
+        if (/professor já/i.test(msg)) {
+          conflicts.push(`${label} — ${msg.replace(/^.*?:\s*/, '')}`);
+        } else {
+          otherErrors.push(`${label}: ${msg}`);
+        }
       }
     }
     await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
     await qc.invalidateQueries({ queryKey: ['appointments'] });
     if (updated > 0) toast.success(`${updated} horário(s) atualizado(s)`);
-    if (lastError && updated === 0) toast.error(lastError);
-    else if (lastError) toast.warning(`Alguns horários falharam: ${lastError}`);
+    if (conflicts.length > 0) {
+      toast.warning(
+        `${conflicts.length} horário(s) ignorado(s) — professor já ocupado`,
+        { description: conflicts.slice(0, 5).join('\n') + (conflicts.length > 5 ? `\n…e mais ${conflicts.length - 5}` : ''), duration: 8000 }
+      );
+    }
+    if (otherErrors.length > 0) {
+      toast.error(`${otherErrors.length} falha(s)`, { description: otherErrors.slice(0, 5).join('\n'), duration: 8000 });
+    }
     exitSelection();
   };
 
