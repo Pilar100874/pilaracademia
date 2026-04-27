@@ -154,13 +154,16 @@ export function SlotGradeDialog({
   const [addOpen, setAddOpen] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
 
+  // Só re-inicializa quando o diálogo abre ou quando o slot muda — NÃO quando rowsInit muda
+  // de referência (evita sobrescrever alterações locais do usuário, como adicionar aluno).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (open) {
       setRows(rowsInit);
       if (autoOpenAdd) setAddOpen(true);
       setStudentSearch('');
     }
-  }, [open, rowsInit, autoOpenAdd]);
+  }, [open, slot?.scheduled_at, slot?.duration_minutes, autoOpenAdd]);
 
   // Descobre sala/capacidade do horário a partir de appointments existentes ou bookable_slot.
   const slotRoomInfo = useMemo(() => {
