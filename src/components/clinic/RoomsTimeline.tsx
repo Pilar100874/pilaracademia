@@ -1,7 +1,7 @@
 import { format, parseISO, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Plus, X, AlertTriangle, Repeat, Sparkles, RefreshCw, DoorOpen, Users } from 'lucide-react';
+import { Plus, X, AlertTriangle, Repeat, Sparkles, RefreshCw, DoorOpen, Users, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { TimelineSlot } from './CalendarTimeline';
 
@@ -12,13 +12,23 @@ export interface Room {
   color?: string | null;
 }
 
+/** Identificador único para uma célula vazia (horário/sala que ainda não existe). */
+export type EmptyCellKey = string; // formato: `${ISODay}|${hour}|${roomId ?? 'none'}`
+
+export const makeEmptyKey = (day: Date, hour: number, roomId: string | null) =>
+  `${day.toISOString().slice(0, 10)}|${hour}|${roomId ?? 'none'}`;
+
+export const parseEmptyKey = (k: EmptyCellKey) => {
+  const [date, hourStr, roomStr] = k.split('|');
+  return { date, hour: parseInt(hourStr, 10), roomId: roomStr === 'none' ? null : roomStr };
+};
+
 interface Props {
   day: Date;
   rooms: Room[];
   startHour: number;
   endHour: number;
   hourHeight?: number;
-  /** Slots de TODAS as salas no dia (incluindo room_id=null que cai em "Sem sala") */
   slots: TimelineSlot[];
   studentName: (id: string | null) => string;
   instructorName: (id: string | null | undefined) => string | null;
@@ -27,12 +37,24 @@ interface Props {
   onSlotClick: (s: TimelineSlot) => void;
   onDelete?: (s: TimelineSlot) => void;
   renderInstructorPicker?: (s: TimelineSlot) => React.ReactNode;
+
+  // ===== Seleção múltipla =====
+  selectionMode?: boolean;
+  selectedSlotKeys?: Set<string>;
+  selectedEmptyKeys?: Set<EmptyCellKey>;
+  onToggleSlot?: (s: TimelineSlot) => void;
+  onToggleEmpty?: (key: EmptyCellKey) => void;
 }
 
 export function RoomsTimeline({
   day, rooms, startHour, endHour, hourHeight = 64,
   slots, studentName, instructorName, colorOf,
   onCellClick, onSlotClick, onDelete, renderInstructorPicker,
+  selectionMode = false,
+  selectedSlotKeys,
+  selectedEmptyKeys,
+  onToggleSlot,
+  onToggleEmpty,
 }: Props) {
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
   const totalHeight = hours.length * hourHeight;
@@ -43,7 +65,6 @@ export function RoomsTimeline({
   const now = new Date();
   const isToday = isSameDay(day, now);
 
-  // Sempre adiciona uma coluna "Sem sala" se houver slots órfãos
   const hasOrphan = slots.some((s) => !s.room_id);
   const cols: (Room | { id: null; name: string; capacity?: number | null })[] = [
     ...rooms,
@@ -53,7 +74,6 @@ export function RoomsTimeline({
   const slotsForRoom = (roomId: string | null) =>
     slots.filter((s) => (s.room_id ?? null) === roomId);
 
-  // ocupação por hora+sala (somente aulas reais com aluno)
   const occupancyAt = (roomId: string | null, hour: number) => {
     if (!roomId) return null;
     const room = rooms.find((r) => r.id === roomId);
@@ -68,7 +88,6 @@ export function RoomsTimeline({
 
   return (
     <div className="border rounded-md overflow-hidden bg-card">
-      {/* Header das salas */}
       <div className="grid border-b bg-muted/30" style={{ gridTemplateColumns: `60px repeat(${cols.length}, minmax(120px, 1fr))` }}>
         <div />
         {cols.map((r) => (
@@ -86,9 +105,7 @@ export function RoomsTimeline({
         ))}
       </div>
 
-      {/* Grid principal */}
       <div className="grid relative overflow-x-auto" style={{ gridTemplateColumns: `60px repeat(${cols.length}, minmax(120px, 1fr))`, height: totalHeight }}>
-        {/* Coluna de horas */}
         <div className="relative">
           {hours.map((h) => (
             <div
@@ -101,27 +118,42 @@ export function RoomsTimeline({
           ))}
         </div>
 
-        {/* Colunas de salas */}
         {cols.map((r) => {
           const roomSlots = slotsForRoom(r.id);
           return (
             <div key={r.id ?? 'orphan'} className="relative border-l">
-              {/* células de hora clicáveis */}
               {hours.map((h) => {
                 const occ = occupancyAt(r.id, h);
                 const full = occ && occ.used >= occ.cap;
+                const emptyKey = makeEmptyKey(day, h, r.id);
+                const emptySelected = selectionMode && selectedEmptyKeys?.has(emptyKey);
                 return (
                   <button
                     key={h}
-                    onClick={() => onCellClick(day, h, r.id)}
-                    title={`Adicionar aula às ${String(h).padStart(2, '0')}:00 em ${r.name}`}
+                    onClick={() => {
+                      if (selectionMode) {
+                        onToggleEmpty?.(emptyKey);
+                      } else {
+                        onCellClick(day, h, r.id);
+                      }
+                    }}
+                    title={
+                      selectionMode
+                        ? `${emptySelected ? 'Remover' : 'Selecionar'} ${String(h).padStart(2, '0')}:00 em ${r.name}`
+                        : `Adicionar aula às ${String(h).padStart(2, '0')}:00 em ${r.name}`
+                    }
                     className={cn(
                       'absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group',
                       full && 'bg-destructive/[0.04]',
+                      emptySelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
                     )}
                     style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
                   >
-                    <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
+                    {emptySelected ? (
+                      <Check className="h-3.5 w-3.5 text-primary absolute top-1 right-1" />
+                    ) : (
+                      <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
+                    )}
                     {occ && (
                       <span className={cn(
                         'absolute bottom-0.5 left-1 text-[9px] font-bold px-1 rounded',
@@ -134,7 +166,6 @@ export function RoomsTimeline({
                 );
               })}
 
-              {/* now indicator */}
               {isToday && now.getHours() >= startHour && now.getHours() < endHour && (
                 <div
                   className="absolute left-0 right-0 z-20 pointer-events-none"
@@ -145,7 +176,6 @@ export function RoomsTimeline({
                 </div>
               )}
 
-              {/* eventos */}
               {roomSlots.map((s) => {
                 const t = parseISO(s.scheduled_at);
                 const top = minutesToTop(t);
@@ -153,46 +183,66 @@ export function RoomsTimeline({
                 if (top < 0 || top >= totalHeight) return null;
                 const color = colorOf(s.instructor_id);
                 const instr = instructorName(s.instructor_id);
+                const isSelected = selectionMode && selectedSlotKeys?.has(s.key);
+                const canSelect = selectionMode && (s.appointment_id || s.bookable_slot_id);
+
+                const eventBox = (
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    style={{
+                      top: top + 1,
+                      height,
+                      borderLeftColor: s.uncovered ? 'hsl(var(--destructive))' : (color || 'hsl(var(--primary))'),
+                    }}
+                    className={cn(
+                      'absolute left-1 right-1 z-10 rounded border border-l-4 px-1.5 py-1 text-[10px] cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary/30 transition shadow-sm',
+                      s.isOpen
+                        ? 'bg-emerald-500/10 border-emerald-500/30 border-dashed'
+                        : s.isProjected
+                          ? 'bg-amber-500/10 border-amber-500/40 border-dashed'
+                          : s.isVirtual
+                            ? 'bg-card border-dashed'
+                            : 'bg-card',
+                      s.uncovered && !s.isOpen && 'bg-destructive/5',
+                      isSelected && 'ring-2 ring-primary bg-primary/10',
+                      selectionMode && !canSelect && 'opacity-50',
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-1 leading-tight">
+                      <span className="font-bold">{format(t, 'HH:mm')}</span>
+                      <div className="flex items-center gap-0.5">
+                        {isSelected && <Check className="h-2.5 w-2.5 text-primary" />}
+                        {s.uncovered && <AlertTriangle className="h-2.5 w-2.5 text-destructive" />}
+                        {s.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
+                        {s.isVirtual && !s.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
+                        {s.hasGrade && <Sparkles className="h-2.5 w-2.5 text-primary" />}
+                      </div>
+                    </div>
+                    <div className="truncate font-medium">
+                      {s.isOpen ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span> : studentName(s.student_id)}
+                    </div>
+                    {instr && height > 36 && (
+                      <div className="truncate text-muted-foreground">{instr}</div>
+                    )}
+                  </div>
+                );
+
+                if (selectionMode) {
+                  return (
+                    <div
+                      key={s.key}
+                      onClick={() => canSelect && onToggleSlot?.(s)}
+                      style={{ position: 'absolute', left: 0, right: 0, top: 0 }}
+                    >
+                      {eventBox}
+                    </div>
+                  );
+                }
+
                 return (
                   <Popover key={s.key}>
-                    <PopoverTrigger asChild>
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        style={{
-                          top: top + 1,
-                          height,
-                          borderLeftColor: s.uncovered ? 'hsl(var(--destructive))' : (color || 'hsl(var(--primary))'),
-                        }}
-                        className={cn(
-                          'absolute left-1 right-1 z-10 rounded border border-l-4 px-1.5 py-1 text-[10px] cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary/30 transition shadow-sm',
-                          s.isOpen
-                            ? 'bg-emerald-500/10 border-emerald-500/30 border-dashed'
-                            : s.isProjected
-                              ? 'bg-amber-500/10 border-amber-500/40 border-dashed'
-                              : s.isVirtual
-                                ? 'bg-card border-dashed'
-                                : 'bg-card',
-                          s.uncovered && !s.isOpen && 'bg-destructive/5',
-                        )}
-                      >
-                        <div className="flex items-center justify-between gap-1 leading-tight">
-                          <span className="font-bold">{format(t, 'HH:mm')}</span>
-                          <div className="flex items-center gap-0.5">
-                            {s.uncovered && <AlertTriangle className="h-2.5 w-2.5 text-destructive" />}
-                            {s.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
-                            {s.isVirtual && !s.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
-                            {s.hasGrade && <Sparkles className="h-2.5 w-2.5 text-primary" />}
-                          </div>
-                        </div>
-                        <div className="truncate font-medium">
-                          {s.isOpen ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span> : studentName(s.student_id)}
-                        </div>
-                        {instr && height > 36 && (
-                          <div className="truncate text-muted-foreground">{instr}</div>
-                        )}
-                      </div>
-                    </PopoverTrigger>
+                    <PopoverTrigger asChild>{eventBox}</PopoverTrigger>
                     <PopoverContent className="w-64 p-2 text-xs space-y-2" onClick={(e) => e.stopPropagation()}>
                       <div>
                         <div className="font-semibold text-sm">

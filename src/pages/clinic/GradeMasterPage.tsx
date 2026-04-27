@@ -32,7 +32,7 @@ import { NewClassDialog } from '@/components/clinic/NewClassDialog';
 import { InstructorAvailabilityDialog } from '@/components/clinic/InstructorAvailabilityDialog';
 import { InstructorPicker } from '@/components/clinic/InstructorPicker';
 import { CalendarTimeline, type TimelineSlot } from '@/components/clinic/CalendarTimeline';
-import { RoomsTimeline } from '@/components/clinic/RoomsTimeline';
+import { RoomsTimeline, makeEmptyKey, parseEmptyKey, type EmptyCellKey } from '@/components/clinic/RoomsTimeline';
 import { PageMotion } from '@/components/PageMotion';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; cls: string }> = {
@@ -148,7 +148,7 @@ export default function GradeMasterPage() {
   const { data: sequences = [] } = useSequences(activeClinicId);
   const { data: rooms = [] } = useClinicRooms(activeClinicId);
   const { data: staff = [] } = useClinicStaff(activeClinicId);
-  const { data: bookableSlots = [], remove: removeBookable } = useBookableSlots(activeClinicId, rangeFromISO, rangeToISO);
+  const { data: bookableSlots = [], create: createBookable, remove: removeBookable } = useBookableSlots(activeClinicId, rangeFromISO, rangeToISO);
   const instructors = useMemo(
     () => staff.filter((s) => s.role === 'instructor' || s.role === 'clinic_admin').map((s) => ({ user_id: s.user_id, name: s.name })),
     [staff],
@@ -344,6 +344,72 @@ export default function GradeMasterPage() {
     setNewClassOpen(true);
   };
 
+  // ===== Seleção múltipla na timeline do dia =====
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedSlotKeys, setSelectedSlotKeys] = useState<Set<string>>(new Set());
+  const [selectedEmptyKeys, setSelectedEmptyKeys] = useState<Set<EmptyCellKey>>(new Set());
+
+  const exitSelection = () => {
+    setSelectionMode(false);
+    setSelectedSlotKeys(new Set());
+    setSelectedEmptyKeys(new Set());
+  };
+
+  const toggleSlotSel = (s: TimelineSlot) => {
+    setSelectedSlotKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(s.key)) next.delete(s.key);
+      else next.add(s.key);
+      return next;
+    });
+  };
+  const toggleEmptySel = (k: EmptyCellKey) => {
+    setSelectedEmptyKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  };
+
+  const deleteSelected = async () => {
+    if (selectedSlotKeys.size === 0) return;
+    if (!confirm(`Excluir ${selectedSlotKeys.size} horário(s) selecionado(s)?`)) return;
+    const tsList = daySlots.map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
+    for (const t of tsList) {
+      if (t.appointment_id) await remove.mutateAsync(t.appointment_id);
+      else if (t.bookable_slot_id) await removeBookable.mutateAsync(t.bookable_slot_id);
+    }
+    toast.success(`${tsList.length} horário(s) excluído(s)`);
+    exitSelection();
+  };
+
+  const createSelectedEmpty = async () => {
+    if (selectedEmptyKeys.size === 0 || !activeClinicId || !user) return;
+    let count = 0;
+    for (const k of selectedEmptyKeys) {
+      const { date, hour, roomId } = parseEmptyKey(k);
+      const sched = new Date(`${date}T${String(hour).padStart(2, '0')}:00:00`);
+      try {
+        await createBookable.mutateAsync({
+          clinic_id: activeClinicId,
+          scheduled_at: sched.toISOString(),
+          duration_minutes: 50,
+          equipment_id: null,
+          instructor_id: null,
+          room_id: roomId,
+          capacity: 1,
+          notes: null,
+          created_by: user.id,
+        } as any);
+        count++;
+      } catch (e) { /* mutation toasts errors */ }
+    }
+    toast.success(`${count} horário(s) criado(s)`);
+    exitSelection();
+  };
+
+
   const openSlotDialog = (slot: MergedSlot) => {
     // Slot livre da grade → abre Nova aula com horário pré-preenchido
     if (slot.isOpen || !slot.student_id) {
@@ -515,6 +581,16 @@ export default function GradeMasterPage() {
               <Button size="sm" variant="outline" onClick={() => setAvailOpen(true)}>
                 <UserCog className="h-4 w-4 mr-1" />Disponibilidade
               </Button>
+              {view === 'day' && (
+                <Button
+                  size="sm"
+                  variant={selectionMode ? 'default' : 'outline'}
+                  onClick={() => (selectionMode ? exitSelection() : setSelectionMode(true))}
+                >
+                  <ListChecks className="h-4 w-4 mr-1" />
+                  {selectionMode ? 'Cancelar seleção' : 'Selecionar'}
+                </Button>
+              )}
               <Button size="sm" onClick={() => openNewClassAt(day)}>
                 <Plus className="h-4 w-4 mr-1" />Nova aula
               </Button>
@@ -695,6 +771,21 @@ export default function GradeMasterPage() {
               )}
             </div>
 
+            {/* Banner do modo seleção */}
+            {selectionMode && (
+              <div className="mb-3 px-3 py-2 rounded-md border border-primary/30 bg-primary/5 text-xs flex items-center gap-2 flex-wrap">
+                <ListChecks className="h-3.5 w-3.5 text-primary" />
+                <span className="font-semibold">Modo seleção</span>
+                <span className="text-muted-foreground">
+                  Clique em horários existentes para excluir, ou em células vazias para criar.
+                </span>
+                <span className="ml-auto">
+                  <Badge variant="secondary">{selectedSlotKeys.size} p/ excluir</Badge>{' '}
+                  <Badge variant="secondary">{selectedEmptyKeys.size} p/ criar</Badge>
+                </span>
+              </div>
+            )}
+
             {/* Timeline visual do dia — uma coluna por sala */}
             <RoomsTimeline
               day={day}
@@ -710,7 +801,31 @@ export default function GradeMasterPage() {
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
               renderInstructorPicker={renderTimelineInstructorPicker}
+              selectionMode={selectionMode}
+              selectedSlotKeys={selectedSlotKeys}
+              selectedEmptyKeys={selectedEmptyKeys}
+              onToggleSlot={toggleSlotSel}
+              onToggleEmpty={toggleEmptySel}
             />
+
+            {/* Barra flutuante de ações de seleção */}
+            {selectionMode && (selectedSlotKeys.size > 0 || selectedEmptyKeys.size > 0) && (
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border shadow-lg rounded-full px-3 py-2 flex items-center gap-2">
+                {selectedSlotKeys.size > 0 && (
+                  <Button size="sm" variant="destructive" onClick={deleteSelected}>
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Excluir {selectedSlotKeys.size}
+                  </Button>
+                )}
+                {selectedEmptyKeys.size > 0 && (
+                  <Button size="sm" onClick={createSelectedEmpty}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Criar {selectedEmptyKeys.size} horário(s)
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={exitSelection}>Cancelar</Button>
+              </div>
+            )}
           </Card>
         )}
 
