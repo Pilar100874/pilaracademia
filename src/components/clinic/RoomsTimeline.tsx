@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Plus, X, AlertTriangle, Repeat, Sparkles, RefreshCw, DoorOpen, Users, Check, Lock, Unlock } from 'lucide-react';
+import { Plus, X, AlertTriangle, Repeat, Sparkles, RefreshCw, DoorOpen, Users, Check, Lock, Unlock, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { TimelineSlot } from './CalendarTimeline';
 import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
@@ -40,6 +40,8 @@ interface Props {
   onCellClick: (d: Date, hour: number, roomId: string | null) => void;
   onSlotClick: (s: TimelineSlot) => void;
   onDelete?: (s: TimelineSlot) => void;
+  /** Exclusão definitiva de um horário livre (bookable_slot) — remove da grade. */
+  onPermanentDelete?: (s: TimelineSlot) => void;
   onPlanClick?: (s: TimelineSlot) => void;
   renderInstructorPicker?: (s: TimelineSlot) => React.ReactNode;
 
@@ -71,7 +73,7 @@ interface Props {
 export function RoomsTimeline({
   day, rooms, startHour, endHour, hourHeight = 64,
   slots, studentName, instructorName, colorOf,
-  onCellClick, onSlotClick, onDelete, onPlanClick, renderInstructorPicker,
+  onCellClick, onSlotClick, onDelete, onPermanentDelete, onPlanClick, renderInstructorPicker,
   selectionMode = false,
   selectedSlotKeys,
   selectedEmptyKeys,
@@ -492,6 +494,23 @@ export function RoomsTimeline({
                               <Lock className="h-3 w-3" />{s.appointment_id ? 'Cancelar' : 'Bloquear'}
                             </button>
                           )
+                        )}
+                        {onPermanentDelete && s.bookable_slot_id && !s.appointment_id && (
+                          <button
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: 'Excluir horário',
+                                description: 'Excluir definitivamente este horário disponível da grade? Esta ação não pode ser desfeita.',
+                                destructive: true,
+                                confirmText: 'Excluir',
+                              });
+                              if (ok) onPermanentDelete(s);
+                            }}
+                            className="px-2 py-1.5 rounded border border-destructive/40 text-destructive hover:bg-destructive/5 inline-flex items-center gap-1"
+                            title="Excluir horário definitivamente"
+                          >
+                            <Trash2 className="h-3 w-3" />Excluir
+                          </button>
                         )}
                       </div>
                     </PopoverContent>

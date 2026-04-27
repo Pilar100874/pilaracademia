@@ -850,6 +850,18 @@ export default function GradeMasterPage() {
     }
   };
 
+  /** Exclusão definitiva de um horário livre (bookable_slot) — remove da grade. */
+  const handleTimelinePermanentDelete = async (ts: TimelineSlot) => {
+    if (!ts.bookable_slot_id || ts.appointment_id) return;
+    try {
+      await removeBookable.mutateAsync(ts.bookable_slot_id);
+      await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+      toast.success('Horário excluído');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao excluir horário');
+    }
+  };
+
   const handleTimelineSlotClick = (ts: TimelineSlot) => {
     // Reconstrói minimal MergedSlot — encontra o original
     const all = view === 'day' ? daySlots : weekDays.flatMap(slotsForDay);
@@ -1030,6 +1042,7 @@ export default function GradeMasterPage() {
               onCellClick={(d, h, roomId) => tryOpenNewClassAt(d, `${String(h).padStart(2, '0')}:00`, roomId ?? null)}
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
+              onPermanentDelete={handleTimelinePermanentDelete}
               onPlanClick={handlePlanClick}
               renderInstructorPicker={renderTimelineInstructorPicker}
               dragActive={draggingInstructorId !== null}
@@ -1181,6 +1194,7 @@ export default function GradeMasterPage() {
               onCellClick={(d, hour, roomId) => tryOpenNewClassAt(d, `${String(hour).padStart(2, '0')}:00`, roomId)}
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
+              onPermanentDelete={handleTimelinePermanentDelete}
               onPlanClick={handlePlanClick}
               renderInstructorPicker={renderTimelineInstructorPicker}
               selectionMode={selectionMode}
