@@ -386,6 +386,7 @@ export default function GradeMasterPage() {
       classes: all.filter((s) => !s.isOpen).length,
       open: all.filter((s) => s.isOpen).length,
       projected: all.filter((s) => s.isProjected).length,
+      uncovered: all.filter((s) => isUncovered(s)).length,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, daySlots, weekDays, monthDays, day, appointments, recurring, bookableSlots, simulateRenewal, horizonDate, filterInstructor, filterRoom]);
