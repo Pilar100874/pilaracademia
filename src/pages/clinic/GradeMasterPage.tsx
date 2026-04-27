@@ -70,6 +70,10 @@ interface MergedSlot {
   /** Slot bloqueado (mantido na grade, sem prof, ninguém agenda) */
   isBlocked?: boolean;
   bookable_slot_id?: string;
+  /** Bloqueio padrão recorrente (almoço etc). Quando setado, o slot é virtual e não persistido. */
+  blockedPeriodId?: string;
+  blockedPeriodName?: string;
+  blockedPeriodColor?: string | null;
 }
 
 /** Expande recorrentes em um dia com opção de ignorar o fim do contrato (projeção). */
