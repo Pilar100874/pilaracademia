@@ -1340,6 +1340,23 @@ function RoomsLegend({ rooms, roomColorOf }: { rooms: any[]; roomColorOf: (id: s
             {r.capacity ? <span className="text-muted-foreground">· cap. {r.capacity}</span> : null}
           </span>
         ))}
+
+        {/* Separador */}
+        <span className="h-3 w-px bg-border mx-1" aria-hidden />
+
+        {/* Legenda de ocupação */}
+        <span className="inline-flex items-center gap-1 text-muted-foreground font-semibold uppercase tracking-wide text-[10px]">
+          Ocupação
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500/90" /> <span className="text-muted-foreground">livre</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> <span className="text-muted-foreground">quase cheia</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-destructive" /> <span className="text-muted-foreground">lotada</span>
+        </span>
       </div>
     </Card>
   );
