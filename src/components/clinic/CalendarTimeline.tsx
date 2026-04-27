@@ -347,10 +347,11 @@ export function CalendarTimeline({
                       }
                       className={cn(
                         'absolute left-0 right-0 border-t border-border/40 transition group',
-                        !isPast && 'hover:bg-primary/5',
+                        !isDisabled && 'hover:bg-primary/5',
                         isPast && 'bg-muted/40 cursor-not-allowed opacity-50',
+                        isOccupied && !isPast && 'cursor-default',
                         !isPast && statusBg,
-                        dragActive && !isPast && 'bg-primary/[0.03]',
+                        dragActive && !isDisabled && 'bg-primary/[0.03]',
                         isHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
                         isSelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
                       )}
