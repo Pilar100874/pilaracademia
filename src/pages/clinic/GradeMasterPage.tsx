@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { SlotGradeDialog } from '@/components/clinic/SlotGradeDialog';
 import { NewClassDialog } from '@/components/clinic/NewClassDialog';
 import { InstructorAvailabilityDialog } from '@/components/clinic/InstructorAvailabilityDialog';
+import { InstructorPicker } from '@/components/clinic/InstructorPicker';
 import { PageMotion } from '@/components/PageMotion';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; cls: string }> = {
