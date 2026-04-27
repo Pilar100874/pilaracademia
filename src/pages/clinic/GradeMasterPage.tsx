@@ -1152,7 +1152,7 @@ export default function GradeMasterPage() {
         initial={(() => {
           // Pré-preenche com a sala/prof do primeiro item selecionado.
           if (bulkOpen === 'reassign') {
-            const first = daySlots.map(toTimelineSlot).find((t) => selectedSlotKeys.has(t.key));
+            const first = visibleSlotsForSelection().map(toTimelineSlot).find((t) => selectedSlotKeys.has(t.key));
             return { roomId: first?.room_id ?? null, instructorId: first?.instructor_id ?? null, durationMinutes: 50 };
           }
           if (bulkOpen === 'create' && selectedEmptyKeys.size > 0) {
