@@ -167,6 +167,17 @@ export default function ClinicLayout() {
         </nav>
 
         <div className={cn('border-t space-y-1', sidebarCollapsed ? 'p-2' : 'p-3')}>
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              className={cn('w-full', sidebarCollapsed ? 'justify-center px-0' : 'justify-start')}
+              onClick={() => setWizardOpen(true)}
+              title={sidebarCollapsed ? 'Assistente de configuração' : undefined}
+            >
+              <Sparkles className={cn('h-4 w-4 text-primary', !sidebarCollapsed && 'mr-2')} />
+              {!sidebarCollapsed && 'Assistente'}
+            </Button>
+          )}
           <Button
             variant="ghost"
             className={cn('w-full', sidebarCollapsed ? 'justify-center px-0' : 'justify-start')}
@@ -200,31 +211,28 @@ export default function ClinicLayout() {
 
       {/* Main */}
       <main className="flex-1 min-w-0 flex flex-col">
-        {/* Mobile top bar */}
-        <header className="md:hidden flex items-center justify-between p-3 border-b bg-card sticky top-0 z-30">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+        {/* Mobile top bar — compacto */}
+        <header className="md:hidden flex items-center justify-between px-3 py-2 border-b bg-card sticky top-0 z-30">
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate('/')} title="Meu app pessoal">
+              <Home className="h-5 w-5" />
+            </Button>
+            <NotificationsBell />
+          </div>
           <div className="font-semibold truncate flex-1 text-center px-2 flex items-center justify-center gap-2">
             {activeClinic.logo_url && <img src={activeClinic.logo_url} alt="" className="h-7 w-7 rounded object-contain" />}
             <span className="truncate text-sm">{activeClinic.name}</span>
           </div>
           <div className="flex items-center gap-1">
             {isAdmin && (
-              <Button variant="ghost" size="icon" onClick={() => setWizardOpen(true)} title="Assistente de configuração">
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setWizardOpen(true)} title="Assistente de configuração">
                 <Sparkles className="h-5 w-5" />
               </Button>
             )}
-            <NotificationsBell />
           </div>
         </header>
-        <header className="hidden md:flex items-center justify-end gap-2 p-3 border-b bg-card sticky top-0 z-30">
-          {isAdmin && (
-            <Button variant="outline" size="sm" onClick={() => setWizardOpen(true)} className="gap-1.5">
-              <Sparkles className="h-3.5 w-3.5" />
-              Assistente
-            </Button>
-          )}
+        {/* Desktop top bar — minimalista, só sino */}
+        <header className="hidden md:flex items-center justify-end gap-2 px-3 py-1.5 border-b bg-card/60 sticky top-0 z-30">
           <NotificationsBell />
         </header>
 
