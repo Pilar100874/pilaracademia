@@ -245,9 +245,7 @@ export default function ClinicLayout() {
         </header>
 
         <div className="flex-1 overflow-y-auto pb-24 md:pb-8">
-          <div className="max-w-7xl mx-auto w-full">
-            <Outlet />
-          </div>
+          <Outlet />
         </div>
 
         {/* Mobile bottom nav: 4 primários + Mais */}
