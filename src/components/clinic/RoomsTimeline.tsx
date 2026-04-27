@@ -306,6 +306,8 @@ export function RoomsTimeline({
                   <div
                     role="button"
                     tabIndex={0}
+                    data-slot-key={s.key}
+                    data-selectable={(s.appointment_id || s.bookable_slot_id) ? 'true' : 'false'}
                     onDragOver={(e) => {
                       if (!onDropInstructorOnSlot) return;
                       e.preventDefault();
