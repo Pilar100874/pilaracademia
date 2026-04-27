@@ -590,6 +590,16 @@ export function CalendarTimeline({
                             </button>
                           )}
 
+                          {!s.blockedPeriodId && !s.isBlocked && onAddStudent && (
+                            <button
+                              onClick={() => onAddStudent(s)}
+                              className="px-2 py-2 rounded-md border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/5 inline-flex items-center justify-center gap-1.5 text-[11.5px] font-medium transition-colors"
+                              title="Adicionar aluno a esta aula"
+                            >
+                              <UserPlus className="h-3.5 w-3.5" />Adicionar
+                            </button>
+                          )}
+
                           {!s.blockedPeriodId && !s.isBlocked && s.appointment_id && onPlanClick && (
                             <button
                               onClick={() => onPlanClick(s)}
