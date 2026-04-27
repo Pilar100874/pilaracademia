@@ -657,7 +657,15 @@ export default function GradeMasterPage() {
       toast.success(`Horário criado em ${format(sched, 'dd/MM HH:mm')}`);
     } catch (e: any) {
       console.error('[GradeMaster] dropInstructorOnCell error', e);
-      toast.error(`Falha: ${e?.message || 'Erro ao criar horário'}`);
+      const msg = e?.message || 'Erro ao criar horário';
+      if (/professor já/i.test(msg)) {
+        toast.warning('Conflito de professor', {
+          description: `${format(sched, 'dd/MM HH:mm')} — ${msg.replace(/^.*?:\s*/, '')}`,
+          duration: 7000,
+        });
+      } else {
+        toast.error(`Falha: ${msg}`);
+      }
     } finally {
       setDraggingInstructorId(null);
     }
