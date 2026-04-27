@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { useCallback, useContext, useRef, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,27 +10,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-
-type ConfirmOptions = {
-  title?: string;
-  description?: string;
-  confirmText?: string;
-  cancelText?: string;
-  destructive?: boolean;
-};
-
-type PromptOptions = ConfirmOptions & {
-  defaultValue?: string;
-  placeholder?: string;
-  inputType?: string;
-};
-
-type Ctx = {
-  confirm: (opts: ConfirmOptions | string) => Promise<boolean>;
-  prompt: (opts: PromptOptions | string) => Promise<string | null>;
-};
-
-const ConfirmContext = createContext<Ctx | null>(null);
+import { ConfirmContext, type PromptOptions, type ConfirmOptions } from './confirm-context';
 
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
