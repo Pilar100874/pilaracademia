@@ -410,19 +410,23 @@ export function CalendarTimeline({
                           style={{
                             top: top + 1,
                             height,
-                            borderLeftColor: s.uncovered ? 'hsl(var(--destructive))' : (color || 'hsl(var(--primary))'),
+                            borderLeftColor: s.blockedPeriodId
+                              ? (s.blockedPeriodColor || 'hsl(var(--destructive))')
+                              : s.uncovered ? 'hsl(var(--destructive))' : (color || 'hsl(var(--primary))'),
                           }}
                           className={cn(
                             'absolute left-1 right-1 z-10 rounded border border-l-4 px-1.5 py-1 text-[10px] cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary/30 transition shadow-sm',
-                            s.isBlocked
-                              ? 'bg-muted/60 border-muted-foreground/40 border-dashed opacity-80'
-                              : s.isOpen
-                                ? 'bg-emerald-500/10 border-emerald-500/30 border-dashed'
-                                : s.isProjected
-                                  ? 'bg-amber-500/10 border-amber-500/40 border-dashed'
-                                  : s.isVirtual
-                                    ? 'bg-card border-dashed'
-                                    : 'bg-card',
+                            s.blockedPeriodId
+                              ? 'bg-[repeating-linear-gradient(45deg,hsl(var(--destructive)/0.10)_0_6px,transparent_6px_12px)] border-destructive/30 border-dashed'
+                              : s.isBlocked
+                                ? 'bg-muted/60 border-muted-foreground/40 border-dashed opacity-80'
+                                : s.isOpen
+                                  ? 'bg-emerald-500/10 border-emerald-500/30 border-dashed'
+                                  : s.isProjected
+                                    ? 'bg-amber-500/10 border-amber-500/40 border-dashed'
+                                    : s.isVirtual
+                                      ? 'bg-card border-dashed'
+                                      : 'bg-card',
                             s.uncovered && !s.isOpen && !s.isBlocked && 'bg-destructive/5',
                             isSlotHover && 'ring-2 ring-primary bg-primary/15',
                             isSelected && 'ring-2 ring-primary bg-primary/15',
@@ -439,11 +443,13 @@ export function CalendarTimeline({
                             </div>
                           </div>
                           <div className="truncate font-medium">
-                            {s.isBlocked
-                              ? <span className="italic text-muted-foreground">Bloqueado</span>
-                              : s.isOpen
-                                ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span>
-                                : studentName(s.student_id)}
+                            {s.blockedPeriodId
+                              ? <span className="italic text-destructive/90">{s.blockedPeriodName || 'Bloqueado'}</span>
+                              : s.isBlocked
+                                ? <span className="italic text-muted-foreground">Bloqueado</span>
+                                : s.isOpen
+                                  ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span>
+                                  : studentName(s.student_id)}
                           </div>
                           {!splitByRoom && room && (
                             <div className="flex items-center gap-1 truncate">
