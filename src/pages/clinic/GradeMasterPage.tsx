@@ -65,6 +65,8 @@ interface MergedSlot {
   isProjected?: boolean;
   /** Slot livre da Grade Master (bookable_slot) sem aluno marcado */
   isOpen?: boolean;
+  /** Slot bloqueado (mantido na grade, sem prof, ninguém agenda) */
+  isBlocked?: boolean;
   bookable_slot_id?: string;
 }
 
