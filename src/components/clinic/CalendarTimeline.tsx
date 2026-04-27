@@ -53,6 +53,12 @@ interface Props {
   dragActive?: boolean;
   onDropInstructorOnCell?: (instructorId: string, day: Date, hour: number) => void;
   onDropInstructorOnSlot?: (instructorId: string, slot: TimelineSlot) => void;
+  // Seleção múltipla (marquee + Shift/Ctrl)
+  selectedSlotKeys?: Set<string>;
+  selectedEmptyKeys?: Set<WeekEmptyKey>;
+  onReplaceSelection?: (slotKeys: Set<string>, emptyKeys: Set<WeekEmptyKey>) => void;
+  onAddSelection?: (slotKeys: Set<string>, emptyKeys: Set<WeekEmptyKey>) => void;
+  onMarqueeEnd?: (info: { slotCount: number; emptyCount: number; additive: boolean }) => void;
 }
 
 export function CalendarTimeline({
