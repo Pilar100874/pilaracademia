@@ -154,8 +154,11 @@ export function SlotGradeDialog({
   const [addOpen, setAddOpen] = useState(false);
 
   useEffect(() => {
-    if (open) setRows(rowsInit);
-  }, [open, rowsInit]);
+    if (open) {
+      setRows(rowsInit);
+      if (autoOpenAdd) setAddOpen(true);
+    }
+  }, [open, rowsInit, autoOpenAdd]);
 
   // Descobre sala/capacidade do horário a partir de appointments existentes ou bookable_slot.
   const slotRoomInfo = useMemo(() => {
