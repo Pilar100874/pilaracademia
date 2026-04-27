@@ -491,6 +491,8 @@ export default function GradeMasterPage() {
                         sequenceName={s.appointment?.sequence_id ? sequences.find((x) => x.id === s.appointment!.sequence_id)?.name : null}
                         roomName={roomName(s.room_id)}
                         instructorName={instructorName(s.instructor_id)}
+                        instructorColor={colorOf(s.instructor_id)}
+                        occupancy={occupancyFor(slots, s)}
                         onClick={() => openSlotDialog(s)}
                       />
                     ))}
