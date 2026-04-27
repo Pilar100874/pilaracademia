@@ -426,53 +426,81 @@ export function RoomsTimeline({
                 return (
                   <Popover key={s.key}>
                     <PopoverTrigger asChild>{eventBox}</PopoverTrigger>
-                    <PopoverContent className="w-64 p-2 text-xs space-y-2" onClick={(e) => e.stopPropagation()}>
-                      <div>
-                        <div className="font-semibold text-sm">
+                    <PopoverContent
+                      className="w-72 p-0 text-xs overflow-hidden border-border shadow-lg"
+                      onClick={(e) => e.stopPropagation()}
+                      onOpenAutoFocus={(e) => e.preventDefault()}
+                    >
+                      {/* Header */}
+                      <div
+                        className={cn(
+                          'px-3 py-2.5 border-b',
+                          s.isBlocked ? 'bg-destructive/5' : s.isOpen ? 'bg-emerald-500/5' : 'bg-muted/40'
+                        )}
+                      >
+                        <div className="font-serif text-[15px] leading-tight tracking-tight">
                           {s.isBlocked
                             ? 'Horário bloqueado'
                             : s.isOpen
                               ? 'Horário disponível'
                               : studentName(s.student_id)}
                         </div>
-                        <div className="text-muted-foreground text-[11px]">
-                          {format(t, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} · {s.duration_minutes}min
+                        <div className="mt-1 flex items-center gap-1 text-[10.5px] uppercase tracking-wider text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          <span className="font-medium">
+                            {format(t, "EEE dd/MM '·' HH:mm", { locale: ptBR })}
+                          </span>
+                          <span className="opacity-60">·</span>
+                          <span>{s.duration_minutes}min</span>
                         </div>
-                        <div className="text-[11px]">📍 {r.name}</div>
+                      </div>
+
+                      {/* Meta */}
+                      <div className="px-3 py-2 space-y-1.5 border-b bg-background">
+                        <div className="flex items-center gap-1.5 text-[11.5px] text-foreground/80">
+                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          <span className="font-medium">{r.name}</span>
+                        </div>
                         {instr && !s.isBlocked && (
-                          <div className="text-[11px] flex items-center gap-1">
-                            <span className="h-2 w-2 rounded-full" style={{ background: color }} />
-                            {instr}
+                          <div className="flex items-center gap-1.5 text-[11.5px] text-foreground/80">
+                            <span
+                              className="h-2.5 w-2.5 rounded-full ring-1 ring-border shrink-0"
+                              style={{ background: color }}
+                            />
+                            <span>{instr}</span>
                           </div>
                         )}
                       </div>
-                      <div className="flex gap-1 flex-wrap pt-1 border-t">
+
+                      {/* Ações */}
+                      <div className="p-2 grid grid-cols-2 gap-1.5">
                         {!s.isBlocked && (
                           <button
                             onClick={() => onSlotClick(s)}
-                            className="flex-1 px-2 py-1.5 rounded border text-[11px] hover:bg-muted text-center"
+                            className="px-2 py-2 rounded-md border border-border bg-background hover:bg-muted inline-flex items-center justify-center gap-1.5 text-[11.5px] font-medium transition-colors"
                           >
-                            Abrir
+                            <ExternalLink className="h-3.5 w-3.5" />Abrir
                           </button>
                         )}
                         {!s.isBlocked && s.appointment_id && onPlanClick && (
                           <button
                             onClick={() => onPlanClick(s)}
-                            className="flex-1 px-2 py-1.5 rounded border border-primary/40 text-primary text-[11px] hover:bg-primary/5 text-center inline-flex items-center justify-center gap-1"
+                            className="px-2 py-2 rounded-md border border-primary/40 text-primary hover:bg-primary/5 inline-flex items-center justify-center gap-1.5 text-[11.5px] font-medium transition-colors"
                             title="Planejar sequência de exercícios"
                           >
-                            ✨ Planejar
+                            <Wand2 className="h-3.5 w-3.5" />Planejar
                           </button>
                         )}
-                        {!s.isBlocked && renderInstructorPicker?.(s)}
+                        {!s.isBlocked && renderInstructorPicker && (
+                          <div className="contents">{renderInstructorPicker(s)}</div>
+                        )}
                         {onDelete && (s.appointment_id || s.bookable_slot_id) && (
                           s.isBlocked ? (
                             <button
                               onClick={() => onDelete(s)}
-                              className="flex-1 px-2 py-1.5 rounded border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/5 inline-flex items-center justify-center gap-1"
-                              title="Desbloquear"
+                              className="col-span-2 px-2 py-2 rounded-md border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/5 inline-flex items-center justify-center gap-1.5 text-[11.5px] font-medium transition-colors"
                             >
-                              <Unlock className="h-3 w-3" />Desbloquear
+                              <Unlock className="h-3.5 w-3.5" />Desbloquear
                             </button>
                           ) : (
                             <button
@@ -488,10 +516,11 @@ export function RoomsTimeline({
                                 });
                                 if (ok) onDelete(s);
                               }}
-                              className="px-2 py-1.5 rounded border border-muted-foreground/30 text-muted-foreground hover:bg-muted inline-flex items-center gap-1"
+                              className="px-2 py-2 rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center justify-center gap-1.5 text-[11.5px] font-medium transition-colors"
                               title={s.appointment_id ? 'Cancelar aula' : 'Bloquear horário'}
                             >
-                              <Lock className="h-3 w-3" />{s.appointment_id ? 'Cancelar' : 'Bloquear'}
+                              {s.appointment_id ? <X className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                              {s.appointment_id ? 'Cancelar' : 'Bloquear'}
                             </button>
                           )
                         )}
@@ -506,10 +535,10 @@ export function RoomsTimeline({
                               });
                               if (ok) onPermanentDelete(s);
                             }}
-                            className="px-2 py-1.5 rounded border border-destructive/40 text-destructive hover:bg-destructive/5 inline-flex items-center gap-1"
+                            className="px-2 py-2 rounded-md border border-destructive/40 text-destructive hover:bg-destructive/5 inline-flex items-center justify-center gap-1.5 text-[11.5px] font-medium transition-colors"
                             title="Excluir horário definitivamente"
                           >
-                            <Trash2 className="h-3 w-3" />Excluir
+                            <Trash2 className="h-3.5 w-3.5" />Excluir
                           </button>
                         )}
                       </div>
