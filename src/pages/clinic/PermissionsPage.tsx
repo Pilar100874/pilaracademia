@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Loader2, ShieldCheck, GraduationCap, Headphones, Dumbbell, ListOrdered, ClipboardList, Search, Lock } from 'lucide-react';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import { toast } from 'sonner';
 
 const ROLE_META: Record<string, { label: string; icon: any; color: string }> = {
@@ -78,14 +79,9 @@ export default function PermissionsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-6 max-w-6xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Permissões da equipe</h1>
-        <p className="text-muted-foreground mt-1">
-          Controle quem pode criar exercícios, montar sequências e prescrever treinos aos alunos.
-          <span className="block text-xs mt-1">Administradores sempre têm acesso total.</span>
-        </p>
-      </div>
+    <>
+      <ClinicPageHeader icon={ShieldCheck} title="Permissões da equipe" subtitle="Quem pode criar exercícios, sequências e prescrever treinos" />
+      <div className="p-4 md:p-8 space-y-6 max-w-6xl mx-auto">
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -161,6 +157,7 @@ export default function PermissionsPage() {
           })}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

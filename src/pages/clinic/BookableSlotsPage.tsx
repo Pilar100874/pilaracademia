@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import {
   Plus, Trash2, Settings, Calendar as CalendarIcon, ChevronLeft, ChevronRight,
   DoorOpen, Dumbbell, Users as UsersIcon, GraduationCap, MoveHorizontal, X,
@@ -204,17 +205,11 @@ export default function BookableSlotsPage() {
   }, [slots, week]);
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-            <CalendarIcon className="h-7 w-7 text-primary" />Grade de aulas
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Defina horários, sala, professor, equipamentos e número máximo de alunos.
-          </p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
+    <>
+      <ClinicPageHeader icon={CalendarIcon} title="Grade de aulas" subtitle="Horários, sala, professor, equipamentos e capacidade" />
+      <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4">
+        <div className="flex items-center justify-end flex-wrap gap-2">
+          <div className="flex gap-2 flex-wrap">
           <Button variant="outline" asChild>
             <Link to="/clinica/salas"><DoorOpen className="h-4 w-4 mr-1" />Salas</Link>
           </Button>
@@ -553,6 +548,7 @@ export default function BookableSlotsPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 }

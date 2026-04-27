@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 
 const NO_ROOM = '__none__';
 
@@ -78,14 +79,10 @@ export default function EquipmentPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 max-w-5xl mx-auto">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight">Equipamentos</h1>
-          <p className="text-sm text-muted-foreground">
-            Cadastre, controle manutenção e vincule equipamentos aos horários da grade.
-          </p>
-        </div>
+    <>
+      <ClinicPageHeader icon={Dumbbell} title="Equipamentos" subtitle="Cadastro, manutenção e vínculo com a grade" />
+      <div className="p-4 sm:p-6 space-y-4 max-w-5xl mx-auto">
+        <div className="flex items-start justify-end gap-3 flex-wrap">
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" asChild>
             <Link to="/clinica/equipamentos-salas">
@@ -243,6 +240,7 @@ export default function EquipmentPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 }

@@ -6,6 +6,7 @@ import {
   Radio, TrendingUp, FileBarChart, ArrowUpRight, Sparkles,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 
 export default function ClinicOverviewPage() {
   const { activeClinicId, activeClinic } = useUserRoles();
@@ -27,30 +28,10 @@ export default function ClinicOverviewPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Yellow editorial hero */}
-      <div className="hero-yellow border-b-4 border-primary">
-        <div className="max-w-7xl mx-auto px-6 py-12 sm:py-16 relative">
-          <div className="absolute top-6 right-6 hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary/80 animate-fade-in">
-            <Sparkles className="h-3.5 w-3.5" />
-            Painel da clínica
-          </div>
-          <div className="animate-slide-up max-w-3xl">
-            <p className="text-primary/70 text-sm font-bold uppercase tracking-widest mb-3">
-              Bem-vindo de volta
-            </p>
-            <h1 className="display-xl text-primary">
-              {activeClinic?.name}
-            </h1>
-            <p className="mt-4 text-lg text-primary/80 font-medium max-w-xl">
-              Tudo o que sua clínica precisa em um só lugar.
-              Comece pelo agendamento, monte sequências e acompanhe seus alunos.
-            </p>
-          </div>
-        </div>
-      </div>
+      <ClinicPageHeader icon={Sparkles} title={activeClinic?.name || 'Visão geral'} subtitle="Painel da clínica" />
 
       {/* Cards grid */}
-      <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+      <div className="max-w-7xl mx-auto px-6 py-6 space-y-10">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 stagger">
           {cards.map((c) => (
             <Card

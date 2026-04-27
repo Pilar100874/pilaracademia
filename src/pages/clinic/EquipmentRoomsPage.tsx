@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, DoorOpen, Dumbbell } from 'lucide-react';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 
 const NO_ROOM = '__none__';
 
@@ -87,18 +88,9 @@ export default function EquipmentRoomsPage() {
   );
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 max-w-5xl mx-auto">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" asChild>
-          <Link to="/clinica/equipamentos"><ArrowLeft className="h-4 w-4" /></Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Equipamentos por sala</h1>
-          <p className="text-sm text-muted-foreground">
-            Defina em qual sala fica cada equipamento. As mudanças são salvas automaticamente.
-          </p>
-        </div>
-      </div>
+    <>
+      <ClinicPageHeader icon={DoorOpen} title="Equipamentos por sala" subtitle="Defina em qual sala fica cada equipamento" />
+      <div className="p-4 sm:p-6 space-y-4 max-w-5xl mx-auto">
 
       {rooms.length === 0 && (
         <Card className="p-4 bg-amber-500/10 border-amber-500/30 text-sm">
@@ -111,6 +103,7 @@ export default function EquipmentRoomsPage() {
         {rooms.map((r) => renderRoomBlock(r, grouped.get(r.id) ?? []))}
         {renderRoomBlock(null, grouped.get(null) ?? [])}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

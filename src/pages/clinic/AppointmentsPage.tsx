@@ -17,6 +17,7 @@ import { format, addDays, isSameDay, parseISO, startOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; variant: any }> = {
   scheduled: { label: 'Agendado', variant: 'secondary' },
@@ -232,12 +233,10 @@ export default function AppointmentsPage() {
   };
 
   return (
-    <div className="p-6 space-y-4 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><CalendarDays className="h-6 w-6 text-primary" />Agenda</h1>
-          <p className="text-sm text-muted-foreground">Aulas fixas + avulsas, com grade pré-montada por aluno.</p>
-        </div>
+    <>
+      <ClinicPageHeader icon={CalendarDays} title="Agenda" subtitle="Aulas fixas + avulsas, com grade pré-montada por aluno" />
+      <div className="p-6 space-y-4 max-w-5xl mx-auto">
+        <div className="flex items-center justify-end flex-wrap gap-2">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Aula avulsa</Button></DialogTrigger>
           <DialogContent>
@@ -391,6 +390,7 @@ export default function AppointmentsPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 }
