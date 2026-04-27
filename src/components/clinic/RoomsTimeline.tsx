@@ -412,13 +412,17 @@ export function RoomsTimeline({
                     <PopoverContent className="w-64 p-2 text-xs space-y-2" onClick={(e) => e.stopPropagation()}>
                       <div>
                         <div className="font-semibold text-sm">
-                          {s.isOpen ? 'Horário disponível' : studentName(s.student_id)}
+                          {s.isBlocked
+                            ? 'Horário bloqueado'
+                            : s.isOpen
+                              ? 'Horário disponível'
+                              : studentName(s.student_id)}
                         </div>
                         <div className="text-muted-foreground text-[11px]">
                           {format(t, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} · {s.duration_minutes}min
                         </div>
                         <div className="text-[11px]">📍 {r.name}</div>
-                        {instr && (
+                        {instr && !s.isBlocked && (
                           <div className="text-[11px] flex items-center gap-1">
                             <span className="h-2 w-2 rounded-full" style={{ background: color }} />
                             {instr}
@@ -426,21 +430,38 @@ export function RoomsTimeline({
                         )}
                       </div>
                       <div className="flex gap-1 flex-wrap pt-1 border-t">
-                        <button
-                          onClick={() => onSlotClick(s)}
-                          className="flex-1 px-2 py-1.5 rounded border text-[11px] hover:bg-muted text-center"
-                        >
-                          Abrir
-                        </button>
-                        {renderInstructorPicker?.(s)}
-                        {onDelete && (s.appointment_id || s.bookable_slot_id) && (
+                        {!s.isBlocked && (
                           <button
-                            onClick={() => { if (confirm('Excluir este horário?')) onDelete(s); }}
-                            className="px-2 py-1.5 rounded border border-destructive/30 text-destructive hover:bg-destructive/5 inline-flex items-center gap-1"
-                            title="Excluir"
+                            onClick={() => onSlotClick(s)}
+                            className="flex-1 px-2 py-1.5 rounded border text-[11px] hover:bg-muted text-center"
                           >
-                            <X className="h-3 w-3" />Excluir
+                            Abrir
                           </button>
+                        )}
+                        {!s.isBlocked && renderInstructorPicker?.(s)}
+                        {onDelete && (s.appointment_id || s.bookable_slot_id) && (
+                          s.isBlocked ? (
+                            <button
+                              onClick={() => onDelete(s)}
+                              className="flex-1 px-2 py-1.5 rounded border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/5 inline-flex items-center justify-center gap-1"
+                              title="Desbloquear"
+                            >
+                              <Unlock className="h-3 w-3" />Desbloquear
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                const msg = s.appointment_id
+                                  ? 'Cancelar esta aula?'
+                                  : 'Bloquear este horário? Ele continuará na grade mas ninguém poderá agendar.';
+                                if (confirm(msg)) onDelete(s);
+                              }}
+                              className="px-2 py-1.5 rounded border border-muted-foreground/30 text-muted-foreground hover:bg-muted inline-flex items-center gap-1"
+                              title={s.appointment_id ? 'Cancelar aula' : 'Bloquear horário'}
+                            >
+                              <Lock className="h-3 w-3" />{s.appointment_id ? 'Cancelar' : 'Bloquear'}
+                            </button>
+                          )
                         )}
                       </div>
                     </PopoverContent>
