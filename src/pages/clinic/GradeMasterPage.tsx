@@ -470,32 +470,36 @@ export default function GradeMasterPage() {
     if (selectedSlotKeys.size === 0) return;
     const tsList = visibleSlotsForSelection().map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
     let updated = 0;
+    let lastError: string | null = null;
     for (const t of tsList) {
       const patch: any = {};
-      // só inclui se o usuário escolheu (não-null) — para evitar limpar sem querer
       if (values.instructorId !== null) patch.instructor_id = values.instructorId;
       if (values.roomId !== null) patch.room_id = values.roomId;
       if (Object.keys(patch).length === 0) continue;
       try {
         if (t.appointment_id) {
-          // class_appointments não tem room_id direto — só instructor_id
           const apptPatch: any = {};
           if (patch.instructor_id !== undefined) apptPatch.instructor_id = patch.instructor_id;
           if (Object.keys(apptPatch).length > 0) {
-            await supabase.from('class_appointments').update(apptPatch).eq('id', t.appointment_id);
+            const { error } = await supabase.from('class_appointments').update(apptPatch).eq('id', t.appointment_id);
+            if (error) throw error;
           }
         } else if (t.bookable_slot_id) {
-          await supabase.from('bookable_slots' as any).update(patch).eq('id', t.bookable_slot_id);
+          const { error } = await supabase.from('bookable_slots' as any).update(patch).eq('id', t.bookable_slot_id);
+          if (error) throw error;
+        } else {
+          continue;
         }
         updated++;
-      } catch (e) { /* noop */ }
+      } catch (e: any) {
+        lastError = e?.message || 'Erro ao atualizar';
+      }
     }
-    toast.success(`${updated} horário(s) atualizado(s)`);
-    // refetch
-    if (activeClinicId) {
-      // invalida caches relevantes via refetch implícito do react-query nas próximas queries
-      window.dispatchEvent(new Event('focus'));
-    }
+    await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+    await qc.invalidateQueries({ queryKey: ['appointments'] });
+    if (updated > 0) toast.success(`${updated} horário(s) atualizado(s)`);
+    if (lastError && updated === 0) toast.error(lastError);
+    else if (lastError) toast.warning(`Alguns horários falharam: ${lastError}`);
     exitSelection();
   };
 
