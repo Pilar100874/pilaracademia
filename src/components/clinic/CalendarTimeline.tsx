@@ -66,10 +66,62 @@ export function CalendarTimeline({
   slotsForDay, studentName, instructorName, roomName, roomColorOf, colorOf,
   onCellClick, onSlotClick, onDelete, renderInstructorPicker,
   dragActive = false, onDropInstructorOnCell, onDropInstructorOnSlot,
+  selectedSlotKeys, selectedEmptyKeys,
+  onReplaceSelection, onAddSelection, onMarqueeEnd,
 }: Props) {
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const readInstructor = (e: React.DragEvent) =>
     e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain') || '';
+
+  // ===== Marquee =====
+  const baseSlotKeysRef = useRef<Set<string>>(new Set());
+  const baseEmptyKeysRef = useRef<Set<WeekEmptyKey>>(new Set());
+  const collectInRect = (rect: MarqueeRect, container: HTMLElement) => {
+    const cRect = container.getBoundingClientRect();
+    const absLeft = cRect.left + rect.left - container.scrollLeft;
+    const absTop = cRect.top + rect.top - container.scrollTop;
+    const absRight = absLeft + rect.width;
+    const absBottom = absTop + rect.height;
+    const slotKeys = new Set<string>();
+    const emptyKeys = new Set<WeekEmptyKey>();
+    container.querySelectorAll<HTMLElement>('[data-cell-key],[data-slot-key]').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      const intersects = r.right >= absLeft && r.left <= absRight && r.bottom >= absTop && r.top <= absBottom;
+      if (!intersects) return;
+      const slotK = el.getAttribute('data-slot-key');
+      const cellK = el.getAttribute('data-cell-key');
+      if (slotK && el.getAttribute('data-selectable') !== 'false') slotKeys.add(slotK);
+      if (cellK) emptyKeys.add(cellK);
+    });
+    return { slotKeys, emptyKeys };
+  };
+  const marquee = useMarqueeSelection({
+    disabled: !(onReplaceSelection || onAddSelection),
+    onUpdate: (rect, additive) => {
+      const container = marquee.containerRef.current;
+      if (!container) return;
+      const { slotKeys, emptyKeys } = collectInRect(rect, container);
+      if (additive) {
+        const sk = new Set(baseSlotKeysRef.current); slotKeys.forEach((k) => sk.add(k));
+        const ek = new Set(baseEmptyKeysRef.current); emptyKeys.forEach((k) => ek.add(k));
+        onReplaceSelection?.(sk, ek);
+      } else {
+        onReplaceSelection?.(slotKeys, emptyKeys);
+      }
+    },
+    onEnd: (rect, additive) => {
+      const container = marquee.containerRef.current;
+      if (!container || !rect) return;
+      const { slotKeys, emptyKeys } = collectInRect(rect, container);
+      const total = slotKeys.size + emptyKeys.size;
+      if (total > 0) onMarqueeEnd?.({ slotCount: slotKeys.size, emptyCount: emptyKeys.size, additive });
+    },
+  });
+  const handlePointerDown = (e: React.PointerEvent) => {
+    baseSlotKeysRef.current = new Set(selectedSlotKeys ?? []);
+    baseEmptyKeysRef.current = new Set(selectedEmptyKeys ?? []);
+    marquee.onPointerDown(e);
+  };
 
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
   const totalHeight = hours.length * hourHeight;
