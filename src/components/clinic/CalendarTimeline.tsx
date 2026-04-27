@@ -7,10 +7,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
 import { useMarqueeSelection, type MarqueeRect } from '@/hooks/useMarqueeSelection';
 
-/** Empty-cell key for week view: `${ISODate}|${hour}` (no room column). */
+/** Empty-cell key for week view (compatible with day format): `${ISODate}|${hour}|none`. */
 export type WeekEmptyKey = string;
 export const makeWeekEmptyKey = (d: Date, hour: number) =>
-  `${d.toISOString().slice(0, 10)}|${hour}`;
+  `${d.toISOString().slice(0, 10)}|${hour}|none`;
 export const parseWeekEmptyKey = (k: WeekEmptyKey) => {
   const [date, h] = k.split('|');
   return { date, hour: parseInt(h, 10) };
