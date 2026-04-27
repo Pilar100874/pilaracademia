@@ -429,6 +429,9 @@ export default function GradeMasterPage() {
                 )}
               </div>
 
+              <Button size="sm" variant="outline" onClick={() => setAvailOpen(true)}>
+                <UserCog className="h-4 w-4 mr-1" />Disponibilidade
+              </Button>
               <Button size="sm" onClick={() => openNewClassAt(day)}>
                 <Plus className="h-4 w-4 mr-1" />Nova aula
               </Button>
