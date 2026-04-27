@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SlotGradeDialog } from '@/components/clinic/SlotGradeDialog';
+import { PageMotion } from '@/components/PageMotion';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; cls: string }> = {
   scheduled:   { label: 'Agendado',  cls: 'bg-secondary text-secondary-foreground' },
@@ -276,16 +277,18 @@ export default function GradeMasterPage() {
   }, [view, daySlots, weekDays, monthDays, day, appointments, recurring, simulateRenewal, horizonDate, filterInstructor]);
 
   return (
-    <div className="min-h-screen">
-      {/* HERO */}
-      <div className="hero-yellow border-b-4 border-primary">
-        <div className="max-w-7xl mx-auto px-6 py-8 sm:py-10">
-          <p className="text-primary/70 text-xs font-bold uppercase tracking-widest mb-2">Painel da clínica</p>
-          <h1 className="display-xl text-primary flex items-center gap-3">
-            <CalendarDays className="h-9 w-9" /> Grade Master
+    <PageMotion className="min-h-screen">
+      {/* HERO — Editorial */}
+      <div className="hero-yellow">
+        <div className="max-w-7xl mx-auto px-6 py-12 sm:py-16">
+          <p className="eyebrow mb-4">Painel da clínica · 01</p>
+          <h1 className="display-xl text-foreground flex items-baseline gap-4">
+            <CalendarDays className="h-8 w-8 opacity-60" strokeWidth={1.25} />
+            Grade Master
           </h1>
-          <p className="mt-2 text-primary/80 font-medium max-w-2xl">
-            Toda a operação em uma tela: alunos fixos, contratos, renovações e prescrição da grade.
+          <p className="mt-4 text-muted-foreground max-w-2xl leading-relaxed text-pretty">
+            Toda a operação em uma tela — alunos fixos, contratos, renovações e prescrição da grade,
+            organizados como um arquivo editorial.
           </p>
         </div>
       </div>
@@ -615,7 +618,7 @@ export default function GradeMasterPage() {
           onSaved={() => { /* react-query refetch via hooks */ }}
         />
       )}
-    </div>
+    </PageMotion>
   );
 }
 
