@@ -851,12 +851,13 @@ export default function GradeMasterPage() {
 }
 
 // ============ subcomponents ============
-function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; value: number; icon: any; tone?: 'default' | 'success' | 'warn' | 'muted' }) {
+function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; value: number; icon: any; tone?: 'default' | 'success' | 'warn' | 'muted' | 'danger' }) {
   const toneCls = {
     default: 'bg-primary/10 text-primary',
     success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
     warn: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
     muted: 'bg-muted text-muted-foreground',
+    danger: 'bg-destructive/15 text-destructive',
   }[tone];
   return (
     <div className="flex items-center gap-3 p-2">
