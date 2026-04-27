@@ -883,6 +883,14 @@ export default function GradeMasterPage() {
                 <Plus className="h-4 w-4 mr-1" />Nova aula
               </Button>
 
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setFocusMode((v) => !v)}
+                title={focusMode ? 'Sair do modo foco' : 'Maximizar agenda'}
+              >
+                {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
             </div>
           </div>
 
