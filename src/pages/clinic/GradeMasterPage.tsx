@@ -548,11 +548,17 @@ export default function GradeMasterPage() {
                             <Badge variant="outline" className="text-[9px] py-0 h-4 border-amber-500 text-amber-700">contrato vencido</Badge>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {equipmentName(s.equipment_id)}
-                          {seqName && <span className="ml-2 text-primary"><Sparkles className="h-3 w-3 inline mr-0.5" />{seqName}</span>}
+                        <div className="text-xs text-muted-foreground truncate flex items-center flex-wrap gap-x-2">
+                          <span>{equipmentName(s.equipment_id)}</span>
+                          {roomName(s.room_id) && (
+                            <span className="inline-flex items-center gap-0.5"><DoorOpen className="h-3 w-3" />{roomName(s.room_id)}</span>
+                          )}
+                          {instructorName(s.instructor_id) && (
+                            <span>· {instructorName(s.instructor_id)}</span>
+                          )}
+                          {seqName && <span className="text-primary"><Sparkles className="h-3 w-3 inline mr-0.5" />{seqName}</span>}
                           {!seqName && !s.isProjected && (
-                            <span className="ml-2 text-amber-600 dark:text-amber-400">
+                            <span className="text-amber-600 dark:text-amber-400">
                               <AlertTriangle className="h-3 w-3 inline mr-0.5" />sem grade
                             </span>
                           )}
