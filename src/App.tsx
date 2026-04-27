@@ -35,6 +35,7 @@ import AppointmentsPage from "@/pages/clinic/AppointmentsPage";
 import StudentEvolutionPage from "@/pages/clinic/StudentEvolutionPage";
 import ReportsPage from "@/pages/clinic/ReportsPage";
 import BookableSlotsPage from "@/pages/clinic/BookableSlotsPage";
+import BlockedPeriodsPage from "@/pages/clinic/BlockedPeriodsPage";
 import StationPage from "@/pages/StationPage";
 import MyPilatesPage from "@/pages/MyPilatesPage";
 import BookClassPage from "@/pages/BookClassPage";
