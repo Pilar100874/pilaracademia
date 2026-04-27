@@ -261,6 +261,18 @@ export function CalendarTimeline({
                   const weekKey = makeWeekEmptyKey(d, h, subRoomId);
                   const isHover = hoverKey === cellKey;
                   const isSelected = selectedEmptyKeys?.has(weekKey);
+                  const occ = occupancyByHour.get(h);
+                  const isFull = occ?.status === 'full';
+                  const statusBg =
+                    occ?.status === 'full' ? 'bg-destructive/10' :
+                    occ?.status === 'mid'  ? 'bg-amber-500/10' :
+                    occ?.status === 'low'  ? 'bg-emerald-500/[0.06]' :
+                    '';
+                  const statusBar =
+                    occ?.status === 'full' ? 'bg-destructive' :
+                    occ?.status === 'mid'  ? 'bg-amber-500' :
+                    occ?.status === 'low'  ? 'bg-emerald-500' :
+                    'bg-transparent';
                   return (
                     <button
                       key={h}
@@ -288,19 +300,48 @@ export function CalendarTimeline({
                         setHoverKey(null);
                         if (id) onDropInstructorOnCell(id, d, h, subRoomId);
                       }}
-                      title={dragActive
-                        ? `Soltar professor às ${String(h).padStart(2, '0')}:00${subRoom ? ` · ${subRoom.name}` : ''}`
-                        : `Adicionar aula às ${String(h).padStart(2, '0')}:00${subRoom ? ` · ${subRoom.name}` : ''}`}
+                      title={
+                        occ && cap
+                          ? `${occ.used}/${cap} ${isFull ? '· LOTADA' : occ.status === 'mid' ? '· quase cheia' : ''}${subRoom ? ` · ${subRoom.name}` : ''} às ${String(h).padStart(2, '0')}:00`
+                          : dragActive
+                            ? `Soltar professor às ${String(h).padStart(2, '0')}:00${subRoom ? ` · ${subRoom.name}` : ''}`
+                            : `Adicionar aula às ${String(h).padStart(2, '0')}:00${subRoom ? ` · ${subRoom.name}` : ''}`
+                      }
                       className={cn(
                         'absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group',
+                        statusBg,
                         dragActive && 'bg-primary/[0.03]',
                         isHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
                         isSelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
                       )}
                       style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
                     >
+                      {/* Barra de status de ocupação (lateral esquerda) */}
+                      {occ && (
+                        <span
+                          className={cn('absolute left-0 top-0 bottom-0 w-[3px]', statusBar)}
+                          aria-hidden
+                        />
+                      )}
+                      {/* Badge de capacidade (canto inferior esquerdo) */}
+                      {occ && cap && occ.used > 0 && (
+                        <span
+                          className={cn(
+                            'absolute bottom-0.5 left-1.5 text-[9px] font-bold tabular-nums px-1 rounded-sm leading-tight',
+                            occ.status === 'full' && 'bg-destructive text-destructive-foreground',
+                            occ.status === 'mid' && 'bg-amber-500 text-white',
+                            occ.status === 'low' && 'bg-emerald-500/90 text-white',
+                          )}
+                        >
+                          {occ.used}/{cap}
+                        </span>
+                      )}
                       {isSelected ? (
                         <Check className="h-3.5 w-3.5 text-primary absolute top-1 right-1" />
+                      ) : isFull ? (
+                        <span className="absolute top-1 right-1 text-[8px] font-bold uppercase tracking-wider text-destructive">
+                          Lotada
+                        </span>
                       ) : (
                         <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
                       )}
