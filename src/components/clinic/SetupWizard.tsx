@@ -285,30 +285,18 @@ function StepRooms({ hook }: { hook: ReturnType<typeof useClinicRooms> }) {
 
 function StepEquipment({ hook }: { hook: ReturnType<typeof useEquipment> }) {
   const [name, setName] = useState('');
-  const [type, setType] = useState('reformer');
 
   const handleAdd = async () => {
     if (!name.trim()) return;
-    await hook.create.mutateAsync({ name: name.trim(), equipment_type: type });
+    await hook.create.mutateAsync({ name: name.trim(), equipment_type: 'other' });
     setName('');
   };
 
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted-foreground">Cadastre os equipamentos da clínica (mínimo 1).</p>
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px_auto] gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
         <Input placeholder="Nome (ex: Reformer 1)" value={name} onChange={(e) => setName(e.target.value)} />
-        <Select value={type} onValueChange={setType}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent className="z-[300]">
-            <SelectItem value="reformer">Reformer</SelectItem>
-            <SelectItem value="cadillac">Cadillac</SelectItem>
-            <SelectItem value="chair">Chair</SelectItem>
-            <SelectItem value="barrel">Barrel</SelectItem>
-            <SelectItem value="mat">Mat / Solo</SelectItem>
-            <SelectItem value="other">Outro</SelectItem>
-          </SelectContent>
-        </Select>
         <Button onClick={handleAdd} disabled={!name.trim() || hook.create.isPending}>
           <Plus className="h-4 w-4 mr-1" /> Adicionar
         </Button>
@@ -320,7 +308,6 @@ function StepEquipment({ hook }: { hook: ReturnType<typeof useEquipment> }) {
           <>
             <Dumbbell className="h-4 w-4 text-muted-foreground shrink-0" />
             <span className="font-medium truncate">{e.name}</span>
-            <Badge variant="secondary" className="ml-auto capitalize">{e.equipment_type}</Badge>
           </>
         )}
         onRemove={(e) => hook.remove.mutate(e.id)}
