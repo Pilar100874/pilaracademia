@@ -544,6 +544,7 @@ export default function GradeMasterPage() {
         }
       }
     });
+    console.log('[GradeMaster] selectRoomColumn', { roomId, targetDays: targetDays.map((d) => d.toISOString().slice(0,10)), newEmpty: newEmpty.size, newSlots: newSlots.size });
     if (newEmpty.size === 0 && newSlots.size === 0) {
       toast.info('Nenhum horário disponível nessa coluna.');
       return;
