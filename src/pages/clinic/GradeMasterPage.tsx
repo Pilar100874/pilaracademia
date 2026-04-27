@@ -918,7 +918,7 @@ export default function GradeMasterPage() {
   };
 
   const handleCellClick = (d: Date, hour: number) => {
-    openNewClassAt(d, `${String(hour).padStart(2, '0')}:00`);
+    tryOpenNewClassAt(d, `${String(hour).padStart(2, '0')}:00`);
   };
 
   const renderTimelineInstructorPicker = (ts: TimelineSlot) => (
