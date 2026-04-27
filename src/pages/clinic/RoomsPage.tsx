@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, DoorOpen, Trash2, Pencil, Loader2, Users } from 'lucide-react';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import { toast } from 'sonner';
 
 const COLOR_PRESETS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
@@ -56,14 +57,10 @@ export default function RoomsPage() {
   }
 
   return (
+    <>
+    <ClinicPageHeader icon={DoorOpen} title="Salas" subtitle="Salas físicas da clínica" />
     <div className="p-4 md:p-8 space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <DoorOpen className="h-7 w-7 text-primary" /> Salas
-          </h1>
-          <p className="text-muted-foreground mt-1">Cadastre as salas físicas da clínica para usar nas grades.</p>
-        </div>
+      <div className="flex items-center justify-end flex-wrap gap-3">
         <Button onClick={startCreate}><Plus className="h-4 w-4 mr-1" />Nova sala</Button>
       </div>
 

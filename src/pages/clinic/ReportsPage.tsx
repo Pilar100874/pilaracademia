@@ -3,6 +3,7 @@ import { useStudents, useEquipment, useSequences } from '@/hooks/useClinicData';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import { BarChart3, Users, Dumbbell, ListOrdered } from 'lucide-react';
 import { useMemo } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -155,5 +156,6 @@ export default function ReportsPage() {
         </Card>
       </div>
     </div>
+    </>
   );
 }
