@@ -33,6 +33,7 @@ import { InstructorAvailabilityDialog } from '@/components/clinic/InstructorAvai
 import { InstructorPicker } from '@/components/clinic/InstructorPicker';
 import { CalendarTimeline, type TimelineSlot } from '@/components/clinic/CalendarTimeline';
 import { RoomsTimeline, makeEmptyKey, parseEmptyKey, type EmptyCellKey } from '@/components/clinic/RoomsTimeline';
+import { BulkAssignDialog, type BulkAssignValues } from '@/components/clinic/BulkAssignDialog';
 import { PageMotion } from '@/components/PageMotion';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; cls: string }> = {
@@ -397,20 +398,25 @@ export default function GradeMasterPage() {
     exitSelection();
   };
 
-  const createSelectedEmpty = async () => {
+  // ===== Atribuição em massa (criar / reatribuir) =====
+  const [bulkOpen, setBulkOpen] = useState<null | 'create' | 'reassign'>(null);
+
+  const createSelectedEmpty = async (values: BulkAssignValues) => {
     if (selectedEmptyKeys.size === 0 || !activeClinicId || !user) return;
     let count = 0;
     for (const k of selectedEmptyKeys) {
-      const { date, hour, roomId } = parseEmptyKey(k);
+      const { date, hour, roomId: cellRoomId } = parseEmptyKey(k);
       const sched = new Date(`${date}T${String(hour).padStart(2, '0')}:00:00`);
       try {
         await createBookable.mutateAsync({
           clinic_id: activeClinicId,
           scheduled_at: sched.toISOString(),
-          duration_minutes: 50,
+          duration_minutes: values.durationMinutes,
           equipment_id: null,
-          instructor_id: null,
-          room_id: roomId,
+          instructor_id: values.instructorId,
+          // Se o usuário escolheu uma sala explicitamente, ela vence;
+          // caso contrário usa a coluna onde clicou.
+          room_id: values.roomId ?? cellRoomId,
           capacity: 1,
           notes: null,
           created_by: user.id,
@@ -421,6 +427,40 @@ export default function GradeMasterPage() {
     toast.success(`${count} horário(s) criado(s)`);
     exitSelection();
   };
+
+  const reassignSelected = async (values: BulkAssignValues) => {
+    if (selectedSlotKeys.size === 0) return;
+    const tsList = daySlots.map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
+    let updated = 0;
+    for (const t of tsList) {
+      const patch: any = {};
+      // só inclui se o usuário escolheu (não-null) — para evitar limpar sem querer
+      if (values.instructorId !== null) patch.instructor_id = values.instructorId;
+      if (values.roomId !== null) patch.room_id = values.roomId;
+      if (Object.keys(patch).length === 0) continue;
+      try {
+        if (t.appointment_id) {
+          // class_appointments não tem room_id direto — só instructor_id
+          const apptPatch: any = {};
+          if (patch.instructor_id !== undefined) apptPatch.instructor_id = patch.instructor_id;
+          if (Object.keys(apptPatch).length > 0) {
+            await supabase.from('class_appointments').update(apptPatch).eq('id', t.appointment_id);
+          }
+        } else if (t.bookable_slot_id) {
+          await supabase.from('bookable_slots' as any).update(patch).eq('id', t.bookable_slot_id);
+        }
+        updated++;
+      } catch (e) { /* noop */ }
+    }
+    toast.success(`${updated} horário(s) atualizado(s)`);
+    // refetch
+    if (activeClinicId) {
+      // invalida caches relevantes via refetch implícito do react-query nas próximas queries
+      window.dispatchEvent(new Event('focus'));
+    }
+    exitSelection();
+  };
+
 
 
   const openSlotDialog = (slot: MergedSlot) => {
@@ -854,15 +894,21 @@ export default function GradeMasterPage() {
 
             {/* Barra flutuante de ações de seleção */}
             {selectionMode && (selectedSlotKeys.size > 0 || selectedEmptyKeys.size > 0) && (
-              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border shadow-lg rounded-full px-3 py-2 flex items-center gap-2">
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border shadow-lg rounded-full px-3 py-2 flex items-center gap-2 flex-wrap max-w-[95vw]">
                 {selectedSlotKeys.size > 0 && (
-                  <Button size="sm" variant="destructive" onClick={deleteSelected}>
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Excluir {selectedSlotKeys.size}
-                  </Button>
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => setBulkOpen('reassign')}>
+                      <UserCog className="h-4 w-4 mr-1" />
+                      Atribuir prof./sala ({selectedSlotKeys.size})
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={deleteSelected}>
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Excluir {selectedSlotKeys.size}
+                    </Button>
+                  </>
                 )}
                 {selectedEmptyKeys.size > 0 && (
-                  <Button size="sm" onClick={createSelectedEmpty}>
+                  <Button size="sm" onClick={() => setBulkOpen('create')}>
                     <Plus className="h-4 w-4 mr-1" />
                     Criar {selectedEmptyKeys.size} horário(s)
                   </Button>
@@ -870,6 +916,7 @@ export default function GradeMasterPage() {
                 <Button size="sm" variant="ghost" onClick={exitSelection}>Cancelar</Button>
               </div>
             )}
+
           </Card>
         )}
 
@@ -945,6 +992,35 @@ export default function GradeMasterPage() {
           instructors={instructors}
         />
       )}
+
+      {/* Dialog: atribuição em massa (criar slots ou reatribuir prof/sala) */}
+      <BulkAssignDialog
+        open={bulkOpen !== null}
+        onClose={() => setBulkOpen(null)}
+        mode={bulkOpen === 'reassign' ? 'reassign' : 'create'}
+        count={bulkOpen === 'reassign' ? selectedSlotKeys.size : selectedEmptyKeys.size}
+        rooms={rooms as any}
+        instructors={instructors}
+        colorOf={colorOf}
+        roomColorOf={roomColorOf}
+        initial={(() => {
+          // Pré-preenche com a sala/prof do primeiro item selecionado.
+          if (bulkOpen === 'reassign') {
+            const first = daySlots.map(toTimelineSlot).find((t) => selectedSlotKeys.has(t.key));
+            return { roomId: first?.room_id ?? null, instructorId: first?.instructor_id ?? null, durationMinutes: 50 };
+          }
+          if (bulkOpen === 'create' && selectedEmptyKeys.size > 0) {
+            const firstK = Array.from(selectedEmptyKeys)[0];
+            const { roomId } = parseEmptyKey(firstK);
+            return { roomId, instructorId: null, durationMinutes: 50 };
+          }
+          return undefined;
+        })()}
+        onConfirm={async (values) => {
+          if (bulkOpen === 'create') await createSelectedEmpty(values);
+          else if (bulkOpen === 'reassign') await reassignSelected(values);
+        }}
+      />
     </PageMotion>
   );
 }
