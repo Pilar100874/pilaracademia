@@ -17,6 +17,7 @@ import { format, addDays, isSameDay, parseISO, startOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; variant: any }> = {
   scheduled: { label: 'Agendado', variant: 'secondary' },
