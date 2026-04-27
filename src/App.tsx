@@ -116,6 +116,7 @@ function AppRoutes() {
         <Route path="equipe" element={<StaffPage />} />
         <Route path="permissoes" element={<PermissionsPage />} />
         <Route path="salas" element={<RoomsPage />} />
+        <Route path="bloqueios" element={<BlockedPeriodsPage />} />
         <Route path="evolucao" element={<StudentEvolutionPage />} />
         <Route path="equipamentos" element={<EquipmentPage />} />
         <Route path="equipamentos-salas" element={<EquipmentRoomsPage />} />
