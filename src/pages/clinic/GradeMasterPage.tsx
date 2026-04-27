@@ -260,7 +260,12 @@ export default function GradeMasterPage() {
 
   // ===== Stats topo =====
   const stats = useMemo(() => {
-    const all = view === 'day' ? daySlots : weekDays.flatMap(slotsForDay);
+    const all =
+      view === 'day'
+        ? daySlots
+        : view === 'week'
+          ? weekDays.flatMap(slotsForDay)
+          : monthDays.filter((d) => isSameMonth(d, day)).flatMap(slotsForDay);
     return {
       total: all.length,
       withGrade: all.filter((s) => s.appointment?.sequence_id).length,
@@ -268,7 +273,7 @@ export default function GradeMasterPage() {
       projected: all.filter((s) => s.isProjected).length,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, daySlots, weekDays, appointments, recurring, simulateRenewal, horizonDate, filterInstructor]);
+  }, [view, daySlots, weekDays, monthDays, day, appointments, recurring, simulateRenewal, horizonDate, filterInstructor]);
 
   return (
     <div className="min-h-screen">
