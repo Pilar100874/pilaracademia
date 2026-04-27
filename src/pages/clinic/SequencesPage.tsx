@@ -719,6 +719,7 @@ export default function SequencesPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }
 
