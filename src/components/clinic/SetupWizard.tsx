@@ -558,6 +558,7 @@ function StepGrade({
       // Generate next 4 weeks of slots
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const rows: any[] = [];
+      const primaryEquipmentId = equipmentIds[0] ?? null;
       for (let week = 0; week < 4; week++) {
         for (const dow of days) {
           const date = new Date(today);
@@ -570,18 +571,36 @@ function StepGrade({
               clinic_id: clinicId,
               scheduled_at: sched.toISOString(),
               duration_minutes: dur,
-              equipment_id: equipmentId === 'any' ? null : equipmentId,
+              equipment_id: primaryEquipmentId,
               instructor_id: null,
               room_id: roomId || null,
-              capacity: 1,
+              capacity: Math.max(1, equipmentIds.length || 1),
               notes: null,
               created_by: user.id,
             });
           }
         }
       }
-      const { error } = await supabase.from('bookable_slots' as any).insert(rows);
+      const { data: insertedSlots, error } = await supabase
+        .from('bookable_slots' as any)
+        .insert(rows)
+        .select('id');
       if (error) throw error;
+
+      // Link multiple equipments per slot
+      if (equipmentIds.length > 1 && insertedSlots?.length) {
+        const links = (insertedSlots as any[]).flatMap((s) =>
+          equipmentIds.map((eid) => ({
+            clinic_id: clinicId,
+            bookable_slot_id: s.id,
+            equipment_id: eid,
+            created_by: user.id,
+          }))
+        );
+        const { error: linkErr } = await supabase.from('bookable_slot_equipment' as any).insert(links);
+        if (linkErr) throw linkErr;
+      }
+
       toast.success(`${rows.length} horários criados`);
       hook.refetch?.();
     } catch (e: any) {
