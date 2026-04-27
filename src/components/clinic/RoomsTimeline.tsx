@@ -46,6 +46,14 @@ interface Props {
   selectedEmptyKeys?: Set<EmptyCellKey>;
   onToggleSlot?: (s: TimelineSlot) => void;
   onToggleEmpty?: (key: EmptyCellKey) => void;
+
+  // ===== Drag & drop de professor =====
+  /** Indica que há um professor sendo arrastado (para destacar drop targets). */
+  dragActive?: boolean;
+  /** Chamado ao soltar professor sobre uma célula vazia (cria novo slot). */
+  onDropInstructorOnCell?: (instructorId: string, day: Date, hour: number, roomId: string | null) => void;
+  /** Chamado ao soltar professor sobre um slot existente (atribui). */
+  onDropInstructorOnSlot?: (instructorId: string, slot: TimelineSlot) => void;
 }
 
 export function RoomsTimeline({
