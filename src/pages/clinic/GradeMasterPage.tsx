@@ -407,10 +407,17 @@ export default function GradeMasterPage() {
     });
   };
 
+  /** Slots visíveis na visualização atual (dia/semana/mês), usados para mapear seleção. */
+  const visibleSlotsForSelection = (): MergedSlot[] => {
+    if (view === 'day') return daySlots;
+    if (view === 'week') return weekDays.flatMap(slotsForDay);
+    return monthDays.flatMap(slotsForDay);
+  };
+
   const deleteSelected = async () => {
     if (selectedSlotKeys.size === 0) return;
     if (!confirm(`Excluir ${selectedSlotKeys.size} horário(s) selecionado(s)?`)) return;
-    const tsList = daySlots.map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
+    const tsList = visibleSlotsForSelection().map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
     for (const t of tsList) {
       if (t.appointment_id) await remove.mutateAsync(t.appointment_id);
       else if (t.bookable_slot_id) await removeBookable.mutateAsync(t.bookable_slot_id);
