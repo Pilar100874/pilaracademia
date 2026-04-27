@@ -144,6 +144,8 @@ export function RoomsTimeline({
                 const full = occ && occ.used >= occ.cap;
                 const emptyKey = makeEmptyKey(day, h, r.id);
                 const emptySelected = selectionMode && selectedEmptyKeys?.has(emptyKey);
+                const cellHoverKey = `cell-${r.id ?? 'orphan'}-${h}`;
+                const isDropHover = hoverKey === cellHoverKey;
                 return (
                   <button
                     key={h}
@@ -154,15 +156,33 @@ export function RoomsTimeline({
                         onCellClick(day, h, r.id);
                       }
                     }}
+                    onDragOver={(e) => {
+                      if (!onDropInstructorOnCell) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'copy';
+                      if (hoverKey !== cellHoverKey) setHoverKey(cellHoverKey);
+                    }}
+                    onDragLeave={() => { if (hoverKey === cellHoverKey) setHoverKey(null); }}
+                    onDrop={(e) => {
+                      if (!onDropInstructorOnCell) return;
+                      e.preventDefault();
+                      const id = readInstructor(e);
+                      setHoverKey(null);
+                      if (id) onDropInstructorOnCell(id, day, h, r.id);
+                    }}
                     title={
                       selectionMode
                         ? `${emptySelected ? 'Remover' : 'Selecionar'} ${String(h).padStart(2, '0')}:00 em ${r.name}`
-                        : `Adicionar aula às ${String(h).padStart(2, '0')}:00 em ${r.name}`
+                        : dragActive
+                          ? `Soltar professor às ${String(h).padStart(2, '0')}:00 em ${r.name}`
+                          : `Adicionar aula às ${String(h).padStart(2, '0')}:00 em ${r.name}`
                     }
                     className={cn(
                       'absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group',
                       full && 'bg-destructive/[0.04]',
                       emptySelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
+                      dragActive && 'bg-primary/[0.04]',
+                      isDropHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
                     )}
                     style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
                   >
@@ -181,6 +201,7 @@ export function RoomsTimeline({
                     )}
                   </button>
                 );
+
               })}
 
               {isToday && now.getHours() >= startHour && now.getHours() < endHour && (
