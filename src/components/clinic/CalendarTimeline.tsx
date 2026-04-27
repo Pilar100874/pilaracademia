@@ -253,12 +253,22 @@ export function CalendarTimeline({
                 const room = roomName(s.room_id);
                 const slotKey = `slot-${s.key}`;
                 const isSlotHover = hoverKey === slotKey;
+                const isSelected = selectedSlotKeys?.has(s.key);
                 return (
                   <Popover key={s.key}>
                     <PopoverTrigger asChild>
                       <div
                         role="button"
                         tabIndex={0}
+                        data-slot-key={s.key}
+                        data-selectable={(s.appointment_id || s.bookable_slot_id) ? 'true' : 'false'}
+                        onClick={(e) => {
+                          if ((e.shiftKey || e.metaKey || e.ctrlKey) && (s.appointment_id || s.bookable_slot_id)) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onAddSelection?.(new Set([s.key]), new Set());
+                          }
+                        }}
                         onDragOver={(e) => {
                           if (!onDropInstructorOnSlot) return;
                           e.preventDefault();
@@ -291,6 +301,7 @@ export function CalendarTimeline({
                                 : 'bg-card',
                           s.uncovered && !s.isOpen && 'bg-destructive/5',
                           isSlotHover && 'ring-2 ring-primary bg-primary/15',
+                          isSelected && 'ring-2 ring-primary bg-primary/15',
                         )}
                       >
 
