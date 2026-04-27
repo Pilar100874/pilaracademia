@@ -669,7 +669,14 @@ function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; v
   );
 }
 
-function SlotMini({ slot, studentName, sequenceName, onClick }: { slot: MergedSlot; studentName: string; sequenceName: string | null | undefined; onClick: () => void }) {
+function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, onClick }: {
+  slot: MergedSlot;
+  studentName: string;
+  sequenceName: string | null | undefined;
+  roomName?: string | null;
+  instructorName?: string | null;
+  onClick: () => void;
+}) {
   const time = format(parseISO(slot.scheduled_at), 'HH:mm');
   const status = slot.appointment?.status;
   const hasGrade = !!sequenceName;
@@ -694,6 +701,11 @@ function SlotMini({ slot, studentName, sequenceName, onClick }: { slot: MergedSl
         )}
       </div>
       <div className="truncate font-medium">{studentName}</div>
+      {(roomName || instructorName) && (
+        <div className="truncate text-muted-foreground text-[10px]">
+          {[roomName, instructorName].filter(Boolean).join(' · ')}
+        </div>
+      )}
       {sequenceName && <div className="truncate text-primary text-[10px]">{sequenceName}</div>}
     </button>
   );
