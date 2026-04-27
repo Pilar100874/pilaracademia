@@ -37,6 +37,13 @@ export default function ClinicLayout() {
   const primaryItems = navItems.filter((i) => i.primary).slice(0, 4);
   const [moreOpen, setMoreOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('clinic.sidebar.collapsed') === '1';
+  });
+  useEffect(() => {
+    localStorage.setItem('clinic.sidebar.collapsed', sidebarCollapsed ? '1' : '0');
+  }, [sidebarCollapsed]);
 
   // Open wizard automatically on first visit (per clinic, admin only)
   useEffect(() => {
