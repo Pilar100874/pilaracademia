@@ -1153,6 +1153,7 @@ export default function GradeMasterPage() {
               onCellClick={(d, h, roomId) => tryOpenNewClassAt(d, `${String(h).padStart(2, '0')}:00`, roomId ?? null)}
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
+              onPlanClick={handlePlanClick}
               renderInstructorPicker={renderTimelineInstructorPicker}
               dragActive={draggingInstructorId !== null}
               onDropInstructorOnCell={(id, d, h, roomId) => dropInstructorOnCell(id, d, h, roomId ?? null)}
