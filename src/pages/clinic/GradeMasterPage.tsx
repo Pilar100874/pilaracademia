@@ -996,11 +996,14 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, i
   const status = slot.appointment?.status;
   const hasGrade = !!sequenceName;
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter') onClick(); }}
       style={instructorColor && !slot.isOpen ? { borderLeftColor: uncovered ? 'hsl(var(--destructive))' : instructorColor, borderLeftWidth: 3 } : undefined}
       className={cn(
-        'w-full text-left p-1.5 rounded border text-[11px] hover:bg-muted/50 transition group block',
+        'w-full text-left p-1.5 rounded border text-[11px] hover:bg-muted/50 transition group block cursor-pointer',
         slot.isVirtual && 'border-dashed',
         slot.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
         slot.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/10',
@@ -1010,7 +1013,8 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, i
     >
       <div className="flex items-center justify-between gap-1">
         <span className="font-bold">{time}</span>
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-1">
+          {instructorPicker}
           {uncovered && (
             <span title="Sem professor de plantão" className="text-[9px] font-bold px-1 rounded bg-destructive/15 text-destructive flex items-center gap-0.5">
               <AlertTriangle className="h-2.5 w-2.5" />sem prof
