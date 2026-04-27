@@ -225,6 +225,11 @@ export default function GradeMasterPage() {
   // ===== Aluno avulso =====
   const [avulsoOpen, setAvulsoOpen] = useState(false);
   const [avulso, setAvulso] = useState({ student_id: '', time: '08:00', duration_minutes: 50, equipment_id: '', notes: '' });
+  const openAvulsoAt = (d: Date, time?: string) => {
+    setDay(d);
+    setAvulso((prev) => ({ ...prev, time: time ?? prev.time }));
+    setAvulsoOpen(true);
+  };
   const handleAvulso = async () => {
     if (!user || !activeClinicId || !avulso.student_id) return;
     const [h, m] = avulso.time.split(':').map(Number);
@@ -245,6 +250,7 @@ export default function GradeMasterPage() {
     setAvulso({ student_id: '', time: '08:00', duration_minutes: 50, equipment_id: '', notes: '' });
     setAvulsoOpen(false);
   };
+
 
   // ===== Renovar contrato (1-clique) =====
   const renewContract = async (studentId: string) => {
@@ -278,20 +284,15 @@ export default function GradeMasterPage() {
 
   return (
     <PageMotion className="min-h-screen">
-      {/* HERO — Editorial */}
-      <div className="hero-yellow">
-        <div className="max-w-7xl mx-auto px-6 py-12 sm:py-16">
-          <p className="eyebrow mb-4">Painel da clínica · 01</p>
-          <h1 className="display-xl text-foreground flex items-baseline gap-4">
-            <CalendarDays className="h-8 w-8 opacity-60" strokeWidth={1.25} />
-            Grade Master
-          </h1>
-          <p className="mt-4 text-muted-foreground max-w-2xl leading-relaxed text-pretty">
-            Toda a operação em uma tela — alunos fixos, contratos, renovações e prescrição da grade,
-            organizados como um arquivo editorial.
-          </p>
+      {/* Cabeçalho compacto */}
+      <div className="border-b bg-card/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+          <CalendarDays className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+          <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Grade Master</h1>
+          <span className="text-xs text-muted-foreground hidden sm:inline">· agenda da clínica</span>
         </div>
       </div>
+
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4">
         {/* TOP BAR: stats + view + filters */}
@@ -499,12 +500,40 @@ export default function GradeMasterPage() {
           </Card>
         ) : (
           <Card className="p-4">
-            <h2 className="font-semibold mb-3">
-              {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })} · {daySlots.length} aula{daySlots.length !== 1 ? 's' : ''}
-            </h2>
+            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+              <h2 className="font-semibold">
+                {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })} · {daySlots.length} aula{daySlots.length !== 1 ? 's' : ''}
+              </h2>
+              <div className="text-[11px] text-muted-foreground">
+                Clique em um horário abaixo para adicionar uma aula avulsa
+              </div>
+            </div>
+
+            {/* Faixa de horários clicáveis para criar aula avulsa */}
+            <div className="mb-4 p-2 rounded-lg border bg-muted/30">
+              <div className="text-[10px] uppercase tracking-wide font-bold text-muted-foreground mb-1.5 px-1">
+                + Aula avulsa às:
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {Array.from({ length: 15 }, (_, i) => 7 + i).map((h) => {
+                  const t = `${String(h).padStart(2, '0')}:00`;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => openAvulsoAt(day, t)}
+                      className="px-2 py-1 text-xs rounded border bg-card hover:border-primary hover:text-primary transition flex items-center gap-1"
+                    >
+                      <Plus className="h-3 w-3" />{t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {daySlots.length === 0 ? (
               <p className="text-sm text-muted-foreground py-8 text-center">Nenhuma aula nesse dia.</p>
             ) : (
+
               <div className="space-y-2">
                 {daySlots.map((s) => {
                   const sl = s.appointment ? STATUS_LABEL[s.appointment.status] : (
