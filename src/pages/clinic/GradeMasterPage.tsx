@@ -864,6 +864,7 @@ export default function GradeMasterPage() {
             <span className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3 text-amber-600" />Sem grade definida</span>
             <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-primary" />Grade pronta</span>
             <span className="flex items-center gap-1.5"><Users className="h-3 w-3" />Ocupação da sala</span>
+            <span className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3 text-destructive" />Sem professor de plantão</span>
           </div>
           {instructors.length > 0 && (
             <div className="flex flex-wrap gap-3 pt-2 border-t">
