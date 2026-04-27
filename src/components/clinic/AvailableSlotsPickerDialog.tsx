@@ -19,6 +19,7 @@ export interface AvailableSlotPick {
   roomId: string | null;
   instructorId: string | null;
   durationMinutes: number;
+  bookableSlotId: string;
 }
 
 interface Props {
@@ -260,6 +261,7 @@ export function AvailableSlotsPickerDialog({
                               roomId: s.room_id,
                               instructorId: s.instructor_id,
                               durationMinutes: s.duration_minutes,
+                              bookableSlotId: s.id,
                             });
                             onClose();
                           }}
