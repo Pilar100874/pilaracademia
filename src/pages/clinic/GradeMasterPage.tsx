@@ -44,8 +44,9 @@ interface MergedSlot {
   student_id: string;
   equipment_id: string | null;
   instructor_id: string | null;
+  room_id: string | null;
   notes: string | null;
-  appointment?: Appointment & { sequence_id?: string | null; prescription_id?: string | null };
+  appointment?: Appointment & { sequence_id?: string | null; prescription_id?: string | null; recurring_schedule_id?: string | null };
   recurring_id?: string;
   /** virtual baseado em recorrente DENTRO do contrato */
   isVirtual?: boolean;
@@ -135,20 +136,27 @@ export default function GradeMasterPage() {
   const studentName = (id: string) => students.find((s) => s.id === id)?.full_name || '—';
   const studentAvatar = (id: string) => (students.find((s) => s.id === id) as any)?.avatar_url;
   const equipmentName = (id: string | null) => equipment.find((e) => e.id === id)?.name || '—';
+  const roomName = (id: string | null | undefined) => id ? (rooms as any[]).find((r) => r.id === id)?.name : null;
+  const instructorName = (id: string | null | undefined) => id ? (instructors.find((i) => i.user_id === id)?.name || `Prof. ${id.slice(0, 4)}`) : null;
 
   /** Slots por dia (real + virtuais + projetados), com filtros */
   const slotsForDay = (d: Date): MergedSlot[] => {
     const dayApps = appointments.filter((a) => isSameDay(parseISO(a.scheduled_at), d));
-    const merged: MergedSlot[] = dayApps.map((a) => ({
-      key: `real-${a.id}`,
-      scheduled_at: a.scheduled_at,
-      duration_minutes: a.duration_minutes,
-      student_id: a.student_id,
-      equipment_id: a.equipment_id,
-      instructor_id: a.instructor_id,
-      notes: a.notes,
-      appointment: a as any,
-    }));
+    const recById = new Map(recurring.map((r) => [r.id, r]));
+    const merged: MergedSlot[] = dayApps.map((a) => {
+      const fromRec = (a as any).recurring_schedule_id ? recById.get((a as any).recurring_schedule_id) : null;
+      return {
+        key: `real-${a.id}`,
+        scheduled_at: a.scheduled_at,
+        duration_minutes: a.duration_minutes,
+        student_id: a.student_id,
+        equipment_id: a.equipment_id,
+        instructor_id: a.instructor_id,
+        room_id: (fromRec as any)?.room_id ?? null,
+        notes: a.notes,
+        appointment: a as any,
+      };
+    });
     const realKeys = new Set(
       dayApps.map((a) => `${a.student_id}-${parseISO(a.scheduled_at).getHours()}:${parseISO(a.scheduled_at).getMinutes()}`)
     );
@@ -157,6 +165,7 @@ export default function GradeMasterPage() {
       const t = new Date(v.scheduled_at);
       const k = `${v.student_id}-${t.getHours()}:${t.getMinutes()}`;
       if (realKeys.has(k)) return;
+      const rec = recById.get(v.recurring_id);
       merged.push({
         key: `virt-${v.recurring_id}-${v.scheduled_at}`,
         scheduled_at: v.scheduled_at,
@@ -164,6 +173,7 @@ export default function GradeMasterPage() {
         student_id: v.student_id,
         equipment_id: v.equipment_id,
         instructor_id: v.instructor_id,
+        room_id: (rec as any)?.room_id ?? null,
         notes: v.notes,
         recurring_id: v.recurring_id,
         isVirtual: !v.projected,
@@ -174,11 +184,7 @@ export default function GradeMasterPage() {
     // filtros
     return merged
       .filter((m) => filterInstructor === 'all' || m.instructor_id === filterInstructor)
-      .filter((m) => {
-        if (filterRoom === 'all') return true;
-        // sala vem do bookable_slot; aproximamos via equipment para visualização
-        return true;
-      })
+      .filter((m) => filterRoom === 'all' || m.room_id === filterRoom)
       .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at));
   };
 
@@ -347,7 +353,7 @@ export default function GradeMasterPage() {
                 <SelectTrigger className="h-8 w-[180px]"><SelectValue placeholder="Professor" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os professores</SelectItem>
-                  {instructorOptions.map((id) => <SelectItem key={id} value={id}>Prof. {id.slice(0, 6)}</SelectItem>)}
+                  {instructorOptions.map((id) => <SelectItem key={id} value={id}>{instructorName(id) || `Prof. ${id.slice(0, 6)}`}</SelectItem>)}
                 </SelectContent>
               </Select>
               {rooms.length > 0 && (
@@ -393,6 +399,8 @@ export default function GradeMasterPage() {
                         slot={s}
                         studentName={studentName(s.student_id)}
                         sequenceName={s.appointment?.sequence_id ? sequences.find((x) => x.id === s.appointment!.sequence_id)?.name : null}
+                        roomName={roomName(s.room_id)}
+                        instructorName={instructorName(s.instructor_id)}
                         onClick={() => openSlotDialog(s)}
                       />
                     ))}
@@ -542,11 +550,17 @@ export default function GradeMasterPage() {
                             <Badge variant="outline" className="text-[9px] py-0 h-4 border-amber-500 text-amber-700">contrato vencido</Badge>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {equipmentName(s.equipment_id)}
-                          {seqName && <span className="ml-2 text-primary"><Sparkles className="h-3 w-3 inline mr-0.5" />{seqName}</span>}
+                        <div className="text-xs text-muted-foreground truncate flex items-center flex-wrap gap-x-2">
+                          <span>{equipmentName(s.equipment_id)}</span>
+                          {roomName(s.room_id) && (
+                            <span className="inline-flex items-center gap-0.5"><DoorOpen className="h-3 w-3" />{roomName(s.room_id)}</span>
+                          )}
+                          {instructorName(s.instructor_id) && (
+                            <span>· {instructorName(s.instructor_id)}</span>
+                          )}
+                          {seqName && <span className="text-primary"><Sparkles className="h-3 w-3 inline mr-0.5" />{seqName}</span>}
                           {!seqName && !s.isProjected && (
-                            <span className="ml-2 text-amber-600 dark:text-amber-400">
+                            <span className="text-amber-600 dark:text-amber-400">
                               <AlertTriangle className="h-3 w-3 inline mr-0.5" />sem grade
                             </span>
                           )}
@@ -655,7 +669,14 @@ function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; v
   );
 }
 
-function SlotMini({ slot, studentName, sequenceName, onClick }: { slot: MergedSlot; studentName: string; sequenceName: string | null | undefined; onClick: () => void }) {
+function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, onClick }: {
+  slot: MergedSlot;
+  studentName: string;
+  sequenceName: string | null | undefined;
+  roomName?: string | null;
+  instructorName?: string | null;
+  onClick: () => void;
+}) {
   const time = format(parseISO(slot.scheduled_at), 'HH:mm');
   const status = slot.appointment?.status;
   const hasGrade = !!sequenceName;
@@ -680,6 +701,11 @@ function SlotMini({ slot, studentName, sequenceName, onClick }: { slot: MergedSl
         )}
       </div>
       <div className="truncate font-medium">{studentName}</div>
+      {(roomName || instructorName) && (
+        <div className="truncate text-muted-foreground text-[10px]">
+          {[roomName, instructorName].filter(Boolean).join(' · ')}
+        </div>
+      )}
       {sequenceName && <div className="truncate text-primary text-[10px]">{sequenceName}</div>}
     </button>
   );
