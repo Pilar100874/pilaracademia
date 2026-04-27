@@ -242,22 +242,25 @@ export default function GradeMasterPage() {
     dayBookable.forEach((b) => {
       const t = parseISO(b.scheduled_at);
       const k = `${t.getHours()}:${t.getMinutes()}|${b.room_id ?? ''}|${b.equipment_id ?? ''}`;
+      const isBlocked = b.blocked === true;
       // também considera ocupado se já existe aula no mesmo horário+sala (mesmo sem equipamento)
       const sameTimeRoom = merged.some((m) => {
         const mt = parseISO(m.scheduled_at);
         return mt.getHours() === t.getHours() && mt.getMinutes() === t.getMinutes() && (m.room_id ?? '') === (b.room_id ?? '');
       });
-      if (occupiedKeys.has(k) || sameTimeRoom) return;
+      // Slots bloqueados sempre aparecem (mesmo se houver outra aula no mesmo horário)
+      if (!isBlocked && (occupiedKeys.has(k) || sameTimeRoom)) return;
       merged.push({
         key: `open-${b.id}`,
         scheduled_at: b.scheduled_at,
         duration_minutes: b.duration_minutes,
         student_id: null,
         equipment_id: b.equipment_id,
-        instructor_id: b.instructor_id,
+        instructor_id: isBlocked ? null : b.instructor_id,
         room_id: b.room_id,
         notes: b.notes,
-        isOpen: true,
+        isOpen: !isBlocked,
+        isBlocked,
         bookable_slot_id: b.id,
       });
     });
