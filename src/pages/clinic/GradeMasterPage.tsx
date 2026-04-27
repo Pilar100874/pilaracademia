@@ -771,6 +771,21 @@ export default function GradeMasterPage() {
               )}
             </div>
 
+            {/* Banner do modo seleção */}
+            {selectionMode && (
+              <div className="mb-3 px-3 py-2 rounded-md border border-primary/30 bg-primary/5 text-xs flex items-center gap-2 flex-wrap">
+                <ListChecks className="h-3.5 w-3.5 text-primary" />
+                <span className="font-semibold">Modo seleção</span>
+                <span className="text-muted-foreground">
+                  Clique em horários existentes para excluir, ou em células vazias para criar.
+                </span>
+                <span className="ml-auto">
+                  <Badge variant="secondary">{selectedSlotKeys.size} p/ excluir</Badge>{' '}
+                  <Badge variant="secondary">{selectedEmptyKeys.size} p/ criar</Badge>
+                </span>
+              </div>
+            )}
+
             {/* Timeline visual do dia — uma coluna por sala */}
             <RoomsTimeline
               day={day}
@@ -786,7 +801,31 @@ export default function GradeMasterPage() {
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
               renderInstructorPicker={renderTimelineInstructorPicker}
+              selectionMode={selectionMode}
+              selectedSlotKeys={selectedSlotKeys}
+              selectedEmptyKeys={selectedEmptyKeys}
+              onToggleSlot={toggleSlotSel}
+              onToggleEmpty={toggleEmptySel}
             />
+
+            {/* Barra flutuante de ações de seleção */}
+            {selectionMode && (selectedSlotKeys.size > 0 || selectedEmptyKeys.size > 0) && (
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border shadow-lg rounded-full px-3 py-2 flex items-center gap-2">
+                {selectedSlotKeys.size > 0 && (
+                  <Button size="sm" variant="destructive" onClick={deleteSelected}>
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Excluir {selectedSlotKeys.size}
+                  </Button>
+                )}
+                {selectedEmptyKeys.size > 0 && (
+                  <Button size="sm" onClick={createSelectedEmpty}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Criar {selectedEmptyKeys.size} horário(s)
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={exitSelection}>Cancelar</Button>
+              </div>
+            )}
           </Card>
         )}
 
