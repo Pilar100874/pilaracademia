@@ -31,7 +31,7 @@ import { SlotGradeDialog } from '@/components/clinic/SlotGradeDialog';
 import { NewClassDialog } from '@/components/clinic/NewClassDialog';
 import { InstructorAvailabilityDialog } from '@/components/clinic/InstructorAvailabilityDialog';
 import { InstructorPicker } from '@/components/clinic/InstructorPicker';
-import { CalendarTimeline, type TimelineSlot } from '@/components/clinic/CalendarTimeline';
+import { CalendarTimeline, type TimelineSlot, makeWeekEmptyKey, parseWeekEmptyKey, type WeekEmptyKey } from '@/components/clinic/CalendarTimeline';
 import { RoomsTimeline, makeEmptyKey, parseEmptyKey, type EmptyCellKey } from '@/components/clinic/RoomsTimeline';
 import { BulkAssignDialog, type BulkAssignValues } from '@/components/clinic/BulkAssignDialog';
 import { InstructorDragPalette, CLEAR_INSTRUCTOR, INSTRUCTOR_DRAG_TYPE } from '@/components/clinic/InstructorDragPalette';
