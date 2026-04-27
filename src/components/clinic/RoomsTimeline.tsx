@@ -65,7 +65,14 @@ export function RoomsTimeline({
   selectedEmptyKeys,
   onToggleSlot,
   onToggleEmpty,
+  dragActive = false,
+  onDropInstructorOnCell,
+  onDropInstructorOnSlot,
 }: Props) {
+  const [hoverKey, setHoverKey] = useState<string | null>(null);
+  const readInstructor = (e: React.DragEvent) =>
+    e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain') || '';
+
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
   const totalHeight = hours.length * hourHeight;
   const minutesToTop = (date: Date) => {
