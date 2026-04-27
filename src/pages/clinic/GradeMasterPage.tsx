@@ -6,6 +6,7 @@ import { useStudents, useEquipment, useSequences, usePrescriptions } from '@/hoo
 import { useRecurringSchedules, type RecurringSchedule } from '@/hooks/useRecurringSchedules';
 import { useClinicRooms } from '@/hooks/useClinicRooms';
 import { useClinicStaff } from '@/hooks/useStaff';
+import { useBookableSlots } from '@/hooks/useBookableSlots';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,7 +42,7 @@ interface MergedSlot {
   key: string;
   scheduled_at: string;
   duration_minutes: number;
-  student_id: string;
+  student_id: string | null;
   equipment_id: string | null;
   instructor_id: string | null;
   room_id: string | null;
@@ -52,6 +53,9 @@ interface MergedSlot {
   isVirtual?: boolean;
   /** virtual projetado APÓS o fim do contrato (renovação simulada) */
   isProjected?: boolean;
+  /** Slot livre da Grade Master (bookable_slot) sem aluno marcado */
+  isOpen?: boolean;
+  bookable_slot_id?: string;
 }
 
 /** Expande recorrentes em um dia com opção de ignorar o fim do contrato (projeção). */
@@ -119,6 +123,18 @@ export default function GradeMasterPage() {
   }, [monthGridStart, monthGridEnd]);
   const fetchDayISO = view === 'day' ? day.toISOString() : undefined;
 
+  // Range para buscar bookable_slots conforme a vista
+  const rangeFromISO = useMemo(() => {
+    if (view === 'day') { const d = new Date(day); d.setHours(0,0,0,0); return d.toISOString(); }
+    if (view === 'week') return weekStart.toISOString();
+    return monthGridStart.toISOString();
+  }, [view, day, weekStart, monthGridStart]);
+  const rangeToISO = useMemo(() => {
+    if (view === 'day') { const d = new Date(day); d.setHours(23,59,59,999); return d.toISOString(); }
+    if (view === 'week') { const d = addDays(weekStart, 7); return d.toISOString(); }
+    return monthGridEnd.toISOString();
+  }, [view, day, weekStart, monthGridEnd]);
+
   // Quando view=week/month, buscamos sem filtro de dia e filtramos no cliente.
   const { data: appointments = [], updateStatus, remove } = useAppointments(activeClinicId, fetchDayISO);
   const { data: students = [] } = useStudents(activeClinicId);
@@ -126,6 +142,7 @@ export default function GradeMasterPage() {
   const { data: sequences = [] } = useSequences(activeClinicId);
   const { data: rooms = [] } = useClinicRooms(activeClinicId);
   const { data: staff = [] } = useClinicStaff(activeClinicId);
+  const { data: bookableSlots = [] } = useBookableSlots(activeClinicId, rangeFromISO, rangeToISO);
   const instructors = useMemo(
     () => staff.filter((s) => s.role === 'instructor' || s.role === 'clinic_admin').map((s) => ({ user_id: s.user_id, name: s.name })),
     [staff],
@@ -133,8 +150,8 @@ export default function GradeMasterPage() {
   const { data: recurring = [] } = useRecurringSchedules(activeClinicId);
   const { create: createPresc } = usePrescriptions({ clinicId: activeClinicId });
 
-  const studentName = (id: string) => students.find((s) => s.id === id)?.full_name || '—';
-  const studentAvatar = (id: string) => (students.find((s) => s.id === id) as any)?.avatar_url;
+  const studentName = (id: string | null) => id ? (students.find((s) => s.id === id)?.full_name || '—') : '—';
+  const studentAvatar = (id: string | null) => id ? (students.find((s) => s.id === id) as any)?.avatar_url : undefined;
   const equipmentName = (id: string | null) => equipment.find((e) => e.id === id)?.name || '—';
   const roomName = (id: string | null | undefined) => id ? (rooms as any[]).find((r) => r.id === id)?.name : null;
   const instructorName = (id: string | null | undefined) => id ? (instructors.find((i) => i.user_id === id)?.name || `Prof. ${id.slice(0, 4)}`) : null;
@@ -181,6 +198,39 @@ export default function GradeMasterPage() {
       });
     });
 
+    // ===== Bookable slots (Grade Master / horários disponíveis da clínica) =====
+    // Aparecem como "Livre" quando não houver aula real/virtual ocupando o mesmo
+    // horário + sala (ou equipamento).
+    const occupiedKeys = new Set(
+      merged.map((m) => {
+        const t = parseISO(m.scheduled_at);
+        return `${t.getHours()}:${t.getMinutes()}|${m.room_id ?? ''}|${m.equipment_id ?? ''}`;
+      }),
+    );
+    const dayBookable = (bookableSlots as any[]).filter((b) => b.active !== false && isSameDay(parseISO(b.scheduled_at), d));
+    dayBookable.forEach((b) => {
+      const t = parseISO(b.scheduled_at);
+      const k = `${t.getHours()}:${t.getMinutes()}|${b.room_id ?? ''}|${b.equipment_id ?? ''}`;
+      // também considera ocupado se já existe aula no mesmo horário+sala (mesmo sem equipamento)
+      const sameTimeRoom = merged.some((m) => {
+        const mt = parseISO(m.scheduled_at);
+        return mt.getHours() === t.getHours() && mt.getMinutes() === t.getMinutes() && (m.room_id ?? '') === (b.room_id ?? '');
+      });
+      if (occupiedKeys.has(k) || sameTimeRoom) return;
+      merged.push({
+        key: `open-${b.id}`,
+        scheduled_at: b.scheduled_at,
+        duration_minutes: b.duration_minutes,
+        student_id: null,
+        equipment_id: b.equipment_id,
+        instructor_id: b.instructor_id,
+        room_id: b.room_id,
+        notes: b.notes,
+        isOpen: true,
+        bookable_slot_id: b.id,
+      });
+    });
+
     // filtros
     return merged
       .filter((m) => filterInstructor === 'all' || m.instructor_id === filterInstructor)
@@ -201,6 +251,7 @@ export default function GradeMasterPage() {
   // ===== Materializar virtual =====
   const materialize = async (slot: MergedSlot): Promise<string | null> => {
     if (slot.appointment) return slot.appointment.id;
+    if (!slot.student_id) return null;
     if (!user || !activeClinicId) return null;
     const { data, error } = await supabase.from('class_appointments').insert({
       clinic_id: activeClinicId,
@@ -223,18 +274,6 @@ export default function GradeMasterPage() {
     focusedStudentId: string;
   } | null>(null);
 
-  const openSlotDialog = (slot: MergedSlot) => {
-    setSlotDialog({
-      slot: { scheduled_at: slot.scheduled_at, duration_minutes: slot.duration_minutes },
-      focusedStudentId: slot.student_id,
-    });
-  };
-
-  const handleCheckIn = async (slot: MergedSlot) => {
-    const apptId = await materialize(slot);
-    if (apptId) updateStatus.mutate({ id: apptId, status: 'checked_in' });
-  };
-
   // ===== Nova aula (avulsa ou fixa) =====
   const [newClassOpen, setNewClassOpen] = useState(false);
   const [newClassTime, setNewClassTime] = useState<string | undefined>(undefined);
@@ -242,6 +281,26 @@ export default function GradeMasterPage() {
     setDay(d);
     setNewClassTime(time);
     setNewClassOpen(true);
+  };
+
+  const openSlotDialog = (slot: MergedSlot) => {
+    // Slot livre da grade → abre Nova aula com horário pré-preenchido
+    if (slot.isOpen || !slot.student_id) {
+      const t = parseISO(slot.scheduled_at);
+      const hh = String(t.getHours()).padStart(2, '0');
+      const mm = String(t.getMinutes()).padStart(2, '0');
+      openNewClassAt(t, `${hh}:${mm}`);
+      return;
+    }
+    setSlotDialog({
+      slot: { scheduled_at: slot.scheduled_at, duration_minutes: slot.duration_minutes },
+      focusedStudentId: slot.student_id!,
+    });
+  };
+
+  const handleCheckIn = async (slot: MergedSlot) => {
+    const apptId = await materialize(slot);
+    if (apptId) updateStatus.mutate({ id: apptId, status: 'checked_in' });
   };
 
 
@@ -268,12 +327,12 @@ export default function GradeMasterPage() {
           : monthDays.filter((d) => isSameMonth(d, day)).flatMap(slotsForDay);
     return {
       total: all.length,
-      withGrade: all.filter((s) => s.appointment?.sequence_id).length,
-      pending: all.filter((s) => !s.appointment?.sequence_id).length,
+      classes: all.filter((s) => !s.isOpen).length,
+      open: all.filter((s) => s.isOpen).length,
       projected: all.filter((s) => s.isProjected).length,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, daySlots, weekDays, monthDays, day, appointments, recurring, simulateRenewal, horizonDate, filterInstructor]);
+  }, [view, daySlots, weekDays, monthDays, day, appointments, recurring, bookableSlots, simulateRenewal, horizonDate, filterInstructor, filterRoom]);
 
   return (
     <PageMotion className="min-h-screen">
@@ -291,9 +350,9 @@ export default function GradeMasterPage() {
         {/* TOP BAR: stats + view + filters */}
         <Card className="p-4 space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Stat label="Aulas" value={stats.total} icon={CalendarDays} />
-            <Stat label="Com grade" value={stats.withGrade} icon={CheckCircle2} tone="success" />
-            <Stat label="Sem grade" value={stats.pending} icon={AlertTriangle} tone="warn" />
+            <Stat label="Total" value={stats.total} icon={CalendarDays} />
+            <Stat label="Aulas marcadas" value={stats.classes} icon={CheckCircle2} tone="success" />
+            <Stat label="Horários livres" value={stats.open} icon={Plus} tone="warn" />
             <Stat label="Projeções" value={stats.projected} icon={RefreshCw} tone="muted" />
           </div>
 
@@ -457,10 +516,11 @@ export default function GradeMasterPage() {
                               'text-[9px] px-1 py-0.5 rounded truncate border',
                               s.isVirtual && 'border-dashed',
                               s.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
-                              hasGrade ? 'bg-primary/10 text-primary' : 'bg-muted',
+                              s.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400',
+                              !s.isOpen && (hasGrade ? 'bg-primary/10 text-primary' : 'bg-muted'),
                             )}
                           >
-                            {format(parseISO(s.scheduled_at), 'HH:mm')} {studentName(s.student_id).split(' ')[0]}
+                            {format(parseISO(s.scheduled_at), 'HH:mm')} {s.isOpen ? (roomName(s.room_id) || 'livre') : studentName(s.student_id).split(' ')[0]}
                           </div>
                         );
                       })}
@@ -514,12 +574,14 @@ export default function GradeMasterPage() {
                   const sl = s.appointment ? STATUS_LABEL[s.appointment.status] : (
                     s.isProjected
                       ? { label: 'Projetado', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30' }
-                      : { label: 'Fixo', cls: 'bg-secondary text-secondary-foreground' }
+                      : s.isOpen
+                        ? { label: 'Livre', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' }
+                        : { label: 'Fixo', cls: 'bg-secondary text-secondary-foreground' }
                   );
                   const seqId = s.appointment?.sequence_id;
                   const seqName = seqId ? sequences.find((x) => x.id === seqId)?.name : null;
                   const av = studentAvatar(s.student_id);
-                  const stu = students.find((x) => x.id === s.student_id) as any;
+                  const stu = s.student_id ? students.find((x) => x.id === s.student_id) as any : null;
                   const expired = stu?.contract_end_date && new Date(stu.contract_end_date) < new Date();
                   return (
                     <div
@@ -528,13 +590,18 @@ export default function GradeMasterPage() {
                         'flex items-center gap-3 p-3 rounded-lg border bg-card flex-wrap',
                         s.isVirtual && 'border-dashed',
                         s.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
+                        s.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5',
                       )}
                     >
                       <div className="text-center min-w-[60px]">
                         <div className="font-bold text-lg">{format(parseISO(s.scheduled_at), 'HH:mm')}</div>
                         <div className="text-[10px] text-muted-foreground">{s.duration_minutes}min</div>
                       </div>
-                      {av ? (
+                      {s.isOpen ? (
+                        <div className="h-9 w-9 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                          <Plus className="h-4 w-4" />
+                        </div>
+                      ) : av ? (
                         <img src={av} alt="" className="h-9 w-9 rounded-full object-cover" />
                       ) : (
                         <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
@@ -543,7 +610,7 @@ export default function GradeMasterPage() {
                       )}
                       <div className="flex-1 min-w-[180px]">
                         <div className="font-medium truncate flex items-center gap-1.5">
-                          {studentName(s.student_id)}
+                          {s.isOpen ? <span className="text-muted-foreground italic">Horário disponível</span> : studentName(s.student_id)}
                           {s.isVirtual && <span title="Horário fixo"><Repeat className="h-3 w-3 text-muted-foreground" /></span>}
                           {s.isProjected && <span title="Projeção pós-contrato"><RefreshCw className="h-3 w-3 text-amber-600" /></span>}
                           {expired && !s.appointment && (
@@ -559,7 +626,7 @@ export default function GradeMasterPage() {
                             <span>· {instructorName(s.instructor_id)}</span>
                           )}
                           {seqName && <span className="text-primary"><Sparkles className="h-3 w-3 inline mr-0.5" />{seqName}</span>}
-                          {!seqName && !s.isProjected && (
+                          {!seqName && !s.isProjected && !s.isOpen && (
                             <span className="text-amber-600 dark:text-amber-400">
                               <AlertTriangle className="h-3 w-3 inline mr-0.5" />sem grade
                             </span>
@@ -568,17 +635,23 @@ export default function GradeMasterPage() {
                       </div>
                       <Badge className={sl.cls}>{sl.label}</Badge>
 
-                      {s.isProjected && (
-                        <Button size="sm" variant="outline" onClick={() => renewContract(s.student_id)}>
+                      {s.isProjected && s.student_id && (
+                        <Button size="sm" variant="outline" onClick={() => renewContract(s.student_id!)}>
                           <RefreshCw className="h-3.5 w-3.5 mr-1" />Renovar
                         </Button>
                       )}
 
-                      <Button size="sm" variant={seqName ? 'outline' : 'default'} onClick={() => openSlotDialog(s)}>
-                        <ListChecks className="h-3.5 w-3.5 mr-1" />{seqName ? 'Trocar grade' : 'Definir grade'}
-                      </Button>
+                      {s.isOpen ? (
+                        <Button size="sm" onClick={() => openSlotDialog(s)}>
+                          <Plus className="h-3.5 w-3.5 mr-1" />Agendar aluno
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant={seqName ? 'outline' : 'default'} onClick={() => openSlotDialog(s)}>
+                          <ListChecks className="h-3.5 w-3.5 mr-1" />{seqName ? 'Trocar grade' : 'Definir grade'}
+                        </Button>
+                      )}
 
-                      {(!s.appointment || s.appointment.status === 'scheduled') && !s.isProjected && (
+                      {!s.isOpen && (!s.appointment || s.appointment.status === 'scheduled') && !s.isProjected && (
                         <Button size="sm" variant="outline" onClick={() => handleCheckIn(s)}>
                           <LogIn className="h-3.5 w-3.5 mr-1" />Check-in
                         </Button>
@@ -687,20 +760,24 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, o
         'w-full text-left p-1.5 rounded border text-[11px] hover:bg-muted/50 transition group block',
         slot.isVirtual && 'border-dashed',
         slot.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
+        slot.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/10',
         status === 'completed' && 'opacity-60',
       )}
     >
       <div className="flex items-center justify-between gap-1">
         <span className="font-bold">{time}</span>
+        {slot.isOpen && <Plus className="h-2.5 w-2.5 text-emerald-600" />}
         {slot.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
         {slot.isVirtual && !slot.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
-        {hasGrade ? (
+        {!slot.isOpen && (hasGrade ? (
           <Sparkles className="h-2.5 w-2.5 text-primary" />
         ) : (
           <AlertTriangle className="h-2.5 w-2.5 text-amber-500" />
-        )}
+        ))}
       </div>
-      <div className="truncate font-medium">{studentName}</div>
+      <div className="truncate font-medium">
+        {slot.isOpen ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span> : studentName}
+      </div>
       {(roomName || instructorName) && (
         <div className="truncate text-muted-foreground text-[10px]">
           {[roomName, instructorName].filter(Boolean).join(' · ')}
