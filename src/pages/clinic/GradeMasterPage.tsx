@@ -198,6 +198,39 @@ export default function GradeMasterPage() {
       });
     });
 
+    // ===== Bookable slots (Grade Master / horários disponíveis da clínica) =====
+    // Aparecem como "Livre" quando não houver aula real/virtual ocupando o mesmo
+    // horário + sala (ou equipamento).
+    const occupiedKeys = new Set(
+      merged.map((m) => {
+        const t = parseISO(m.scheduled_at);
+        return `${t.getHours()}:${t.getMinutes()}|${m.room_id ?? ''}|${m.equipment_id ?? ''}`;
+      }),
+    );
+    const dayBookable = (bookableSlots as any[]).filter((b) => b.active !== false && isSameDay(parseISO(b.scheduled_at), d));
+    dayBookable.forEach((b) => {
+      const t = parseISO(b.scheduled_at);
+      const k = `${t.getHours()}:${t.getMinutes()}|${b.room_id ?? ''}|${b.equipment_id ?? ''}`;
+      // também considera ocupado se já existe aula no mesmo horário+sala (mesmo sem equipamento)
+      const sameTimeRoom = merged.some((m) => {
+        const mt = parseISO(m.scheduled_at);
+        return mt.getHours() === t.getHours() && mt.getMinutes() === t.getMinutes() && (m.room_id ?? '') === (b.room_id ?? '');
+      });
+      if (occupiedKeys.has(k) || sameTimeRoom) return;
+      merged.push({
+        key: `open-${b.id}`,
+        scheduled_at: b.scheduled_at,
+        duration_minutes: b.duration_minutes,
+        student_id: null,
+        equipment_id: b.equipment_id,
+        instructor_id: b.instructor_id,
+        room_id: b.room_id,
+        notes: b.notes,
+        isOpen: true,
+        bookable_slot_id: b.id,
+      });
+    });
+
     // filtros
     return merged
       .filter((m) => filterInstructor === 'all' || m.instructor_id === filterInstructor)
