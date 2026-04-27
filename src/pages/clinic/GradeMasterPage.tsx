@@ -7,7 +7,9 @@ import { useRecurringSchedules, type RecurringSchedule } from '@/hooks/useRecurr
 import { useClinicRooms } from '@/hooks/useClinicRooms';
 import { useClinicStaff } from '@/hooks/useStaff';
 import { useBookableSlots } from '@/hooks/useBookableSlots';
+import { useInstructorAvailability, useInstructorColors, colorForInstructor } from '@/hooks/useInstructorAvailability';
 import { Card } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
