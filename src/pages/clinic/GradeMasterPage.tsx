@@ -965,7 +965,7 @@ export default function GradeMasterPage() {
                   {selectionMode ? 'Cancelar seleção' : 'Selecionar'}
                 </Button>
               )}
-              <Button size="sm" onClick={() => openNewClassAt(day)}>
+              <Button size="sm" onClick={() => setAvailPickerOpen(true)}>
                 <Plus className="h-4 w-4 mr-1" />Nova aula
               </Button>
 
