@@ -980,7 +980,7 @@ function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; v
   );
 }
 
-function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, instructorColor, occupancy, uncovered, onClick }: {
+function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, instructorColor, occupancy, uncovered, onClick, instructorPicker }: {
   slot: MergedSlot;
   studentName: string;
   sequenceName: string | null | undefined;
@@ -990,6 +990,7 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, i
   occupancy?: { used: number; cap: number } | null;
   uncovered?: boolean;
   onClick: () => void;
+  instructorPicker?: React.ReactNode;
 }) {
   const time = format(parseISO(slot.scheduled_at), 'HH:mm');
   const status = slot.appointment?.status;
