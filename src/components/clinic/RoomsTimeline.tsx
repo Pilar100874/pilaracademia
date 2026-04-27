@@ -122,10 +122,12 @@ export function RoomsTimeline({
         onReplaceSelection?.(slotKeys, emptyKeys);
       }
     },
-    onEnd: (_rect, additive) => {
-      const slotCount = selectedSlotKeys?.size ?? 0;
-      const emptyCount = selectedEmptyKeys?.size ?? 0;
-      if (slotCount + emptyCount > 0) onMarqueeEnd?.({ slotCount, emptyCount, additive });
+    onEnd: (rect, additive) => {
+      const container = marquee.containerRef.current;
+      if (!container || !rect) return;
+      const { slotKeys, emptyKeys } = collectInRect(rect, container);
+      const total = slotKeys.size + emptyKeys.size;
+      if (total > 0) onMarqueeEnd?.({ slotCount: slotKeys.size, emptyCount: emptyKeys.size, additive });
     },
   });
 
