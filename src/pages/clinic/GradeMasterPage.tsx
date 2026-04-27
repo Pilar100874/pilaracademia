@@ -1183,7 +1183,7 @@ export default function GradeMasterPage() {
               rooms={rooms as any}
               startHour={6}
               endHour={22}
-              hourHeight={64}
+              hourHeight={72}
               slots={daySlots.map(toTimelineSlot)}
               studentName={studentName}
               instructorName={instructorName}
