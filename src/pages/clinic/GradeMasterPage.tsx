@@ -836,14 +836,25 @@ export default function GradeMasterPage() {
     appointment_id: s.appointment?.id,
     bookable_slot_id: s.bookable_slot_id,
     recurring_id: s.recurring_id,
+    blockedPeriodId: s.blockedPeriodId,
+    blockedPeriodName: s.blockedPeriodName,
+    blockedPeriodColor: s.blockedPeriodColor,
   });
 
   /**
    * "Excluir" um horário NUNCA remove de fato.
+   * - Bloqueio padrão (almoço etc) → cria/remove EXCEÇÃO daquela data.
    * - Aulas reais (class_appointments) → cancelamento.
-   * - Slots livres (bookable_slots)    → bloqueio (blocked=true).
+   * - Slots livres (bookable_slots) → bloqueio (blocked=true).
    */
   const handleTimelineDelete = (ts: TimelineSlot) => {
+    if (ts.blockedPeriodId) {
+      const dt = parseISO(ts.scheduled_at);
+      const dateStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+      // Como o slot só aparece quando NÃO há exceção, deletar = liberar pontualmente.
+      addException.mutate({ blocked_period_id: ts.blockedPeriodId, exception_date: dateStr });
+      return;
+    }
     if (ts.appointment_id) {
       remove.mutate(ts.appointment_id);
     } else if (ts.bookable_slot_id) {
