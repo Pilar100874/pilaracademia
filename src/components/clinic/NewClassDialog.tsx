@@ -221,6 +221,55 @@ export function NewClassDialog({
         const [h, m] = time.split(':').map(Number);
         const sched = new Date(initialDate);
         sched.setHours(h, m, 0, 0);
+        const schedEnd = new Date(sched.getTime() + duration * 60 * 1000);
+
+        // Validação obrigatória: precisa haver professor alocado na grade nesse horário
+        const dow = sched.getDay();
+        const hhmm = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+        const endH = schedEnd.getHours();
+        const endM = schedEnd.getMinutes();
+        const endHHMM = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}:00`;
+
+        // 1) Disponibilidade recorrente do professor (grade semanal)
+        let hasInstructorOnGrid = false;
+        if (instructorId) {
+          const { data: avail } = await supabase
+            .from('instructor_availability' as any)
+            .select('id, start_time, end_time')
+            .eq('clinic_id', clinicId)
+            .eq('instructor_id', instructorId)
+            .eq('day_of_week', dow)
+            .eq('active', true);
+          hasInstructorOnGrid = (avail ?? []).some((a: any) =>
+            a.start_time <= hhmm && a.end_time >= endHHMM
+          );
+
+          // 2) Ou um bookable_slot ativo cobrindo o intervalo
+          if (!hasInstructorOnGrid) {
+            const dayStart = new Date(sched); dayStart.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(sched); dayEnd.setHours(23, 59, 59, 999);
+            const { data: slots } = await supabase
+              .from('bookable_slots' as any)
+              .select('scheduled_at, duration_minutes, instructor_id, active, blocked')
+              .eq('clinic_id', clinicId)
+              .eq('instructor_id', instructorId)
+              .gte('scheduled_at', dayStart.toISOString())
+              .lte('scheduled_at', dayEnd.toISOString());
+            hasInstructorOnGrid = (slots ?? []).some((s: any) => {
+              if (s.active === false || s.blocked === true) return false;
+              const sStart = new Date(s.scheduled_at).getTime();
+              const sEnd = sStart + (s.duration_minutes || 50) * 60 * 1000;
+              return sStart <= sched.getTime() && sEnd >= schedEnd.getTime();
+            });
+          }
+        }
+
+        if (!hasInstructorOnGrid) {
+          toast.error('Não há professor alocado na grade nesse horário. Defina a disponibilidade do professor antes de criar a aula avulsa.');
+          setSaving(false);
+          return;
+        }
+
         // Conflito: mesma sala/equipamento no mesmo horário
         if (roomId || equipmentId) {
           const start = new Date(sched.getTime() - 60 * 60 * 1000);
