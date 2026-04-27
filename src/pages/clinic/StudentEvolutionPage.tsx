@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Activity, Calendar as CalIcon } from 'lucide-react';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import { format, subDays, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line, CartesianGrid } from 'recharts';
@@ -68,11 +69,9 @@ export default function StudentEvolutionPage() {
   const current = students.find((s) => s.id === studentId);
 
   return (
+    <>
+    <ClinicPageHeader icon={TrendingUp} title="Evolução do aluno" subtitle="Últimos 90 dias" />
     <div className="p-6 space-y-4 max-w-6xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2"><TrendingUp className="h-6 w-6 text-primary" />Evolução do aluno</h1>
-        <p className="text-sm text-muted-foreground">Histórico de execuções dos últimos 90 dias.</p>
-      </div>
 
       <Card className="p-4">
         <label className="text-sm font-medium">Selecione o aluno</label>
@@ -132,5 +131,6 @@ export default function StudentEvolutionPage() {
         </>
       )}
     </div>
+    </>
   );
 }

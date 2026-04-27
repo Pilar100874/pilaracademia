@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2, ListOrdered, GripVertical, Library, Pencil, Check, X, MessageCircle, Play, Maximize2, Dumbbell, LayoutTemplate, Search, Clock, Filter, Layers } from 'lucide-react';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import { ShareSequenceDialog } from '@/components/ShareSequenceDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
@@ -325,12 +326,10 @@ export default function SequencesPage() {
   const currentSeq = sequences.find((s) => s.id === selected);
 
   return (
+    <>
+    <ClinicPageHeader icon={ListOrdered} title="Sequências" subtitle="Grades por equipamento e nível" />
     <div className="p-6 space-y-4 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-bold">Sequências de exercícios</h1>
-          <p className="text-sm text-muted-foreground">Monte grades por equipamento e nível.</p>
-        </div>
+      <div className="flex items-center justify-end flex-wrap gap-2">
         <div className="flex gap-2 flex-wrap">
           <ImportGlobalTemplateButton clinicId={activeClinicId} onImported={(id) => setSelected(id)} />
           {canCreateSequences && (
@@ -720,6 +719,7 @@ export default function SequencesPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }
 
