@@ -167,6 +167,17 @@ export default function ClinicLayout() {
         </nav>
 
         <div className={cn('border-t space-y-1', sidebarCollapsed ? 'p-2' : 'p-3')}>
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              className={cn('w-full', sidebarCollapsed ? 'justify-center px-0' : 'justify-start')}
+              onClick={() => setWizardOpen(true)}
+              title={sidebarCollapsed ? 'Assistente de configuração' : undefined}
+            >
+              <Sparkles className={cn('h-4 w-4 text-primary', !sidebarCollapsed && 'mr-2')} />
+              {!sidebarCollapsed && 'Assistente'}
+            </Button>
+          )}
           <Button
             variant="ghost"
             className={cn('w-full', sidebarCollapsed ? 'justify-center px-0' : 'justify-start')}
