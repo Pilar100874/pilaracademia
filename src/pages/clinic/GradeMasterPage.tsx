@@ -19,6 +19,10 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogAction,
+} from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Plus, ChevronLeft, ChevronRight, CalendarDays, CheckCircle2, LogIn, Trash2,
@@ -630,13 +634,30 @@ export default function GradeMasterPage() {
   // ===== Atribuição em massa (criar / reatribuir) =====
   const [bulkOpen, setBulkOpen] = useState<null | 'create' | 'reassign'>(null);
 
+  // Drag & drop de professor (paleta) — stubs no-op (handlers reais a implementar)
+  const [draggingInstructorId, setDraggingInstructorId] = useState<string | null>(null);
+  const dropInstructorOnCell = (_id: string, _d: Date, _h: number, _roomId: string | null) => {};
+  const dropInstructorOnSlot = (_id: string, _ts: TimelineSlot) => {};
+  const selectRoomColumn = (_roomId: string, _days: Date[]) => {};
+
+  // Relatório exibido após operação em massa quando há skips/erros
+  type BulkReport = {
+    title: string;
+    createdOrUpdated: number;
+    requested: number;
+    conflicts: string[];
+    otherErrors: string[];
+  };
+  const [bulkReport, setBulkReport] = useState<BulkReport | null>(null);
+
   const createSelectedEmpty = async (values: BulkAssignValues) => {
     console.log('[GradeMaster] createSelectedEmpty', { count: selectedEmptyKeys.size, values, activeClinicId, hasUser: !!user });
     if (!activeClinicId || !user) {
       toast.error('Sessão sem clínica ativa. Recarregue a página.');
-      return;
+      return { created: 0, requested: selectedEmptyKeys.size, conflicts: [], otherErrors: ['Sessão sem clínica ativa. Recarregue a página.'] };
     }
-    if (selectedEmptyKeys.size === 0) return;
+    const requested = selectedEmptyKeys.size;
+    if (requested === 0) return { created: 0, requested: 0, conflicts: [], otherErrors: [] };
     let count = 0;
     const conflicts: string[] = [];
     const otherErrors: string[] = [];
@@ -670,24 +691,14 @@ export default function GradeMasterPage() {
     await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
     await qc.invalidateQueries({ queryKey: ['appointments'] });
     if (count > 0) toast.success(`${count} horário(s) criado(s)`);
-    if (conflicts.length > 0) {
-      toast.warning(
-        `${conflicts.length} horário(s) ignorado(s) — professor já ocupado`,
-        { description: conflicts.slice(0, 5).join('\n') + (conflicts.length > 5 ? `\n…e mais ${conflicts.length - 5}` : ''), duration: 8000 }
-      );
-    }
-    if (otherErrors.length > 0) {
-      toast.error(`${otherErrors.length} falha(s)`, { description: otherErrors.slice(0, 5).join('\n'), duration: 8000 });
-    }
-    if (count === 0 && conflicts.length === 0 && otherErrors.length === 0) {
-      toast.info('Nenhum horário processado.');
-    }
     exitSelection();
+    return { created: count, requested, conflicts, otherErrors };
   };
 
   const reassignSelected = async (values: BulkAssignValues) => {
-    if (selectedSlotKeys.size === 0) return;
     const tsList = visibleSlotsForSelection().map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
+    const requested = tsList.length;
+    if (requested === 0) return { updated: 0, requested: 0, conflicts: [], otherErrors: [] };
     let updated = 0;
     const conflicts: string[] = [];
     const otherErrors: string[] = [];
@@ -724,142 +735,8 @@ export default function GradeMasterPage() {
     await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
     await qc.invalidateQueries({ queryKey: ['appointments'] });
     if (updated > 0) toast.success(`${updated} horário(s) atualizado(s)`);
-    if (conflicts.length > 0) {
-      toast.warning(
-        `${conflicts.length} horário(s) ignorado(s) — professor já ocupado`,
-        { description: conflicts.slice(0, 5).join('\n') + (conflicts.length > 5 ? `\n…e mais ${conflicts.length - 5}` : ''), duration: 8000 }
-      );
-    }
-    if (otherErrors.length > 0) {
-      toast.error(`${otherErrors.length} falha(s)`, { description: otherErrors.slice(0, 5).join('\n'), duration: 8000 });
-    }
     exitSelection();
-  };
-
-  /**
-   * Seleciona toda a coluna de uma sala (todas as horas 6..21) para um conjunto
-   * de dias visíveis e abre o BulkAssignDialog. Se o slot daquele horário já
-   * existir (slot/aula), entra em selectedSlotKeys (modo reassign);
-   * caso contrário entra em selectedEmptyKeys (modo create).
-   */
-  const selectRoomColumn = (roomId: string | null, targetDays: Date[]) => {
-    const HOUR_START = 6;
-    const HOUR_END = 22;
-    const newEmpty = new Set<EmptyCellKey>();
-    const newSlots = new Set<string>();
-    const allVisible = visibleSlotsForSelection();
-    targetDays.forEach((d) => {
-      for (let h = HOUR_START; h < HOUR_END; h++) {
-        // Slot existente neste horário+sala?
-        const existing = allVisible.find((s) => {
-          if ((s.room_id ?? null) !== roomId) return false;
-          if (!isSameDay(parseISO(s.scheduled_at), d)) return false;
-          return parseISO(s.scheduled_at).getHours() === h;
-        });
-        if (existing) {
-          newSlots.add(existing.key);
-        } else {
-          newEmpty.add(makeEmptyKey(d, h, roomId));
-        }
-      }
-    });
-    console.log('[GradeMaster] selectRoomColumn', { roomId, targetDays: targetDays.map((d) => d.toISOString().slice(0,10)), newEmpty: newEmpty.size, newSlots: newSlots.size });
-    if (newEmpty.size === 0 && newSlots.size === 0) {
-      toast.info('Nenhum horário disponível nessa coluna.');
-      return;
-    }
-    replaceSelection(newSlots, newEmpty);
-    // Prioriza criar horários vazios; se só houver existentes, vai para reassign
-    if (newEmpty.size > 0) setBulkOpen('create');
-    else setBulkOpen('reassign');
-  };
-
-  // ===== Drag & drop de professor =====
-  const [draggingInstructorId, setDraggingInstructorId] = useState<string | null>(null);
-  const resolveInstructor = (raw: string): string | null => raw === CLEAR_INSTRUCTOR ? null : raw;
-
-  const dropInstructorOnSlot = async (raw: string, ts: TimelineSlot) => {
-    if (!activeClinicId || !user) return;
-    const newInstructorId = resolveInstructor(raw);
-    try {
-      if (ts.appointment_id) {
-        const { error } = await supabase.from('class_appointments')
-          .update({ instructor_id: newInstructorId })
-          .eq('id', ts.appointment_id);
-        if (error) throw error;
-      } else if (ts.bookable_slot_id) {
-        const { error } = await supabase.from('bookable_slots' as any)
-          .update({ instructor_id: newInstructorId })
-          .eq('id', ts.bookable_slot_id);
-        if (error) throw error;
-      } else if (ts.recurring_id) {
-        // Materializa a virtual como appointment já com o novo professor
-        const original = (view === 'day' ? daySlots : weekDays.flatMap(slotsForDay)).find((s) => s.key === ts.key);
-        if (!original?.student_id) { setDraggingInstructorId(null); return; }
-        const { error } = await supabase.from('class_appointments').insert({
-          clinic_id: activeClinicId,
-          student_id: original.student_id,
-          equipment_id: original.equipment_id,
-          instructor_id: newInstructorId,
-          scheduled_at: original.scheduled_at,
-          duration_minutes: original.duration_minutes,
-          notes: original.notes,
-          created_by: user.id,
-          recurring_schedule_id: original.recurring_id || null,
-        });
-        if (error) throw error;
-      }
-      toast.success(newInstructorId ? 'Professor atribuído' : 'Professor removido');
-    } catch (e: any) {
-      toast.error(e?.message || 'Erro ao atribuir professor');
-    } finally {
-      setDraggingInstructorId(null);
-    }
-  };
-
-  const dropInstructorOnCell = async (raw: string, d: Date, hour: number, roomId: string | null = null) => {
-    console.log('[GradeMaster] dropInstructorOnCell', { raw, day: d.toISOString(), hour, roomId, activeClinicId, hasUser: !!user });
-    if (!activeClinicId || !user) {
-      toast.error('Sessão sem clínica ativa. Recarregue a página.');
-      setDraggingInstructorId(null);
-      return;
-    }
-    const newInstructorId = resolveInstructor(raw);
-    if (!newInstructorId) {
-      toast.info('Arraste um professor para criar um horário.');
-      setDraggingInstructorId(null);
-      return;
-    }
-    const sched = new Date(d);
-    sched.setHours(hour, 0, 0, 0);
-    try {
-      await createBookable.mutateAsync({
-        clinic_id: activeClinicId,
-        scheduled_at: sched.toISOString(),
-        duration_minutes: 50,
-        equipment_id: null,
-        instructor_id: newInstructorId,
-        room_id: roomId,
-        capacity: 1,
-        notes: null,
-        created_by: user.id,
-      } as any);
-      await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
-      toast.success(`Horário criado em ${format(sched, 'dd/MM HH:mm')}`);
-    } catch (e: any) {
-      console.error('[GradeMaster] dropInstructorOnCell error', e);
-      const msg = e?.message || 'Erro ao criar horário';
-      if (/professor já/i.test(msg)) {
-        toast.warning('Conflito de professor', {
-          description: `${format(sched, 'dd/MM HH:mm')} — ${msg.replace(/^.*?:\s*/, '')}`,
-          duration: 7000,
-        });
-      } else {
-        toast.error(`Falha: ${msg}`);
-      }
-    } finally {
-      setDraggingInstructorId(null);
-    }
+    return { updated, requested, conflicts, otherErrors };
   };
 
 
@@ -1477,11 +1354,96 @@ export default function GradeMasterPage() {
         })()}
         onConfirm={async (values) => {
           console.log('[GradeMaster] BulkAssignDialog confirm', { values, empty: selectedEmptyKeys.size, slots: selectedSlotKeys.size });
-          // Sempre executa ambas as operações se houver seleção mista
-          if (selectedEmptyKeys.size > 0) await createSelectedEmpty(values);
-          if (selectedSlotKeys.size > 0) await reassignSelected(values);
+          const isCreate = bulkOpen === 'create';
+          let createRes = { created: 0, requested: 0, conflicts: [] as string[], otherErrors: [] as string[] };
+          let reassignRes = { updated: 0, requested: 0, conflicts: [] as string[], otherErrors: [] as string[] };
+          if (selectedEmptyKeys.size > 0) createRes = await createSelectedEmpty(values);
+          if (selectedSlotKeys.size > 0) reassignRes = await reassignSelected(values);
+
+          const ok = createRes.created + reassignRes.updated;
+          const requested = createRes.requested + reassignRes.requested;
+          const conflicts = [...createRes.conflicts, ...reassignRes.conflicts];
+          const otherErrors = [...createRes.otherErrors, ...reassignRes.otherErrors];
+          const failed = conflicts.length + otherErrors.length;
+          const skipped = Math.max(0, requested - ok - failed);
+
+          // Abre relatório se algo não foi feito (popup explicativo)
+          if (requested > 0 && (ok < requested || failed > 0)) {
+            setBulkReport({
+              title: isCreate ? 'Resultado da criação de horários' : 'Resultado da reatribuição',
+              createdOrUpdated: ok,
+              requested,
+              conflicts,
+              otherErrors: [
+                ...otherErrors,
+                ...(skipped > 0 ? [`${skipped} horário(s) ignorado(s) sem detalhes — verifique se a sala/professor estão disponíveis e tente novamente.`] : []),
+              ],
+            });
+          }
         }}
       />
+
+      {/* Popup com motivo quando algum horário não foi criado/atualizado */}
+      <AlertDialog open={bulkReport !== null} onOpenChange={(v) => !v && setBulkReport(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              {bulkReport?.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <span className="font-semibold text-foreground">{bulkReport?.createdOrUpdated ?? 0}</span>
+                  {' de '}
+                  <span className="font-semibold text-foreground">{bulkReport?.requested ?? 0}</span>
+                  {' horário(s) processado(s) com sucesso.'}
+                </div>
+
+                {bulkReport && bulkReport.conflicts.length > 0 && (
+                  <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
+                    <div className="font-semibold text-amber-700 dark:text-amber-400 mb-1.5 flex items-center gap-1.5">
+                      <UserCog className="h-4 w-4" />
+                      Conflitos de professor ({bulkReport.conflicts.length})
+                    </div>
+                    <ul className="space-y-1 text-xs max-h-40 overflow-auto">
+                      {bulkReport.conflicts.slice(0, 20).map((c, i) => (
+                        <li key={i} className="text-muted-foreground">• {c}</li>
+                      ))}
+                      {bulkReport.conflicts.length > 20 && (
+                        <li className="text-muted-foreground italic">…e mais {bulkReport.conflicts.length - 20}</li>
+                      )}
+                    </ul>
+                    <div className="mt-2 text-[11px] text-muted-foreground">
+                      O professor selecionado já tinha aula em outro horário/sala neste mesmo momento.
+                    </div>
+                  </div>
+                )}
+
+                {bulkReport && bulkReport.otherErrors.length > 0 && (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
+                    <div className="font-semibold text-destructive mb-1.5 flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4" />
+                      Outras falhas ({bulkReport.otherErrors.length})
+                    </div>
+                    <ul className="space-y-1 text-xs max-h-40 overflow-auto">
+                      {bulkReport.otherErrors.slice(0, 20).map((c, i) => (
+                        <li key={i} className="text-muted-foreground">• {c}</li>
+                      ))}
+                      {bulkReport.otherErrors.length > 20 && (
+                        <li className="text-muted-foreground italic">…e mais {bulkReport.otherErrors.length - 20}</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setBulkReport(null)}>Entendi</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageMotion>
   );
 }
