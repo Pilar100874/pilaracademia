@@ -305,6 +305,56 @@ export default function GradeMasterPage() {
       });
     });
 
+    // ===== Bloqueios padrão recorrentes (ex: almoço) =====
+    // Para cada hora dentro de cada bloqueio ativo (não excepcionado naquele dia),
+    // injeta um slot virtual isBlocked. Se o bloqueio tem room_id, só naquela sala;
+    // caso contrário, em todas as salas (ou null).
+    const targetRoomIds: (string | null)[] = (rooms as any[]).length > 0
+      ? (rooms as any[]).map((r) => r.id as string)
+      : [null];
+    blockedPeriods
+      .filter((bp) => bp.active && bp.day_of_week === d.getDay())
+      .forEach((bp) => {
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const released = blockedExceptions.some((e) => e.blocked_period_id === bp.id && e.exception_date === dateStr);
+        if (released) return;
+        const [sh, sm] = bp.start_time.split(':').map(Number);
+        const [eh, em] = bp.end_time.split(':').map(Number);
+        const startMin = sh * 60 + sm;
+        const endMin = eh * 60 + em;
+        const roomIds = bp.room_id ? [bp.room_id] : targetRoomIds;
+        // Quebra em fatias de 1 hora alinhadas
+        for (let m = startMin; m < endMin; m += 60) {
+          const sliceEnd = Math.min(m + 60, endMin);
+          const dur = sliceEnd - m;
+          const sched = new Date(d);
+          sched.setHours(Math.floor(m / 60), m % 60, 0, 0);
+          roomIds.forEach((rid) => {
+            // Se a hora exata + sala já tem aula real/virtual ocupando, NÃO sobrepõe — apenas marca a hora vazia
+            const hasClass = merged.some((mm) => {
+              if (mm.isOpen || mm.isBlocked) return false;
+              const mt = parseISO(mm.scheduled_at);
+              return mt.getHours() === sched.getHours() && (mm.room_id ?? null) === (rid ?? null);
+            });
+            if (hasClass) return;
+            merged.push({
+              key: `bp-${bp.id}-${sched.toISOString()}-${rid ?? 'all'}`,
+              scheduled_at: sched.toISOString(),
+              duration_minutes: dur,
+              student_id: null,
+              equipment_id: null,
+              instructor_id: null,
+              room_id: rid,
+              notes: bp.name,
+              isBlocked: true,
+              blockedPeriodId: bp.id,
+              blockedPeriodName: bp.name,
+              blockedPeriodColor: bp.color,
+            });
+          });
+        }
+      });
+
     // filtros
     return merged
       .filter((m) => filterInstructor === 'all' || m.instructor_id === filterInstructor)
