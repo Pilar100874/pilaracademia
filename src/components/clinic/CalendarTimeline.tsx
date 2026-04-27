@@ -415,7 +415,8 @@ export function CalendarTimeline({
                               : s.uncovered ? 'hsl(var(--destructive))' : (color || 'hsl(var(--primary))'),
                           }}
                           className={cn(
-                            'absolute left-1 right-1 z-10 rounded border border-l-4 px-1.5 py-1 text-[10px] cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary/30 transition shadow-sm',
+                            'absolute left-1 right-1 rounded border border-l-4 px-1.5 py-1 text-[10px] cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary/30 transition shadow-sm',
+                            s.blockedPeriodId || s.isBlocked ? 'z-30' : 'z-10',
                             s.blockedPeriodId
                               ? 'bg-[repeating-linear-gradient(45deg,hsl(var(--destructive)/0.10)_0_6px,transparent_6px_12px)] border-destructive/30 border-dashed'
                               : s.isBlocked
