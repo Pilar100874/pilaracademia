@@ -440,9 +440,14 @@ export default function GradeMasterPage() {
   const [bulkOpen, setBulkOpen] = useState<null | 'create' | 'reassign'>(null);
 
   const createSelectedEmpty = async (values: BulkAssignValues) => {
-    if (selectedEmptyKeys.size === 0 || !activeClinicId || !user) return;
+    console.log('[GradeMaster] createSelectedEmpty', { count: selectedEmptyKeys.size, values, activeClinicId, hasUser: !!user });
+    if (!activeClinicId || !user) {
+      toast.error('Sessão sem clínica ativa. Recarregue a página.');
+      return;
+    }
+    if (selectedEmptyKeys.size === 0) return;
     let count = 0;
-    let errorMsg: string | null = null;
+    let lastError: string | null = null;
     for (const k of selectedEmptyKeys) {
       const { date, hour, roomId: cellRoomId } = parseEmptyKey(k);
       const sched = new Date(`${date}T${String(hour).padStart(2, '0')}:00:00`);
@@ -462,14 +467,16 @@ export default function GradeMasterPage() {
         } as any);
         count++;
       } catch (e: any) {
-        errorMsg = e?.message || 'Erro ao criar horário';
+        lastError = e?.message || 'Erro ao criar horário';
+        console.error('[GradeMaster] createBookable error', e);
       }
     }
     // Força refetch dos dados visíveis para garantir que apareçam no dashboard
     await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
     await qc.invalidateQueries({ queryKey: ['appointments'] });
     if (count > 0) toast.success(`${count} horário(s) criado(s)`);
-    if (errorMsg && count === 0) toast.error(errorMsg);
+    if (lastError && count === 0) toast.error(`Falha: ${lastError}`);
+    else if (lastError) toast.warning(`Alguns horários falharam: ${lastError}`);
     exitSelection();
   };
 
@@ -537,6 +544,7 @@ export default function GradeMasterPage() {
         }
       }
     });
+    console.log('[GradeMaster] selectRoomColumn', { roomId, targetDays: targetDays.map((d) => d.toISOString().slice(0,10)), newEmpty: newEmpty.size, newSlots: newSlots.size });
     if (newEmpty.size === 0 && newSlots.size === 0) {
       toast.info('Nenhum horário disponível nessa coluna.');
       return;
@@ -591,7 +599,12 @@ export default function GradeMasterPage() {
   };
 
   const dropInstructorOnCell = async (raw: string, d: Date, hour: number, roomId: string | null = null) => {
-    if (!activeClinicId || !user) return;
+    console.log('[GradeMaster] dropInstructorOnCell', { raw, day: d.toISOString(), hour, roomId, activeClinicId, hasUser: !!user });
+    if (!activeClinicId || !user) {
+      toast.error('Sessão sem clínica ativa. Recarregue a página.');
+      setDraggingInstructorId(null);
+      return;
+    }
     const newInstructorId = resolveInstructor(raw);
     if (!newInstructorId) {
       toast.info('Arraste um professor para criar um horário.');
@@ -612,9 +625,11 @@ export default function GradeMasterPage() {
         notes: null,
         created_by: user.id,
       } as any);
-      toast.success('Horário criado com professor');
+      await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+      toast.success(`Horário criado em ${format(sched, 'dd/MM HH:mm')}`);
     } catch (e: any) {
-      toast.error(e?.message || 'Erro ao criar horário');
+      console.error('[GradeMaster] dropInstructorOnCell error', e);
+      toast.error(`Falha: ${e?.message || 'Erro ao criar horário'}`);
     } finally {
       setDraggingInstructorId(null);
     }
@@ -1173,6 +1188,7 @@ export default function GradeMasterPage() {
           return undefined;
         })()}
         onConfirm={async (values) => {
+          console.log('[GradeMaster] BulkAssignDialog confirm', { values, empty: selectedEmptyKeys.size, slots: selectedSlotKeys.size });
           // Sempre executa ambas as operações se houver seleção mista
           if (selectedEmptyKeys.size > 0) await createSelectedEmpty(values);
           if (selectedSlotKeys.size > 0) await reassignSelected(values);
