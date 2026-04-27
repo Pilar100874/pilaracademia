@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
-  CalendarDays, Clock, User, MapPin, Dumbbell, Sparkles, ListOrdered,
+  CalendarDays, Clock, User, Users, MapPin, Dumbbell, Sparkles, ListOrdered,
   ChevronRight, ChevronLeft, Plus, X, GripVertical, AlertTriangle, Save,
   Search, Loader2, Library, Filter, BookmarkPlus,
 } from 'lucide-react';
@@ -171,6 +171,33 @@ export default function PlanClassPage() {
   const selectedSlot = selectedApp?.bookable_slot_id ? slotById.get(selectedApp.bookable_slot_id) : null;
   const selectedRoomId = (selectedSlot as any)?.room_id ?? null;
   const selectedRoom = rooms.find((r) => r.id === selectedRoomId) ?? null;
+
+  /** Todos os alunos inscritos no MESMO horário do appointment selecionado. */
+  const slotmates = useMemo(() => {
+    if (!selectedApp) return [] as Appointment[];
+    const t = new Date(selectedApp.scheduled_at).getTime();
+    return appointments
+      .filter((a) => new Date(a.scheduled_at).getTime() === t)
+      .sort((a, b) => {
+        const an = studentById.get(a.student_id)?.full_name ?? '';
+        const bn = studentById.get(b.student_id)?.full_name ?? '';
+        return an.localeCompare(bn);
+      });
+  }, [appointments, selectedApp, studentById]);
+
+  /** Agrupa as aulas do dia por (horário + sala) para mostrar todos os alunos juntos na lista. */
+  const groupedAppointments = useMemo(() => {
+    const map = new Map<string, { key: string; scheduled_at: string; room_id: string | null; apps: Appointment[] }>();
+    appointments.forEach((a) => {
+      const slot = a.bookable_slot_id ? (slotById.get(a.bookable_slot_id) as any) : null;
+      const roomId = slot?.room_id ?? null;
+      const key = `${a.scheduled_at}|${roomId ?? 'none'}`;
+      const cur = map.get(key);
+      if (cur) cur.apps.push(a);
+      else map.set(key, { key, scheduled_at: a.scheduled_at, room_id: roomId, apps: [a] });
+    });
+    return Array.from(map.values()).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at));
+  }, [appointments, slotById]);
 
   // Equipment available in the selected room
   const roomEquipmentIds = useMemo(() => {
@@ -598,49 +625,56 @@ export default function PlanClassPage() {
                       <p>Nenhuma aula neste dia.</p>
                     </div>
                   )}
-                  {appointments.map((a) => {
-                    const st = studentById.get(a.student_id);
-                    const slot = a.bookable_slot_id ? (slotById.get(a.bookable_slot_id) as any) : null;
-                    const room = rooms.find((r) => r.id === slot?.room_id) ?? null;
-                    const isActive = a.id === selectedAppointmentId;
-                    const hasPlan = !!a.sequence_id;
+                  {groupedAppointments.map((g) => {
+                    const room = rooms.find((r) => r.id === g.room_id) ?? null;
+                    const isActiveGroup = g.apps.some((a) => a.id === selectedAppointmentId);
                     return (
-                      <button
-                        key={a.id}
-                        onClick={() => setSelectedAppointmentId(a.id)}
+                      <div
+                        key={g.key}
                         className={cn(
                           'w-full text-left p-2.5 rounded-md border transition-all',
-                          isActive
+                          isActiveGroup
                             ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                            : 'border-border hover:bg-muted/40'
+                            : 'border-border'
                         )}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-                              <span className="font-mono text-sm font-semibold">
-                                {format(new Date(a.scheduled_at), 'HH:mm')}
-                              </span>
-                              {hasPlan && (
-                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
-                                  <ListOrdered className="h-2.5 w-2.5 mr-0.5" />
-                                  Planejada
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="text-sm font-medium truncate mt-0.5">
-                              {st?.full_name ?? '—'}
-                            </div>
-                            {room && (
-                              <div className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
-                                <MapPin className="h-3 w-3" /> {room.name}
-                              </div>
-                            )}
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <span className="font-mono text-sm font-semibold">
+                            {format(new Date(g.scheduled_at), 'HH:mm')}
+                          </span>
+                          {room && (
+                            <span className="text-xs text-muted-foreground truncate flex items-center gap-1 ml-auto">
+                              <MapPin className="h-3 w-3" /> {room.name}
+                            </span>
+                          )}
                         </div>
-                      </button>
+                        <div className="space-y-1">
+                          {g.apps.map((a) => {
+                            const st = studentById.get(a.student_id);
+                            const isActive = a.id === selectedAppointmentId;
+                            const hasPlan = !!a.sequence_id;
+                            return (
+                              <button
+                                key={a.id}
+                                onClick={() => setSelectedAppointmentId(a.id)}
+                                className={cn(
+                                  'w-full text-left px-2 py-1.5 rounded border text-sm flex items-center gap-2 transition',
+                                  isActive
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-border hover:bg-muted/60'
+                                )}
+                              >
+                                <User className={cn('h-3 w-3 shrink-0', isActive ? '' : 'text-muted-foreground')} />
+                                <span className="truncate flex-1">{st?.full_name ?? '—'}</span>
+                                {hasPlan && (
+                                  <ListOrdered className={cn('h-3 w-3 shrink-0', isActive ? '' : 'text-primary')} />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -818,6 +852,39 @@ export default function PlanClassPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Alunos do mesmo horário — alterna entre planos */}
+                {slotmates.length > 1 && (
+                  <div className="mb-3 p-2 border border-border rounded-md bg-muted/20">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 px-1 flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {slotmates.length} alunos neste horário — planejamento individual
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {slotmates.map((a) => {
+                        const st = studentById.get(a.student_id);
+                        const isActive = a.id === selectedAppointmentId;
+                        const hasPlan = !!a.sequence_id;
+                        return (
+                          <button
+                            key={a.id}
+                            onClick={() => setSelectedAppointmentId(a.id)}
+                            className={cn(
+                              'px-2.5 py-1 rounded-full border text-xs flex items-center gap-1.5 transition',
+                              isActive
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-border hover:bg-muted'
+                            )}
+                          >
+                            <User className="h-3 w-3" />
+                            <span className="truncate max-w-[140px]">{st?.full_name ?? '—'}</span>
+                            {hasPlan && <ListOrdered className={cn('h-3 w-3', isActive ? '' : 'text-primary')} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Equipamento */}
                 <div className="mb-4 p-3 border border-border rounded-md bg-muted/30">
