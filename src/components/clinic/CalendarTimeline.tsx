@@ -423,16 +423,18 @@ export function CalendarTimeline({
                               : s.uncovered ? 'hsl(var(--destructive))' : (color || 'hsl(var(--primary))'),
                           }}
                           className={cn(
-                            'absolute left-1 right-1 rounded-md border border-l-[5px] px-2 py-1.5 text-[11px] cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary/30 transition shadow-sm',
+                            'absolute left-1 right-1 rounded-md border px-2 py-1.5 text-[11px] cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary/30 transition shadow-sm',
+                            // Barra lateral colorida apenas quando NÃO é bloqueio
+                            !(s.blockedPeriodId || s.isBlocked) && 'border-l-[5px]',
                             s.blockedPeriodId || s.isBlocked ? 'z-30' : 'z-10',
                             s.blockedPeriodId
-                              ? 'bg-[repeating-linear-gradient(45deg,hsl(var(--destructive)/0.10)_0_6px,transparent_6px_12px)] border-destructive/30 border-dashed'
+                              ? 'bg-[repeating-linear-gradient(45deg,hsl(var(--destructive)/0.10)_0_6px,transparent_6px_12px)] border-destructive/30'
                               : s.isBlocked
-                                ? 'bg-muted/60 border-muted-foreground/40 border-dashed opacity-80'
+                                ? 'bg-muted/60 border-muted-foreground/40 opacity-80'
                                 : s.isOpen
-                                  ? 'bg-emerald-500/10 border-emerald-500/30 border-dashed'
+                                  ? 'bg-emerald-500/10 border-emerald-500/30'
                                   : s.isProjected
-                                    ? 'bg-amber-500/10 border-amber-500/40 border-dashed'
+                                    ? 'bg-amber-500/10 border-amber-500/40'
                                     : s.isVirtual
                                       ? 'bg-card'
                                       : 'bg-card',
