@@ -156,24 +156,24 @@ export function CalendarTimeline({
     <div className="border rounded-md overflow-hidden bg-card overflow-x-auto">
       {/* Header dos dias */}
       <div
-        className="grid border-b bg-muted/30"
-        style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(${splitByRoom ? colsPerDay * 90 : 0}px, 1fr))` }}
+        className="grid border-b bg-muted/40 backdrop-blur-sm sticky top-0 z-20"
+        style={{ gridTemplateColumns: `72px repeat(${days.length}, minmax(${splitByRoom ? colsPerDay * 110 : 120}px, 1fr))` }}
       >
-        <div />
+        <div className="border-r border-border/60" />
         {days.map((d) => {
           const isToday = isSameDay(d, now);
           return (
-            <div key={d.toISOString()} className={cn('border-l', isToday && 'bg-primary/5')}>
-              <div className="px-2 pt-2 pb-1 text-center">
-                <div className="text-[10px] uppercase font-bold text-muted-foreground">
+            <div key={d.toISOString()} className={cn('border-l border-border/60', isToday && 'bg-primary/10')}>
+              <div className="px-2 pt-2.5 pb-1.5 text-center">
+                <div className={cn('text-[11px] uppercase tracking-wider font-semibold', isToday ? 'text-primary' : 'text-muted-foreground')}>
                   {format(d, 'EEE', { locale: ptBR })}
                 </div>
-                <div className={cn('text-base font-bold', isToday && 'text-primary')}>
+                <div className={cn('text-lg font-bold leading-tight mt-0.5', isToday && 'text-primary')}>
                   {format(d, 'd/MM')}
                 </div>
               </div>
               {splitByRoom && (
-                <div className="grid border-t border-border/40" style={{ gridTemplateColumns: `repeat(${colsPerDay}, minmax(0, 1fr))` }}>
+                <div className="grid border-t border-border/40 bg-card/50" style={{ gridTemplateColumns: `repeat(${colsPerDay}, minmax(0, 1fr))` }}>
                   {subCols.map((r, i) => (
                     <button
                       key={r?.id ?? i}
@@ -183,17 +183,17 @@ export function CalendarTimeline({
                         onRoomColumnClick?.(d, r?.id ?? null, allDays);
                       }}
                       className={cn(
-                        'px-1 py-1 text-[9px] font-semibold truncate text-center flex items-center justify-center gap-1 transition',
+                        'px-1.5 py-1.5 text-[10px] font-semibold truncate text-center flex items-center justify-center gap-1.5 transition',
                         i > 0 && 'border-l border-border/40',
                         onRoomColumnClick && 'hover:bg-primary/10 cursor-pointer',
                       )}
                       title={onRoomColumnClick ? `Clique: coluna do dia · Shift+clique: a sala em toda a semana` : r?.name}
                     >
                       <span
-                        className="h-1.5 w-1.5 rounded-sm shrink-0 border"
+                        className="h-2 w-2 rounded-sm shrink-0 border border-border/60"
                         style={{ background: roomColorOf?.(r?.id ?? null) || 'hsl(var(--muted))' }}
                       />
-                      <span className="truncate">{r?.name ?? '—'}</span>
+                      <span className="truncate text-foreground/80">{r?.name ?? '—'}</span>
                     </button>
                   ))}
                 </div>
@@ -208,17 +208,25 @@ export function CalendarTimeline({
         ref={marquee.containerRef}
         onPointerDown={handlePointerDown}
         className="grid relative select-none"
-        style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(${splitByRoom ? colsPerDay * 90 : 0}px, 1fr))`, height: totalHeight }}
+        style={{ gridTemplateColumns: `72px repeat(${days.length}, minmax(${splitByRoom ? colsPerDay * 110 : 120}px, 1fr))`, height: totalHeight }}
       >
         {/* Coluna de horas */}
-        <div className="relative">
+        <div className="relative bg-muted/20 border-r border-border/60">
           {hours.map((h) => (
             <div
               key={h}
-              className="absolute left-0 right-0 border-t border-border/60 text-[10px] text-muted-foreground text-right pr-2 pt-0.5"
+              className="absolute left-0 right-0 border-t border-border/60"
               style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
             >
-              {String(h).padStart(2, '0')}:00
+              <div className="text-[11px] font-semibold text-muted-foreground/90 text-right pr-2.5 pt-1 tabular-nums">
+                {String(h).padStart(2, '0')}:00
+              </div>
+              {/* meia-hora marcador sutil */}
+              <div
+                className="absolute left-0 right-0 border-t border-dashed border-border/30"
+                style={{ top: hourHeight / 2 }}
+                aria-hidden
+              />
             </div>
           ))}
         </div>
@@ -415,7 +423,7 @@ export function CalendarTimeline({
                               : s.uncovered ? 'hsl(var(--destructive))' : (color || 'hsl(var(--primary))'),
                           }}
                           className={cn(
-                            'absolute left-1 right-1 rounded border border-l-4 px-1.5 py-1 text-[10px] cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary/30 transition shadow-sm',
+                            'absolute left-1 right-1 rounded-md border border-l-[5px] px-2 py-1.5 text-[11px] cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary/30 transition shadow-sm',
                             s.blockedPeriodId || s.isBlocked ? 'z-30' : 'z-10',
                             s.blockedPeriodId
                               ? 'bg-[repeating-linear-gradient(45deg,hsl(var(--destructive)/0.10)_0_6px,transparent_6px_12px)] border-destructive/30 border-dashed'
@@ -434,16 +442,16 @@ export function CalendarTimeline({
                           )}
                         >
                           <div className="flex items-center justify-between gap-1 leading-tight">
-                            <span className="font-bold">{format(t, 'HH:mm')}</span>
+                            <span className="font-bold tabular-nums text-[11px]">{format(t, 'HH:mm')}</span>
                             <div className="flex items-center gap-0.5">
-                              {s.isBlocked && <Lock className="h-2.5 w-2.5 text-muted-foreground" />}
-                              {s.uncovered && !s.isBlocked && <AlertTriangle className="h-2.5 w-2.5 text-destructive" />}
-                              {s.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
-                              {s.isVirtual && !s.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
-                              {s.hasGrade && <Sparkles className="h-2.5 w-2.5 text-primary" />}
+                              {s.isBlocked && <Lock className="h-3 w-3 text-muted-foreground" />}
+                              {s.uncovered && !s.isBlocked && <AlertTriangle className="h-3 w-3 text-destructive" />}
+                              {s.isProjected && <RefreshCw className="h-3 w-3 text-amber-600" />}
+                              {s.isVirtual && !s.isProjected && <Repeat className="h-3 w-3 text-muted-foreground" />}
+                              {s.hasGrade && <Sparkles className="h-3 w-3 text-primary" />}
                             </div>
                           </div>
-                          <div className="truncate font-medium">
+                          <div className="truncate font-semibold text-[12px] mt-0.5 leading-snug">
                             {s.blockedPeriodId
                               ? <span className="italic text-destructive/90">{s.blockedPeriodName || 'Bloqueado'}</span>
                               : s.isBlocked
@@ -453,16 +461,16 @@ export function CalendarTimeline({
                                   : studentName(s.student_id)}
                           </div>
                           {!splitByRoom && room && (
-                            <div className="flex items-center gap-1 truncate">
+                            <div className="flex items-center gap-1 truncate mt-0.5">
                               <span
                                 className="h-2 w-2 rounded-sm shrink-0 border"
                                 style={{ background: roomColorOf?.(s.room_id) || 'hsl(var(--muted))' }}
                               />
-                              <span className="truncate text-[9px] font-semibold text-foreground/80">{room}</span>
+                              <span className="truncate text-[10px] font-semibold text-foreground/80">{room}</span>
                             </div>
                           )}
                           {instr && height > 48 && !s.isBlocked && (
-                            <div className="truncate text-muted-foreground">{instr}</div>
+                            <div className="truncate text-muted-foreground text-[10px] mt-0.5">{instr}</div>
                           )}
                         </div>
                       </PopoverTrigger>
