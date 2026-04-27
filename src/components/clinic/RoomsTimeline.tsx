@@ -47,6 +47,12 @@ interface Props {
   selectedEmptyKeys?: Set<EmptyCellKey>;
   onToggleSlot?: (s: TimelineSlot) => void;
   onToggleEmpty?: (key: EmptyCellKey) => void;
+  /** Substituir totalmente a seleção (usado pelo marquee não-aditivo). */
+  onReplaceSelection?: (slotKeys: Set<string>, emptyKeys: Set<EmptyCellKey>) => void;
+  /** Adicionar à seleção (usado pelo marquee aditivo Shift/Ctrl). */
+  onAddSelection?: (slotKeys: Set<string>, emptyKeys: Set<EmptyCellKey>) => void;
+  /** Disparado quando um arrasto de seleção termina e selecionou pelo menos 1 célula. */
+  onMarqueeEnd?: (info: { slotCount: number; emptyCount: number; additive: boolean }) => void;
 
   // ===== Drag & drop de professor =====
   /** Indica que há um professor sendo arrastado (para destacar drop targets). */
