@@ -353,7 +353,7 @@ export default function GradeMasterPage() {
                 <SelectTrigger className="h-8 w-[180px]"><SelectValue placeholder="Professor" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os professores</SelectItem>
-                  {instructorOptions.map((id) => <SelectItem key={id} value={id}>Prof. {id.slice(0, 6)}</SelectItem>)}
+                  {instructorOptions.map((id) => <SelectItem key={id} value={id}>{instructorName(id) || `Prof. ${id.slice(0, 6)}`}</SelectItem>)}
                 </SelectContent>
               </Select>
               {rooms.length > 0 && (
