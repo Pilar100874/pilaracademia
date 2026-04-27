@@ -152,6 +152,11 @@ export default function GradeMasterPage() {
   );
   const { data: recurring = [] } = useRecurringSchedules(activeClinicId);
   const { create: createPresc } = usePrescriptions({ clinicId: activeClinicId });
+  const { data: availability = [] } = useInstructorAvailability(activeClinicId);
+  const { data: instructorColors = [] } = useInstructorColors(activeClinicId);
+  const [availOpen, setAvailOpen] = useState(false);
+
+  const colorOf = (instructorId: string | null | undefined) => colorForInstructor(instructorId, instructorColors);
 
   const studentName = (id: string | null) => id ? (students.find((s) => s.id === id)?.full_name || '—') : '—';
   const studentAvatar = (id: string | null) => id ? (students.find((s) => s.id === id) as any)?.avatar_url : undefined;
