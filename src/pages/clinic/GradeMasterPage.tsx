@@ -493,6 +493,13 @@ export default function GradeMasterPage() {
   const tryOpenNewClassAt = (d: Date, time?: string, roomId?: string | null) => {
     if (time) {
       const [h, m] = time.split(':').map(Number);
+      // Bloqueia horários passados
+      const cellEnd = new Date(d);
+      cellEnd.setHours(h, (m || 0) + 60, 0, 0);
+      if (cellEnd.getTime() <= Date.now()) {
+        toast.error('Não é possível agendar em horários que já passaram.');
+        return;
+      }
       if (!hasInstructorAt(d, h, m || 0, 60, roomId)) {
         toast.error('Sem professor alocado nesse horário. Defina a disponibilidade do professor antes de criar uma aula aqui.');
         return;
@@ -815,6 +822,12 @@ export default function GradeMasterPage() {
     // Slot livre da grade → abre Nova aula com horário/sala pré-preenchidos
     if (slot.isOpen || !slot.student_id) {
       const t = parseISO(slot.scheduled_at);
+      // Bloqueia horários passados
+      const slotEnd = new Date(t.getTime() + (slot.duration_minutes || 50) * 60 * 1000);
+      if (slotEnd.getTime() <= Date.now()) {
+        toast.error('Não é possível agendar em horários que já passaram.');
+        return;
+      }
       const hh = String(t.getHours()).padStart(2, '0');
       const mm = String(t.getMinutes()).padStart(2, '0');
       openNewClassAt(t, `${hh}:${mm}`, (slot as any).room_id ?? null);

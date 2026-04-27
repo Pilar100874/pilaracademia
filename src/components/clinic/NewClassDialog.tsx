@@ -370,7 +370,8 @@ export function NewClassDialog({
 
       await persistFixed(planned, plan.from, plan.to);
     } catch (e: any) {
-      toast.error(e?.message || 'Erro ao salvar');
+      const msg = e?.message || 'Erro ao salvar';
+      toast.error('Não foi possível agendar', { description: msg, duration: 8000 });
     } finally {
       setSaving(false);
     }

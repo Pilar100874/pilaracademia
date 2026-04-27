@@ -275,6 +275,10 @@ export function CalendarTimeline({
                   const isSelected = selectedEmptyKeys?.has(weekKey);
                   const occ = occupancyByHour.get(h);
                   const isFull = occ?.status === 'full';
+                  // Horário passado: fim da hora <= agora
+                  const cellEnd = new Date(d);
+                  cellEnd.setHours(h + 1, 0, 0, 0);
+                  const isPast = cellEnd.getTime() <= now.getTime();
                   const statusBg =
                     occ?.status === 'full' ? 'bg-destructive/10' :
                     occ?.status === 'mid'  ? 'bg-amber-500/10' :
@@ -289,7 +293,9 @@ export function CalendarTimeline({
                     <button
                       key={h}
                       data-cell-key={weekKey}
+                      disabled={isPast}
                       onClick={(e) => {
+                        if (isPast) return;
                         if (marquee.didDrag()) return;
                         const additive = e.shiftKey || e.metaKey || e.ctrlKey;
                         if (additive) {
@@ -299,6 +305,7 @@ export function CalendarTimeline({
                         }
                       }}
                       onDragOver={(e) => {
+                        if (isPast) return;
                         if (!onDropInstructorOnCell) return;
                         e.preventDefault();
                         e.dataTransfer.dropEffect = 'copy';
@@ -306,6 +313,7 @@ export function CalendarTimeline({
                       }}
                       onDragLeave={() => { if (hoverKey === cellKey) setHoverKey(null); }}
                       onDrop={(e) => {
+                        if (isPast) return;
                         if (!onDropInstructorOnCell) return;
                         e.preventDefault();
                         const id = readInstructor(e);
@@ -313,30 +321,34 @@ export function CalendarTimeline({
                         if (id) onDropInstructorOnCell(id, d, h, subRoomId);
                       }}
                       title={
-                        occ && cap
-                          ? `${occ.used}/${cap} ${isFull ? '· LOTADA' : occ.status === 'mid' ? '· quase cheia' : ''}${subRoom ? ` · ${subRoom.name}` : ''} às ${String(h).padStart(2, '0')}:00`
-                          : dragActive
-                            ? `Soltar professor às ${String(h).padStart(2, '0')}:00${subRoom ? ` · ${subRoom.name}` : ''}`
-                            : `Adicionar aula às ${String(h).padStart(2, '0')}:00${subRoom ? ` · ${subRoom.name}` : ''}`
+                        isPast
+                          ? `Horário já passou — ${String(h).padStart(2, '0')}:00`
+                          : occ && cap
+                            ? `${occ.used}/${cap} ${isFull ? '· LOTADA' : occ.status === 'mid' ? '· quase cheia' : ''}${subRoom ? ` · ${subRoom.name}` : ''} às ${String(h).padStart(2, '0')}:00`
+                            : dragActive
+                              ? `Soltar professor às ${String(h).padStart(2, '0')}:00${subRoom ? ` · ${subRoom.name}` : ''}`
+                              : `Adicionar aula às ${String(h).padStart(2, '0')}:00${subRoom ? ` · ${subRoom.name}` : ''}`
                       }
                       className={cn(
-                        'absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group',
-                        statusBg,
-                        dragActive && 'bg-primary/[0.03]',
+                        'absolute left-0 right-0 border-t border-border/40 transition group',
+                        !isPast && 'hover:bg-primary/5',
+                        isPast && 'bg-muted/40 cursor-not-allowed opacity-50',
+                        !isPast && statusBg,
+                        dragActive && !isPast && 'bg-primary/[0.03]',
                         isHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
                         isSelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
                       )}
                       style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
                     >
                       {/* Barra de status de ocupação (lateral esquerda) */}
-                      {occ && (
+                      {!isPast && occ && (
                         <span
                           className={cn('absolute left-0 top-0 bottom-0 w-[3px]', statusBar)}
                           aria-hidden
                         />
                       )}
                       {/* Badge de capacidade (canto inferior esquerdo) */}
-                      {occ && cap && occ.used > 0 && (
+                      {!isPast && occ && cap && occ.used > 0 && (
                         <span
                           className={cn(
                             'absolute bottom-0.5 left-1.5 text-[9px] font-bold tabular-nums px-1 rounded-sm leading-tight',
@@ -348,7 +360,7 @@ export function CalendarTimeline({
                           {occ.used}/{cap}
                         </span>
                       )}
-                      {isSelected ? (
+                      {!isPast && (isSelected ? (
                         <Check className="h-3.5 w-3.5 text-primary absolute top-1 right-1" />
                       ) : isFull ? (
                         <span className="absolute top-1 right-1 text-[8px] font-bold uppercase tracking-wider text-destructive">
@@ -356,7 +368,7 @@ export function CalendarTimeline({
                         </span>
                       ) : (
                         <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
-                      )}
+                      ))}
                     </button>
                   );
                 })}
