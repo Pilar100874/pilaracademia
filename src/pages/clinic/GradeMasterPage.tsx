@@ -992,6 +992,35 @@ export default function GradeMasterPage() {
           instructors={instructors}
         />
       )}
+
+      {/* Dialog: atribuição em massa (criar slots ou reatribuir prof/sala) */}
+      <BulkAssignDialog
+        open={bulkOpen !== null}
+        onClose={() => setBulkOpen(null)}
+        mode={bulkOpen === 'reassign' ? 'reassign' : 'create'}
+        count={bulkOpen === 'reassign' ? selectedSlotKeys.size : selectedEmptyKeys.size}
+        rooms={rooms as any}
+        instructors={instructors}
+        colorOf={colorOf}
+        roomColorOf={roomColorOf}
+        initial={(() => {
+          // Pré-preenche com a sala/prof do primeiro item selecionado.
+          if (bulkOpen === 'reassign') {
+            const first = daySlots.map(toTimelineSlot).find((t) => selectedSlotKeys.has(t.key));
+            return { roomId: first?.room_id ?? null, instructorId: first?.instructor_id ?? null, durationMinutes: 50 };
+          }
+          if (bulkOpen === 'create' && selectedEmptyKeys.size > 0) {
+            const firstK = Array.from(selectedEmptyKeys)[0];
+            const { roomId } = parseEmptyKey(firstK);
+            return { roomId, instructorId: null, durationMinutes: 50 };
+          }
+          return undefined;
+        })()}
+        onConfirm={async (values) => {
+          if (bulkOpen === 'create') await createSelectedEmpty(values);
+          else if (bulkOpen === 'reassign') await reassignSelected(values);
+        }}
+      />
     </PageMotion>
   );
 }
