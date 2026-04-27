@@ -822,6 +822,12 @@ export default function GradeMasterPage() {
     // Slot livre da grade → abre Nova aula com horário/sala pré-preenchidos
     if (slot.isOpen || !slot.student_id) {
       const t = parseISO(slot.scheduled_at);
+      // Bloqueia horários passados
+      const slotEnd = new Date(t.getTime() + (slot.duration_minutes || 50) * 60 * 1000);
+      if (slotEnd.getTime() <= Date.now()) {
+        toast.error('Não é possível agendar em horários que já passaram.');
+        return;
+      }
       const hh = String(t.getHours()).padStart(2, '0');
       const mm = String(t.getMinutes()).padStart(2, '0');
       openNewClassAt(t, `${hh}:${mm}`, (slot as any).room_id ?? null);
