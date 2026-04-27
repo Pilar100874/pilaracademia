@@ -547,6 +547,7 @@ export default function BookableSlotsPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 }
