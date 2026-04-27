@@ -750,14 +750,41 @@ export default function GradeMasterPage() {
         )}
 
         {/* Legenda */}
-        <Card className="p-3 text-xs text-muted-foreground flex flex-wrap gap-4">
-          <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border bg-card" />Aula real</span>
-          <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border border-dashed" />Horário fixo (virtual)</span>
-          <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border border-dashed border-amber-500 bg-amber-500/10" />Projeção pós-contrato</span>
-          <span className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3 text-amber-600" />Sem grade definida</span>
-          <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-primary" />Grade pronta</span>
+        <Card className="p-3 text-xs text-muted-foreground space-y-2">
+          <div className="flex flex-wrap gap-4">
+            <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border bg-card" />Aula real</span>
+            <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border border-dashed" />Horário fixo (virtual)</span>
+            <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border border-dashed border-amber-500 bg-amber-500/10" />Projeção pós-contrato</span>
+            <span className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3 text-amber-600" />Sem grade definida</span>
+            <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-primary" />Grade pronta</span>
+            <span className="flex items-center gap-1.5"><Users className="h-3 w-3" />Ocupação da sala</span>
+          </div>
+          {instructors.length > 0 && (
+            <div className="flex flex-wrap gap-3 pt-2 border-t">
+              <span className="font-semibold text-muted-foreground">Professores:</span>
+              {instructors.map((i) => (
+                <span key={i.user_id} className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded" style={{ background: colorOf(i.user_id) }} />
+                  {i.name}
+                </span>
+              ))}
+              <button onClick={() => setAvailOpen(true)} className="text-primary underline ml-2">editar cores</button>
+            </div>
+          )}
         </Card>
       </div>
+
+      {/* Dialog: disponibilidade + cores dos professores */}
+      {user && activeClinicId && (
+        <InstructorAvailabilityDialog
+          open={availOpen}
+          onClose={() => setAvailOpen(false)}
+          clinicId={activeClinicId}
+          userId={user.id}
+          instructors={instructors}
+          rooms={rooms as any}
+        />
+      )}
 
       {/* Dialog: alunos da aula + grade + propagação */}
       {slotDialog && user && activeClinicId && (
