@@ -570,46 +570,54 @@ export function NewClassDialog({
 
           {mode === 'avulsa' ? (
             <>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Hora</Label>
-                  <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+              {(initialTime && initialRoomId) ? (
+                <div className="flex flex-wrap gap-2 p-3 rounded-md bg-muted/40 text-xs">
+                  <Badge variant="secondary">
+                    {format(initialDate, "EEE dd/MM", { locale: ptBR })} às {time}
+                  </Badge>
+                  <Badge variant="secondary">
+                    Sala: {rooms.find((r) => r.id === roomId)?.name ?? '—'}
+                  </Badge>
+                  <Badge variant="secondary">
+                    Prof.: {instructors.find((i) => i.user_id === instructorId)?.name ?? '—'}
+                  </Badge>
+                  <Badge variant="outline">{duration} min</Badge>
                 </div>
-                <div>
-                  <Label>Duração (min)</Label>
-                  <Input type="number" min={5} step={5} value={duration} onChange={(e) => setDuration(parseInt(e.target.value) || 50)} />
-                </div>
-              </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Hora</Label>
+                      <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label>Duração (min)</Label>
+                      <Input type="number" min={5} step={5} value={duration} onChange={(e) => setDuration(parseInt(e.target.value) || 50)} />
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <Label>Sala</Label>
-                  <Select value={roomId} onValueChange={setRoomId}>
-                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>
-                      {rooms.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Professor</Label>
-                  <Select value={instructorId} onValueChange={setInstructorId}>
-                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>
-                      {instructors.map((i) => <SelectItem key={i.user_id} value={i.user_id}>{i.name || i.user_id.slice(0, 6)}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Equipamento</Label>
-                  <Select value={equipmentId} onValueChange={setEquipmentId}>
-                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>
-                      {equipment.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label>Sala</Label>
+                      <Select value={roomId} onValueChange={setRoomId}>
+                        <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          {rooms.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Professor</Label>
+                      <Select value={instructorId} onValueChange={setInstructorId}>
+                        <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          {instructors.map((i) => <SelectItem key={i.user_id} value={i.user_id}>{i.name || i.user_id.slice(0, 6)}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           ) : (
             <div className="space-y-3">
@@ -664,7 +672,7 @@ export function NewClassDialog({
                       <Input className="h-9" type="number" min={5} step={5} value={r.duration_minutes} onChange={(e) => updateRule(r.id, { duration_minutes: parseInt(e.target.value) || 50 })} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <Label className="text-[10px]">Sala</Label>
                       <Select value={r.room_id ?? ''} onValueChange={(v) => updateRule(r.id, { room_id: v || null })}>
@@ -680,15 +688,6 @@ export function NewClassDialog({
                         <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
                         <SelectContent>
                           {instructors.map((i) => <SelectItem key={i.user_id} value={i.user_id}>{i.name || i.user_id.slice(0, 6)}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-[10px]">Equipamento</Label>
-                      <Select value={r.equipment_id ?? ''} onValueChange={(v) => updateRule(r.id, { equipment_id: v || null })}>
-                        <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
-                        <SelectContent>
-                          {equipment.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
