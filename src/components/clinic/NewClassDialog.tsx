@@ -570,17 +570,21 @@ export function NewClassDialog({
 
           {mode === 'avulsa' ? (
             <>
-              {(initialTime && initialRoomId) ? (
+              {initialTime ? (
                 <div className="flex flex-wrap gap-2 p-3 rounded-md bg-muted/40 text-xs">
                   <Badge variant="secondary">
                     {format(initialDate, "EEE dd/MM", { locale: ptBR })} às {time}
                   </Badge>
-                  <Badge variant="secondary">
-                    Sala: {rooms.find((r) => r.id === roomId)?.name ?? '—'}
-                  </Badge>
-                  <Badge variant="secondary">
-                    Prof.: {instructors.find((i) => i.user_id === instructorId)?.name ?? '—'}
-                  </Badge>
+                  {roomId && (
+                    <Badge variant="secondary">
+                      Sala: {rooms.find((r) => r.id === roomId)?.name ?? '—'}
+                    </Badge>
+                  )}
+                  {instructorId && (
+                    <Badge variant="secondary">
+                      Prof.: {instructors.find((i) => i.user_id === instructorId)?.name ?? '—'}
+                    </Badge>
+                  )}
                   <Badge variant="outline">{duration} min</Badge>
                 </div>
               ) : (
