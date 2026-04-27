@@ -63,6 +63,8 @@ export function BulkAssignDialog({
   };
 
   const isCreate = mode === 'create';
+  // Ao criar, professor e sala são obrigatórios
+  const missingRequired = isCreate && (!instructorId || !roomId);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
