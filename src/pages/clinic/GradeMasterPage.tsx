@@ -993,6 +993,8 @@ function RoomsLegend({ rooms, roomColorOf }: { rooms: any[]; roomColorOf: (id: s
     </Card>
   );
 }
+
+function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, instructorColor, occupancy, uncovered, onClick, instructorPicker }: {
   slot: MergedSlot;
   studentName: string;
   sequenceName: string | null | undefined;
