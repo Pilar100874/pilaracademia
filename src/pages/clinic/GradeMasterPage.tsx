@@ -812,12 +812,12 @@ export default function GradeMasterPage() {
       toast.info('Horário bloqueado. Desbloqueie para usar.');
       return;
     }
-    // Slot livre da grade → abre Nova aula com horário pré-preenchido
+    // Slot livre da grade → abre Nova aula com horário/sala pré-preenchidos
     if (slot.isOpen || !slot.student_id) {
       const t = parseISO(slot.scheduled_at);
       const hh = String(t.getHours()).padStart(2, '0');
       const mm = String(t.getMinutes()).padStart(2, '0');
-      openNewClassAt(t, `${hh}:${mm}`);
+      openNewClassAt(t, `${hh}:${mm}`, (slot as any).room_id ?? null);
       return;
     }
     setSlotDialog({
