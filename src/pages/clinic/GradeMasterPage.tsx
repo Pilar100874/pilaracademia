@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SlotGradeDialog } from '@/components/clinic/SlotGradeDialog';
+import { NewClassDialog } from '@/components/clinic/NewClassDialog';
 import { PageMotion } from '@/components/PageMotion';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; cls: string }> = {
@@ -222,33 +223,13 @@ export default function GradeMasterPage() {
     if (apptId) updateStatus.mutate({ id: apptId, status: 'checked_in' });
   };
 
-  // ===== Aluno avulso =====
-  const [avulsoOpen, setAvulsoOpen] = useState(false);
-  const [avulso, setAvulso] = useState({ student_id: '', time: '08:00', duration_minutes: 50, equipment_id: '', notes: '' });
-  const openAvulsoAt = (d: Date, time?: string) => {
+  // ===== Nova aula (avulsa ou fixa) =====
+  const [newClassOpen, setNewClassOpen] = useState(false);
+  const [newClassTime, setNewClassTime] = useState<string | undefined>(undefined);
+  const openNewClassAt = (d: Date, time?: string) => {
     setDay(d);
-    setAvulso((prev) => ({ ...prev, time: time ?? prev.time }));
-    setAvulsoOpen(true);
-  };
-  const handleAvulso = async () => {
-    if (!user || !activeClinicId || !avulso.student_id) return;
-    const [h, m] = avulso.time.split(':').map(Number);
-    const sched = new Date(day);
-    sched.setHours(h, m, 0, 0);
-    const { error } = await supabase.from('class_appointments').insert({
-      clinic_id: activeClinicId,
-      student_id: avulso.student_id,
-      equipment_id: avulso.equipment_id || null,
-      instructor_id: user.id,
-      scheduled_at: sched.toISOString(),
-      duration_minutes: avulso.duration_minutes,
-      notes: avulso.notes || null,
-      created_by: user.id,
-    });
-    if (error) { toast.error(error.message); return; }
-    toast.success('Aula avulsa adicionada');
-    setAvulso({ student_id: '', time: '08:00', duration_minutes: 50, equipment_id: '', notes: '' });
-    setAvulsoOpen(false);
+    setNewClassTime(time);
+    setNewClassOpen(true);
   };
 
 
@@ -346,36 +327,10 @@ export default function GradeMasterPage() {
                 )}
               </div>
 
-              <Dialog open={avulsoOpen} onOpenChange={setAvulsoOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm"><Plus className="h-4 w-4 mr-1" />Aula avulsa</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Aula avulsa em {format(day, "dd/MM/yyyy", { locale: ptBR })}</DialogTitle></DialogHeader>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm">Aluno</label>
-                      <Select value={avulso.student_id} onValueChange={(v) => setAvulso({ ...avulso, student_id: v })}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>{students.map((s) => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><label className="text-sm">Hora</label><Input type="time" value={avulso.time} onChange={(e) => setAvulso({ ...avulso, time: e.target.value })} /></div>
-                      <div><label className="text-sm">Duração (min)</label><Input type="number" value={avulso.duration_minutes} onChange={(e) => setAvulso({ ...avulso, duration_minutes: parseInt(e.target.value) || 50 })} /></div>
-                    </div>
-                    <div>
-                      <label className="text-sm">Equipamento</label>
-                      <Select value={avulso.equipment_id} onValueChange={(v) => setAvulso({ ...avulso, equipment_id: v })}>
-                        <SelectTrigger><SelectValue placeholder="Opcional" /></SelectTrigger>
-                        <SelectContent>{equipment.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <div><label className="text-sm">Observações</label><Textarea value={avulso.notes} onChange={(e) => setAvulso({ ...avulso, notes: e.target.value })} /></div>
-                    <Button onClick={handleAvulso} disabled={!avulso.student_id} className="w-full">Adicionar</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button size="sm" onClick={() => openNewClassAt(day)}>
+                <Plus className="h-4 w-4 mr-1" />Nova aula
+              </Button>
+
             </div>
           </div>
 
@@ -505,14 +460,14 @@ export default function GradeMasterPage() {
                 {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })} · {daySlots.length} aula{daySlots.length !== 1 ? 's' : ''}
               </h2>
               <div className="text-[11px] text-muted-foreground">
-                Clique em um horário abaixo para adicionar uma aula avulsa
+                Clique em um horário abaixo para adicionar uma aula (avulsa ou fixa)
               </div>
             </div>
 
-            {/* Faixa de horários clicáveis para criar aula avulsa */}
+            {/* Faixa de horários clicáveis para criar aula */}
             <div className="mb-4 p-2 rounded-lg border bg-muted/30">
               <div className="text-[10px] uppercase tracking-wide font-bold text-muted-foreground mb-1.5 px-1">
-                + Aula avulsa às:
+                + Nova aula às:
               </div>
               <div className="flex flex-wrap gap-1">
                 {Array.from({ length: 15 }, (_, i) => 7 + i).map((h) => {
@@ -520,7 +475,7 @@ export default function GradeMasterPage() {
                   return (
                     <button
                       key={t}
-                      onClick={() => openAvulsoAt(day, t)}
+                      onClick={() => openNewClassAt(day, t)}
                       className="px-2 py-1 text-xs rounded border bg-card hover:border-primary hover:text-primary transition flex items-center gap-1"
                     >
                       <Plus className="h-3 w-3" />{t}
@@ -645,6 +600,20 @@ export default function GradeMasterPage() {
           equipment={equipment}
           sequences={sequences}
           onSaved={() => { /* react-query refetch via hooks */ }}
+        />
+      )}
+
+      {/* Dialog: nova aula (avulsa ou fixa) */}
+      {user && activeClinicId && (
+        <NewClassDialog
+          open={newClassOpen}
+          onClose={() => setNewClassOpen(false)}
+          clinicId={activeClinicId}
+          userId={user.id}
+          initialDate={day}
+          initialTime={newClassTime}
+          students={students as any}
+          equipment={equipment as any}
         />
       )}
     </PageMotion>
