@@ -30,6 +30,8 @@ interface Props {
   studentName: (id: string | null) => string;
   instructorName: (id: string | null | undefined) => string | null;
   roomName: (id: string | null | undefined) => string | null;
+  /** Cor associada à sala (usado para chip visual de sala). */
+  roomColorOf?: (id: string | null | undefined) => string | null;
   colorOf: (id: string | null | undefined) => string;
   onCellClick: (d: Date, hour: number) => void;
   onSlotClick: (s: TimelineSlot) => void;
