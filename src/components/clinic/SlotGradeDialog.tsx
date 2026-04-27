@@ -462,14 +462,28 @@ export function SlotGradeDialog({
                           </Badge>
                         )}
                       </div>
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                        <Checkbox
-                          checked={r.lock_equipment}
-                          onCheckedChange={(v) => updateRow(idx, { lock_equipment: !!v })}
-                        />
-                        <Lock className="h-3 w-3" />
-                        Equipamento fixo
-                      </label>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                          <Checkbox
+                            checked={r.lock_equipment}
+                            onCheckedChange={(v) => updateRow(idx, { lock_equipment: !!v })}
+                          />
+                          <Lock className="h-3 w-3" />
+                          Equipamento fixo
+                        </label>
+                        {!r.appointment_id && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-muted-foreground hover:text-destructive"
+                            onClick={() => removeRow(idx)}
+                            title="Remover aluno desta aula"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
