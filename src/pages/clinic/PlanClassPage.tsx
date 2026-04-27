@@ -172,6 +172,33 @@ export default function PlanClassPage() {
   const selectedRoomId = (selectedSlot as any)?.room_id ?? null;
   const selectedRoom = rooms.find((r) => r.id === selectedRoomId) ?? null;
 
+  /** Todos os alunos inscritos no MESMO horário do appointment selecionado. */
+  const slotmates = useMemo(() => {
+    if (!selectedApp) return [] as Appointment[];
+    const t = new Date(selectedApp.scheduled_at).getTime();
+    return appointments
+      .filter((a) => new Date(a.scheduled_at).getTime() === t)
+      .sort((a, b) => {
+        const an = studentById.get(a.student_id)?.full_name ?? '';
+        const bn = studentById.get(b.student_id)?.full_name ?? '';
+        return an.localeCompare(bn);
+      });
+  }, [appointments, selectedApp, studentById]);
+
+  /** Agrupa as aulas do dia por (horário + sala) para mostrar todos os alunos juntos na lista. */
+  const groupedAppointments = useMemo(() => {
+    const map = new Map<string, { key: string; scheduled_at: string; room_id: string | null; apps: Appointment[] }>();
+    appointments.forEach((a) => {
+      const slot = a.bookable_slot_id ? (slotById.get(a.bookable_slot_id) as any) : null;
+      const roomId = slot?.room_id ?? null;
+      const key = `${a.scheduled_at}|${roomId ?? 'none'}`;
+      const cur = map.get(key);
+      if (cur) cur.apps.push(a);
+      else map.set(key, { key, scheduled_at: a.scheduled_at, room_id: roomId, apps: [a] });
+    });
+    return Array.from(map.values()).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at));
+  }, [appointments, slotById]);
+
   // Equipment available in the selected room
   const roomEquipmentIds = useMemo(() => {
     if (!selectedRoomId) return equipment.map((e) => e.id);
