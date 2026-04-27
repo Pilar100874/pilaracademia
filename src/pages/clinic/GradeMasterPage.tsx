@@ -336,9 +336,11 @@ export default function GradeMasterPage() {
   // ===== Nova aula (avulsa ou fixa) =====
   const [newClassOpen, setNewClassOpen] = useState(false);
   const [newClassTime, setNewClassTime] = useState<string | undefined>(undefined);
-  const openNewClassAt = (d: Date, time?: string) => {
+  const [newClassRoomId, setNewClassRoomId] = useState<string | null | undefined>(undefined);
+  const openNewClassAt = (d: Date, time?: string, roomId?: string | null) => {
     setDay(d);
     setNewClassTime(time);
+    setNewClassRoomId(roomId);
     setNewClassOpen(true);
   };
 
