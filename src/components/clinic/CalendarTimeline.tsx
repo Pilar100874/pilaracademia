@@ -72,7 +72,12 @@ export function CalendarTimeline({
   dragActive = false, onDropInstructorOnCell, onDropInstructorOnSlot,
   selectedSlotKeys, selectedEmptyKeys,
   onReplaceSelection, onAddSelection, onMarqueeEnd,
+  rooms,
 }: Props) {
+  const splitByRoom = !!rooms && rooms.length > 0;
+  // Sub-colunas: se houver salas, cada dia tem N colunas (1 por sala). Caso contrário, 1.
+  const subCols: (RoomLite | null)[] = splitByRoom ? (rooms as RoomLite[]) : [null];
+  const colsPerDay = subCols.length;
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const readInstructor = (e: React.DragEvent) =>
     e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain') || '';
