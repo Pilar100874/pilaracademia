@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { format, parseISO, isSameDay, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Plus, X, AlertTriangle, Repeat, Sparkles, Users, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
 
 export interface TimelineSlot {
   key: string;
