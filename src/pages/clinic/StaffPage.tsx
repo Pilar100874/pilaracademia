@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, UserCog, Trash2, KeyRound, Copy, ShieldCheck, GraduationCap, Headphones, Search, Users, Mail } from 'lucide-react';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -112,20 +113,13 @@ export default function StaffPage() {
   }
 
   return (
+    <>
+    <ClinicPageHeader icon={Users} title="Equipe" subtitle="Professores, recepção e administradores" />
     <div className="p-4 sm:p-6 space-y-5 max-w-6xl mx-auto pb-24">
       {/* Hero */}
       <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-background to-background p-5 sm:p-7">
         <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="relative flex items-start sm:items-center justify-between gap-3 flex-wrap">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary">
-              <Users className="h-3.5 w-3.5" /> Equipe da clínica
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Usuários</h1>
-            <p className="text-sm text-muted-foreground max-w-md">
-              Cadastre e gerencie professores, recepção e administradores.
-            </p>
-          </div>
+        <div className="relative flex items-start sm:items-center justify-end gap-3 flex-wrap">
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="lg" className="shadow-lg shadow-primary/20 w-full sm:w-auto">
