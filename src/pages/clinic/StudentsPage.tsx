@@ -746,5 +746,6 @@ export default function StudentsPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

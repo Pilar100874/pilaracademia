@@ -58,5 +58,6 @@ export default function SkillLevelsPage() {
         </div>
       )}
     </div>
+    </>
   );
 }
