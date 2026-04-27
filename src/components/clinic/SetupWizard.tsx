@@ -538,8 +538,11 @@ function StepGrade({
   const [endHour, setEndHour] = useState('20');
   const [duration, setDuration] = useState('50');
   const [roomId, setRoomId] = useState<string>(rooms[0]?.id ?? '');
-  const [equipmentId, setEquipmentId] = useState<string>('any');
+  const [equipmentIds, setEquipmentIds] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
+
+  const toggleEquipment = (id: string) =>
+    setEquipmentIds((cur) => cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]);
 
   useEffect(() => { if (!roomId && rooms[0]) setRoomId(rooms[0].id); }, [rooms, roomId]);
 
