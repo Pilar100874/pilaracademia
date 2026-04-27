@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Plus, ChevronLeft, ChevronRight, CalendarDays, CheckCircle2, LogIn, Trash2,
   Repeat, ListChecks, Sparkles, AlertTriangle, RefreshCw, Filter, DoorOpen, Users, UserCog,
+  Maximize2, Minimize2,
 } from 'lucide-react';
 import { format, addDays, addMonths, isSameDay, parseISO, startOfWeek, startOfMonth, endOfMonth, endOfWeek, isSameMonth, differenceInCalendarDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -120,6 +121,7 @@ export default function GradeMasterPage() {
   const [renewalMonths, setRenewalMonths] = useState(3);
   const [filterInstructor, setFilterInstructor] = useState<string>('all');
   const [filterRoom, setFilterRoom] = useState<string>('all');
+  const [focusMode, setFocusMode] = useState(false);
 
   const horizonDate = useMemo(() => addMonths(new Date(), renewalMonths), [renewalMonths]);
 
@@ -798,25 +800,29 @@ export default function GradeMasterPage() {
   return (
     <PageMotion className="min-h-screen">
       {/* Cabeçalho compacto */}
-      <div className="border-b bg-card/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
-          <CalendarDays className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
-          <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Grade Master</h1>
-          <span className="text-xs text-muted-foreground hidden sm:inline">· agenda da clínica</span>
-        </div>
-      </div>
-
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4">
-        {/* TOP BAR: stats + view + filters */}
-        <Card className="p-4 space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <Stat label="Total" value={stats.total} icon={CalendarDays} />
-            <Stat label="Aulas marcadas" value={stats.classes} icon={CheckCircle2} tone="success" />
-            <Stat label="Sem professor" value={stats.uncovered} icon={AlertTriangle} tone={stats.uncovered > 0 ? 'danger' : 'muted'} />
-            <Stat label="Horários livres" value={stats.open} icon={Plus} tone="warn" />
-            <Stat label="Projeções" value={stats.projected} icon={RefreshCw} tone="muted" />
+      {!focusMode && (
+        <div className="border-b bg-card/40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+            <CalendarDays className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+            <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Grade Master</h1>
+            <span className="text-xs text-muted-foreground hidden sm:inline">· agenda da clínica</span>
           </div>
+        </div>
+      )}
+
+
+      <div className={cn(focusMode ? 'w-full px-2 sm:px-3 py-2 space-y-2' : 'max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4')}>
+        {/* TOP BAR: stats + view + filters */}
+        <Card className={cn(focusMode ? 'p-2 space-y-2' : 'p-4 space-y-4')}>
+          {!focusMode && (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <Stat label="Total" value={stats.total} icon={CalendarDays} />
+              <Stat label="Aulas marcadas" value={stats.classes} icon={CheckCircle2} tone="success" />
+              <Stat label="Sem professor" value={stats.uncovered} icon={AlertTriangle} tone={stats.uncovered > 0 ? 'danger' : 'muted'} />
+              <Stat label="Horários livres" value={stats.open} icon={Plus} tone="warn" />
+              <Stat label="Projeções" value={stats.projected} icon={RefreshCw} tone="muted" />
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-3 pt-2 border-t">
             <Tabs value={view} onValueChange={(v) => setView(v as 'day' | 'week' | 'month')}>
@@ -877,6 +883,14 @@ export default function GradeMasterPage() {
                 <Plus className="h-4 w-4 mr-1" />Nova aula
               </Button>
 
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setFocusMode((v) => !v)}
+                title={focusMode ? 'Sair do modo foco' : 'Maximizar agenda'}
+              >
+                {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
             </div>
           </div>
 
@@ -904,7 +918,7 @@ export default function GradeMasterPage() {
         </Card>
 
         {/* Paleta de professores arrastáveis */}
-        {instructors.length > 0 && (
+        {!focusMode && instructors.length > 0 && (
           <InstructorDragPalette
             instructors={instructors}
             colorOf={colorOf}
