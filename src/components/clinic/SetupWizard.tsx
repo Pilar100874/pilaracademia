@@ -300,7 +300,7 @@ function StepEquipment({ hook }: { hook: ReturnType<typeof useEquipment> }) {
         <Input placeholder="Nome (ex: Reformer 1)" value={name} onChange={(e) => setName(e.target.value)} />
         <Select value={type} onValueChange={setType}>
           <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[300]">
             <SelectItem value="reformer">Reformer</SelectItem>
             <SelectItem value="cadillac">Cadillac</SelectItem>
             <SelectItem value="chair">Chair</SelectItem>
@@ -358,7 +358,7 @@ function StepStaff({ clinicId, hook }: { clinicId: string; hook: ReturnType<type
         <Input placeholder="email@exemplo.com" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <Select value={form.role} onValueChange={(v: any) => setForm({ ...form, role: v })}>
           <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[300]">
             <SelectItem value="instructor">Professor</SelectItem>
             <SelectItem value="receptionist">Recepção</SelectItem>
             <SelectItem value="clinic_admin">Administrador</SelectItem>
@@ -647,7 +647,7 @@ function StepGrade({
             <Label className="text-xs">Sala</Label>
             <Select value={roomId} onValueChange={setRoomId}>
               <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[300]">
                 {rooms.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -656,7 +656,7 @@ function StepGrade({
             <Label className="text-xs">Equipamento</Label>
             <Select value={equipmentId} onValueChange={setEquipmentId}>
               <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[300]">
                 <SelectItem value="any">Qualquer (definir depois)</SelectItem>
                 {equipment.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
               </SelectContent>
