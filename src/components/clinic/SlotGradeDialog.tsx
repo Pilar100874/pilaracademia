@@ -261,7 +261,8 @@ export function SlotGradeDialog({
         duration_minutes: slot.duration_minutes,
         created_by: userId,
         recurring_schedule_id: r.recurring_id,
-      })
+        room_id: slotRoomInfo.roomId ?? null,
+      } as any)
       .select('id')
       .single();
     if (error) {
