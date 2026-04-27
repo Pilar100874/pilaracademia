@@ -40,6 +40,8 @@ interface Props {
   onCellClick: (d: Date, hour: number, roomId: string | null) => void;
   onSlotClick: (s: TimelineSlot) => void;
   onDelete?: (s: TimelineSlot) => void;
+  /** Exclusão definitiva de um horário livre (bookable_slot) — remove da grade. */
+  onPermanentDelete?: (s: TimelineSlot) => void;
   onPlanClick?: (s: TimelineSlot) => void;
   renderInstructorPicker?: (s: TimelineSlot) => React.ReactNode;
 
