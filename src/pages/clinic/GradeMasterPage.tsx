@@ -44,8 +44,9 @@ interface MergedSlot {
   student_id: string;
   equipment_id: string | null;
   instructor_id: string | null;
+  room_id: string | null;
   notes: string | null;
-  appointment?: Appointment & { sequence_id?: string | null; prescription_id?: string | null };
+  appointment?: Appointment & { sequence_id?: string | null; prescription_id?: string | null; recurring_schedule_id?: string | null };
   recurring_id?: string;
   /** virtual baseado em recorrente DENTRO do contrato */
   isVirtual?: boolean;
