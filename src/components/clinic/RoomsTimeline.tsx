@@ -232,11 +232,17 @@ export function RoomsTimeline({
                 const emptySelected = selectionMode && selectedEmptyKeys?.has(emptyKey);
                 const cellHoverKey = `cell-${r.id ?? 'orphan'}-${h}`;
                 const isDropHover = hoverKey === cellHoverKey;
+                // Horário passado: dia anterior ao hoje OU hora < agora no mesmo dia
+                const cellDate = new Date(day);
+                cellDate.setHours(h + 1, 0, 0, 0); // fim da hora
+                const isPast = cellDate.getTime() <= now.getTime();
                 return (
                   <button
                     key={h}
                     data-cell-key={emptyKey}
+                    disabled={isPast}
                     onClick={(e) => {
+                      if (isPast) return;
                       if (marquee.didDrag()) return;
                       const additive = e.shiftKey || e.metaKey || e.ctrlKey;
                       if (selectionMode || additive) {
@@ -250,6 +256,7 @@ export function RoomsTimeline({
                       }
                     }}
                     onDragOver={(e) => {
+                      if (isPast) return;
                       if (!onDropInstructorOnCell) return;
                       e.preventDefault();
                       e.dataTransfer.dropEffect = 'copy';
@@ -257,6 +264,7 @@ export function RoomsTimeline({
                     }}
                     onDragLeave={() => { if (hoverKey === cellHoverKey) setHoverKey(null); }}
                     onDrop={(e) => {
+                      if (isPast) return;
                       if (!onDropInstructorOnCell) return;
                       e.preventDefault();
                       const id = readInstructor(e);
@@ -264,26 +272,30 @@ export function RoomsTimeline({
                       if (id) onDropInstructorOnCell(id, day, h, r.id);
                     }}
                     title={
-                      selectionMode
-                        ? `${emptySelected ? 'Remover' : 'Selecionar'} ${String(h).padStart(2, '0')}:00 em ${r.name}`
-                        : dragActive
-                          ? `Soltar professor às ${String(h).padStart(2, '0')}:00 em ${r.name}`
-                          : `Adicionar aula às ${String(h).padStart(2, '0')}:00 em ${r.name}`
+                      isPast
+                        ? `Horário já passou — ${String(h).padStart(2, '0')}:00`
+                        : selectionMode
+                          ? `${emptySelected ? 'Remover' : 'Selecionar'} ${String(h).padStart(2, '0')}:00 em ${r.name}`
+                          : dragActive
+                            ? `Soltar professor às ${String(h).padStart(2, '0')}:00 em ${r.name}`
+                            : `Adicionar aula às ${String(h).padStart(2, '0')}:00 em ${r.name}`
                     }
                     className={cn(
-                      'absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group',
-                      full && 'bg-destructive/[0.04]',
+                      'absolute left-0 right-0 border-t border-border/40 transition group',
+                      !isPast && 'hover:bg-primary/5',
+                      isPast && 'bg-muted/30 cursor-not-allowed opacity-60',
+                      full && !isPast && 'bg-destructive/[0.04]',
                       emptySelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
-                      dragActive && 'bg-primary/[0.04]',
+                      dragActive && !isPast && 'bg-primary/[0.04]',
                       isDropHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
                     )}
                     style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
                   >
-                    {emptySelected ? (
+                    {!isPast && (emptySelected ? (
                       <Check className="h-3.5 w-3.5 text-primary absolute top-1 right-1" />
                     ) : (
                       <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
-                    )}
+                    ))}
                     {occ && (
                       <span className={cn(
                         'absolute bottom-0.5 left-1 text-[9px] font-bold px-1 rounded',
