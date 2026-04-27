@@ -634,13 +634,24 @@ export default function GradeMasterPage() {
   // ===== Atribuição em massa (criar / reatribuir) =====
   const [bulkOpen, setBulkOpen] = useState<null | 'create' | 'reassign'>(null);
 
+  // Relatório exibido após operação em massa quando há skips/erros
+  type BulkReport = {
+    title: string;
+    createdOrUpdated: number;
+    requested: number;
+    conflicts: string[];
+    otherErrors: string[];
+  };
+  const [bulkReport, setBulkReport] = useState<BulkReport | null>(null);
+
   const createSelectedEmpty = async (values: BulkAssignValues) => {
     console.log('[GradeMaster] createSelectedEmpty', { count: selectedEmptyKeys.size, values, activeClinicId, hasUser: !!user });
     if (!activeClinicId || !user) {
       toast.error('Sessão sem clínica ativa. Recarregue a página.');
-      return;
+      return { created: 0, requested: selectedEmptyKeys.size, conflicts: [], otherErrors: ['Sessão sem clínica ativa. Recarregue a página.'] };
     }
-    if (selectedEmptyKeys.size === 0) return;
+    const requested = selectedEmptyKeys.size;
+    if (requested === 0) return { created: 0, requested: 0, conflicts: [], otherErrors: [] };
     let count = 0;
     const conflicts: string[] = [];
     const otherErrors: string[] = [];
@@ -674,24 +685,14 @@ export default function GradeMasterPage() {
     await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
     await qc.invalidateQueries({ queryKey: ['appointments'] });
     if (count > 0) toast.success(`${count} horário(s) criado(s)`);
-    if (conflicts.length > 0) {
-      toast.warning(
-        `${conflicts.length} horário(s) ignorado(s) — professor já ocupado`,
-        { description: conflicts.slice(0, 5).join('\n') + (conflicts.length > 5 ? `\n…e mais ${conflicts.length - 5}` : ''), duration: 8000 }
-      );
-    }
-    if (otherErrors.length > 0) {
-      toast.error(`${otherErrors.length} falha(s)`, { description: otherErrors.slice(0, 5).join('\n'), duration: 8000 });
-    }
-    if (count === 0 && conflicts.length === 0 && otherErrors.length === 0) {
-      toast.info('Nenhum horário processado.');
-    }
     exitSelection();
+    return { created: count, requested, conflicts, otherErrors };
   };
 
   const reassignSelected = async (values: BulkAssignValues) => {
-    if (selectedSlotKeys.size === 0) return;
     const tsList = visibleSlotsForSelection().map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
+    const requested = tsList.length;
+    if (requested === 0) return { updated: 0, requested: 0, conflicts: [], otherErrors: [] };
     let updated = 0;
     const conflicts: string[] = [];
     const otherErrors: string[] = [];
@@ -728,142 +729,8 @@ export default function GradeMasterPage() {
     await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
     await qc.invalidateQueries({ queryKey: ['appointments'] });
     if (updated > 0) toast.success(`${updated} horário(s) atualizado(s)`);
-    if (conflicts.length > 0) {
-      toast.warning(
-        `${conflicts.length} horário(s) ignorado(s) — professor já ocupado`,
-        { description: conflicts.slice(0, 5).join('\n') + (conflicts.length > 5 ? `\n…e mais ${conflicts.length - 5}` : ''), duration: 8000 }
-      );
-    }
-    if (otherErrors.length > 0) {
-      toast.error(`${otherErrors.length} falha(s)`, { description: otherErrors.slice(0, 5).join('\n'), duration: 8000 });
-    }
     exitSelection();
-  };
-
-  /**
-   * Seleciona toda a coluna de uma sala (todas as horas 6..21) para um conjunto
-   * de dias visíveis e abre o BulkAssignDialog. Se o slot daquele horário já
-   * existir (slot/aula), entra em selectedSlotKeys (modo reassign);
-   * caso contrário entra em selectedEmptyKeys (modo create).
-   */
-  const selectRoomColumn = (roomId: string | null, targetDays: Date[]) => {
-    const HOUR_START = 6;
-    const HOUR_END = 22;
-    const newEmpty = new Set<EmptyCellKey>();
-    const newSlots = new Set<string>();
-    const allVisible = visibleSlotsForSelection();
-    targetDays.forEach((d) => {
-      for (let h = HOUR_START; h < HOUR_END; h++) {
-        // Slot existente neste horário+sala?
-        const existing = allVisible.find((s) => {
-          if ((s.room_id ?? null) !== roomId) return false;
-          if (!isSameDay(parseISO(s.scheduled_at), d)) return false;
-          return parseISO(s.scheduled_at).getHours() === h;
-        });
-        if (existing) {
-          newSlots.add(existing.key);
-        } else {
-          newEmpty.add(makeEmptyKey(d, h, roomId));
-        }
-      }
-    });
-    console.log('[GradeMaster] selectRoomColumn', { roomId, targetDays: targetDays.map((d) => d.toISOString().slice(0,10)), newEmpty: newEmpty.size, newSlots: newSlots.size });
-    if (newEmpty.size === 0 && newSlots.size === 0) {
-      toast.info('Nenhum horário disponível nessa coluna.');
-      return;
-    }
-    replaceSelection(newSlots, newEmpty);
-    // Prioriza criar horários vazios; se só houver existentes, vai para reassign
-    if (newEmpty.size > 0) setBulkOpen('create');
-    else setBulkOpen('reassign');
-  };
-
-  // ===== Drag & drop de professor =====
-  const [draggingInstructorId, setDraggingInstructorId] = useState<string | null>(null);
-  const resolveInstructor = (raw: string): string | null => raw === CLEAR_INSTRUCTOR ? null : raw;
-
-  const dropInstructorOnSlot = async (raw: string, ts: TimelineSlot) => {
-    if (!activeClinicId || !user) return;
-    const newInstructorId = resolveInstructor(raw);
-    try {
-      if (ts.appointment_id) {
-        const { error } = await supabase.from('class_appointments')
-          .update({ instructor_id: newInstructorId })
-          .eq('id', ts.appointment_id);
-        if (error) throw error;
-      } else if (ts.bookable_slot_id) {
-        const { error } = await supabase.from('bookable_slots' as any)
-          .update({ instructor_id: newInstructorId })
-          .eq('id', ts.bookable_slot_id);
-        if (error) throw error;
-      } else if (ts.recurring_id) {
-        // Materializa a virtual como appointment já com o novo professor
-        const original = (view === 'day' ? daySlots : weekDays.flatMap(slotsForDay)).find((s) => s.key === ts.key);
-        if (!original?.student_id) { setDraggingInstructorId(null); return; }
-        const { error } = await supabase.from('class_appointments').insert({
-          clinic_id: activeClinicId,
-          student_id: original.student_id,
-          equipment_id: original.equipment_id,
-          instructor_id: newInstructorId,
-          scheduled_at: original.scheduled_at,
-          duration_minutes: original.duration_minutes,
-          notes: original.notes,
-          created_by: user.id,
-          recurring_schedule_id: original.recurring_id || null,
-        });
-        if (error) throw error;
-      }
-      toast.success(newInstructorId ? 'Professor atribuído' : 'Professor removido');
-    } catch (e: any) {
-      toast.error(e?.message || 'Erro ao atribuir professor');
-    } finally {
-      setDraggingInstructorId(null);
-    }
-  };
-
-  const dropInstructorOnCell = async (raw: string, d: Date, hour: number, roomId: string | null = null) => {
-    console.log('[GradeMaster] dropInstructorOnCell', { raw, day: d.toISOString(), hour, roomId, activeClinicId, hasUser: !!user });
-    if (!activeClinicId || !user) {
-      toast.error('Sessão sem clínica ativa. Recarregue a página.');
-      setDraggingInstructorId(null);
-      return;
-    }
-    const newInstructorId = resolveInstructor(raw);
-    if (!newInstructorId) {
-      toast.info('Arraste um professor para criar um horário.');
-      setDraggingInstructorId(null);
-      return;
-    }
-    const sched = new Date(d);
-    sched.setHours(hour, 0, 0, 0);
-    try {
-      await createBookable.mutateAsync({
-        clinic_id: activeClinicId,
-        scheduled_at: sched.toISOString(),
-        duration_minutes: 50,
-        equipment_id: null,
-        instructor_id: newInstructorId,
-        room_id: roomId,
-        capacity: 1,
-        notes: null,
-        created_by: user.id,
-      } as any);
-      await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
-      toast.success(`Horário criado em ${format(sched, 'dd/MM HH:mm')}`);
-    } catch (e: any) {
-      console.error('[GradeMaster] dropInstructorOnCell error', e);
-      const msg = e?.message || 'Erro ao criar horário';
-      if (/professor já/i.test(msg)) {
-        toast.warning('Conflito de professor', {
-          description: `${format(sched, 'dd/MM HH:mm')} — ${msg.replace(/^.*?:\s*/, '')}`,
-          duration: 7000,
-        });
-      } else {
-        toast.error(`Falha: ${msg}`);
-      }
-    } finally {
-      setDraggingInstructorId(null);
-    }
+    return { updated, requested, conflicts, otherErrors };
   };
 
 
