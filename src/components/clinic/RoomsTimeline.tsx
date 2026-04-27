@@ -224,10 +224,28 @@ export function RoomsTimeline({
                 const isSelected = selectionMode && selectedSlotKeys?.has(s.key);
                 const canSelect = selectionMode && (s.appointment_id || s.bookable_slot_id);
 
+                const slotHoverKey = `slot-${s.key}`;
+                const isSlotDropHover = hoverKey === slotHoverKey;
                 const eventBox = (
                   <div
                     role="button"
                     tabIndex={0}
+                    onDragOver={(e) => {
+                      if (!onDropInstructorOnSlot) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.dataTransfer.dropEffect = 'copy';
+                      if (hoverKey !== slotHoverKey) setHoverKey(slotHoverKey);
+                    }}
+                    onDragLeave={() => { if (hoverKey === slotHoverKey) setHoverKey(null); }}
+                    onDrop={(e) => {
+                      if (!onDropInstructorOnSlot) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const id = readInstructor(e);
+                      setHoverKey(null);
+                      if (id) onDropInstructorOnSlot(id, s);
+                    }}
                     style={{
                       top: top + 1,
                       height,
@@ -245,6 +263,7 @@ export function RoomsTimeline({
                       s.uncovered && !s.isOpen && 'bg-destructive/5',
                       isSelected && 'ring-2 ring-primary bg-primary/10',
                       selectionMode && !canSelect && 'opacity-50',
+                      isSlotDropHover && 'ring-2 ring-primary bg-primary/15',
                     )}
                   >
                     <div className="flex items-center justify-between gap-1 leading-tight">
@@ -265,6 +284,7 @@ export function RoomsTimeline({
                     )}
                   </div>
                 );
+
 
                 if (selectionMode) {
                   return (
