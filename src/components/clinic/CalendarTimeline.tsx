@@ -530,6 +530,15 @@ export function CalendarTimeline({
                               Abrir
                             </button>
                           )}
+                          {!s.blockedPeriodId && !s.isBlocked && s.appointment_id && onPlanClick && (
+                            <button
+                              onClick={() => onPlanClick(s)}
+                              className="flex-1 px-2 py-1.5 rounded border border-primary/40 text-primary text-[11px] hover:bg-primary/5 text-center"
+                              title="Planejar sequência"
+                            >
+                              ✨ Planejar
+                            </button>
+                          )}
                           {!s.blockedPeriodId && !s.isBlocked && renderInstructorPicker?.(s)}
                           {!s.blockedPeriodId && onDelete && (s.appointment_id || s.bookable_slot_id) && (
                             s.isBlocked ? (
