@@ -348,15 +348,16 @@ export function CalendarTimeline({
                           aria-hidden
                         />
                       )}
-                      {/* Badge de capacidade (canto inferior esquerdo) */}
+                      {/* Bolinha de capacidade (canto inferior esquerdo) — destaque forte quando lotada */}
                       {!isPast && occ && cap && occ.used > 0 && (
                         <span
                           className={cn(
-                            'absolute bottom-0.5 left-1.5 text-[9px] font-bold tabular-nums px-1 rounded-sm leading-tight',
-                            occ.status === 'full' && 'bg-destructive text-destructive-foreground',
+                            'absolute bottom-1 left-1 z-10 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold tabular-nums leading-none shadow-md ring-2 ring-background',
+                            occ.status === 'full' && 'bg-destructive text-destructive-foreground ring-destructive/30 animate-pulse scale-110',
                             occ.status === 'mid' && 'bg-amber-500 text-white',
-                            occ.status === 'low' && 'bg-emerald-500/90 text-white',
+                            occ.status === 'low' && 'bg-emerald-500 text-white',
                           )}
+                          aria-label={`${occ.used} de ${cap} ocupadas${occ.status === 'full' ? ' — sala lotada' : ''}`}
                         >
                           {occ.used}/{cap}
                         </span>
