@@ -14,6 +14,8 @@ export interface BookableSlot {
   notes: string | null;
   created_by: string;
   created_at: string;
+  blocked?: boolean;
+  active?: boolean;
 }
 
 export function useBookableSlots(clinicId: string | null, fromISO?: string, toISO?: string) {
