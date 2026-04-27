@@ -291,6 +291,8 @@ export function CalendarTimeline({
                   const cellEnd = new Date(d);
                   cellEnd.setHours(h + 1, 0, 0, 0);
                   const isPast = cellEnd.getTime() <= now.getTime();
+                  const isOccupied = occupiedHours.has(h);
+                  const isDisabled = isPast || isOccupied;
                   const statusBg =
                     occ?.status === 'full' ? 'bg-destructive/10' :
                     occ?.status === 'mid'  ? 'bg-amber-500/10' :
@@ -304,10 +306,12 @@ export function CalendarTimeline({
                   return (
                     <button
                       key={h}
-                      data-cell-key={weekKey}
-                      disabled={isPast}
+                      // Só expõe data-cell-key quando livre — assim o marquee pula
+                      // automaticamente as células com aula/bloqueio existente.
+                      {...(!isDisabled ? { 'data-cell-key': weekKey } : {})}
+                      disabled={isDisabled}
                       onClick={(e) => {
-                        if (isPast) return;
+                        if (isDisabled) return;
                         if (marquee.didDrag()) return;
                         const additive = e.shiftKey || e.metaKey || e.ctrlKey;
                         if (additive) {
@@ -317,7 +321,7 @@ export function CalendarTimeline({
                         }
                       }}
                       onDragOver={(e) => {
-                        if (isPast) return;
+                        if (isDisabled) return;
                         if (!onDropInstructorOnCell) return;
                         e.preventDefault();
                         e.dataTransfer.dropEffect = 'copy';
@@ -325,7 +329,7 @@ export function CalendarTimeline({
                       }}
                       onDragLeave={() => { if (hoverKey === cellKey) setHoverKey(null); }}
                       onDrop={(e) => {
-                        if (isPast) return;
+                        if (isDisabled) return;
                         if (!onDropInstructorOnCell) return;
                         e.preventDefault();
                         const id = readInstructor(e);
