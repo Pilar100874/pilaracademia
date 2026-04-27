@@ -44,21 +44,8 @@ export default function ClinicLayout() {
     localStorage.setItem('clinic.sidebar.collapsed', sidebarCollapsed ? '1' : '0');
   }, [sidebarCollapsed]);
 
-  // Open wizard automatically on first visit (per clinic, admin only)
-  useEffect(() => {
-    if (isLoading || !isAdmin || !activeClinicId) return;
-    if (setupWizardCompleted(activeClinicId)) return;
-    let cancelled = false;
-    isWizardCompletedRemote(activeClinicId).then((done) => {
-      if (cancelled) return;
-      if (done) {
-        markWizardCompleted(activeClinicId);
-      } else {
-        setWizardOpen(true);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [isLoading, isAdmin, activeClinicId]);
+  // Wizard no longer opens automatically — always go straight to Grade Master.
+  // Admins can still open it manually via the sidebar/header buttons.
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
