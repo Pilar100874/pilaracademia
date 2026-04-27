@@ -301,25 +301,28 @@ export default function GradeMasterPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 pt-2 border-t">
-            <Tabs value={view} onValueChange={(v) => setView(v as 'day' | 'week')}>
+            <Tabs value={view} onValueChange={(v) => setView(v as 'day' | 'week' | 'month')}>
               <TabsList>
-                <TabsTrigger value="week">Semana</TabsTrigger>
                 <TabsTrigger value="day">Dia</TabsTrigger>
+                <TabsTrigger value="week">Semana</TabsTrigger>
+                <TabsTrigger value="month">Mês</TabsTrigger>
               </TabsList>
             </Tabs>
 
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={() => setDay((d) => addDays(d, view === 'day' ? -1 : -7))}>
+              <Button variant="ghost" size="icon" onClick={() => setDay((d) => view === 'month' ? addMonths(d, -1) : addDays(d, view === 'day' ? -1 : -7))}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <Button variant="outline" size="sm" onClick={() => setDay(new Date())}>Hoje</Button>
-              <Button variant="ghost" size="icon" onClick={() => setDay((d) => addDays(d, view === 'day' ? 1 : 7))}>
+              <Button variant="ghost" size="icon" onClick={() => setDay((d) => view === 'month' ? addMonths(d, 1) : addDays(d, view === 'day' ? 1 : 7))}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <span className="ml-2 text-sm font-medium">
                 {view === 'day'
                   ? format(day, "dd 'de' MMMM yyyy", { locale: ptBR })
-                  : `${format(weekStart, 'dd/MM')} - ${format(addDays(weekStart, 6), 'dd/MM')}`}
+                  : view === 'week'
+                    ? `${format(weekStart, 'dd/MM')} - ${format(addDays(weekStart, 6), 'dd/MM')}`
+                    : format(day, "MMMM 'de' yyyy", { locale: ptBR })}
               </span>
             </div>
 
