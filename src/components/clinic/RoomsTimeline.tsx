@@ -420,6 +420,19 @@ export function RoomsTimeline({
             </div>
           );
         })}
+
+        {/* Marquee selection rectangle */}
+        {marquee.state.active && marquee.state.rect && (
+          <div
+            className="absolute z-30 pointer-events-none border-2 border-primary bg-primary/10 rounded-sm"
+            style={{
+              left: marquee.state.rect.left,
+              top: marquee.state.rect.top,
+              width: marquee.state.rect.width,
+              height: marquee.state.rect.height,
+            }}
+          />
+        )}
       </div>
     </div>
   );
