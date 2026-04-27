@@ -248,6 +248,29 @@ export default function GradeMasterPage() {
 
   const daySlots = view === 'day' ? slotsForDay(day) : [];
 
+  /** Agrupa slots por (HH:mm + sala) e calcula ocupação vs capacidade da sala. */
+  const occupancyFor = (slots: MergedSlot[], target: MergedSlot) => {
+    if (!target.room_id) return null;
+    const room = (rooms as any[]).find((r) => r.id === target.room_id);
+    const cap = room?.capacity as number | null | undefined;
+    if (!cap) return null;
+    const t = parseISO(target.scheduled_at);
+    const key = `${t.getHours()}:${t.getMinutes()}|${target.room_id}`;
+    const same = slots.filter((s) => {
+      if (s.isOpen) return false;
+      const st = parseISO(s.scheduled_at);
+      return `${st.getHours()}:${st.getMinutes()}|${s.room_id ?? ''}` === key;
+    });
+    return { used: same.length, cap, students: same.map((s) => s.student_id).filter(Boolean) as string[] };
+  };
+
+  /** Disponibilidade (turnos) que cobre o instante dado. */
+  const shiftsCovering = (d: Date) => {
+    const dow = d.getDay();
+    const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`;
+    return (availability as any[]).filter((s) => s.day_of_week === dow && s.start_time <= hhmm && s.end_time > hhmm);
+  };
+
   // Lista de professores presentes nos schedules (deduplicados via clinic_users via recurring/instructor)
   const instructorOptions = useMemo(() => {
     const ids = new Set<string>();
