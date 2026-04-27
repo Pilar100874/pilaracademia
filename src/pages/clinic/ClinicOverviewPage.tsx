@@ -6,6 +6,7 @@ import {
   Radio, TrendingUp, FileBarChart, ArrowUpRight, Sparkles,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 
 export default function ClinicOverviewPage() {
   const { activeClinicId, activeClinic } = useUserRoles();
