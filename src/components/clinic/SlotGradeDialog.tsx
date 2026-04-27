@@ -205,6 +205,49 @@ export function SlotGradeDialog({
 
   const studentName = (id: string) => students.find((s) => s.id === id)?.full_name || '—';
 
+  // ===== Adicionar aluno =====
+  const isFull = slotRoomInfo.capacity != null && rows.length >= slotRoomInfo.capacity;
+  const presentIds = new Set(rows.map((r) => r.student_id));
+  const availableStudents = students
+    .filter((s) => (s as any).active !== false)
+    .filter((s) => !presentIds.has(s.id))
+    .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+
+  const addStudent = (studentId: string) => {
+    if (isFull) {
+      toast.error(`Sala lotada (${rows.length}/${slotRoomInfo.capacity}). Não é possível adicionar mais alunos.`);
+      return;
+    }
+    if (presentIds.has(studentId)) {
+      toast.info('Aluno já está nesta aula.');
+      return;
+    }
+    setRows((rs) => [
+      ...rs,
+      {
+        student_id: studentId,
+        appointment_id: null,
+        recurring_id: null,
+        equipment_id: '',
+        sequence_id: '',
+        lock_equipment: false,
+      },
+    ]);
+    setAddOpen(false);
+    toast.success(`${studentName(studentId)} adicionado(a). Salve para confirmar.`);
+  };
+
+  const removeRow = (idx: number) => {
+    const r = rows[idx];
+    // Se é appointment já gravado, não remove aqui (precisa cancelamento próprio).
+    if (r.appointment_id) {
+      toast.info('Para remover um aluno já agendado, cancele a aula pelo card do horário.');
+      return;
+    }
+    setRows((rs) => rs.filter((_, i) => i !== idx));
+  };
+
+
   const materializeRow = async (r: RowState): Promise<string | null> => {
     if (r.appointment_id) return r.appointment_id;
     const { data, error } = await supabase
