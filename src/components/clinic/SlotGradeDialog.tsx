@@ -78,6 +78,7 @@ export function SlotGradeDialog({
   clinicId,
   userId,
   focusedStudentId,
+  autoOpenAdd,
   appointments,
   recurring,
   students,
