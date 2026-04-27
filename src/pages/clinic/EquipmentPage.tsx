@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 
 const NO_ROOM = '__none__';
 
