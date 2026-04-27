@@ -28,6 +28,7 @@ export interface TimelineSlot {
   isOpen?: boolean;
   isVirtual?: boolean;
   isProjected?: boolean;
+  isBlocked?: boolean;
   hasGrade?: boolean;
   uncovered?: boolean;
   appointment_id?: string;
