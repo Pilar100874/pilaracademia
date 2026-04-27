@@ -1056,6 +1056,7 @@ export default function GradeMasterPage() {
               onDelete={handleTimelineDelete}
               onPermanentDelete={handleTimelinePermanentDelete}
               onPlanClick={handlePlanClick}
+              onAddStudent={handleTimelineAddStudent}
               renderInstructorPicker={renderTimelineInstructorPicker}
               dragActive={draggingInstructorId !== null}
               onDropInstructorOnCell={(id, d, h, roomId) => dropInstructorOnCell(id, d, h, roomId ?? null)}
