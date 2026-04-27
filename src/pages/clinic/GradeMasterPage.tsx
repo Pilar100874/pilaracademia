@@ -225,6 +225,11 @@ export default function GradeMasterPage() {
   // ===== Aluno avulso =====
   const [avulsoOpen, setAvulsoOpen] = useState(false);
   const [avulso, setAvulso] = useState({ student_id: '', time: '08:00', duration_minutes: 50, equipment_id: '', notes: '' });
+  const openAvulsoAt = (d: Date, time?: string) => {
+    setDay(d);
+    setAvulso((prev) => ({ ...prev, time: time ?? prev.time }));
+    setAvulsoOpen(true);
+  };
   const handleAvulso = async () => {
     if (!user || !activeClinicId || !avulso.student_id) return;
     const [h, m] = avulso.time.split(':').map(Number);
@@ -245,6 +250,7 @@ export default function GradeMasterPage() {
     setAvulso({ student_id: '', time: '08:00', duration_minutes: 50, equipment_id: '', notes: '' });
     setAvulsoOpen(false);
   };
+
 
   // ===== Renovar contrato (1-clique) =====
   const renewContract = async (studentId: string) => {
