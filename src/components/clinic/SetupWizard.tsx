@@ -681,28 +681,98 @@ function StepGrade({
             </Select>
           </div>
           <div>
-            <Label className="text-xs">Equipamentos</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Equipamentos</Label>
+              {equipment.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="text-[11px] font-medium text-primary hover:underline"
+                    onClick={() => setEquipmentIds(equipment.map((e: any) => e.id))}
+                  >
+                    Selecionar todos
+                  </button>
+                  <span className="text-[11px] text-muted-foreground">·</span>
+                  <button
+                    type="button"
+                    className="text-[11px] font-medium text-muted-foreground hover:underline"
+                    onClick={() => setEquipmentIds([])}
+                  >
+                    Limpar
+                  </button>
+                </div>
+              )}
+            </div>
+
             {equipment.length === 0 ? (
               <div className="text-xs text-muted-foreground mt-2">Nenhum equipamento cadastrado. Será "qualquer".</div>
             ) : (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {equipment.map((e) => {
-                  const active = equipmentIds.includes(e.id);
-                  return (
-                    <button
-                      key={e.id}
-                      type="button"
-                      onClick={() => toggleEquipment(e.id)}
-                      className={`h-9 px-3 rounded-lg border text-xs font-semibold transition ${
-                        active ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-muted'
-                      }`}
-                    >
-                      {e.name}
-                    </button>
-                  );
-                })}
-              </div>
+              <>
+                <div className="relative mt-2">
+                  <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={equipmentSearch}
+                    onChange={(e) => setEquipmentSearch(e.target.value)}
+                    placeholder={`Buscar entre ${equipment.length} equipamentos…`}
+                    className="h-8 pl-8 text-xs"
+                  />
+                </div>
+
+                {equipmentIds.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {equipmentIds.map((id) => {
+                      const e = equipment.find((x: any) => x.id === id);
+                      if (!e) return null;
+                      return (
+                        <Badge key={id} variant="secondary" className="gap-1 pr-1">
+                          {e.name}
+                          <button
+                            type="button"
+                            onClick={() => toggleEquipment(id)}
+                            className="rounded-full hover:bg-muted-foreground/20 p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="mt-2 max-h-56 overflow-y-auto rounded-lg border divide-y">
+                  {filteredEquipment.length === 0 ? (
+                    <div className="text-[11px] text-muted-foreground p-3 text-center">
+                      Nenhum equipamento encontrado.
+                    </div>
+                  ) : (
+                    filteredEquipment.map((e: any) => {
+                      const active = equipmentIds.includes(e.id);
+                      return (
+                        <button
+                          key={e.id}
+                          type="button"
+                          onClick={() => toggleEquipment(e.id)}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-left text-xs transition ${
+                            active ? 'bg-primary/10' : 'hover:bg-muted/50'
+                          }`}
+                        >
+                          <span className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 ${
+                            active ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30'
+                          }`}>
+                            {active && <Check className="h-3 w-3" />}
+                          </span>
+                          <span className="font-medium truncate flex-1">{e.name}</span>
+                          {e.equipment_type && (
+                            <span className="text-[10px] text-muted-foreground uppercase">{e.equipment_type}</span>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </>
             )}
+
             <div className="text-[11px] text-muted-foreground mt-1">
               {equipmentIds.length === 0
                 ? 'Nenhum selecionado → "qualquer" (definir depois)'
