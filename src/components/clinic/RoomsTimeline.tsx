@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Plus, X, AlertTriangle, Repeat, Sparkles, RefreshCw, DoorOpen, Users, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { TimelineSlot } from './CalendarTimeline';
+import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
 
 export interface Room {
   id: string;
@@ -44,6 +46,14 @@ interface Props {
   selectedEmptyKeys?: Set<EmptyCellKey>;
   onToggleSlot?: (s: TimelineSlot) => void;
   onToggleEmpty?: (key: EmptyCellKey) => void;
+
+  // ===== Drag & drop de professor =====
+  /** Indica que há um professor sendo arrastado (para destacar drop targets). */
+  dragActive?: boolean;
+  /** Chamado ao soltar professor sobre uma célula vazia (cria novo slot). */
+  onDropInstructorOnCell?: (instructorId: string, day: Date, hour: number, roomId: string | null) => void;
+  /** Chamado ao soltar professor sobre um slot existente (atribui). */
+  onDropInstructorOnSlot?: (instructorId: string, slot: TimelineSlot) => void;
 }
 
 export function RoomsTimeline({
@@ -55,7 +65,14 @@ export function RoomsTimeline({
   selectedEmptyKeys,
   onToggleSlot,
   onToggleEmpty,
+  dragActive = false,
+  onDropInstructorOnCell,
+  onDropInstructorOnSlot,
 }: Props) {
+  const [hoverKey, setHoverKey] = useState<string | null>(null);
+  const readInstructor = (e: React.DragEvent) =>
+    e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain') || '';
+
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
   const totalHeight = hours.length * hourHeight;
   const minutesToTop = (date: Date) => {
@@ -127,6 +144,8 @@ export function RoomsTimeline({
                 const full = occ && occ.used >= occ.cap;
                 const emptyKey = makeEmptyKey(day, h, r.id);
                 const emptySelected = selectionMode && selectedEmptyKeys?.has(emptyKey);
+                const cellHoverKey = `cell-${r.id ?? 'orphan'}-${h}`;
+                const isDropHover = hoverKey === cellHoverKey;
                 return (
                   <button
                     key={h}
@@ -137,15 +156,33 @@ export function RoomsTimeline({
                         onCellClick(day, h, r.id);
                       }
                     }}
+                    onDragOver={(e) => {
+                      if (!onDropInstructorOnCell) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'copy';
+                      if (hoverKey !== cellHoverKey) setHoverKey(cellHoverKey);
+                    }}
+                    onDragLeave={() => { if (hoverKey === cellHoverKey) setHoverKey(null); }}
+                    onDrop={(e) => {
+                      if (!onDropInstructorOnCell) return;
+                      e.preventDefault();
+                      const id = readInstructor(e);
+                      setHoverKey(null);
+                      if (id) onDropInstructorOnCell(id, day, h, r.id);
+                    }}
                     title={
                       selectionMode
                         ? `${emptySelected ? 'Remover' : 'Selecionar'} ${String(h).padStart(2, '0')}:00 em ${r.name}`
-                        : `Adicionar aula às ${String(h).padStart(2, '0')}:00 em ${r.name}`
+                        : dragActive
+                          ? `Soltar professor às ${String(h).padStart(2, '0')}:00 em ${r.name}`
+                          : `Adicionar aula às ${String(h).padStart(2, '0')}:00 em ${r.name}`
                     }
                     className={cn(
                       'absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group',
                       full && 'bg-destructive/[0.04]',
                       emptySelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
+                      dragActive && 'bg-primary/[0.04]',
+                      isDropHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
                     )}
                     style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
                   >
@@ -164,6 +201,7 @@ export function RoomsTimeline({
                     )}
                   </button>
                 );
+
               })}
 
               {isToday && now.getHours() >= startHour && now.getHours() < endHour && (
@@ -186,10 +224,28 @@ export function RoomsTimeline({
                 const isSelected = selectionMode && selectedSlotKeys?.has(s.key);
                 const canSelect = selectionMode && (s.appointment_id || s.bookable_slot_id);
 
+                const slotHoverKey = `slot-${s.key}`;
+                const isSlotDropHover = hoverKey === slotHoverKey;
                 const eventBox = (
                   <div
                     role="button"
                     tabIndex={0}
+                    onDragOver={(e) => {
+                      if (!onDropInstructorOnSlot) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.dataTransfer.dropEffect = 'copy';
+                      if (hoverKey !== slotHoverKey) setHoverKey(slotHoverKey);
+                    }}
+                    onDragLeave={() => { if (hoverKey === slotHoverKey) setHoverKey(null); }}
+                    onDrop={(e) => {
+                      if (!onDropInstructorOnSlot) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const id = readInstructor(e);
+                      setHoverKey(null);
+                      if (id) onDropInstructorOnSlot(id, s);
+                    }}
                     style={{
                       top: top + 1,
                       height,
@@ -207,6 +263,7 @@ export function RoomsTimeline({
                       s.uncovered && !s.isOpen && 'bg-destructive/5',
                       isSelected && 'ring-2 ring-primary bg-primary/10',
                       selectionMode && !canSelect && 'opacity-50',
+                      isSlotDropHover && 'ring-2 ring-primary bg-primary/15',
                     )}
                   >
                     <div className="flex items-center justify-between gap-1 leading-tight">
@@ -227,6 +284,7 @@ export function RoomsTimeline({
                     )}
                   </div>
                 );
+
 
                 if (selectionMode) {
                   return (

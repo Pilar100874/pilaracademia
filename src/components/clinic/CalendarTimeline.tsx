@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { format, parseISO, isSameDay, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Plus, X, AlertTriangle, Repeat, Sparkles, Users, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
 
 export interface TimelineSlot {
   key: string;
@@ -37,13 +39,22 @@ interface Props {
   onSlotClick: (s: TimelineSlot) => void;
   onDelete?: (s: TimelineSlot) => void;
   renderInstructorPicker?: (s: TimelineSlot) => React.ReactNode;
+  // Drag & drop de professor
+  dragActive?: boolean;
+  onDropInstructorOnCell?: (instructorId: string, day: Date, hour: number) => void;
+  onDropInstructorOnSlot?: (instructorId: string, slot: TimelineSlot) => void;
 }
 
 export function CalendarTimeline({
   days, startHour, endHour, hourHeight = 56,
   slotsForDay, studentName, instructorName, roomName, roomColorOf, colorOf,
   onCellClick, onSlotClick, onDelete, renderInstructorPicker,
+  dragActive = false, onDropInstructorOnCell, onDropInstructorOnSlot,
 }: Props) {
+  const [hoverKey, setHoverKey] = useState<string | null>(null);
+  const readInstructor = (e: React.DragEvent) =>
+    e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain') || '';
+
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
   const totalHeight = hours.length * hourHeight;
   const minutesToTop = (date: Date) => {
@@ -96,17 +107,40 @@ export function CalendarTimeline({
           return (
             <div key={d.toISOString()} className={cn('relative border-l', isToday && 'bg-primary/[0.02]')}>
               {/* linhas de hora clicáveis */}
-              {hours.map((h) => (
-                <button
-                  key={h}
-                  onClick={() => onCellClick(d, h)}
-                  title={`Adicionar aula às ${String(h).padStart(2, '0')}:00`}
-                  className="absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group"
-                  style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
-                >
-                  <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
-                </button>
-              ))}
+              {hours.map((h) => {
+                const cellKey = `cell-${d.toISOString()}-${h}`;
+                const isHover = hoverKey === cellKey;
+                return (
+                  <button
+                    key={h}
+                    onClick={() => onCellClick(d, h)}
+                    onDragOver={(e) => {
+                      if (!onDropInstructorOnCell) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'copy';
+                      if (hoverKey !== cellKey) setHoverKey(cellKey);
+                    }}
+                    onDragLeave={() => { if (hoverKey === cellKey) setHoverKey(null); }}
+                    onDrop={(e) => {
+                      if (!onDropInstructorOnCell) return;
+                      e.preventDefault();
+                      const id = readInstructor(e);
+                      setHoverKey(null);
+                      if (id) onDropInstructorOnCell(id, d, h);
+                    }}
+                    title={dragActive ? `Soltar professor às ${String(h).padStart(2, '0')}:00` : `Adicionar aula às ${String(h).padStart(2, '0')}:00`}
+                    className={cn(
+                      'absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group',
+                      dragActive && 'bg-primary/[0.03]',
+                      isHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
+                    )}
+                    style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
+                  >
+                    <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
+                  </button>
+                );
+              })}
+
 
               {/* now indicator */}
               {showNow && (
@@ -128,12 +162,30 @@ export function CalendarTimeline({
                 const color = colorOf(s.instructor_id);
                 const instr = instructorName(s.instructor_id);
                 const room = roomName(s.room_id);
+                const slotKey = `slot-${s.key}`;
+                const isSlotHover = hoverKey === slotKey;
                 return (
                   <Popover key={s.key}>
                     <PopoverTrigger asChild>
                       <div
                         role="button"
                         tabIndex={0}
+                        onDragOver={(e) => {
+                          if (!onDropInstructorOnSlot) return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          e.dataTransfer.dropEffect = 'copy';
+                          if (hoverKey !== slotKey) setHoverKey(slotKey);
+                        }}
+                        onDragLeave={() => { if (hoverKey === slotKey) setHoverKey(null); }}
+                        onDrop={(e) => {
+                          if (!onDropInstructorOnSlot) return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const id = readInstructor(e);
+                          setHoverKey(null);
+                          if (id) onDropInstructorOnSlot(id, s);
+                        }}
                         style={{
                           top: top + 1,
                           height,
@@ -149,8 +201,10 @@ export function CalendarTimeline({
                                 ? 'bg-card border-dashed'
                                 : 'bg-card',
                           s.uncovered && !s.isOpen && 'bg-destructive/5',
+                          isSlotHover && 'ring-2 ring-primary bg-primary/15',
                         )}
                       >
+
                         <div className="flex items-center justify-between gap-1 leading-tight">
                           <span className="font-bold">{format(t, 'HH:mm')}</span>
                           <div className="flex items-center gap-0.5">

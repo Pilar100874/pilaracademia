@@ -34,6 +34,7 @@ import { InstructorPicker } from '@/components/clinic/InstructorPicker';
 import { CalendarTimeline, type TimelineSlot } from '@/components/clinic/CalendarTimeline';
 import { RoomsTimeline, makeEmptyKey, parseEmptyKey, type EmptyCellKey } from '@/components/clinic/RoomsTimeline';
 import { BulkAssignDialog, type BulkAssignValues } from '@/components/clinic/BulkAssignDialog';
+import { InstructorDragPalette, CLEAR_INSTRUCTOR, INSTRUCTOR_DRAG_TYPE } from '@/components/clinic/InstructorDragPalette';
 import { PageMotion } from '@/components/PageMotion';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; cls: string }> = {
@@ -462,6 +463,79 @@ export default function GradeMasterPage() {
   };
 
 
+  // ===== Drag & drop de professor =====
+  const [draggingInstructorId, setDraggingInstructorId] = useState<string | null>(null);
+  const resolveInstructor = (raw: string): string | null => raw === CLEAR_INSTRUCTOR ? null : raw;
+
+  const dropInstructorOnSlot = async (raw: string, ts: TimelineSlot) => {
+    if (!activeClinicId || !user) return;
+    const newInstructorId = resolveInstructor(raw);
+    try {
+      if (ts.appointment_id) {
+        const { error } = await supabase.from('class_appointments')
+          .update({ instructor_id: newInstructorId })
+          .eq('id', ts.appointment_id);
+        if (error) throw error;
+      } else if (ts.bookable_slot_id) {
+        const { error } = await supabase.from('bookable_slots' as any)
+          .update({ instructor_id: newInstructorId })
+          .eq('id', ts.bookable_slot_id);
+        if (error) throw error;
+      } else if (ts.recurring_id) {
+        // Materializa a virtual como appointment já com o novo professor
+        const original = (view === 'day' ? daySlots : weekDays.flatMap(slotsForDay)).find((s) => s.key === ts.key);
+        if (!original?.student_id) { setDraggingInstructorId(null); return; }
+        const { error } = await supabase.from('class_appointments').insert({
+          clinic_id: activeClinicId,
+          student_id: original.student_id,
+          equipment_id: original.equipment_id,
+          instructor_id: newInstructorId,
+          scheduled_at: original.scheduled_at,
+          duration_minutes: original.duration_minutes,
+          notes: original.notes,
+          created_by: user.id,
+          recurring_schedule_id: original.recurring_id || null,
+        });
+        if (error) throw error;
+      }
+      toast.success(newInstructorId ? 'Professor atribuído' : 'Professor removido');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao atribuir professor');
+    } finally {
+      setDraggingInstructorId(null);
+    }
+  };
+
+  const dropInstructorOnCell = async (raw: string, d: Date, hour: number, roomId: string | null = null) => {
+    if (!activeClinicId || !user) return;
+    const newInstructorId = resolveInstructor(raw);
+    if (!newInstructorId) {
+      toast.info('Arraste um professor para criar um horário.');
+      setDraggingInstructorId(null);
+      return;
+    }
+    const sched = new Date(d);
+    sched.setHours(hour, 0, 0, 0);
+    try {
+      await createBookable.mutateAsync({
+        clinic_id: activeClinicId,
+        scheduled_at: sched.toISOString(),
+        duration_minutes: 50,
+        equipment_id: null,
+        instructor_id: newInstructorId,
+        room_id: roomId,
+        capacity: 1,
+        notes: null,
+        created_by: user.id,
+      } as any);
+      toast.success('Horário criado com professor');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao criar horário');
+    } finally {
+      setDraggingInstructorId(null);
+    }
+  };
+
 
   const openSlotDialog = (slot: MergedSlot) => {
     // Slot livre da grade → abre Nova aula com horário pré-preenchido
@@ -674,6 +748,17 @@ export default function GradeMasterPage() {
           )}
         </Card>
 
+        {/* Paleta de professores arrastáveis */}
+        {instructors.length > 0 && (
+          <InstructorDragPalette
+            instructors={instructors}
+            colorOf={colorOf}
+            draggingId={draggingInstructorId}
+            onDragStart={(id) => setDraggingInstructorId(id)}
+            onDragEnd={() => setDraggingInstructorId(null)}
+          />
+        )}
+
         {/* CONTEÚDO */}
         {view === 'week' ? (
           <div className="space-y-3">
@@ -692,8 +777,12 @@ export default function GradeMasterPage() {
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
               renderInstructorPicker={renderTimelineInstructorPicker}
+              dragActive={draggingInstructorId !== null}
+              onDropInstructorOnCell={(id, d, h) => dropInstructorOnCell(id, d, h, null)}
+              onDropInstructorOnSlot={dropInstructorOnSlot}
             />
           </div>
+
         ) : view === 'month' ? (
           <div className="space-y-3">
             {rooms.length > 0 && <RoomsLegend rooms={rooms as any[]} roomColorOf={roomColorOf} />}
@@ -718,10 +807,22 @@ export default function GradeMasterPage() {
                     <button
                       key={d.toISOString()}
                       onClick={() => { setDay(d); setView('day'); }}
+                      onDragOver={(e) => {
+                        if (draggingInstructorId === null) return;
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'copy';
+                      }}
+                      onDrop={(e) => {
+                        if (draggingInstructorId === null) return;
+                        e.preventDefault();
+                        const id = e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain');
+                        if (id) dropInstructorOnCell(id, d, 8, null);
+                      }}
                       className={cn(
                         'min-h-[100px] p-1.5 rounded border text-left flex flex-col gap-1 hover:border-primary transition',
                         !inMonth && 'opacity-40 bg-muted/30',
                         isToday && 'border-primary border-2',
+                        draggingInstructorId !== null && 'ring-1 ring-primary/30',
                       )}
                     >
                       <div className="flex items-center justify-between">
@@ -890,6 +991,9 @@ export default function GradeMasterPage() {
               selectedEmptyKeys={selectedEmptyKeys}
               onToggleSlot={toggleSlotSel}
               onToggleEmpty={toggleEmptySel}
+              dragActive={draggingInstructorId !== null}
+              onDropInstructorOnCell={dropInstructorOnCell}
+              onDropInstructorOnSlot={dropInstructorOnSlot}
             />
 
             {/* Barra flutuante de ações de seleção */}
