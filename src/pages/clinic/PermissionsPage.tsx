@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Loader2, ShieldCheck, GraduationCap, Headphones, Dumbbell, ListOrdered, ClipboardList, Search, Lock } from 'lucide-react';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import { toast } from 'sonner';
 
 const ROLE_META: Record<string, { label: string; icon: any; color: string }> = {
