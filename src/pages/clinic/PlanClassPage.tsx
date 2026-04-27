@@ -853,6 +853,39 @@ export default function PlanClassPage() {
                   </div>
                 </div>
 
+                {/* Alunos do mesmo horário — alterna entre planos */}
+                {slotmates.length > 1 && (
+                  <div className="mb-3 p-2 border border-border rounded-md bg-muted/20">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 px-1 flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {slotmates.length} alunos neste horário — planejamento individual
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {slotmates.map((a) => {
+                        const st = studentById.get(a.student_id);
+                        const isActive = a.id === selectedAppointmentId;
+                        const hasPlan = !!a.sequence_id;
+                        return (
+                          <button
+                            key={a.id}
+                            onClick={() => setSelectedAppointmentId(a.id)}
+                            className={cn(
+                              'px-2.5 py-1 rounded-full border text-xs flex items-center gap-1.5 transition',
+                              isActive
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-border hover:bg-muted'
+                            )}
+                          >
+                            <User className="h-3 w-3" />
+                            <span className="truncate max-w-[140px]">{st?.full_name ?? '—'}</span>
+                            {hasPlan && <ListOrdered className={cn('h-3 w-3', isActive ? '' : 'text-primary')} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Equipamento */}
                 <div className="mb-4 p-3 border border-border rounded-md bg-muted/30">
                   <div className="flex items-center justify-between mb-2">
