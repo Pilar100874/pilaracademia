@@ -495,8 +495,10 @@ export default function GradeMasterPage() {
             {weekDays.map((d) => {
               const slots = slotsForDay(d);
               const isToday = isSameDay(d, new Date());
+              const uncoveredCount = slots.filter((s) => isUncovered(s)).length;
+              const studentsCount = slots.filter((s) => !s.isOpen && s.student_id).length;
               return (
-                <Card key={d.toISOString()} className={cn('p-3 min-h-[200px]', isToday && 'border-primary border-2')}>
+                <Card key={d.toISOString()} className={cn('p-3 min-h-[200px]', isToday && 'border-primary border-2', uncoveredCount > 0 && 'border-destructive/40')}>
                   <button
                     onClick={() => { setDay(d); setView('day'); }}
                     className="w-full text-left mb-2 group"
@@ -507,7 +509,14 @@ export default function GradeMasterPage() {
                     <div className={cn('text-lg font-bold group-hover:text-primary transition', isToday && 'text-primary')}>
                       {format(d, 'd/MM')}
                     </div>
-                    <div className="text-[10px] text-muted-foreground">{slots.length} aula{slots.length !== 1 ? 's' : ''}</div>
+                    <div className="text-[10px] text-muted-foreground flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-0.5"><Users className="h-2.5 w-2.5" />{studentsCount}</span>
+                      {uncoveredCount > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-destructive font-semibold">
+                          <AlertTriangle className="h-2.5 w-2.5" />{uncoveredCount} sem prof.
+                        </span>
+                      )}
+                    </div>
                   </button>
                   <div className="space-y-1.5">
                     {slots.length === 0 && (
@@ -523,6 +532,7 @@ export default function GradeMasterPage() {
                         instructorName={instructorName(s.instructor_id)}
                         instructorColor={colorOf(s.instructor_id)}
                         occupancy={occupancyFor(slots, s)}
+                        uncovered={isUncovered(s)}
                         onClick={() => openSlotDialog(s)}
                       />
                     ))}
