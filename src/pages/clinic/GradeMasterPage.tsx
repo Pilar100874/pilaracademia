@@ -535,6 +535,24 @@ export default function GradeMasterPage() {
                         occupancy={occupancyFor(slots, s)}
                         uncovered={isUncovered(s)}
                         onClick={() => openSlotDialog(s)}
+                        instructorPicker={
+                          <InstructorPicker
+                            appointmentId={s.appointment?.id}
+                            bookableSlotId={s.bookable_slot_id}
+                            recurringId={!s.appointment && s.recurring_id ? s.recurring_id : undefined}
+                            currentInstructorId={s.instructor_id}
+                            instructors={instructors}
+                            colorOf={colorOf}
+                            clinicId={activeClinicId!}
+                          >
+                            <span
+                              role="button"
+                              title="Atribuir professor"
+                              className="h-3.5 w-3.5 rounded-full border-2 border-card shadow cursor-pointer hover:scale-110 transition shrink-0"
+                              style={{ background: s.instructor_id ? colorOf(s.instructor_id) : 'hsl(var(--muted))' }}
+                            />
+                          </InstructorPicker>
+                        }
                       />
                     ))}
                     <button
