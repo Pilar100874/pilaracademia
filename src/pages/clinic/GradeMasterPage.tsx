@@ -1449,7 +1449,13 @@ export default function GradeMasterPage() {
       {/* Dialog: atribuição em massa (criar slots ou reatribuir prof/sala) */}
       <BulkAssignDialog
         open={bulkOpen !== null}
-        onClose={() => setBulkOpen(null)}
+        onClose={() => {
+          // Fechar sem confirmar = cancelar a seleção pendente
+          setBulkOpen(null);
+          if (selectedEmptyKeys.size > 0 || selectedSlotKeys.size > 0) {
+            exitSelection();
+          }
+        }}
         mode={bulkOpen === 'reassign' ? 'reassign' : 'create'}
         count={selectedEmptyKeys.size + selectedSlotKeys.size}
         rooms={rooms as any}
