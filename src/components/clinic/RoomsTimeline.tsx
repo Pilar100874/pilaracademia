@@ -61,6 +61,9 @@ interface Props {
   onDropInstructorOnCell?: (instructorId: string, day: Date, hour: number, roomId: string | null) => void;
   /** Chamado ao soltar professor sobre um slot existente (atribui). */
   onDropInstructorOnSlot?: (instructorId: string, slot: TimelineSlot) => void;
+
+  /** Clique no cabeçalho de uma sala — selecionar a coluna inteira. */
+  onRoomHeaderClick?: (roomId: string | null) => void;
 }
 
 export function RoomsTimeline({
@@ -78,6 +81,7 @@ export function RoomsTimeline({
   dragActive = false,
   onDropInstructorOnCell,
   onDropInstructorOnSlot,
+  onRoomHeaderClick,
 }: Props) {
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const readInstructor = (e: React.DragEvent) =>
@@ -174,7 +178,16 @@ export function RoomsTimeline({
       <div className="grid border-b bg-muted/30" style={{ gridTemplateColumns: `60px repeat(${cols.length}, minmax(120px, 1fr))` }}>
         <div />
         {cols.map((r) => (
-          <div key={r.id ?? 'orphan'} className="px-2 py-2 text-center border-l">
+          <button
+            key={r.id ?? 'orphan'}
+            type="button"
+            onClick={() => onRoomHeaderClick?.(r.id ?? null)}
+            className={cn(
+              'px-2 py-2 text-center border-l transition',
+              onRoomHeaderClick && 'hover:bg-primary/10 cursor-pointer',
+            )}
+            title={onRoomHeaderClick ? `Selecionar coluna · ${r.name}` : r.name}
+          >
             <div className="flex items-center justify-center gap-1 text-sm font-semibold truncate">
               <DoorOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <span className="truncate">{r.name}</span>
@@ -184,7 +197,7 @@ export function RoomsTimeline({
                 <Users className="h-2.5 w-2.5" />cap. {r.capacity}
               </div>
             ) : null}
-          </div>
+          </button>
         ))}
       </div>
 

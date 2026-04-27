@@ -63,6 +63,10 @@ interface Props {
   onMarqueeEnd?: (info: { slotCount: number; emptyCount: number; additive: boolean }) => void;
   /** Quando informado e com pelo menos 1 sala, cada dia ganha sub-colunas por sala. */
   rooms?: RoomLite[];
+  /** Clique no sub-cabeçalho de uma sala (no dia D) — para selecionar a coluna.
+   * O segundo argumento `allDays` é true quando o usuário usou Shift/Ctrl/Cmd
+   * para indicar "selecionar essa sala em TODOS os dias visíveis". */
+  onRoomColumnClick?: (day: Date, roomId: string | null, allDays: boolean) => void;
 }
 
 export function CalendarTimeline({
@@ -73,6 +77,7 @@ export function CalendarTimeline({
   selectedSlotKeys, selectedEmptyKeys,
   onReplaceSelection, onAddSelection, onMarqueeEnd,
   rooms,
+  onRoomColumnClick,
 }: Props) {
   const splitByRoom = !!rooms && rooms.length > 0;
   // Sub-colunas: se houver salas, cada dia tem N colunas (1 por sala). Caso contrário, 1.
@@ -163,20 +168,26 @@ export function CalendarTimeline({
               {splitByRoom && (
                 <div className="grid border-t border-border/40" style={{ gridTemplateColumns: `repeat(${colsPerDay}, minmax(0, 1fr))` }}>
                   {subCols.map((r, i) => (
-                    <div
+                    <button
                       key={r?.id ?? i}
+                      type="button"
+                      onClick={(e) => {
+                        const allDays = e.shiftKey || e.metaKey || e.ctrlKey;
+                        onRoomColumnClick?.(d, r?.id ?? null, allDays);
+                      }}
                       className={cn(
-                        'px-1 py-1 text-[9px] font-semibold truncate text-center flex items-center justify-center gap-1',
+                        'px-1 py-1 text-[9px] font-semibold truncate text-center flex items-center justify-center gap-1 transition',
                         i > 0 && 'border-l border-border/40',
+                        onRoomColumnClick && 'hover:bg-primary/10 cursor-pointer',
                       )}
-                      title={r?.name}
+                      title={onRoomColumnClick ? `Clique: coluna do dia · Shift+clique: a sala em toda a semana` : r?.name}
                     >
                       <span
                         className="h-1.5 w-1.5 rounded-sm shrink-0 border"
                         style={{ background: roomColorOf?.(r?.id ?? null) || 'hsl(var(--muted))' }}
                       />
                       <span className="truncate">{r?.name ?? '—'}</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}

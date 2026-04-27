@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppointments, type AppointmentStatus, type Appointment } from '@/hooks/useAppointments';
@@ -108,6 +109,7 @@ function expandRecurringForDayExt(
 export default function GradeMasterPage() {
   const { activeClinicId } = useUserRoles();
   const { user } = useAuth();
+  const qc = useQueryClient();
   const [view, setView] = useState<'day' | 'week' | 'month'>('week');
   const [day, setDay] = useState(() => new Date());
   const [simulateRenewal, setSimulateRenewal] = useState(true);
@@ -433,6 +435,7 @@ export default function GradeMasterPage() {
   const createSelectedEmpty = async (values: BulkAssignValues) => {
     if (selectedEmptyKeys.size === 0 || !activeClinicId || !user) return;
     let count = 0;
+    let errorMsg: string | null = null;
     for (const k of selectedEmptyKeys) {
       const { date, hour, roomId: cellRoomId } = parseEmptyKey(k);
       const sched = new Date(`${date}T${String(hour).padStart(2, '0')}:00:00`);
@@ -451,9 +454,15 @@ export default function GradeMasterPage() {
           created_by: user.id,
         } as any);
         count++;
-      } catch (e) { /* mutation toasts errors */ }
+      } catch (e: any) {
+        errorMsg = e?.message || 'Erro ao criar horário';
+      }
     }
-    toast.success(`${count} horário(s) criado(s)`);
+    // Força refetch dos dados visíveis para garantir que apareçam no dashboard
+    await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+    await qc.invalidateQueries({ queryKey: ['appointments'] });
+    if (count > 0) toast.success(`${count} horário(s) criado(s)`);
+    if (errorMsg && count === 0) toast.error(errorMsg);
     exitSelection();
   };
 
@@ -490,6 +499,39 @@ export default function GradeMasterPage() {
     exitSelection();
   };
 
+  /**
+   * Seleciona toda a coluna de uma sala (todas as horas 6..21) para um conjunto
+   * de dias visíveis e abre o BulkAssignDialog. Se o slot daquele horário já
+   * existir (slot/aula), entra em selectedSlotKeys (modo reassign);
+   * caso contrário entra em selectedEmptyKeys (modo create).
+   */
+  const selectRoomColumn = (roomId: string | null, targetDays: Date[]) => {
+    const HOUR_START = 6;
+    const HOUR_END = 22;
+    const newEmpty = new Set<EmptyCellKey>();
+    const newSlots = new Set<string>();
+    const allVisible = visibleSlotsForSelection();
+    targetDays.forEach((d) => {
+      for (let h = HOUR_START; h < HOUR_END; h++) {
+        // Slot existente neste horário+sala?
+        const existing = allVisible.find((s) => {
+          if ((s.room_id ?? null) !== roomId) return false;
+          if (!isSameDay(parseISO(s.scheduled_at), d)) return false;
+          return parseISO(s.scheduled_at).getHours() === h;
+        });
+        if (existing) {
+          newSlots.add(existing.key);
+        } else {
+          newEmpty.add(makeEmptyKey(d, h, roomId));
+        }
+      }
+    });
+    if (newEmpty.size === 0 && newSlots.size === 0) return;
+    replaceSelection(newSlots, newEmpty);
+    // Prioriza criar horários vazios; se só houver existentes, vai para reassign
+    if (newEmpty.size > 0) setBulkOpen('create');
+    else setBulkOpen('reassign');
+  };
 
   // ===== Drag & drop de professor =====
   const [draggingInstructorId, setDraggingInstructorId] = useState<string | null>(null);
@@ -817,6 +859,7 @@ export default function GradeMasterPage() {
                 if (emptyCount > 0) setBulkOpen('create');
                 else if (slotCount > 0) setBulkOpen('reassign');
               }}
+              onRoomColumnClick={(d, roomId, allDays) => selectRoomColumn(roomId, allDays ? weekDays : [d])}
             />
           </div>
 
@@ -970,6 +1013,7 @@ export default function GradeMasterPage() {
               dragActive={draggingInstructorId !== null}
               onDropInstructorOnCell={dropInstructorOnCell}
               onDropInstructorOnSlot={dropInstructorOnSlot}
+              onRoomHeaderClick={(roomId) => selectRoomColumn(roomId, [day])}
             />
 
             {/* Barra flutuante de ações de seleção */}
