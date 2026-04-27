@@ -75,6 +75,7 @@ export function CalendarTimeline({
   selectedSlotKeys, selectedEmptyKeys,
   onReplaceSelection, onAddSelection, onMarqueeEnd,
   rooms,
+  onRoomColumnClick,
 }: Props) {
   const splitByRoom = !!rooms && rooms.length > 0;
   // Sub-colunas: se houver salas, cada dia tem N colunas (1 por sala). Caso contrário, 1.
