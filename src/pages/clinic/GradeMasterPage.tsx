@@ -695,18 +695,18 @@ export default function GradeMasterPage() {
               )}
             </div>
 
-            {/* Timeline visual do dia */}
-            <CalendarTimeline
-              days={[day]}
+            {/* Timeline visual do dia — uma coluna por sala */}
+            <RoomsTimeline
+              day={day}
+              rooms={rooms as any}
               startHour={6}
               endHour={22}
               hourHeight={64}
-              slotsForDay={(d) => slotsForDay(d).map(toTimelineSlot)}
+              slots={daySlots.map(toTimelineSlot)}
               studentName={studentName}
               instructorName={instructorName}
-              roomName={roomName}
               colorOf={colorOf}
-              onCellClick={handleCellClick}
+              onCellClick={(d, hour, roomId) => openNewClassAt(d, `${String(hour).padStart(2, '0')}:00`, roomId)}
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
               renderInstructorPicker={renderTimelineInstructorPicker}
