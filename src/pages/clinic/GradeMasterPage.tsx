@@ -18,7 +18,7 @@ import {
   Plus, ChevronLeft, ChevronRight, CalendarDays, CheckCircle2, LogIn, Trash2,
   Repeat, ListChecks, Sparkles, AlertTriangle, RefreshCw, Filter, DoorOpen,
 } from 'lucide-react';
-import { format, addDays, addMonths, isSameDay, parseISO, startOfWeek, differenceInCalendarDays } from 'date-fns';
+import { format, addDays, addMonths, isSameDay, parseISO, startOfWeek, startOfMonth, endOfMonth, endOfWeek, isSameMonth, differenceInCalendarDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
