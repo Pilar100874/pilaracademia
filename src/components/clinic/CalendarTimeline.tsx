@@ -35,6 +35,10 @@ export interface TimelineSlot {
   appointment_id?: string;
   bookable_slot_id?: string;
   recurring_id?: string;
+  /** Bloqueio padrão recorrente (ex: almoço). Quando setado, "Desbloquear" cria exceção. */
+  blockedPeriodId?: string;
+  blockedPeriodName?: string;
+  blockedPeriodColor?: string | null;
 }
 
 interface Props {
