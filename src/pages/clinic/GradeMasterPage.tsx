@@ -499,6 +499,39 @@ export default function GradeMasterPage() {
     exitSelection();
   };
 
+  /**
+   * Seleciona toda a coluna de uma sala (todas as horas 6..21) para um conjunto
+   * de dias visíveis e abre o BulkAssignDialog. Se o slot daquele horário já
+   * existir (slot/aula), entra em selectedSlotKeys (modo reassign);
+   * caso contrário entra em selectedEmptyKeys (modo create).
+   */
+  const selectRoomColumn = (roomId: string | null, targetDays: Date[]) => {
+    const HOUR_START = 6;
+    const HOUR_END = 22;
+    const newEmpty = new Set<EmptyCellKey>();
+    const newSlots = new Set<string>();
+    const allVisible = visibleSlotsForSelection();
+    targetDays.forEach((d) => {
+      for (let h = HOUR_START; h < HOUR_END; h++) {
+        // Slot existente neste horário+sala?
+        const existing = allVisible.find((s) => {
+          if ((s.room_id ?? null) !== roomId) return false;
+          if (!isSameDay(parseISO(s.scheduled_at), d)) return false;
+          return parseISO(s.scheduled_at).getHours() === h;
+        });
+        if (existing) {
+          newSlots.add(existing.key);
+        } else {
+          newEmpty.add(makeEmptyKey(d, h, roomId));
+        }
+      }
+    });
+    if (newEmpty.size === 0 && newSlots.size === 0) return;
+    replaceSelection(newSlots, newEmpty);
+    // Prioriza criar horários vazios; se só houver existentes, vai para reassign
+    if (newEmpty.size > 0) setBulkOpen('create');
+    else setBulkOpen('reassign');
+  };
 
   // ===== Drag & drop de professor =====
   const [draggingInstructorId, setDraggingInstructorId] = useState<string | null>(null);
