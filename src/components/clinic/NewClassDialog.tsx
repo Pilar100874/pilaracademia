@@ -122,7 +122,7 @@ export function NewClassDialog({
       setStudentId('');
       setDuration(50);
       setEquipmentId('');
-      setRoomId('');
+      setRoomId(initialRoomId ?? '');
       setInstructorId(userId);
       setNotes('');
       setConflicts(null);
@@ -136,12 +136,12 @@ export function NewClassDialog({
         day_of_week: initialDate.getDay(),
         start_time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
         duration_minutes: 50,
-        room_id: null,
+        room_id: initialRoomId ?? null,
         instructor_id: userId,
         equipment_id: null,
       }]);
     }
-  }, [open, initialDate, initialTime, userId]);
+  }, [open, initialDate, initialTime, initialRoomId, userId]);
 
   const student = useMemo(() => students.find((s) => s.id === studentId), [students, studentId]);
   const contractInfo = useMemo(() => {
