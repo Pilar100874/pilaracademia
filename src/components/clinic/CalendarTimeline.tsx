@@ -141,20 +141,45 @@ export function CalendarTimeline({
   const now = new Date();
 
   return (
-    <div className="border rounded-md overflow-hidden bg-card">
+    <div className="border rounded-md overflow-hidden bg-card overflow-x-auto">
       {/* Header dos dias */}
-      <div className="grid border-b bg-muted/30" style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(0, 1fr))` }}>
+      <div
+        className="grid border-b bg-muted/30"
+        style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(${splitByRoom ? colsPerDay * 90 : 0}px, 1fr))` }}
+      >
         <div />
         {days.map((d) => {
           const isToday = isSameDay(d, now);
           return (
-            <div key={d.toISOString()} className={cn('px-2 py-2 text-center border-l', isToday && 'bg-primary/5')}>
-              <div className="text-[10px] uppercase font-bold text-muted-foreground">
-                {format(d, 'EEE', { locale: ptBR })}
+            <div key={d.toISOString()} className={cn('border-l', isToday && 'bg-primary/5')}>
+              <div className="px-2 pt-2 pb-1 text-center">
+                <div className="text-[10px] uppercase font-bold text-muted-foreground">
+                  {format(d, 'EEE', { locale: ptBR })}
+                </div>
+                <div className={cn('text-base font-bold', isToday && 'text-primary')}>
+                  {format(d, 'd/MM')}
+                </div>
               </div>
-              <div className={cn('text-base font-bold', isToday && 'text-primary')}>
-                {format(d, 'd/MM')}
-              </div>
+              {splitByRoom && (
+                <div className="grid border-t border-border/40" style={{ gridTemplateColumns: `repeat(${colsPerDay}, minmax(0, 1fr))` }}>
+                  {subCols.map((r, i) => (
+                    <div
+                      key={r?.id ?? i}
+                      className={cn(
+                        'px-1 py-1 text-[9px] font-semibold truncate text-center flex items-center justify-center gap-1',
+                        i > 0 && 'border-l border-border/40',
+                      )}
+                      title={r?.name}
+                    >
+                      <span
+                        className="h-1.5 w-1.5 rounded-sm shrink-0 border"
+                        style={{ background: roomColorOf?.(r?.id ?? null) || 'hsl(var(--muted))' }}
+                      />
+                      <span className="truncate">{r?.name ?? '—'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
@@ -165,7 +190,7 @@ export function CalendarTimeline({
         ref={marquee.containerRef}
         onPointerDown={handlePointerDown}
         className="grid relative select-none"
-        style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(0, 1fr))`, height: totalHeight }}
+        style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(${splitByRoom ? colsPerDay * 90 : 0}px, 1fr))`, height: totalHeight }}
       >
         {/* Coluna de horas */}
         <div className="relative">
