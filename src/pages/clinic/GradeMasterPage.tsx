@@ -232,18 +232,21 @@ export default function GradeMasterPage() {
   const slotsForDay = (d: Date): MergedSlot[] => {
     const dayApps = appointments.filter((a) => isSameDay(parseISO(a.scheduled_at), d));
     const recById = new Map(recurring.map((r) => [r.id, r]));
+    const bookableById = new Map((bookableSlots as any[]).map((b) => [b.id, b]));
     const merged: MergedSlot[] = dayApps.map((a) => {
       const fromRec = (a as any).recurring_schedule_id ? recById.get((a as any).recurring_schedule_id) : null;
+      const fromBookable = (a as any).bookable_slot_id ? bookableById.get((a as any).bookable_slot_id) : null;
       return {
         key: `real-${a.id}`,
         scheduled_at: a.scheduled_at,
         duration_minutes: a.duration_minutes,
         student_id: a.student_id,
-        equipment_id: a.equipment_id,
+        equipment_id: a.equipment_id ?? fromBookable?.equipment_id ?? null,
         instructor_id: a.instructor_id,
-        room_id: (fromRec as any)?.room_id ?? null,
+        room_id: (fromRec as any)?.room_id ?? fromBookable?.room_id ?? null,
         notes: a.notes,
         appointment: a as any,
+        bookable_slot_id: (a as any).bookable_slot_id ?? undefined,
       };
     });
     const realKeys = new Set(
@@ -281,6 +284,8 @@ export default function GradeMasterPage() {
     );
     const dayBookable = (bookableSlots as any[]).filter((b) => b.active !== false && isSameDay(parseISO(b.scheduled_at), d));
     dayBookable.forEach((b) => {
+      const alreadyBooked = dayApps.some((a) => (a as any).bookable_slot_id === b.id && a.status !== 'cancelled');
+      if (alreadyBooked) return;
       const t = parseISO(b.scheduled_at);
       const k = `${t.getHours()}:${t.getMinutes()}|${b.room_id ?? ''}|${b.equipment_id ?? ''}`;
       const isBlocked = b.blocked === true;
