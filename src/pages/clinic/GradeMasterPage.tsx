@@ -616,9 +616,14 @@ export default function GradeMasterPage() {
                   const av = studentAvatar(s.student_id);
                   const stu = s.student_id ? students.find((x) => x.id === s.student_id) as any : null;
                   const expired = stu?.contract_end_date && new Date(stu.contract_end_date) < new Date();
+                  const occ = occupancyFor(daySlots, s);
+                  const instColor = colorOf(s.instructor_id);
+                  const studentsHere = occ ? occ.students.map((id) => studentName(id)) : [];
+                  const shifts = shiftsCovering(parseISO(s.scheduled_at));
                   return (
                     <div
                       key={s.key}
+                      style={!s.isOpen && instColor ? { borderLeftColor: instColor, borderLeftWidth: 4 } : undefined}
                       className={cn(
                         'flex items-center gap-3 p-3 rounded-lg border bg-card flex-wrap',
                         s.isVirtual && 'border-dashed',
@@ -656,7 +661,15 @@ export default function GradeMasterPage() {
                             <span className="inline-flex items-center gap-0.5"><DoorOpen className="h-3 w-3" />{roomName(s.room_id)}</span>
                           )}
                           {instructorName(s.instructor_id) && (
-                            <span>· {instructorName(s.instructor_id)}</span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="h-2 w-2 rounded-full" style={{ background: instColor }} />
+                              {instructorName(s.instructor_id)}
+                            </span>
+                          )}
+                          {shifts.length > 0 && !s.isOpen && (
+                            <span className="text-muted-foreground/70 text-[10px]">
+                              · turno {shifts[0].start_time.slice(0,5)}–{shifts[0].end_time.slice(0,5)}
+                            </span>
                           )}
                           {seqName && <span className="text-primary"><Sparkles className="h-3 w-3 inline mr-0.5" />{seqName}</span>}
                           {!seqName && !s.isProjected && !s.isOpen && (
@@ -666,6 +679,32 @@ export default function GradeMasterPage() {
                           )}
                         </div>
                       </div>
+                      {occ && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              className={cn(
+                                'inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded border hover:bg-muted/60',
+                                occ.used >= occ.cap ? 'bg-destructive/10 text-destructive border-destructive/30' : 'bg-primary/5 text-primary border-primary/20',
+                              )}
+                              title="Alunos nesta sala neste horário"
+                            >
+                              <Users className="h-3 w-3" /> {occ.used}/{occ.cap}
+                              {occ.used < occ.cap && <span className="text-[10px] font-normal text-muted-foreground">· {occ.cap - occ.used} vaga{occ.cap - occ.used !== 1 ? 's' : ''}</span>}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-56 p-2 text-xs">
+                            <div className="font-semibold mb-1">Alunos na sala</div>
+                            {studentsHere.length === 0 ? (
+                              <div className="text-muted-foreground italic">Nenhum</div>
+                            ) : (
+                              <ul className="space-y-0.5">
+                                {studentsHere.map((n, i) => <li key={i}>· {n}</li>)}
+                              </ul>
+                            )}
+                          </PopoverContent>
+                        </Popover>
+                      )}
                       <Badge className={sl.cls}>{sl.label}</Badge>
 
                       {s.isProjected && s.student_id && (
