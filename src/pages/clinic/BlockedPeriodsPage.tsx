@@ -384,6 +384,37 @@ export default function BlockedPeriodsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!instructorDialog} onOpenChange={(v) => { if (!v) setInstructorDialog(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              Professor com horário neste período
+            </DialogTitle>
+          </DialogHeader>
+          {instructorDialog && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Existe(m) <strong>{instructorDialog.freeSlotIds} horário(s) livre(s) de professor</strong> dentro
+                desse intervalo. Não há aulas marcadas com alunos. O que você prefere fazer?
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-1.5 pl-4 list-disc">
+                <li><strong>Excluir do professor</strong>: libera os horários do professor e cria o bloqueio.</li>
+                <li><strong>Ignorar e cancelar</strong>: mantém os horários do professor e <em>não</em> cria o bloqueio.</li>
+              </ul>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => instructorDialog?.onSkip()}>
+              Ignorar e cancelar
+            </Button>
+            <Button variant="destructive" onClick={() => instructorDialog?.onClear()}>
+              Excluir do professor e bloquear
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageMotion>
   );
 }
