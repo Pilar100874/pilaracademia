@@ -10,6 +10,7 @@ import { useSlotEquipmentLinks } from '@/hooks/useSlotEquipment';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   ChevronLeft,
