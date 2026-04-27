@@ -74,6 +74,10 @@ export async function impersonate(
     body: payload,
   });
   if (error) throw error;
+  if (data?.same_user) {
+    // Already logged in as the target — skip sign-in, no banner needed.
+    return (await supabase.auth.getUser()).data.user?.email || '';
+  }
   if (!data?.email || !data?.password) throw new Error('Resposta inválida do servidor');
 
   // Backup origin session BEFORE signing in as the target user
