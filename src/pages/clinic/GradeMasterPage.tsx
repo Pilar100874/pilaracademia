@@ -622,6 +622,11 @@ export default function GradeMasterPage() {
 
 
   const openSlotDialog = (slot: MergedSlot) => {
+    // Slot bloqueado → ignora clique de "abrir"
+    if (slot.isBlocked) {
+      toast.info('Horário bloqueado. Desbloqueie para usar.');
+      return;
+    }
     // Slot livre da grade → abre Nova aula com horário pré-preenchido
     if (slot.isOpen || !slot.student_id) {
       const t = parseISO(slot.scheduled_at);
