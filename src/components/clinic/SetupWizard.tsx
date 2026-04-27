@@ -33,6 +33,26 @@ export function setupWizardCompleted(clinicId: string) {
 
 export function markWizardCompleted(clinicId: string) {
   localStorage.setItem(WIZARD_STORAGE_PREFIX + clinicId, '1');
+  // Persist server-side so it works across browsers and impersonation
+  import('@/integrations/supabase/client').then(({ supabase }) => {
+    supabase
+      .from('clinic_settings')
+      .upsert(
+        { clinic_id: clinicId, wizard_completed_at: new Date().toISOString() },
+        { onConflict: 'clinic_id' }
+      )
+      .then(() => {});
+  });
+}
+
+export async function isWizardCompletedRemote(clinicId: string): Promise<boolean> {
+  const { supabase } = await import('@/integrations/supabase/client');
+  const { data } = await supabase
+    .from('clinic_settings')
+    .select('wizard_completed_at')
+    .eq('clinic_id', clinicId)
+    .maybeSingle();
+  return !!(data as any)?.wizard_completed_at;
 }
 
 type StepKey =
