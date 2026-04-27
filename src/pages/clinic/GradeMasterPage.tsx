@@ -184,11 +184,7 @@ export default function GradeMasterPage() {
     // filtros
     return merged
       .filter((m) => filterInstructor === 'all' || m.instructor_id === filterInstructor)
-      .filter((m) => {
-        if (filterRoom === 'all') return true;
-        // sala vem do bookable_slot; aproximamos via equipment para visualização
-        return true;
-      })
+      .filter((m) => filterRoom === 'all' || m.room_id === filterRoom)
       .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at));
   };
 
