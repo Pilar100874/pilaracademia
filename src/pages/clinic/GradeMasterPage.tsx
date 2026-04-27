@@ -1050,6 +1050,6 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, i
         </div>
       )}
       {sequenceName && <div className="truncate text-primary text-[10px]">{sequenceName}</div>}
-    </button>
+    </div>
   );
 }
