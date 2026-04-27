@@ -389,6 +389,7 @@ export default function AppointmentsPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 }
