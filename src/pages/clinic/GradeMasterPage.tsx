@@ -42,7 +42,7 @@ interface MergedSlot {
   key: string;
   scheduled_at: string;
   duration_minutes: number;
-  student_id: string;
+  student_id: string | null;
   equipment_id: string | null;
   instructor_id: string | null;
   room_id: string | null;
@@ -53,6 +53,9 @@ interface MergedSlot {
   isVirtual?: boolean;
   /** virtual projetado APÓS o fim do contrato (renovação simulada) */
   isProjected?: boolean;
+  /** Slot livre da Grade Master (bookable_slot) sem aluno marcado */
+  isOpen?: boolean;
+  bookable_slot_id?: string;
 }
 
 /** Expande recorrentes em um dia com opção de ignorar o fim do contrato (projeção). */
