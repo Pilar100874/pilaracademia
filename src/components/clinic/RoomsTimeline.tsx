@@ -71,7 +71,7 @@ interface Props {
 export function RoomsTimeline({
   day, rooms, startHour, endHour, hourHeight = 64,
   slots, studentName, instructorName, colorOf,
-  onCellClick, onSlotClick, onDelete, renderInstructorPicker,
+  onCellClick, onSlotClick, onDelete, onPlanClick, renderInstructorPicker,
   selectionMode = false,
   selectedSlotKeys,
   selectedEmptyKeys,
