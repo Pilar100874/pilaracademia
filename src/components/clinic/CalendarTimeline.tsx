@@ -56,6 +56,7 @@ interface Props {
   onCellClick: (d: Date, hour: number, roomId?: string | null) => void;
   onSlotClick: (s: TimelineSlot) => void;
   onDelete?: (s: TimelineSlot) => void;
+  onPlanClick?: (s: TimelineSlot) => void;
   renderInstructorPicker?: (s: TimelineSlot) => React.ReactNode;
   // Drag & drop de professor
   dragActive?: boolean;
@@ -78,7 +79,7 @@ interface Props {
 export function CalendarTimeline({
   days, startHour, endHour, hourHeight = 56,
   slotsForDay, studentName, instructorName, roomName, roomColorOf, colorOf,
-  onCellClick, onSlotClick, onDelete, renderInstructorPicker,
+  onCellClick, onSlotClick, onDelete, onPlanClick, renderInstructorPicker,
   dragActive = false, onDropInstructorOnCell, onDropInstructorOnSlot,
   selectedSlotKeys, selectedEmptyKeys,
   onReplaceSelection, onAddSelection, onMarqueeEnd,
@@ -527,6 +528,15 @@ export function CalendarTimeline({
                               className="flex-1 px-2 py-1.5 rounded border text-[11px] hover:bg-muted text-center"
                             >
                               Abrir
+                            </button>
+                          )}
+                          {!s.blockedPeriodId && !s.isBlocked && s.appointment_id && onPlanClick && (
+                            <button
+                              onClick={() => onPlanClick(s)}
+                              className="flex-1 px-2 py-1.5 rounded border border-primary/40 text-primary text-[11px] hover:bg-primary/5 text-center"
+                              title="Planejar sequência"
+                            >
+                              ✨ Planejar
                             </button>
                           )}
                           {!s.blockedPeriodId && !s.isBlocked && renderInstructorPicker?.(s)}

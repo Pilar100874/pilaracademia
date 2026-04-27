@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';
@@ -117,10 +118,17 @@ function expandRecurringForDayExt(
 }
 
 export default function GradeMasterPage() {
+  const navigate = useNavigate();
   const { activeClinicId } = useUserRoles();
   const { user } = useAuth();
   const qc = useQueryClient();
   const { confirm } = useConfirm();
+  const handlePlanClick = useCallback((s: any) => {
+    if (!s?.appointment_id) return;
+    const d = new Date(s.scheduled_at ?? Date.now());
+    const dateStr = format(d, 'yyyy-MM-dd');
+    navigate(`/clinica/planejar?date=${dateStr}&appointment=${s.appointment_id}`);
+  }, [navigate]);
   const [view, setView] = useState<'day' | 'week' | 'month'>('week');
   const [day, setDay] = useState(() => new Date());
   const [simulateRenewal, setSimulateRenewal] = useState(true);
@@ -1145,6 +1153,7 @@ export default function GradeMasterPage() {
               onCellClick={(d, h, roomId) => tryOpenNewClassAt(d, `${String(h).padStart(2, '0')}:00`, roomId ?? null)}
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
+              onPlanClick={handlePlanClick}
               renderInstructorPicker={renderTimelineInstructorPicker}
               dragActive={draggingInstructorId !== null}
               onDropInstructorOnCell={(id, d, h, roomId) => dropInstructorOnCell(id, d, h, roomId ?? null)}
@@ -1295,6 +1304,7 @@ export default function GradeMasterPage() {
               onCellClick={(d, hour, roomId) => tryOpenNewClassAt(d, `${String(hour).padStart(2, '0')}:00`, roomId)}
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
+              onPlanClick={handlePlanClick}
               renderInstructorPicker={renderTimelineInstructorPicker}
               selectionMode={selectionMode}
               selectedSlotKeys={selectedSlotKeys}

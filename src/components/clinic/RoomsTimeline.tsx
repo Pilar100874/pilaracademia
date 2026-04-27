@@ -40,6 +40,7 @@ interface Props {
   onCellClick: (d: Date, hour: number, roomId: string | null) => void;
   onSlotClick: (s: TimelineSlot) => void;
   onDelete?: (s: TimelineSlot) => void;
+  onPlanClick?: (s: TimelineSlot) => void;
   renderInstructorPicker?: (s: TimelineSlot) => React.ReactNode;
 
   // ===== Seleção múltipla =====
@@ -70,7 +71,7 @@ interface Props {
 export function RoomsTimeline({
   day, rooms, startHour, endHour, hourHeight = 64,
   slots, studentName, instructorName, colorOf,
-  onCellClick, onSlotClick, onDelete, renderInstructorPicker,
+  onCellClick, onSlotClick, onDelete, onPlanClick, renderInstructorPicker,
   selectionMode = false,
   selectedSlotKeys,
   selectedEmptyKeys,
@@ -450,6 +451,15 @@ export function RoomsTimeline({
                             className="flex-1 px-2 py-1.5 rounded border text-[11px] hover:bg-muted text-center"
                           >
                             Abrir
+                          </button>
+                        )}
+                        {!s.isBlocked && s.appointment_id && onPlanClick && (
+                          <button
+                            onClick={() => onPlanClick(s)}
+                            className="flex-1 px-2 py-1.5 rounded border border-primary/40 text-primary text-[11px] hover:bg-primary/5 text-center inline-flex items-center justify-center gap-1"
+                            title="Planejar sequência de exercícios"
+                          >
+                            ✨ Planejar
                           </button>
                         )}
                         {!s.isBlocked && renderInstructorPicker?.(s)}
