@@ -285,6 +285,7 @@ export default function GradeEquipmentLinkPage() {
           </div>
         )}
       </Card>
-    </div>
+      </div>
+    </>
   );
 }
