@@ -636,79 +636,110 @@ export default function GradeMasterPage() {
 
         {/* CONTEÚDO */}
         {view === 'week' ? (
-          <CalendarTimeline
-            days={weekDays}
-            startHour={6}
-            endHour={22}
-            slotsForDay={(d) => slotsForDay(d).map(toTimelineSlot)}
-            studentName={studentName}
-            instructorName={instructorName}
-            roomName={roomName}
-            colorOf={colorOf}
-            onCellClick={handleCellClick}
-            onSlotClick={handleTimelineSlotClick}
-            onDelete={handleTimelineDelete}
-            renderInstructorPicker={renderTimelineInstructorPicker}
-          />
+          <div className="space-y-3">
+            {rooms.length > 0 && <RoomsLegend rooms={rooms as any[]} roomColorOf={roomColorOf} />}
+            <CalendarTimeline
+              days={weekDays}
+              startHour={6}
+              endHour={22}
+              slotsForDay={(d) => slotsForDay(d).map(toTimelineSlot)}
+              studentName={studentName}
+              instructorName={instructorName}
+              roomName={roomName}
+              roomColorOf={roomColorOf}
+              colorOf={colorOf}
+              onCellClick={handleCellClick}
+              onSlotClick={handleTimelineSlotClick}
+              onDelete={handleTimelineDelete}
+              renderInstructorPicker={renderTimelineInstructorPicker}
+            />
+          </div>
         ) : view === 'month' ? (
-          <Card className="p-3">
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((wd) => (
-                <div key={wd} className="text-[10px] uppercase font-bold text-muted-foreground text-center py-1">
-                  {wd}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {monthDays.map((d) => {
-                const slots = slotsForDay(d);
-                const isToday = isSameDay(d, new Date());
-                const inMonth = isSameMonth(d, day);
-                const visible = slots.slice(0, 3);
-                const extra = slots.length - visible.length;
-                return (
-                  <button
-                    key={d.toISOString()}
-                    onClick={() => { setDay(d); setView('day'); }}
-                    className={cn(
-                      'min-h-[90px] p-1.5 rounded border text-left flex flex-col gap-1 hover:border-primary transition',
-                      !inMonth && 'opacity-40 bg-muted/30',
-                      isToday && 'border-primary border-2',
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className={cn('text-xs font-bold', isToday && 'text-primary')}>{format(d, 'd')}</span>
-                      {slots.length > 0 && (
-                        <span className="text-[9px] text-muted-foreground">{slots.length}</span>
+          <div className="space-y-3">
+            {rooms.length > 0 && <RoomsLegend rooms={rooms as any[]} roomColorOf={roomColorOf} />}
+            <Card className="p-3">
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((wd) => (
+                  <div key={wd} className="text-[10px] uppercase font-bold text-muted-foreground text-center py-1">
+                    {wd}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {monthDays.map((d) => {
+                  const slots = slotsForDay(d);
+                  const isToday = isSameDay(d, new Date());
+                  const inMonth = isSameMonth(d, day);
+                  const visible = slots.slice(0, 3);
+                  const extra = slots.length - visible.length;
+                  // salas únicas usadas no dia
+                  const roomIds = Array.from(new Set(slots.map((s) => s.room_id).filter(Boolean))) as string[];
+                  return (
+                    <button
+                      key={d.toISOString()}
+                      onClick={() => { setDay(d); setView('day'); }}
+                      className={cn(
+                        'min-h-[100px] p-1.5 rounded border text-left flex flex-col gap-1 hover:border-primary transition',
+                        !inMonth && 'opacity-40 bg-muted/30',
+                        isToday && 'border-primary border-2',
                       )}
-                    </div>
-                    <div className="space-y-0.5 flex-1">
-                      {visible.map((s) => {
-                        const hasGrade = !!s.appointment?.sequence_id;
-                        return (
-                          <div
-                            key={s.key}
-                            className={cn(
-                              'text-[9px] px-1 py-0.5 rounded truncate border',
-                              s.isVirtual && 'border-dashed',
-                              s.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
-                              s.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400',
-                              !s.isOpen && (hasGrade ? 'bg-primary/10 text-primary' : 'bg-muted'),
-                            )}
-                          >
-                            {format(parseISO(s.scheduled_at), 'HH:mm')} {s.isOpen ? (roomName(s.room_id) || 'livre') : studentName(s.student_id).split(' ')[0]}
-                          </div>
-                        );
-                      })}
-                      {extra > 0 && (
-                        <div className="text-[9px] text-muted-foreground px-1">+{extra} mais</div>
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={cn('text-xs font-bold', isToday && 'text-primary')}>{format(d, 'd')}</span>
+                        {slots.length > 0 && (
+                          <span className="text-[9px] text-muted-foreground">{slots.length}</span>
+                        )}
+                      </div>
+                      {/* faixa de salas usadas */}
+                      {roomIds.length > 0 && (
+                        <div className="flex items-center gap-px h-1 -mt-0.5" title={`${roomIds.length} sala(s) usada(s)`}>
+                          {roomIds.map((rid) => (
+                            <span
+                              key={rid}
+                              className="flex-1 rounded-sm"
+                              style={{ background: roomColorOf(rid) || 'hsl(var(--muted))' }}
+                            />
+                          ))}
+                        </div>
                       )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </Card>
+                      <div className="space-y-0.5 flex-1">
+                        {visible.map((s) => {
+                          const hasGrade = !!s.appointment?.sequence_id;
+                          const rcolor = roomColorOf(s.room_id);
+                          return (
+                            <div
+                              key={s.key}
+                              className={cn(
+                                'text-[9px] px-1 py-0.5 rounded truncate border flex items-center gap-1',
+                                s.isVirtual && 'border-dashed',
+                                s.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
+                                s.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400',
+                                !s.isOpen && (hasGrade ? 'bg-primary/10 text-primary' : 'bg-muted'),
+                              )}
+                            >
+                              {rcolor && (
+                                <span
+                                  className="h-1.5 w-1.5 rounded-full shrink-0"
+                                  style={{ background: rcolor }}
+                                  title={roomName(s.room_id) || ''}
+                                />
+                              )}
+                              <span className="truncate">
+                                {format(parseISO(s.scheduled_at), 'HH:mm')} {s.isOpen ? (roomName(s.room_id) || 'livre') : studentName(s.student_id).split(' ')[0]}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {extra > 0 && (
+                          <div className="text-[9px] text-muted-foreground px-1">+{extra} mais</div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </Card>
+          </div>
         ) : (
           <Card className="p-4">
             <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
