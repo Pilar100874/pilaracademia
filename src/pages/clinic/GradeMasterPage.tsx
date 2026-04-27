@@ -692,186 +692,22 @@ export default function GradeMasterPage() {
               )}
             </div>
 
-            {/* Faixa de horários clicáveis para criar aula */}
-            <div className="mb-4 p-2 rounded-lg border bg-muted/30">
-              <div className="text-[10px] uppercase tracking-wide font-bold text-muted-foreground mb-1.5 px-1">
-                + Nova aula às:
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {Array.from({ length: 15 }, (_, i) => 7 + i).map((h) => {
-                  const t = `${String(h).padStart(2, '0')}:00`;
-                  return (
-                    <button
-                      key={t}
-                      onClick={() => openNewClassAt(day, t)}
-                      className="px-2 py-1 text-xs rounded border bg-card hover:border-primary hover:text-primary transition flex items-center gap-1"
-                    >
-                      <Plus className="h-3 w-3" />{t}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {daySlots.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">Nenhuma aula nesse dia.</p>
-            ) : (
-
-              <div className="space-y-2">
-                {daySlots.map((s) => {
-                  const sl = s.appointment ? STATUS_LABEL[s.appointment.status] : (
-                    s.isProjected
-                      ? { label: 'Projetado', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30' }
-                      : s.isOpen
-                        ? { label: 'Livre', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' }
-                        : { label: 'Fixo', cls: 'bg-secondary text-secondary-foreground' }
-                  );
-                  const seqId = s.appointment?.sequence_id;
-                  const seqName = seqId ? sequences.find((x) => x.id === seqId)?.name : null;
-                  const av = studentAvatar(s.student_id);
-                  const stu = s.student_id ? students.find((x) => x.id === s.student_id) as any : null;
-                  const expired = stu?.contract_end_date && new Date(stu.contract_end_date) < new Date();
-                  const occ = occupancyFor(daySlots, s);
-                  const instColor = colorOf(s.instructor_id);
-                  const studentsHere = occ ? occ.students.map((id) => studentName(id)) : [];
-                  const shifts = shiftsCovering(parseISO(s.scheduled_at));
-                  return (
-                    <div
-                      key={s.key}
-                      style={!s.isOpen && instColor ? { borderLeftColor: instColor, borderLeftWidth: 4 } : undefined}
-                      className={cn(
-                        'flex items-center gap-3 p-3 rounded-lg border bg-card flex-wrap',
-                        s.isVirtual && 'border-dashed',
-                        s.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
-                        s.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5',
-                      )}
-                    >
-                      <div className="text-center min-w-[60px]">
-                        <div className="font-bold text-lg">{format(parseISO(s.scheduled_at), 'HH:mm')}</div>
-                        <div className="text-[10px] text-muted-foreground">{s.duration_minutes}min</div>
-                      </div>
-                      {s.isOpen ? (
-                        <div className="h-9 w-9 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                          <Plus className="h-4 w-4" />
-                        </div>
-                      ) : av ? (
-                        <img src={av} alt="" className="h-9 w-9 rounded-full object-cover" />
-                      ) : (
-                        <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
-                          {studentName(s.student_id).charAt(0)}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-[180px]">
-                        <div className="font-medium truncate flex items-center gap-1.5">
-                          {s.isOpen ? <span className="text-muted-foreground italic">Horário disponível</span> : studentName(s.student_id)}
-                          {s.isVirtual && <span title="Horário fixo"><Repeat className="h-3 w-3 text-muted-foreground" /></span>}
-                          {s.isProjected && <span title="Projeção pós-contrato"><RefreshCw className="h-3 w-3 text-amber-600" /></span>}
-                          {expired && !s.appointment && (
-                            <Badge variant="outline" className="text-[9px] py-0 h-4 border-amber-500 text-amber-700">contrato vencido</Badge>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate flex items-center flex-wrap gap-x-2">
-                          <span>{equipmentName(s.equipment_id)}</span>
-                          {roomName(s.room_id) && (
-                            <span className="inline-flex items-center gap-0.5"><DoorOpen className="h-3 w-3" />{roomName(s.room_id)}</span>
-                          )}
-                          {instructorName(s.instructor_id) && (
-                            <span className="inline-flex items-center gap-1">
-                              <span className="h-2 w-2 rounded-full" style={{ background: instColor }} />
-                              {instructorName(s.instructor_id)}
-                            </span>
-                          )}
-                          {!s.isOpen && isUncovered(s) && (
-                            <span className="inline-flex items-center gap-0.5 text-destructive font-semibold">
-                              <AlertTriangle className="h-3 w-3" />sem prof.
-                            </span>
-                          )}
-                          {shifts.length > 0 && !s.isOpen && (
-                            <span className="text-muted-foreground/70 text-[10px]">
-                              · turno {shifts[0].start_time.slice(0,5)}–{shifts[0].end_time.slice(0,5)}
-                            </span>
-                          )}
-                          {seqName && <span className="text-primary"><Sparkles className="h-3 w-3 inline mr-0.5" />{seqName}</span>}
-                          {!seqName && !s.isProjected && !s.isOpen && (
-                            <span className="text-amber-600 dark:text-amber-400">
-                              <AlertTriangle className="h-3 w-3 inline mr-0.5" />sem grade
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {occ && (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <button
-                              className={cn(
-                                'inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded border hover:bg-muted/60',
-                                occ.used >= occ.cap ? 'bg-destructive/10 text-destructive border-destructive/30' : 'bg-primary/5 text-primary border-primary/20',
-                              )}
-                              title="Alunos nesta sala neste horário"
-                            >
-                              <Users className="h-3 w-3" /> {occ.used}/{occ.cap}
-                              {occ.used < occ.cap && <span className="text-[10px] font-normal text-muted-foreground">· {occ.cap - occ.used} vaga{occ.cap - occ.used !== 1 ? 's' : ''}</span>}
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-56 p-2 text-xs">
-                            <div className="font-semibold mb-1">Alunos na sala</div>
-                            {studentsHere.length === 0 ? (
-                              <div className="text-muted-foreground italic">Nenhum</div>
-                            ) : (
-                              <ul className="space-y-0.5">
-                                {studentsHere.map((n, i) => <li key={i}>· {n}</li>)}
-                              </ul>
-                            )}
-                          </PopoverContent>
-                        </Popover>
-                      )}
-                      <InstructorPicker
-                        appointmentId={s.appointment?.id}
-                        bookableSlotId={s.bookable_slot_id}
-                        recurringId={!s.appointment && s.recurring_id ? s.recurring_id : undefined}
-                        currentInstructorId={s.instructor_id}
-                        instructors={instructors}
-                        colorOf={colorOf}
-                        clinicId={activeClinicId!}
-                      />
-                      <Badge className={sl.cls}>{sl.label}</Badge>
-
-                      {s.isProjected && s.student_id && (
-                        <Button size="sm" variant="outline" onClick={() => renewContract(s.student_id!)}>
-                          <RefreshCw className="h-3.5 w-3.5 mr-1" />Renovar
-                        </Button>
-                      )}
-
-                      {s.isOpen ? (
-                        <Button size="sm" onClick={() => openSlotDialog(s)}>
-                          <Plus className="h-3.5 w-3.5 mr-1" />Agendar aluno
-                        </Button>
-                      ) : (
-                        <Button size="sm" variant={seqName ? 'outline' : 'default'} onClick={() => openSlotDialog(s)}>
-                          <ListChecks className="h-3.5 w-3.5 mr-1" />{seqName ? 'Trocar grade' : 'Definir grade'}
-                        </Button>
-                      )}
-
-                      {!s.isOpen && (!s.appointment || s.appointment.status === 'scheduled') && !s.isProjected && (
-                        <Button size="sm" variant="outline" onClick={() => handleCheckIn(s)}>
-                          <LogIn className="h-3.5 w-3.5 mr-1" />Check-in
-                        </Button>
-                      )}
-                      {s.appointment && (s.appointment.status === 'checked_in' || s.appointment.status === 'in_progress') && (
-                        <Button size="sm" onClick={() => updateStatus.mutate({ id: s.appointment!.id, status: 'completed' })}>
-                          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Concluir
-                        </Button>
-                      )}
-                      {s.appointment && (
-                        <Button size="icon" variant="ghost" onClick={() => { if (confirm('Excluir esta aula?')) remove.mutate(s.appointment!.id); }}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            {/* Timeline visual do dia */}
+            <CalendarTimeline
+              days={[day]}
+              startHour={6}
+              endHour={22}
+              hourHeight={64}
+              slotsForDay={(d) => slotsForDay(d).map(toTimelineSlot)}
+              studentName={studentName}
+              instructorName={instructorName}
+              roomName={roomName}
+              colorOf={colorOf}
+              onCellClick={handleCellClick}
+              onSlotClick={handleTimelineSlotClick}
+              onDelete={handleTimelineDelete}
+              renderInstructorPicker={renderTimelineInstructorPicker}
+            />
           </Card>
         )}
 
