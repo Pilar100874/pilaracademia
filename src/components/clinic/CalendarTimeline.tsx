@@ -426,7 +426,7 @@ export function CalendarTimeline({
                                   : s.isProjected
                                     ? 'bg-amber-500/10 border-amber-500/40 border-dashed'
                                     : s.isVirtual
-                                      ? 'bg-card border-dashed'
+                                      ? 'bg-card'
                                       : 'bg-card',
                             s.uncovered && !s.isOpen && !s.isBlocked && 'bg-destructive/5',
                             isSlotHover && 'ring-2 ring-primary bg-primary/15',

@@ -121,6 +121,11 @@ export default function BlockedPeriodsPage() {
     freeSlotIds: string[];
     onConfirm: () => void;
   } | null>(null);
+  const [instructorDialog, setInstructorDialog] = useState<{
+    freeSlotIds: number;
+    onClear: () => void;
+    onSkip: () => void;
+  } | null>(null);
 
   const persistRules = async (form: BlockedFormState) => {
     const base = {
@@ -177,13 +182,29 @@ export default function BlockedPeriodsPage() {
 
     const { appointments, freeSlotIds } = await findConflicts(activeClinicId, rules);
 
-    const proceed = async () => {
-      await clearFreeSlots(freeSlotIds);
+    const proceed = async (clearSlots: boolean) => {
+      if (clearSlots) await clearFreeSlots(freeSlotIds);
       await persistRules(form);
     };
 
     if (appointments.length === 0) {
-      await proceed();
+      if (freeSlotIds.length === 0) {
+        await proceed(false);
+        return;
+      }
+      // Apenas horários de professor conflitam — perguntar o que fazer
+      setInstructorDialog({
+        freeSlotIds: freeSlotIds.length,
+        onClear: async () => {
+          setInstructorDialog(null);
+          await proceed(true);
+        },
+        onSkip: () => {
+          setInstructorDialog(null);
+          // Cancela a criação do bloqueio
+          toast.info('Bloqueio não criado. Horários do professor preservados.');
+        },
+      });
       return;
     }
 
@@ -192,7 +213,7 @@ export default function BlockedPeriodsPage() {
       freeSlotIds,
       onConfirm: async () => {
         setConflictDialog(null);
-        await proceed();
+        await proceed(true);
       },
     });
   };
@@ -359,6 +380,37 @@ export default function BlockedPeriodsPage() {
             <Button variant="outline" onClick={() => setConflictDialog(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={() => conflictDialog?.onConfirm()}>
               Criar bloqueio mesmo assim
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!instructorDialog} onOpenChange={(v) => { if (!v) setInstructorDialog(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              Professor com horário neste período
+            </DialogTitle>
+          </DialogHeader>
+          {instructorDialog && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Existe(m) <strong>{instructorDialog.freeSlotIds} horário(s) livre(s) de professor</strong> dentro
+                desse intervalo. Não há aulas marcadas com alunos. O que você prefere fazer?
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-1.5 pl-4 list-disc">
+                <li><strong>Excluir do professor</strong>: libera os horários do professor e cria o bloqueio.</li>
+                <li><strong>Ignorar e cancelar</strong>: mantém os horários do professor e <em>não</em> cria o bloqueio.</li>
+              </ul>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => instructorDialog?.onSkip()}>
+              Ignorar e cancelar
+            </Button>
+            <Button variant="destructive" onClick={() => instructorDialog?.onClear()}>
+              Excluir do professor e bloquear
             </Button>
           </DialogFooter>
         </DialogContent>
