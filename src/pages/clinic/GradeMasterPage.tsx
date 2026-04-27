@@ -458,7 +458,7 @@ export default function GradeMasterPage() {
 
   const reassignSelected = async (values: BulkAssignValues) => {
     if (selectedSlotKeys.size === 0) return;
-    const tsList = daySlots.map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
+    const tsList = visibleSlotsForSelection().map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
     let updated = 0;
     for (const t of tsList) {
       const patch: any = {};
