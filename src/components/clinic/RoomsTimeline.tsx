@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Plus, X, AlertTriangle, Repeat, Sparkles, RefreshCw, DoorOpen, Users, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { TimelineSlot } from './CalendarTimeline';
+import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
 
 export interface Room {
   id: string;
