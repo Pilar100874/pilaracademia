@@ -1087,7 +1087,7 @@ export default function GradeMasterPage() {
               roomName={roomName}
               roomColorOf={roomColorOf}
               colorOf={colorOf}
-              onCellClick={(d, h, roomId) => openNewClassAt(d, `${String(h).padStart(2, '0')}:00`, roomId ?? null)}
+              onCellClick={(d, h, roomId) => tryOpenNewClassAt(d, `${String(h).padStart(2, '0')}:00`, roomId ?? null)}
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
               renderInstructorPicker={renderTimelineInstructorPicker}
