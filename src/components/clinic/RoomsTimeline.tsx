@@ -61,6 +61,9 @@ interface Props {
   onDropInstructorOnCell?: (instructorId: string, day: Date, hour: number, roomId: string | null) => void;
   /** Chamado ao soltar professor sobre um slot existente (atribui). */
   onDropInstructorOnSlot?: (instructorId: string, slot: TimelineSlot) => void;
+
+  /** Clique no cabeçalho de uma sala — selecionar a coluna inteira. */
+  onRoomHeaderClick?: (roomId: string | null) => void;
 }
 
 export function RoomsTimeline({
