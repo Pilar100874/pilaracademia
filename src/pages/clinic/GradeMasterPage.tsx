@@ -516,10 +516,11 @@ export default function GradeMasterPage() {
                               'text-[9px] px-1 py-0.5 rounded truncate border',
                               s.isVirtual && 'border-dashed',
                               s.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
-                              hasGrade ? 'bg-primary/10 text-primary' : 'bg-muted',
+                              s.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400',
+                              !s.isOpen && (hasGrade ? 'bg-primary/10 text-primary' : 'bg-muted'),
                             )}
                           >
-                            {format(parseISO(s.scheduled_at), 'HH:mm')} {studentName(s.student_id).split(' ')[0]}
+                            {format(parseISO(s.scheduled_at), 'HH:mm')} {s.isOpen ? (roomName(s.room_id) || 'livre') : studentName(s.student_id).split(' ')[0]}
                           </div>
                         );
                       })}
