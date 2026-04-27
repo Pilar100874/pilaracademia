@@ -5,6 +5,7 @@ import { useAppointments, type AppointmentStatus, type Appointment } from '@/hoo
 import { useStudents, useEquipment, useSequences, usePrescriptions } from '@/hooks/useClinicData';
 import { useRecurringSchedules, type RecurringSchedule } from '@/hooks/useRecurringSchedules';
 import { useClinicRooms } from '@/hooks/useClinicRooms';
+import { useClinicStaff } from '@/hooks/useStaff';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -123,6 +124,11 @@ export default function GradeMasterPage() {
   const { data: equipment = [] } = useEquipment(activeClinicId);
   const { data: sequences = [] } = useSequences(activeClinicId);
   const { data: rooms = [] } = useClinicRooms(activeClinicId);
+  const { data: staff = [] } = useClinicStaff(activeClinicId);
+  const instructors = useMemo(
+    () => staff.filter((s) => s.role === 'instructor' || s.role === 'clinic_admin').map((s) => ({ user_id: s.user_id, name: s.name })),
+    [staff],
+  );
   const { data: recurring = [] } = useRecurringSchedules(activeClinicId);
   const { create: createPresc } = usePrescriptions({ clinicId: activeClinicId });
 
@@ -614,6 +620,8 @@ export default function GradeMasterPage() {
           initialTime={newClassTime}
           students={students as any}
           equipment={equipment as any}
+          rooms={rooms as any}
+          instructors={instructors}
         />
       )}
     </PageMotion>
