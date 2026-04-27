@@ -156,6 +156,7 @@ export default function PermissionsPage() {
           })}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
