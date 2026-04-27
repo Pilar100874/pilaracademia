@@ -475,7 +475,7 @@ export default function GradeMasterPage() {
                   return (
                     <button
                       key={t}
-                      onClick={() => openAvulsoAt(day, t)}
+                      onClick={() => openNewClassAt(day, t)}
                       className="px-2 py-1 text-xs rounded border bg-card hover:border-primary hover:text-primary transition flex items-center gap-1"
                     >
                       <Plus className="h-3 w-3" />{t}
