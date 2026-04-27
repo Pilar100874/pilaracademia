@@ -83,6 +83,60 @@ export function RoomsTimeline({
   const readInstructor = (e: React.DragEvent) =>
     e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain') || '';
 
+  // ===== Marquee (Excel-style drag select) =====
+  const baseSlotKeysRef = useRef<Set<string>>(new Set());
+  const baseEmptyKeysRef = useRef<Set<EmptyCellKey>>(new Set());
+  const collectInRect = (rect: MarqueeRect, container: HTMLElement) => {
+    const cRect = container.getBoundingClientRect();
+    const absLeft = cRect.left + rect.left - container.scrollLeft;
+    const absTop = cRect.top + rect.top - container.scrollTop;
+    const absRight = absLeft + rect.width;
+    const absBottom = absTop + rect.height;
+    const slotKeys = new Set<string>();
+    const emptyKeys = new Set<EmptyCellKey>();
+    container.querySelectorAll<HTMLElement>('[data-cell-key],[data-slot-key]').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      const intersects = r.right >= absLeft && r.left <= absRight && r.bottom >= absTop && r.top <= absBottom;
+      if (!intersects) return;
+      const slotK = el.getAttribute('data-slot-key');
+      const cellK = el.getAttribute('data-cell-key');
+      if (slotK && el.getAttribute('data-selectable') !== 'false') slotKeys.add(slotK);
+      if (cellK) emptyKeys.add(cellK);
+    });
+    return { slotKeys, emptyKeys };
+  };
+
+  const marquee = useMarqueeSelection({
+    disabled: !(onReplaceSelection || onAddSelection),
+    onUpdate: (rect, additive) => {
+      const container = marquee.containerRef.current;
+      if (!container) return;
+      const { slotKeys, emptyKeys } = collectInRect(rect, container);
+      if (additive) {
+        const sk = new Set(baseSlotKeysRef.current);
+        slotKeys.forEach((k) => sk.add(k));
+        const ek = new Set(baseEmptyKeysRef.current);
+        emptyKeys.forEach((k) => ek.add(k));
+        onReplaceSelection?.(sk, ek);
+      } else {
+        onReplaceSelection?.(slotKeys, emptyKeys);
+      }
+    },
+    onEnd: (_rect, additive) => {
+      const slotCount = selectedSlotKeys?.size ?? 0;
+      const emptyCount = selectedEmptyKeys?.size ?? 0;
+      if (slotCount + emptyCount > 0) onMarqueeEnd?.({ slotCount, emptyCount, additive });
+    },
+  });
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    // captura snapshot da seleção atual para modo aditivo
+    baseSlotKeysRef.current = new Set(selectedSlotKeys ?? []);
+    baseEmptyKeysRef.current = new Set(selectedEmptyKeys ?? []);
+    marquee.onPointerDown(e);
+  };
+
+
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
   const totalHeight = hours.length * hourHeight;
   const minutesToTop = (date: Date) => {
