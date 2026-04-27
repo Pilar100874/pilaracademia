@@ -710,21 +710,31 @@ function StepGrade({
     const brk = Math.max(0, Number(breakMinutes) || 0);
     if (eh <= sh) { toast.error('Hora final deve ser maior que a inicial'); return; }
     if (dur <= 0) { toast.error('Duração inválida'); return; }
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    let lastDate: Date;
+    if (noEndDate) {
+      lastDate = new Date(today);
+      lastDate.setDate(lastDate.getDate() + 7 * 12); // 12 semanas, estende depois
+    } else {
+      if (!endDate) { toast.error('Defina a data final ou marque "sem data final"'); return; }
+      lastDate = new Date(endDate + 'T23:59:59');
+      if (lastDate < today) { toast.error('Data final deve ser hoje ou no futuro'); return; }
+    }
+
     setCreating(true);
     try {
-      // Generate next 4 weeks of slots
-      const today = new Date(); today.setHours(0, 0, 0, 0);
       const rows: any[] = [];
       const primaryEquipmentId = equipmentIds[0] ?? null;
       const stepMinutes = dur + brk;
       const dayMinutes = (eh - sh) * 60;
-      for (let week = 0; week < 4; week++) {
-        for (const dow of days) {
-          const date = new Date(today);
-          const diff = (dow - today.getDay() + 7) % 7 + week * 7;
-          date.setDate(today.getDate() + diff);
+      const seriesId = (crypto as any)?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+
+      const cursor = new Date(today);
+      while (cursor <= lastDate) {
+        if (days.includes(cursor.getDay())) {
           for (let offset = 0; offset + dur <= dayMinutes; offset += stepMinutes) {
-            const sched = new Date(date);
+            const sched = new Date(cursor);
             sched.setHours(sh, 0, 0, 0);
             sched.setMinutes(sched.getMinutes() + offset);
             rows.push({
@@ -737,17 +747,22 @@ function StepGrade({
               capacity: Math.max(1, equipmentIds.length || 1),
               notes: null,
               created_by: user.id,
+              series_id: seriesId,
+              active: true,
             });
           }
         }
+        cursor.setDate(cursor.getDate() + 1);
       }
+
+      if (rows.length === 0) { toast.error('Nenhum horário para este período'); setCreating(false); return; }
+
       const { data: insertedSlots, error } = await supabase
         .from('bookable_slots' as any)
         .insert(rows)
         .select('id');
       if (error) throw error;
 
-      // Link multiple equipments per slot
       if (equipmentIds.length > 1 && insertedSlots?.length) {
         const links = (insertedSlots as any[]).flatMap((s) =>
           equipmentIds.map((eid) => ({
@@ -761,8 +776,9 @@ function StepGrade({
         if (linkErr) throw linkErr;
       }
 
-      toast.success(`${rows.length} horários criados`);
+      toast.success(`${rows.length} horários criados${noEndDate ? ' (12 semanas — estenda depois)' : ''}`);
       hook.refetch?.();
+      loadSeries();
     } catch (e: any) {
       toast.error(e?.message || 'Erro ao gerar grade');
     } finally { setCreating(false); }
