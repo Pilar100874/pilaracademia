@@ -37,6 +37,9 @@ interface Props {
   initialDate: Date;
   initialTime?: string;
   initialRoomId?: string | null;
+  initialInstructorId?: string | null;
+  initialDurationMinutes?: number | null;
+  initialBookableSlotId?: string | null;
   students: Student[];
   equipment: Equipment[];
   rooms?: Room[];
@@ -97,7 +100,7 @@ function expandRule(rule: WeekRule, from: Date, to: Date): Date[] {
 }
 
 export function NewClassDialog({
-  open, onClose, clinicId, userId, initialDate, initialTime, initialRoomId, students, equipment, rooms = [], instructors = [], onSaved,
+  open, onClose, clinicId, userId, initialDate, initialTime, initialRoomId, initialInstructorId, initialDurationMinutes, initialBookableSlotId, students, equipment, rooms = [], instructors = [], onSaved,
 }: Props) {
   const { confirm } = useConfirm();
   const [mode, setMode] = useState<'avulsa' | 'fixa'>('avulsa');
@@ -122,10 +125,10 @@ export function NewClassDialog({
       setTime(initialTime ?? '08:00');
       setMode('avulsa');
       setStudentId('');
-      setDuration(50);
+      setDuration(initialDurationMinutes ?? 50);
       setEquipmentId('');
       setRoomId(initialRoomId ?? '');
-      setInstructorId(userId);
+      setInstructorId(initialInstructorId || userId);
       setNotes('');
       setConflicts(null);
       setPendingPlan(null);
@@ -137,13 +140,13 @@ export function NewClassDialog({
         week_of_month: wom,
         day_of_week: initialDate.getDay(),
         start_time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
-        duration_minutes: 50,
+        duration_minutes: initialDurationMinutes ?? 50,
         room_id: initialRoomId ?? null,
-        instructor_id: userId,
+        instructor_id: initialInstructorId || userId,
         equipment_id: null,
       }]);
     }
-  }, [open, initialDate, initialTime, initialRoomId, userId]);
+  }, [open, initialDate, initialTime, initialRoomId, initialInstructorId, initialDurationMinutes, userId]);
 
   const student = useMemo(() => students.find((s) => s.id === studentId), [students, studentId]);
   const contractInfo = useMemo(() => {
@@ -255,11 +258,11 @@ export function NewClassDialog({
               .eq('instructor_id', instructorId)
               .gte('scheduled_at', dayStart.toISOString())
               .lte('scheduled_at', dayEnd.toISOString());
-            hasInstructorOnGrid = (slots ?? []).some((s: any) => {
+          hasInstructorOnGrid = (slots ?? []).some((s: any) => {
               if (s.active === false || s.blocked === true) return false;
               const sStart = new Date(s.scheduled_at).getTime();
               const sEnd = sStart + (s.duration_minutes || 50) * 60 * 1000;
-              return sStart <= sched.getTime() && sEnd >= schedEnd.getTime();
+            return sStart <= sched.getTime() && sEnd >= schedEnd.getTime();
             });
           }
         }
@@ -308,6 +311,7 @@ export function NewClassDialog({
           instructor_id: instructorId || userId,
           scheduled_at: sched.toISOString(),
           duration_minutes: duration,
+          bookable_slot_id: initialBookableSlotId || null,
           notes: notes || null,
           created_by: userId,
         });
