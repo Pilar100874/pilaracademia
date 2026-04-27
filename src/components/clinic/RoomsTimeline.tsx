@@ -354,14 +354,16 @@ export function RoomsTimeline({
                     }}
                     className={cn(
                       'absolute left-1 right-1 z-10 rounded border border-l-4 px-1.5 py-1 text-[10px] cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary/30 transition shadow-sm',
-                      s.isOpen
-                        ? 'bg-emerald-500/10 border-emerald-500/30 border-dashed'
-                        : s.isProjected
-                          ? 'bg-amber-500/10 border-amber-500/40 border-dashed'
-                          : s.isVirtual
-                            ? 'bg-card border-dashed'
-                            : 'bg-card',
-                      s.uncovered && !s.isOpen && 'bg-destructive/5',
+                      s.isBlocked
+                        ? 'bg-muted/60 border-muted-foreground/40 border-dashed opacity-80'
+                        : s.isOpen
+                          ? 'bg-emerald-500/10 border-emerald-500/30 border-dashed'
+                          : s.isProjected
+                            ? 'bg-amber-500/10 border-amber-500/40 border-dashed'
+                            : s.isVirtual
+                              ? 'bg-card border-dashed'
+                              : 'bg-card',
+                      s.uncovered && !s.isOpen && !s.isBlocked && 'bg-destructive/5',
                       isSelected && 'ring-2 ring-primary bg-primary/10',
                       selectionMode && !canSelect && 'opacity-50',
                       isSlotDropHover && 'ring-2 ring-primary bg-primary/15',
@@ -371,16 +373,21 @@ export function RoomsTimeline({
                       <span className="font-bold">{format(t, 'HH:mm')}</span>
                       <div className="flex items-center gap-0.5">
                         {isSelected && <Check className="h-2.5 w-2.5 text-primary" />}
-                        {s.uncovered && <AlertTriangle className="h-2.5 w-2.5 text-destructive" />}
+                        {s.isBlocked && <Lock className="h-2.5 w-2.5 text-muted-foreground" />}
+                        {s.uncovered && !s.isBlocked && <AlertTriangle className="h-2.5 w-2.5 text-destructive" />}
                         {s.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
                         {s.isVirtual && !s.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
                         {s.hasGrade && <Sparkles className="h-2.5 w-2.5 text-primary" />}
                       </div>
                     </div>
                     <div className="truncate font-medium">
-                      {s.isOpen ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span> : studentName(s.student_id)}
+                      {s.isBlocked
+                        ? <span className="italic text-muted-foreground">Bloqueado</span>
+                        : s.isOpen
+                          ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span>
+                          : studentName(s.student_id)}
                     </div>
-                    {instr && height > 36 && (
+                    {instr && height > 36 && !s.isBlocked && (
                       <div className="truncate text-muted-foreground">{instr}</div>
                     )}
                   </div>
