@@ -943,6 +943,15 @@ export default function GradeMasterPage() {
                   </SelectContent>
                 </Select>
               )}
+
+              {/* Stats compactos inline */}
+              <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                <StatChip label="Total" value={stats.total} icon={CalendarDays} />
+                <StatChip label="Aulas" value={stats.classes} icon={CheckCircle2} tone="success" />
+                <StatChip label="Sem prof." value={stats.uncovered} icon={AlertTriangle} tone={stats.uncovered > 0 ? 'danger' : 'muted'} />
+                <StatChip label="Livres" value={stats.open} icon={Plus} tone="warn" />
+                <StatChip label="Projeções" value={stats.projected} icon={RefreshCw} tone="muted" />
+              </div>
             </div>
           )}
         </Card>
