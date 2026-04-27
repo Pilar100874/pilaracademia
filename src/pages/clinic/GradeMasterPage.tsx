@@ -894,15 +894,21 @@ export default function GradeMasterPage() {
 
             {/* Barra flutuante de ações de seleção */}
             {selectionMode && (selectedSlotKeys.size > 0 || selectedEmptyKeys.size > 0) && (
-              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border shadow-lg rounded-full px-3 py-2 flex items-center gap-2">
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border shadow-lg rounded-full px-3 py-2 flex items-center gap-2 flex-wrap max-w-[95vw]">
                 {selectedSlotKeys.size > 0 && (
-                  <Button size="sm" variant="destructive" onClick={deleteSelected}>
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Excluir {selectedSlotKeys.size}
-                  </Button>
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => setBulkOpen('reassign')}>
+                      <UserCog className="h-4 w-4 mr-1" />
+                      Atribuir prof./sala ({selectedSlotKeys.size})
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={deleteSelected}>
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Excluir {selectedSlotKeys.size}
+                    </Button>
+                  </>
                 )}
                 {selectedEmptyKeys.size > 0 && (
-                  <Button size="sm" onClick={createSelectedEmpty}>
+                  <Button size="sm" onClick={() => setBulkOpen('create')}>
                     <Plus className="h-4 w-4 mr-1" />
                     Criar {selectedEmptyKeys.size} horário(s)
                   </Button>
@@ -910,6 +916,7 @@ export default function GradeMasterPage() {
                 <Button size="sm" variant="ghost" onClick={exitSelection}>Cancelar</Button>
               </div>
             )}
+
           </Card>
         )}
 
