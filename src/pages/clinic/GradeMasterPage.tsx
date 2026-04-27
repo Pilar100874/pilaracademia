@@ -18,7 +18,7 @@ import {
   Plus, ChevronLeft, ChevronRight, CalendarDays, CheckCircle2, LogIn, Trash2,
   Repeat, ListChecks, Sparkles, AlertTriangle, RefreshCw, Filter, DoorOpen,
 } from 'lucide-react';
-import { format, addDays, addMonths, isSameDay, parseISO, startOfWeek, differenceInCalendarDays } from 'date-fns';
+import { format, addDays, addMonths, isSameDay, parseISO, startOfWeek, startOfMonth, endOfMonth, endOfWeek, isSameMonth, differenceInCalendarDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -91,7 +91,7 @@ function expandRecurringForDayExt(
 export default function GradeMasterPage() {
   const { activeClinicId } = useUserRoles();
   const { user } = useAuth();
-  const [view, setView] = useState<'day' | 'week'>('week');
+  const [view, setView] = useState<'day' | 'week' | 'month'>('week');
   const [day, setDay] = useState(() => new Date());
   const [simulateRenewal, setSimulateRenewal] = useState(true);
   const [renewalMonths, setRenewalMonths] = useState(3);
@@ -100,12 +100,22 @@ export default function GradeMasterPage() {
 
   const horizonDate = useMemo(() => addMonths(new Date(), renewalMonths), [renewalMonths]);
 
-  // Para a vista semanal, buscamos appointments cobrindo a semana inteira
+  // Para a vista semanal/mensal, buscamos appointments cobrindo o range inteiro
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+  const monthStart = useMemo(() => startOfMonth(day), [day]);
+  const monthEnd = useMemo(() => endOfMonth(day), [day]);
+  const monthGridStart = useMemo(() => startOfWeek(monthStart, { weekStartsOn: 1 }), [monthStart]);
+  const monthGridEnd = useMemo(() => endOfWeek(monthEnd, { weekStartsOn: 1 }), [monthEnd]);
+  const monthDays = useMemo(() => {
+    const days: Date[] = [];
+    const total = differenceInCalendarDays(monthGridEnd, monthGridStart) + 1;
+    for (let i = 0; i < total; i++) days.push(addDays(monthGridStart, i));
+    return days;
+  }, [monthGridStart, monthGridEnd]);
   const fetchDayISO = view === 'day' ? day.toISOString() : undefined;
 
-  // Quando view=week, buscamos sem filtro de dia e filtramos no cliente.
+  // Quando view=week/month, buscamos sem filtro de dia e filtramos no cliente.
   const { data: appointments = [], updateStatus, remove } = useAppointments(activeClinicId, fetchDayISO);
   const { data: students = [] } = useStudents(activeClinicId);
   const { data: equipment = [] } = useEquipment(activeClinicId);
@@ -250,7 +260,12 @@ export default function GradeMasterPage() {
 
   // ===== Stats topo =====
   const stats = useMemo(() => {
-    const all = view === 'day' ? daySlots : weekDays.flatMap(slotsForDay);
+    const all =
+      view === 'day'
+        ? daySlots
+        : view === 'week'
+          ? weekDays.flatMap(slotsForDay)
+          : monthDays.filter((d) => isSameMonth(d, day)).flatMap(slotsForDay);
     return {
       total: all.length,
       withGrade: all.filter((s) => s.appointment?.sequence_id).length,
@@ -258,7 +273,7 @@ export default function GradeMasterPage() {
       projected: all.filter((s) => s.isProjected).length,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, daySlots, weekDays, appointments, recurring, simulateRenewal, horizonDate, filterInstructor]);
+  }, [view, daySlots, weekDays, monthDays, day, appointments, recurring, simulateRenewal, horizonDate, filterInstructor]);
 
   return (
     <div className="min-h-screen">
@@ -286,25 +301,28 @@ export default function GradeMasterPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 pt-2 border-t">
-            <Tabs value={view} onValueChange={(v) => setView(v as 'day' | 'week')}>
+            <Tabs value={view} onValueChange={(v) => setView(v as 'day' | 'week' | 'month')}>
               <TabsList>
-                <TabsTrigger value="week">Semana</TabsTrigger>
                 <TabsTrigger value="day">Dia</TabsTrigger>
+                <TabsTrigger value="week">Semana</TabsTrigger>
+                <TabsTrigger value="month">Mês</TabsTrigger>
               </TabsList>
             </Tabs>
 
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={() => setDay((d) => addDays(d, view === 'day' ? -1 : -7))}>
+              <Button variant="ghost" size="icon" onClick={() => setDay((d) => view === 'month' ? addMonths(d, -1) : addDays(d, view === 'day' ? -1 : -7))}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <Button variant="outline" size="sm" onClick={() => setDay(new Date())}>Hoje</Button>
-              <Button variant="ghost" size="icon" onClick={() => setDay((d) => addDays(d, view === 'day' ? 1 : 7))}>
+              <Button variant="ghost" size="icon" onClick={() => setDay((d) => view === 'month' ? addMonths(d, 1) : addDays(d, view === 'day' ? 1 : 7))}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <span className="ml-2 text-sm font-medium">
                 {view === 'day'
                   ? format(day, "dd 'de' MMMM yyyy", { locale: ptBR })
-                  : `${format(weekStart, 'dd/MM')} - ${format(addDays(weekStart, 6), 'dd/MM')}`}
+                  : view === 'week'
+                    ? `${format(weekStart, 'dd/MM')} - ${format(addDays(weekStart, 6), 'dd/MM')}`
+                    : format(day, "MMMM 'de' yyyy", { locale: ptBR })}
               </span>
             </div>
 
@@ -418,6 +436,64 @@ export default function GradeMasterPage() {
               );
             })}
           </div>
+        ) : view === 'month' ? (
+          <Card className="p-3">
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((wd) => (
+                <div key={wd} className="text-[10px] uppercase font-bold text-muted-foreground text-center py-1">
+                  {wd}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {monthDays.map((d) => {
+                const slots = slotsForDay(d);
+                const isToday = isSameDay(d, new Date());
+                const inMonth = isSameMonth(d, day);
+                const visible = slots.slice(0, 3);
+                const extra = slots.length - visible.length;
+                return (
+                  <button
+                    key={d.toISOString()}
+                    onClick={() => { setDay(d); setView('day'); }}
+                    className={cn(
+                      'min-h-[90px] p-1.5 rounded border text-left flex flex-col gap-1 hover:border-primary transition',
+                      !inMonth && 'opacity-40 bg-muted/30',
+                      isToday && 'border-primary border-2',
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={cn('text-xs font-bold', isToday && 'text-primary')}>{format(d, 'd')}</span>
+                      {slots.length > 0 && (
+                        <span className="text-[9px] text-muted-foreground">{slots.length}</span>
+                      )}
+                    </div>
+                    <div className="space-y-0.5 flex-1">
+                      {visible.map((s) => {
+                        const hasGrade = !!s.appointment?.sequence_id;
+                        return (
+                          <div
+                            key={s.key}
+                            className={cn(
+                              'text-[9px] px-1 py-0.5 rounded truncate border',
+                              s.isVirtual && 'border-dashed',
+                              s.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
+                              hasGrade ? 'bg-primary/10 text-primary' : 'bg-muted',
+                            )}
+                          >
+                            {format(parseISO(s.scheduled_at), 'HH:mm')} {studentName(s.student_id).split(' ')[0]}
+                          </div>
+                        );
+                      })}
+                      {extra > 0 && (
+                        <div className="text-[9px] text-muted-foreground px-1">+{extra} mais</div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
         ) : (
           <Card className="p-4">
             <h2 className="font-semibold mb-3">
