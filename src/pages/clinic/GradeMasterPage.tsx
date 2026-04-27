@@ -1166,7 +1166,7 @@ export default function GradeMasterPage() {
                   return (
                     <button
                       key={c.hour}
-                      onClick={() => openNewClassAt(day, `${String(c.hour).padStart(2, '0')}:00`)}
+                      onClick={() => tryOpenNewClassAt(day, `${String(c.hour).padStart(2, '0')}:00`)}
                       className={cn(
                         'group flex flex-col items-stretch rounded border p-1 text-[10px] transition hover:ring-2 hover:ring-primary/30',
                         danger && 'bg-destructive/10 border-destructive/40',
