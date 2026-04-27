@@ -324,6 +324,14 @@ export function RoomsTimeline({
                       setHoverKey(null);
                       if (id) onDropInstructorOnSlot(id, s);
                     }}
+                    onClick={(e) => {
+                      // intercept Shift/Ctrl click for additive selection
+                      if ((e.shiftKey || e.metaKey || e.ctrlKey) && (s.appointment_id || s.bookable_slot_id)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onAddSelection?.(new Set([s.key]), new Set());
+                      }
+                    }}
                     style={{
                       top: top + 1,
                       height,
