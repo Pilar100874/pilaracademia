@@ -325,6 +325,7 @@ export default function MasterSequencesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { confirm } = useConfirm();
   const [selected, setSelected] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
