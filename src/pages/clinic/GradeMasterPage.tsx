@@ -294,7 +294,7 @@ export default function GradeMasterPage() {
     }
     setSlotDialog({
       slot: { scheduled_at: slot.scheduled_at, duration_minutes: slot.duration_minutes },
-      focusedStudentId: slot.student_id,
+      focusedStudentId: slot.student_id!,
     });
   };
 
