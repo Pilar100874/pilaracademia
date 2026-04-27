@@ -152,7 +152,12 @@ export function CalendarTimeline({
       </div>
 
       {/* Grid principal com timeline */}
-      <div className="grid relative" style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(0, 1fr))`, height: totalHeight }}>
+      <div
+        ref={marquee.containerRef}
+        onPointerDown={handlePointerDown}
+        className="grid relative select-none"
+        style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(0, 1fr))`, height: totalHeight }}
+      >
         {/* Coluna de horas */}
         <div className="relative">
           {hours.map((h) => (
