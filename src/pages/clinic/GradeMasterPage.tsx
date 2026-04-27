@@ -460,14 +460,14 @@ export default function GradeMasterPage() {
                 {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })} · {daySlots.length} aula{daySlots.length !== 1 ? 's' : ''}
               </h2>
               <div className="text-[11px] text-muted-foreground">
-                Clique em um horário abaixo para adicionar uma aula avulsa
+                Clique em um horário abaixo para adicionar uma aula (avulsa ou fixa)
               </div>
             </div>
 
-            {/* Faixa de horários clicáveis para criar aula avulsa */}
+            {/* Faixa de horários clicáveis para criar aula */}
             <div className="mb-4 p-2 rounded-lg border bg-muted/30">
               <div className="text-[10px] uppercase tracking-wide font-bold text-muted-foreground mb-1.5 px-1">
-                + Aula avulsa às:
+                + Nova aula às:
               </div>
               <div className="flex flex-wrap gap-1">
                 {Array.from({ length: 15 }, (_, i) => 7 + i).map((h) => {
