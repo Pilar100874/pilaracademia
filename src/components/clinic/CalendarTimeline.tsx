@@ -245,6 +245,17 @@ export function CalendarTimeline({
               ? allSlots.filter((s) => (s.room_id ?? null) === subRoomId || (subIdx === 0 && !s.room_id && !subRoomId))
               : allSlots;
 
+            // Horas ocupadas por qualquer slot (aula, bloqueio, slot reservável) nesta sub-coluna.
+            // Essas horas não podem ser selecionadas para criação em massa.
+            const occupiedHours = new Set<number>();
+            slots.forEach((s) => {
+              const t = parseISO(s.scheduled_at);
+              const startH = t.getHours();
+              const endMin = t.getHours() * 60 + t.getMinutes() + (s.duration_minutes || 60);
+              const endH = Math.ceil(endMin / 60);
+              for (let hh = startH; hh < endH; hh++) occupiedHours.add(hh);
+            });
+
             // Ocupação por hora (apenas sub-colunas com sala + capacidade definida)
             const cap = subRoom?.capacity ?? null;
             const occupancyByHour = new Map<number, { used: number; ratio: number; status: 'free' | 'low' | 'mid' | 'full' }>();
@@ -280,6 +291,8 @@ export function CalendarTimeline({
                   const cellEnd = new Date(d);
                   cellEnd.setHours(h + 1, 0, 0, 0);
                   const isPast = cellEnd.getTime() <= now.getTime();
+                  const isOccupied = occupiedHours.has(h);
+                  const isDisabled = isPast || isOccupied;
                   const statusBg =
                     occ?.status === 'full' ? 'bg-destructive/10' :
                     occ?.status === 'mid'  ? 'bg-amber-500/10' :
@@ -293,10 +306,12 @@ export function CalendarTimeline({
                   return (
                     <button
                       key={h}
-                      data-cell-key={weekKey}
-                      disabled={isPast}
+                      // Só expõe data-cell-key quando livre — assim o marquee pula
+                      // automaticamente as células com aula/bloqueio existente.
+                      {...(!isDisabled ? { 'data-cell-key': weekKey } : {})}
+                      disabled={isDisabled}
                       onClick={(e) => {
-                        if (isPast) return;
+                        if (isDisabled) return;
                         if (marquee.didDrag()) return;
                         const additive = e.shiftKey || e.metaKey || e.ctrlKey;
                         if (additive) {
@@ -306,7 +321,7 @@ export function CalendarTimeline({
                         }
                       }}
                       onDragOver={(e) => {
-                        if (isPast) return;
+                        if (isDisabled) return;
                         if (!onDropInstructorOnCell) return;
                         e.preventDefault();
                         e.dataTransfer.dropEffect = 'copy';
@@ -314,7 +329,7 @@ export function CalendarTimeline({
                       }}
                       onDragLeave={() => { if (hoverKey === cellKey) setHoverKey(null); }}
                       onDrop={(e) => {
-                        if (isPast) return;
+                        if (isDisabled) return;
                         if (!onDropInstructorOnCell) return;
                         e.preventDefault();
                         const id = readInstructor(e);
@@ -332,10 +347,11 @@ export function CalendarTimeline({
                       }
                       className={cn(
                         'absolute left-0 right-0 border-t border-border/40 transition group',
-                        !isPast && 'hover:bg-primary/5',
+                        !isDisabled && 'hover:bg-primary/5',
                         isPast && 'bg-muted/40 cursor-not-allowed opacity-50',
+                        isOccupied && !isPast && 'cursor-default',
                         !isPast && statusBg,
-                        dragActive && !isPast && 'bg-primary/[0.03]',
+                        dragActive && !isDisabled && 'bg-primary/[0.03]',
                         isHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
                         isSelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
                       )}
