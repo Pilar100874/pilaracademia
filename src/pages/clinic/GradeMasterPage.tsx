@@ -344,6 +344,72 @@ export default function GradeMasterPage() {
     setNewClassOpen(true);
   };
 
+  // ===== Seleção múltipla na timeline do dia =====
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedSlotKeys, setSelectedSlotKeys] = useState<Set<string>>(new Set());
+  const [selectedEmptyKeys, setSelectedEmptyKeys] = useState<Set<EmptyCellKey>>(new Set());
+
+  const exitSelection = () => {
+    setSelectionMode(false);
+    setSelectedSlotKeys(new Set());
+    setSelectedEmptyKeys(new Set());
+  };
+
+  const toggleSlotSel = (s: TimelineSlot) => {
+    setSelectedSlotKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(s.key)) next.delete(s.key);
+      else next.add(s.key);
+      return next;
+    });
+  };
+  const toggleEmptySel = (k: EmptyCellKey) => {
+    setSelectedEmptyKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  };
+
+  const deleteSelected = async () => {
+    if (selectedSlotKeys.size === 0) return;
+    if (!confirm(`Excluir ${selectedSlotKeys.size} horário(s) selecionado(s)?`)) return;
+    const tsList = daySlots.map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
+    for (const t of tsList) {
+      if (t.appointment_id) await remove.mutateAsync(t.appointment_id);
+      else if (t.bookable_slot_id) await removeBookable.mutateAsync(t.bookable_slot_id);
+    }
+    toast.success(`${tsList.length} horário(s) excluído(s)`);
+    exitSelection();
+  };
+
+  const createSelectedEmpty = async () => {
+    if (selectedEmptyKeys.size === 0 || !activeClinicId || !user) return;
+    let count = 0;
+    for (const k of selectedEmptyKeys) {
+      const { date, hour, roomId } = parseEmptyKey(k);
+      const sched = new Date(`${date}T${String(hour).padStart(2, '0')}:00:00`);
+      try {
+        await createBookable.mutateAsync({
+          clinic_id: activeClinicId,
+          scheduled_at: sched.toISOString(),
+          duration_minutes: 50,
+          equipment_id: null,
+          instructor_id: null,
+          room_id: roomId,
+          capacity: 1,
+          notes: null,
+          created_by: user.id,
+        } as any);
+        count++;
+      } catch (e) { /* mutation toasts errors */ }
+    }
+    toast.success(`${count} horário(s) criado(s)`);
+    exitSelection();
+  };
+
+
   const openSlotDialog = (slot: MergedSlot) => {
     // Slot livre da grade → abre Nova aula com horário pré-preenchido
     if (slot.isOpen || !slot.student_id) {
