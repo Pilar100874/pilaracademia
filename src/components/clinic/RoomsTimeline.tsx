@@ -219,7 +219,6 @@ export function RoomsTimeline({
                   <button
                     key={h}
                     data-cell-key={emptyKey}
-                    data-no-marquee="true"
                     onClick={(e) => {
                       if (marquee.didDrag()) return;
                       const additive = e.shiftKey || e.metaKey || e.ctrlKey;
