@@ -17,7 +17,7 @@ export const parseWeekEmptyKey = (k: WeekEmptyKey) => {
   return { date, hour: parseInt(h, 10), roomId: roomId === 'none' ? null : roomId };
 };
 
-interface RoomLite { id: string; name: string }
+interface RoomLite { id: string; name: string; capacity?: number | null }
 
 export interface TimelineSlot {
   key: string;
