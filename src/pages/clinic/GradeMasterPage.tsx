@@ -1126,7 +1126,7 @@ export default function GradeMasterPage() {
         open={bulkOpen !== null}
         onClose={() => setBulkOpen(null)}
         mode={bulkOpen === 'reassign' ? 'reassign' : 'create'}
-        count={bulkOpen === 'reassign' ? selectedSlotKeys.size : selectedEmptyKeys.size}
+        count={selectedEmptyKeys.size + selectedSlotKeys.size}
         rooms={rooms as any}
         instructors={instructors}
         colorOf={colorOf}
