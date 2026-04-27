@@ -284,6 +284,7 @@ export default function StaffPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }
 

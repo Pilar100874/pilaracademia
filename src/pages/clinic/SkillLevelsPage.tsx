@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Layers } from 'lucide-react';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 
 export default function SkillLevelsPage() {
   const { activeClinicId } = useUserRoles();
@@ -20,11 +21,9 @@ export default function SkillLevelsPage() {
   };
 
   return (
+    <>
+    <ClinicPageHeader icon={Layers} title="Níveis de habilidade" subtitle="1 = mais básico" />
     <div className="p-6 space-y-4 max-w-3xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold">Níveis de habilidade</h1>
-        <p className="text-sm text-muted-foreground">Use a ordem para indicar progressão (1 = mais básico).</p>
-      </div>
 
       <Card className="p-4 flex gap-2 items-end">
         <div className="flex-1">

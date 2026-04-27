@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, User, Trash2, ChevronRight, Activity, Calendar, KeyRound, Copy, Camera, HeartPulse, Save, Repeat, FileText, LogIn, Settings, Search, Users as UsersIcon } from 'lucide-react';
+import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import { impersonate } from '@/lib/impersonation';
 import { StudentInstructorsManager } from '@/components/StudentInstructorsManager';
 import { useMyStudentIds } from '@/hooks/useStaff';
@@ -326,12 +327,10 @@ export default function StudentsPage() {
   };
 
   return (
+    <>
+    <ClinicPageHeader icon={UsersIcon} title="Alunos" subtitle="Cadastro e evolução" />
     <div className="p-3 sm:p-6 space-y-4 max-w-7xl mx-auto w-full overflow-x-hidden pb-24">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold">Alunos</h1>
-          <p className="text-sm text-muted-foreground">Cadastre alunos e acompanhe sua evolução.</p>
-        </div>
+      <div className="flex items-center justify-end gap-2 flex-wrap">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Cadastrar aluno</Button></DialogTrigger>
           <DialogContent>
