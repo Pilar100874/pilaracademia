@@ -6,6 +6,7 @@ import { useStudents, useEquipment, useSequences, usePrescriptions } from '@/hoo
 import { useRecurringSchedules, type RecurringSchedule } from '@/hooks/useRecurringSchedules';
 import { useClinicRooms } from '@/hooks/useClinicRooms';
 import { useClinicStaff } from '@/hooks/useStaff';
+import { useBookableSlots } from '@/hooks/useBookableSlots';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
