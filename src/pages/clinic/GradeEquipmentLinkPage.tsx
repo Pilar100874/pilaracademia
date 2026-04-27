@@ -92,29 +92,17 @@ export default function GradeEquipmentLinkPage() {
   const inMaintenance = equipment.filter((e) => e.status === 'maintenance');
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="icon">
-              <Link to="/clinica/equipamentos"><ArrowLeft className="h-4 w-4" /></Link>
-            </Button>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
-              <Link2 className="h-6 w-6 text-primary" />
-              Equipamentos por grade
-            </h1>
-          </div>
-          <p className="text-sm text-muted-foreground ml-12">
-            Defina quais equipamentos estão disponíveis em cada horário da grade.
-          </p>
+    <>
+      <ClinicPageHeader icon={Link2} title="Equipamentos por grade" subtitle="Equipamentos disponíveis em cada horário" />
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4">
+        <div className="flex items-center justify-end gap-3 flex-wrap">
+          <Button asChild variant="outline">
+            <Link to="/clinica/equipamentos">
+              <Dumbbell className="h-4 w-4 mr-1" />
+              Gerenciar equipamentos
+            </Link>
+          </Button>
         </div>
-        <Button asChild variant="outline">
-          <Link to="/clinica/equipamentos">
-            <Dumbbell className="h-4 w-4 mr-1" />
-            Gerenciar equipamentos
-          </Link>
-        </Button>
-      </div>
 
       {inMaintenance.length > 0 && (
         <Card className="p-3 border-amber-500/30 bg-amber-500/5 flex items-center gap-2 text-sm">
