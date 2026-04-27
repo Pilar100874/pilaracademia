@@ -436,6 +436,64 @@ export default function GradeMasterPage() {
               );
             })}
           </div>
+        ) : view === 'month' ? (
+          <Card className="p-3">
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((wd) => (
+                <div key={wd} className="text-[10px] uppercase font-bold text-muted-foreground text-center py-1">
+                  {wd}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {monthDays.map((d) => {
+                const slots = slotsForDay(d);
+                const isToday = isSameDay(d, new Date());
+                const inMonth = isSameMonth(d, day);
+                const visible = slots.slice(0, 3);
+                const extra = slots.length - visible.length;
+                return (
+                  <button
+                    key={d.toISOString()}
+                    onClick={() => { setDay(d); setView('day'); }}
+                    className={cn(
+                      'min-h-[90px] p-1.5 rounded border text-left flex flex-col gap-1 hover:border-primary transition',
+                      !inMonth && 'opacity-40 bg-muted/30',
+                      isToday && 'border-primary border-2',
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={cn('text-xs font-bold', isToday && 'text-primary')}>{format(d, 'd')}</span>
+                      {slots.length > 0 && (
+                        <span className="text-[9px] text-muted-foreground">{slots.length}</span>
+                      )}
+                    </div>
+                    <div className="space-y-0.5 flex-1">
+                      {visible.map((s) => {
+                        const hasGrade = !!s.appointment?.sequence_id;
+                        return (
+                          <div
+                            key={s.key}
+                            className={cn(
+                              'text-[9px] px-1 py-0.5 rounded truncate border',
+                              s.isVirtual && 'border-dashed',
+                              s.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
+                              hasGrade ? 'bg-primary/10 text-primary' : 'bg-muted',
+                            )}
+                          >
+                            {format(parseISO(s.scheduled_at), 'HH:mm')} {studentName(s.student_id).split(' ')[0]}
+                          </div>
+                        );
+                      })}
+                      {extra > 0 && (
+                        <div className="text-[9px] text-muted-foreground px-1">+{extra} mais</div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
         ) : (
           <Card className="p-4">
             <h2 className="font-semibold mb-3">
