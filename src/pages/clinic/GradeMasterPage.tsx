@@ -918,7 +918,7 @@ export default function GradeMasterPage() {
         </Card>
 
         {/* Paleta de professores arrastáveis */}
-        {instructors.length > 0 && (
+        {!focusMode && instructors.length > 0 && (
           <InstructorDragPalette
             instructors={instructors}
             colorOf={colorOf}
