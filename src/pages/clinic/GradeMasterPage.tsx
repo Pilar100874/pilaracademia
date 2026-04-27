@@ -1313,6 +1313,20 @@ export default function GradeMasterPage() {
         />
       )}
 
+      {/* Dialog: seletor de horários disponíveis (passo 1 do botão Nova aula) */}
+      {activeClinicId && (
+        <AvailableSlotsPickerDialog
+          open={availPickerOpen}
+          onClose={() => setAvailPickerOpen(false)}
+          clinicId={activeClinicId}
+          rooms={rooms as any}
+          instructors={instructors}
+          onPick={(p) => {
+            openNewClassAt(p.date, p.time, p.roomId);
+          }}
+        />
+      )}
+
       {/* Dialog: atribuição em massa (criar slots ou reatribuir prof/sala) */}
       <BulkAssignDialog
         open={bulkOpen !== null}
