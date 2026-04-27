@@ -165,9 +165,9 @@ export function SlotGradeDialog({
     }
   }, [open, slot?.scheduled_at, slot?.duration_minutes, autoOpenAdd]);
 
-  // Descobre sala/capacidade do horário a partir de appointments existentes ou bookable_slot.
+  // Descobre sala/capacidade/instrutor do horário a partir de appointments existentes ou bookable_slot.
   const slotRoomInfo = useMemo(() => {
-    if (!slot || !slotDate) return { roomId: null as string | null, capacity: null as number | null, roomName: null as string | null, bookableSlotId: null as string | null };
+    if (!slot || !slotDate) return { roomId: null as string | null, capacity: null as number | null, roomName: null as string | null, bookableSlotId: null as string | null, instructorId: null as string | null };
     // 1) appointment do mesmo dia/hora
     const appt = appointments.find((a) => {
       const d = parseISO(a.scheduled_at);
@@ -175,6 +175,7 @@ export function SlotGradeDialog({
     }) as any;
     let roomId: string | null = appt?.room_id ?? null;
     let capacity: number | null = null;
+    let instructorId: string | null = appt?.instructor_id ?? null;
 
     // 2) bookable_slot do mesmo horário
     const bs = (bookableSlots || []).find((b) => {
@@ -183,6 +184,7 @@ export function SlotGradeDialog({
       return d.toISOString().slice(0, 10) === dayISO && d.getHours() === hh && d.getMinutes() === mm;
     });
     if (!roomId && bs?.room_id) roomId = bs.room_id;
+    if (!instructorId && (bs as any)?.instructor_id) instructorId = (bs as any).instructor_id;
 
     // 3) capacidade efetiva = MAIOR entre slot e sala (sala manda no limite real)
     const room = roomId ? rooms.find((r) => r.id === roomId) : null;
@@ -191,7 +193,7 @@ export function SlotGradeDialog({
     if (roomCap != null && slotCap != null) capacity = Math.max(roomCap, slotCap);
     else capacity = roomCap ?? slotCap;
 
-    return { roomId, capacity, roomName: room?.name ?? null, bookableSlotId: (bs as any)?.id ?? null };
+    return { roomId, capacity, roomName: room?.name ?? null, bookableSlotId: (bs as any)?.id ?? null, instructorId };
   }, [slot, slotDate, dayISO, hh, mm, appointments, bookableSlots, rooms]);
 
   if (!slot || !slotDate) return null;
