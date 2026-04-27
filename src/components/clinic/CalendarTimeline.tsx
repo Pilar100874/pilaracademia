@@ -171,13 +171,16 @@ export function CalendarTimeline({
                     <button
                       key={r?.id ?? i}
                       type="button"
-                      onClick={() => onRoomColumnClick?.(d, r?.id ?? null)}
+                      onClick={(e) => {
+                        const allDays = e.shiftKey || e.metaKey || e.ctrlKey;
+                        onRoomColumnClick?.(d, r?.id ?? null, allDays);
+                      }}
                       className={cn(
                         'px-1 py-1 text-[9px] font-semibold truncate text-center flex items-center justify-center gap-1 transition',
                         i > 0 && 'border-l border-border/40',
                         onRoomColumnClick && 'hover:bg-primary/10 cursor-pointer',
                       )}
-                      title={onRoomColumnClick ? `Selecionar coluna · ${r?.name ?? ''} · ${format(d, 'dd/MM')}` : r?.name}
+                      title={onRoomColumnClick ? `Clique: coluna do dia · Shift+clique: a sala em toda a semana` : r?.name}
                     >
                       <span
                         className="h-1.5 w-1.5 rounded-sm shrink-0 border"
