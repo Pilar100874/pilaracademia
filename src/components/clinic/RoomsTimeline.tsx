@@ -40,6 +40,7 @@ interface Props {
   onCellClick: (d: Date, hour: number, roomId: string | null) => void;
   onSlotClick: (s: TimelineSlot) => void;
   onDelete?: (s: TimelineSlot) => void;
+  onPlanClick?: (s: TimelineSlot) => void;
   renderInstructorPicker?: (s: TimelineSlot) => React.ReactNode;
 
   // ===== Seleção múltipla =====
