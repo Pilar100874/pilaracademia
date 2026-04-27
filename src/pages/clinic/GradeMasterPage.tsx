@@ -40,6 +40,7 @@ import { BulkAssignDialog, type BulkAssignValues } from '@/components/clinic/Bul
 import { MonthMarqueeGrid } from '@/components/clinic/MonthMarqueeGrid';
 import { InstructorDragPalette, CLEAR_INSTRUCTOR, INSTRUCTOR_DRAG_TYPE } from '@/components/clinic/InstructorDragPalette';
 import { PageMotion } from '@/components/PageMotion';
+import { useBlockedPeriods, findActiveBlockAt } from '@/hooks/useBlockedPeriods';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; cls: string }> = {
   scheduled:   { label: 'Agendado',  cls: 'bg-secondary text-secondary-foreground' },
@@ -70,6 +71,10 @@ interface MergedSlot {
   /** Slot bloqueado (mantido na grade, sem prof, ninguém agenda) */
   isBlocked?: boolean;
   bookable_slot_id?: string;
+  /** Bloqueio padrão recorrente (almoço etc). Quando setado, o slot é virtual e não persistido. */
+  blockedPeriodId?: string;
+  blockedPeriodName?: string;
+  blockedPeriodColor?: string | null;
 }
 
 /** Expande recorrentes em um dia com opção de ignorar o fim do contrato (projeção). */
@@ -198,6 +203,7 @@ export default function GradeMasterPage() {
   const { create: createPresc } = usePrescriptions({ clinicId: activeClinicId });
   const { data: availability = [] } = useInstructorAvailability(activeClinicId);
   const { data: instructorColors = [] } = useInstructorColors(activeClinicId);
+  const { periods: blockedPeriods, exceptions: blockedExceptions, addException, removeException } = useBlockedPeriods(activeClinicId);
   const [availOpen, setAvailOpen] = useState(false);
 
   const colorOf = (instructorId: string | null | undefined) => colorForInstructor(instructorId, instructorColors);
@@ -298,6 +304,56 @@ export default function GradeMasterPage() {
         bookable_slot_id: b.id,
       });
     });
+
+    // ===== Bloqueios padrão recorrentes (ex: almoço) =====
+    // Para cada hora dentro de cada bloqueio ativo (não excepcionado naquele dia),
+    // injeta um slot virtual isBlocked. Se o bloqueio tem room_id, só naquela sala;
+    // caso contrário, em todas as salas (ou null).
+    const targetRoomIds: (string | null)[] = (rooms as any[]).length > 0
+      ? (rooms as any[]).map((r) => r.id as string)
+      : [null];
+    blockedPeriods
+      .filter((bp) => bp.active && bp.day_of_week === d.getDay())
+      .forEach((bp) => {
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const released = blockedExceptions.some((e) => e.blocked_period_id === bp.id && e.exception_date === dateStr);
+        if (released) return;
+        const [sh, sm] = bp.start_time.split(':').map(Number);
+        const [eh, em] = bp.end_time.split(':').map(Number);
+        const startMin = sh * 60 + sm;
+        const endMin = eh * 60 + em;
+        const roomIds = bp.room_id ? [bp.room_id] : targetRoomIds;
+        // Quebra em fatias de 1 hora alinhadas
+        for (let m = startMin; m < endMin; m += 60) {
+          const sliceEnd = Math.min(m + 60, endMin);
+          const dur = sliceEnd - m;
+          const sched = new Date(d);
+          sched.setHours(Math.floor(m / 60), m % 60, 0, 0);
+          roomIds.forEach((rid) => {
+            // Se a hora exata + sala já tem aula real/virtual ocupando, NÃO sobrepõe — apenas marca a hora vazia
+            const hasClass = merged.some((mm) => {
+              if (mm.isOpen || mm.isBlocked) return false;
+              const mt = parseISO(mm.scheduled_at);
+              return mt.getHours() === sched.getHours() && (mm.room_id ?? null) === (rid ?? null);
+            });
+            if (hasClass) return;
+            merged.push({
+              key: `bp-${bp.id}-${sched.toISOString()}-${rid ?? 'all'}`,
+              scheduled_at: sched.toISOString(),
+              duration_minutes: dur,
+              student_id: null,
+              equipment_id: null,
+              instructor_id: null,
+              room_id: rid,
+              notes: bp.name,
+              isBlocked: true,
+              blockedPeriodId: bp.id,
+              blockedPeriodName: bp.name,
+              blockedPeriodColor: bp.color,
+            });
+          });
+        }
+      });
 
     // filtros
     return merged
@@ -780,14 +836,25 @@ export default function GradeMasterPage() {
     appointment_id: s.appointment?.id,
     bookable_slot_id: s.bookable_slot_id,
     recurring_id: s.recurring_id,
+    blockedPeriodId: s.blockedPeriodId,
+    blockedPeriodName: s.blockedPeriodName,
+    blockedPeriodColor: s.blockedPeriodColor,
   });
 
   /**
    * "Excluir" um horário NUNCA remove de fato.
+   * - Bloqueio padrão (almoço etc) → cria/remove EXCEÇÃO daquela data.
    * - Aulas reais (class_appointments) → cancelamento.
-   * - Slots livres (bookable_slots)    → bloqueio (blocked=true).
+   * - Slots livres (bookable_slots) → bloqueio (blocked=true).
    */
   const handleTimelineDelete = (ts: TimelineSlot) => {
+    if (ts.blockedPeriodId) {
+      const dt = parseISO(ts.scheduled_at);
+      const dateStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+      // Como o slot só aparece quando NÃO há exceção, deletar = liberar pontualmente.
+      addException.mutate({ blocked_period_id: ts.blockedPeriodId, exception_date: dateStr });
+      return;
+    }
     if (ts.appointment_id) {
       remove.mutate(ts.appointment_id);
     } else if (ts.bookable_slot_id) {

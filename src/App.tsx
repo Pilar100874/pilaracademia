@@ -35,6 +35,7 @@ import AppointmentsPage from "@/pages/clinic/AppointmentsPage";
 import StudentEvolutionPage from "@/pages/clinic/StudentEvolutionPage";
 import ReportsPage from "@/pages/clinic/ReportsPage";
 import BookableSlotsPage from "@/pages/clinic/BookableSlotsPage";
+import BlockedPeriodsPage from "@/pages/clinic/BlockedPeriodsPage";
 import StationPage from "@/pages/StationPage";
 import MyPilatesPage from "@/pages/MyPilatesPage";
 import BookClassPage from "@/pages/BookClassPage";
@@ -115,6 +116,7 @@ function AppRoutes() {
         <Route path="equipe" element={<StaffPage />} />
         <Route path="permissoes" element={<PermissionsPage />} />
         <Route path="salas" element={<RoomsPage />} />
+        <Route path="bloqueios" element={<BlockedPeriodsPage />} />
         <Route path="evolucao" element={<StudentEvolutionPage />} />
         <Route path="equipamentos" element={<EquipmentPage />} />
         <Route path="equipamentos-salas" element={<EquipmentRoomsPage />} />

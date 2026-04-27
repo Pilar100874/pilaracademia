@@ -190,6 +190,89 @@ export type Database = {
           },
         ]
       }
+      clinic_blocked_period_exceptions: {
+        Row: {
+          blocked_period_id: string
+          clinic_id: string
+          created_at: string
+          created_by: string
+          exception_date: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_period_id: string
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          exception_date: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_period_id?: string
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          exception_date?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_blocked_period_exceptions_blocked_period_id_fkey"
+            columns: ["blocked_period_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_blocked_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_blocked_periods: {
+        Row: {
+          active: boolean
+          clinic_id: string
+          color: string | null
+          created_at: string
+          created_by: string
+          day_of_week: number
+          end_time: string
+          id: string
+          name: string
+          room_id: string | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          clinic_id: string
+          color?: string | null
+          created_at?: string
+          created_by: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          name: string
+          room_id?: string | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          clinic_id?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          name?: string
+          room_id?: string | null
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clinic_equipment: {
         Row: {
           active: boolean
