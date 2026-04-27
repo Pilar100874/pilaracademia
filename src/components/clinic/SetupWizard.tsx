@@ -542,6 +542,151 @@ function StepGrade({
   const [equipmentIds, setEquipmentIds] = useState<string[]>([]);
   const [equipmentSearch, setEquipmentSearch] = useState('');
   const [creating, setCreating] = useState(false);
+  // Período da grade
+  const [noEndDate, setNoEndDate] = useState(false);
+  const [endDate, setEndDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 28); // default 4 semanas
+    return d.toISOString().slice(0, 10);
+  });
+  // Lista de séries existentes
+  const [series, setSeries] = useState<Array<{
+    series_id: string;
+    count: number;
+    active_count: number;
+    first: string;
+    last: string;
+    active: boolean;
+  }>>([]);
+  const [loadingSeries, setLoadingSeries] = useState(false);
+
+  const loadSeries = async () => {
+    setLoadingSeries(true);
+    const { data } = await supabase
+      .from('bookable_slots' as any)
+      .select('series_id, scheduled_at, active')
+      .eq('clinic_id', clinicId)
+      .not('series_id', 'is', null)
+      .order('scheduled_at', { ascending: true });
+    const map = new Map<string, { count: number; active_count: number; first: string; last: string }>();
+    (data ?? []).forEach((r: any) => {
+      const k = r.series_id as string;
+      const cur = map.get(k) ?? { count: 0, active_count: 0, first: r.scheduled_at, last: r.scheduled_at };
+      cur.count += 1;
+      if (r.active) cur.active_count += 1;
+      if (r.scheduled_at < cur.first) cur.first = r.scheduled_at;
+      if (r.scheduled_at > cur.last) cur.last = r.scheduled_at;
+      map.set(k, cur);
+    });
+    setSeries(
+      Array.from(map.entries()).map(([series_id, v]) => ({
+        series_id, ...v, active: v.active_count > 0,
+      })).sort((a, b) => b.last.localeCompare(a.last))
+    );
+    setLoadingSeries(false);
+  };
+
+  useEffect(() => { loadSeries(); }, [clinicId, hook.data?.length]);
+
+  const suspendSeries = async (sid: string) => {
+    const todayISO = new Date().toISOString();
+    const { error } = await supabase
+      .from('bookable_slots' as any)
+      .update({ active: false })
+      .eq('series_id', sid)
+      .gte('scheduled_at', todayISO);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Grade suspensa (futuras desativadas)');
+    hook.refetch?.();
+    loadSeries();
+  };
+
+  const reactivateSeries = async (sid: string) => {
+    const todayISO = new Date().toISOString();
+    const { error } = await supabase
+      .from('bookable_slots' as any)
+      .update({ active: true })
+      .eq('series_id', sid)
+      .gte('scheduled_at', todayISO);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Grade reativada');
+    hook.refetch?.();
+    loadSeries();
+  };
+
+  const deleteSeries = async (sid: string) => {
+    if (!confirm('Excluir todos os horários FUTUROS desta série? Os passados serão mantidos.')) return;
+    const todayISO = new Date().toISOString();
+    const { error } = await supabase
+      .from('bookable_slots' as any)
+      .delete()
+      .eq('series_id', sid)
+      .gte('scheduled_at', todayISO);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Horários futuros excluídos');
+    hook.refetch?.();
+    loadSeries();
+  };
+
+  const extendSeries = async (sid: string) => {
+    const ans = prompt('Estender até qual data? (YYYY-MM-DD)');
+    if (!ans || !/^\d{4}-\d{2}-\d{2}$/.test(ans)) return;
+    // Pega o template a partir do último slot da série
+    const { data: lastSlots } = await supabase
+      .from('bookable_slots' as any)
+      .select('*')
+      .eq('series_id', sid)
+      .order('scheduled_at', { ascending: false })
+      .limit(50);
+    if (!lastSlots?.length || !user) return;
+    // Reconstroi o padrão dia/hora a partir dos slots existentes da série
+    const { data: allSlots } = await supabase
+      .from('bookable_slots' as any)
+      .select('scheduled_at, duration_minutes, room_id, equipment_id')
+      .eq('series_id', sid)
+      .order('scheduled_at', { ascending: true });
+    if (!allSlots?.length) return;
+    const lastDate = new Date((allSlots as any[])[allSlots.length - 1].scheduled_at);
+    const targetEnd = new Date(ans + 'T23:59:59');
+    if (targetEnd <= lastDate) { toast.error('Data deve ser depois do último slot atual'); return; }
+    // Identifica o "padrão semanal": (dow, hh:mm, duration, room, equipment)
+    const patterns = new Map<string, any>();
+    (allSlots as any[]).slice(-50).forEach((s) => {
+      const d = new Date(s.scheduled_at);
+      const k = `${d.getDay()}|${d.getHours()}:${d.getMinutes()}`;
+      if (!patterns.has(k)) patterns.set(k, { dow: d.getDay(), hh: d.getHours(), mm: d.getMinutes(), duration_minutes: s.duration_minutes, room_id: s.room_id, equipment_id: s.equipment_id });
+    });
+    const rows: any[] = [];
+    const cursor = new Date(lastDate); cursor.setDate(cursor.getDate() + 1); cursor.setHours(0,0,0,0);
+    while (cursor <= targetEnd) {
+      patterns.forEach((p) => {
+        if (p.dow === cursor.getDay()) {
+          const sched = new Date(cursor);
+          sched.setHours(p.hh, p.mm, 0, 0);
+          rows.push({
+            clinic_id: clinicId,
+            scheduled_at: sched.toISOString(),
+            duration_minutes: p.duration_minutes,
+            room_id: p.room_id,
+            equipment_id: p.equipment_id,
+            instructor_id: null,
+            capacity: 1,
+            notes: null,
+            created_by: user.id,
+            series_id: sid,
+            active: true,
+          });
+        }
+      });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    if (rows.length === 0) { toast.error('Nada a estender'); return; }
+    const { error } = await supabase.from('bookable_slots' as any).insert(rows);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${rows.length} horários adicionados`);
+    hook.refetch?.();
+    loadSeries();
+  };
 
   const toggleEquipment = (id: string) =>
     setEquipmentIds((cur) => cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]);
