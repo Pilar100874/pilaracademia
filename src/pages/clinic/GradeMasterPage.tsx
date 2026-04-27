@@ -398,20 +398,25 @@ export default function GradeMasterPage() {
     exitSelection();
   };
 
-  const createSelectedEmpty = async () => {
+  // ===== Atribuição em massa (criar / reatribuir) =====
+  const [bulkOpen, setBulkOpen] = useState<null | 'create' | 'reassign'>(null);
+
+  const createSelectedEmpty = async (values: BulkAssignValues) => {
     if (selectedEmptyKeys.size === 0 || !activeClinicId || !user) return;
     let count = 0;
     for (const k of selectedEmptyKeys) {
-      const { date, hour, roomId } = parseEmptyKey(k);
+      const { date, hour, roomId: cellRoomId } = parseEmptyKey(k);
       const sched = new Date(`${date}T${String(hour).padStart(2, '0')}:00:00`);
       try {
         await createBookable.mutateAsync({
           clinic_id: activeClinicId,
           scheduled_at: sched.toISOString(),
-          duration_minutes: 50,
+          duration_minutes: values.durationMinutes,
           equipment_id: null,
-          instructor_id: null,
-          room_id: roomId,
+          instructor_id: values.instructorId,
+          // Se o usuário escolheu uma sala explicitamente, ela vence;
+          // caso contrário usa a coluna onde clicou.
+          room_id: values.roomId ?? cellRoomId,
           capacity: 1,
           notes: null,
           created_by: user.id,
@@ -422,6 +427,40 @@ export default function GradeMasterPage() {
     toast.success(`${count} horário(s) criado(s)`);
     exitSelection();
   };
+
+  const reassignSelected = async (values: BulkAssignValues) => {
+    if (selectedSlotKeys.size === 0) return;
+    const tsList = daySlots.map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
+    let updated = 0;
+    for (const t of tsList) {
+      const patch: any = {};
+      // só inclui se o usuário escolheu (não-null) — para evitar limpar sem querer
+      if (values.instructorId !== null) patch.instructor_id = values.instructorId;
+      if (values.roomId !== null) patch.room_id = values.roomId;
+      if (Object.keys(patch).length === 0) continue;
+      try {
+        if (t.appointment_id) {
+          // class_appointments não tem room_id direto — só instructor_id
+          const apptPatch: any = {};
+          if (patch.instructor_id !== undefined) apptPatch.instructor_id = patch.instructor_id;
+          if (Object.keys(apptPatch).length > 0) {
+            await supabase.from('class_appointments').update(apptPatch).eq('id', t.appointment_id);
+          }
+        } else if (t.bookable_slot_id) {
+          await supabase.from('bookable_slots' as any).update(patch).eq('id', t.bookable_slot_id);
+        }
+        updated++;
+      } catch (e) { /* noop */ }
+    }
+    toast.success(`${updated} horário(s) atualizado(s)`);
+    // refetch
+    if (activeClinicId) {
+      // invalida caches relevantes via refetch implícito do react-query nas próximas queries
+      window.dispatchEvent(new Event('focus'));
+    }
+    exitSelection();
+  };
+
 
 
   const openSlotDialog = (slot: MergedSlot) => {
