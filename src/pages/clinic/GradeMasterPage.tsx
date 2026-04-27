@@ -748,6 +748,17 @@ export default function GradeMasterPage() {
           )}
         </Card>
 
+        {/* Paleta de professores arrastáveis */}
+        {instructors.length > 0 && (
+          <InstructorDragPalette
+            instructors={instructors}
+            colorOf={colorOf}
+            draggingId={draggingInstructorId}
+            onDragStart={(id) => setDraggingInstructorId(id)}
+            onDragEnd={() => setDraggingInstructorId(null)}
+          />
+        )}
+
         {/* CONTEÚDO */}
         {view === 'week' ? (
           <div className="space-y-3">
@@ -766,8 +777,12 @@ export default function GradeMasterPage() {
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
               renderInstructorPicker={renderTimelineInstructorPicker}
+              dragActive={draggingInstructorId !== null}
+              onDropInstructorOnCell={(id, d, h) => dropInstructorOnCell(id, d, h, null)}
+              onDropInstructorOnSlot={dropInstructorOnSlot}
             />
           </div>
+
         ) : view === 'month' ? (
           <div className="space-y-3">
             {rooms.length > 0 && <RoomsLegend rooms={rooms as any[]} roomColorOf={roomColorOf} />}
