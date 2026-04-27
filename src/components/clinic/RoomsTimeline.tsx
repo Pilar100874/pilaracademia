@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Plus, X, AlertTriangle, Repeat, Sparkles, RefreshCw, DoorOpen, Users, Check, Lock, Unlock, Trash2, Clock, MapPin, ExternalLink, Wand2 } from 'lucide-react';
+import { Plus, X, AlertTriangle, Repeat, Sparkles, RefreshCw, DoorOpen, Users, Check, Lock, Unlock, Trash2, Clock, MapPin, ExternalLink, Wand2, UserPlus } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { TimelineSlot } from './CalendarTimeline';
 import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
@@ -43,6 +43,7 @@ interface Props {
   /** Exclusão definitiva de um horário livre (bookable_slot) — remove da grade. */
   onPermanentDelete?: (s: TimelineSlot) => void;
   onPlanClick?: (s: TimelineSlot) => void;
+  onAddStudent?: (s: TimelineSlot) => void;
   renderInstructorPicker?: (s: TimelineSlot) => React.ReactNode;
 
   // ===== Seleção múltipla =====
@@ -73,7 +74,7 @@ interface Props {
 export function RoomsTimeline({
   day, rooms, startHour, endHour, hourHeight = 64,
   slots, studentName, instructorName, colorOf,
-  onCellClick, onSlotClick, onDelete, onPermanentDelete, onPlanClick, renderInstructorPicker,
+  onCellClick, onSlotClick, onDelete, onPermanentDelete, onPlanClick, onAddStudent, renderInstructorPicker,
   selectionMode = false,
   selectedSlotKeys,
   selectedEmptyKeys,
@@ -480,6 +481,15 @@ export function RoomsTimeline({
                             className="px-2 py-2 rounded-md border border-border bg-background hover:bg-muted inline-flex items-center justify-center gap-1.5 text-[11.5px] font-medium transition-colors"
                           >
                             <ExternalLink className="h-3.5 w-3.5" />Abrir
+                          </button>
+                        )}
+                        {!s.isBlocked && onAddStudent && (
+                          <button
+                            onClick={() => onAddStudent(s)}
+                            className="px-2 py-2 rounded-md border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/5 inline-flex items-center justify-center gap-1.5 text-[11.5px] font-medium transition-colors"
+                            title="Adicionar aluno a esta aula"
+                          >
+                            <UserPlus className="h-3.5 w-3.5" />Adicionar
                           </button>
                         )}
                         {!s.isBlocked && s.appointment_id && onPlanClick && (

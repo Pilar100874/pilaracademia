@@ -44,6 +44,8 @@ interface Props {
   userId: string;
   /** Aluno destacado (clicado pelo usuário) — entra como pré-selecionado */
   focusedStudentId?: string | null;
+  /** Quando true, abre o popover de adicionar aluno automaticamente. */
+  autoOpenAdd?: boolean;
 
   appointments: Appointment[];
   recurring: RecurringSchedule[];
@@ -76,6 +78,7 @@ export function SlotGradeDialog({
   clinicId,
   userId,
   focusedStudentId,
+  autoOpenAdd,
   appointments,
   recurring,
   students,
@@ -151,8 +154,11 @@ export function SlotGradeDialog({
   const [addOpen, setAddOpen] = useState(false);
 
   useEffect(() => {
-    if (open) setRows(rowsInit);
-  }, [open, rowsInit]);
+    if (open) {
+      setRows(rowsInit);
+      if (autoOpenAdd) setAddOpen(true);
+    }
+  }, [open, rowsInit, autoOpenAdd]);
 
   // Descobre sala/capacidade do horário a partir de appointments existentes ou bookable_slot.
   const slotRoomInfo = useMemo(() => {

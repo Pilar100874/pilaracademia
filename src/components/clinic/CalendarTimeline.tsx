@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { format, parseISO, isSameDay, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Plus, X, AlertTriangle, Repeat, Sparkles, Users, RefreshCw, Check, Lock, Unlock, Trash2, Clock, MapPin, ExternalLink, Wand2, UserCog } from 'lucide-react';
+import { Plus, X, AlertTriangle, Repeat, Sparkles, Users, RefreshCw, Check, Lock, Unlock, Trash2, Clock, MapPin, ExternalLink, Wand2, UserCog, UserPlus } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
 import { useMarqueeSelection, type MarqueeRect } from '@/hooks/useMarqueeSelection';
@@ -59,6 +59,7 @@ interface Props {
   /** Exclusão definitiva de um horário livre (bookable_slot) — remove da grade. */
   onPermanentDelete?: (s: TimelineSlot) => void;
   onPlanClick?: (s: TimelineSlot) => void;
+  onAddStudent?: (s: TimelineSlot) => void;
   renderInstructorPicker?: (s: TimelineSlot) => React.ReactNode;
   // Drag & drop de professor
   dragActive?: boolean;
@@ -81,7 +82,7 @@ interface Props {
 export function CalendarTimeline({
   days, startHour, endHour, hourHeight = 56,
   slotsForDay, studentName, instructorName, roomName, roomColorOf, colorOf,
-  onCellClick, onSlotClick, onDelete, onPermanentDelete, onPlanClick, renderInstructorPicker,
+  onCellClick, onSlotClick, onDelete, onPermanentDelete, onPlanClick, onAddStudent, renderInstructorPicker,
   dragActive = false, onDropInstructorOnCell, onDropInstructorOnSlot,
   selectedSlotKeys, selectedEmptyKeys,
   onReplaceSelection, onAddSelection, onMarqueeEnd,
@@ -586,6 +587,16 @@ export function CalendarTimeline({
                               className="px-2 py-2 rounded-md border border-border bg-background hover:bg-muted inline-flex items-center justify-center gap-1.5 text-[11.5px] font-medium transition-colors"
                             >
                               <ExternalLink className="h-3.5 w-3.5" />Abrir
+                            </button>
+                          )}
+
+                          {!s.blockedPeriodId && !s.isBlocked && onAddStudent && (
+                            <button
+                              onClick={() => onAddStudent(s)}
+                              className="px-2 py-2 rounded-md border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/5 inline-flex items-center justify-center gap-1.5 text-[11.5px] font-medium transition-colors"
+                              title="Adicionar aluno a esta aula"
+                            >
+                              <UserPlus className="h-3.5 w-3.5" />Adicionar
                             </button>
                           )}
 

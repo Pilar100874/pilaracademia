@@ -457,6 +457,7 @@ export default function GradeMasterPage() {
   const [slotDialog, setSlotDialog] = useState<{
     slot: { scheduled_at: string; duration_minutes: number };
     focusedStudentId: string;
+    autoOpenAdd?: boolean;
   } | null>(null);
 
   // ===== Nova aula (avulsa ou fixa) =====
@@ -869,6 +870,17 @@ export default function GradeMasterPage() {
     if (original) openSlotDialog(original);
   };
 
+  const handleTimelineAddStudent = (ts: TimelineSlot) => {
+    const all = view === 'day' ? daySlots : weekDays.flatMap(slotsForDay);
+    const original = all.find((s) => s.key === ts.key);
+    if (!original) return;
+    setSlotDialog({
+      slot: { scheduled_at: original.scheduled_at, duration_minutes: original.duration_minutes },
+      focusedStudentId: original.student_id ?? '',
+      autoOpenAdd: true,
+    });
+  };
+
   const handleCellClick = (d: Date, hour: number) => {
     tryOpenNewClassAt(d, `${String(hour).padStart(2, '0')}:00`);
   };
@@ -1044,6 +1056,7 @@ export default function GradeMasterPage() {
               onDelete={handleTimelineDelete}
               onPermanentDelete={handleTimelinePermanentDelete}
               onPlanClick={handlePlanClick}
+              onAddStudent={handleTimelineAddStudent}
               renderInstructorPicker={renderTimelineInstructorPicker}
               dragActive={draggingInstructorId !== null}
               onDropInstructorOnCell={(id, d, h, roomId) => dropInstructorOnCell(id, d, h, roomId ?? null)}
@@ -1196,6 +1209,7 @@ export default function GradeMasterPage() {
               onDelete={handleTimelineDelete}
               onPermanentDelete={handleTimelinePermanentDelete}
               onPlanClick={handlePlanClick}
+              onAddStudent={handleTimelineAddStudent}
               renderInstructorPicker={renderTimelineInstructorPicker}
               selectionMode={selectionMode}
               selectedSlotKeys={selectedSlotKeys}
@@ -1288,6 +1302,7 @@ export default function GradeMasterPage() {
           onClose={() => setSlotDialog(null)}
           slot={slotDialog.slot}
           focusedStudentId={slotDialog.focusedStudentId}
+          autoOpenAdd={slotDialog.autoOpenAdd}
           clinicId={activeClinicId}
           userId={user.id}
           appointments={appointments as any}
