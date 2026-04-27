@@ -218,9 +218,17 @@ export function RoomsTimeline({
                 return (
                   <button
                     key={h}
-                    onClick={() => {
-                      if (selectionMode) {
-                        onToggleEmpty?.(emptyKey);
+                    data-cell-key={emptyKey}
+                    data-no-marquee="true"
+                    onClick={(e) => {
+                      if (marquee.didDrag()) return;
+                      const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+                      if (selectionMode || additive) {
+                        if (additive && onAddSelection) {
+                          onAddSelection(new Set(), new Set([emptyKey]));
+                        } else {
+                          onToggleEmpty?.(emptyKey);
+                        }
                       } else {
                         onCellClick(day, h, r.id);
                       }
