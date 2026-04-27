@@ -44,6 +44,8 @@ interface Props {
   userId: string;
   /** Aluno destacado (clicado pelo usuário) — entra como pré-selecionado */
   focusedStudentId?: string | null;
+  /** Quando true, abre o popover de adicionar aluno automaticamente. */
+  autoOpenAdd?: boolean;
 
   appointments: Appointment[];
   recurring: RecurringSchedule[];
