@@ -1188,6 +1188,7 @@ export default function GradeMasterPage() {
           return undefined;
         })()}
         onConfirm={async (values) => {
+          console.log('[GradeMaster] BulkAssignDialog confirm', { values, empty: selectedEmptyKeys.size, slots: selectedSlotKeys.size });
           // Sempre executa ambas as operações se houver seleção mista
           if (selectedEmptyKeys.size > 0) await createSelectedEmpty(values);
           if (selectedSlotKeys.size > 0) await reassignSelected(values);
