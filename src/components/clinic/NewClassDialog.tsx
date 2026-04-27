@@ -96,14 +96,14 @@ function expandRule(rule: WeekRule, from: Date, to: Date): Date[] {
 }
 
 export function NewClassDialog({
-  open, onClose, clinicId, userId, initialDate, initialTime, students, equipment, rooms = [], instructors = [], onSaved,
+  open, onClose, clinicId, userId, initialDate, initialTime, initialRoomId, students, equipment, rooms = [], instructors = [], onSaved,
 }: Props) {
   const [mode, setMode] = useState<'avulsa' | 'fixa'>('avulsa');
   const [studentId, setStudentId] = useState('');
   const [time, setTime] = useState(initialTime ?? '08:00');
   const [duration, setDuration] = useState(50);
   const [equipmentId, setEquipmentId] = useState<string>('');
-  const [roomId, setRoomId] = useState<string>('');
+  const [roomId, setRoomId] = useState<string>(initialRoomId ?? '');
   const [instructorId, setInstructorId] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
