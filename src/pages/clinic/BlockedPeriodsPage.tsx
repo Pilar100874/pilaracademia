@@ -27,10 +27,9 @@ export default function BlockedPeriodsPage() {
 
   const handleSave = async (form: BlockedFormState) => {
     if (!activeClinicId) return;
-    const payload = {
+    const base = {
       clinic_id: activeClinicId,
       name: form.name.trim() || 'Bloqueio',
-      day_of_week: form.day_of_week,
       start_time: form.start_time + ':00',
       end_time: form.end_time + ':00',
       room_id: form.room_id || null,
@@ -38,9 +37,12 @@ export default function BlockedPeriodsPage() {
       active: form.active,
     };
     if (editing) {
-      await update.mutateAsync({ id: editing.id, ...payload });
+      await update.mutateAsync({ id: editing.id, ...base, day_of_week: form.days_of_week[0] ?? editing.day_of_week });
     } else {
-      await create.mutateAsync(payload as any);
+      const days = form.days_of_week.length > 0 ? form.days_of_week : [1];
+      for (const dow of days) {
+        await create.mutateAsync({ ...base, day_of_week: dow } as any);
+      }
     }
     setEditing(null);
     setOpen(false);
@@ -171,7 +173,7 @@ export default function BlockedPeriodsPage() {
 
 interface BlockedFormState {
   name: string;
-  day_of_week: number;
+  days_of_week: number[];
   start_time: string;
   end_time: string;
   room_id: string;
@@ -192,7 +194,7 @@ function BlockedForm({
 }) {
   const [form, setForm] = useState<BlockedFormState>({
     name: initial?.name ?? '',
-    day_of_week: initial?.day_of_week ?? 1,
+    days_of_week: initial ? [initial.day_of_week] : [1],
     start_time: initial?.start_time?.slice(0, 5) ?? '12:00',
     end_time: initial?.end_time?.slice(0, 5) ?? '13:00',
     room_id: initial?.room_id ?? '',
@@ -215,30 +217,52 @@ function BlockedForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label className="text-xs">Dia da semana</Label>
-          <Select value={String(form.day_of_week)} onValueChange={(v) => set('day_of_week', Number(v))}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {DOW_LABELS.map((l, i) => (
-                <SelectItem key={i} value={String(i)}>{l}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div>
+        <Label className="text-xs">
+          {initial ? 'Dia da semana' : 'Dias da semana'}
+          {!initial && <span className="text-muted-foreground ml-1">(selecione um ou mais)</span>}
+        </Label>
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
+          {DOW_LABELS.map((l, i) => {
+            const selected = form.days_of_week.includes(i);
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  if (initial) {
+                    set('days_of_week', [i]);
+                  } else {
+                    set(
+                      'days_of_week',
+                      selected ? form.days_of_week.filter((d) => d !== i) : [...form.days_of_week, i].sort(),
+                    );
+                  }
+                }}
+                className={`h-9 min-w-[44px] px-2 rounded-md border text-xs font-medium transition ${
+                  selected
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'bg-card hover:border-foreground/40 text-foreground border-border'
+                }`}
+              >
+                {l}
+              </button>
+            );
+          })}
         </div>
-        <div>
-          <Label className="text-xs">Sala</Label>
-          <Select value={form.room_id || 'all'} onValueChange={(v) => set('room_id', v === 'all' ? '' : v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as salas</SelectItem>
-              {rooms.map((r) => (
-                <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      </div>
+
+      <div>
+        <Label className="text-xs">Sala</Label>
+        <Select value={form.room_id || 'all'} onValueChange={(v) => set('room_id', v === 'all' ? '' : v)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as salas</SelectItem>
+            {rooms.map((r) => (
+              <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -267,7 +291,7 @@ function BlockedForm({
 
       <div className="flex gap-2 pt-2 border-t">
         <Button variant="outline" className="flex-1" onClick={onCancel}>Cancelar</Button>
-        <Button className="flex-1" onClick={() => onSave(form)} disabled={form.start_time >= form.end_time}>
+        <Button className="flex-1" onClick={() => onSave(form)} disabled={form.start_time >= form.end_time || form.days_of_week.length === 0}>
           Salvar
         </Button>
       </div>
