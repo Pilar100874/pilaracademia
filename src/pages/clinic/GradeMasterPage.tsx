@@ -393,6 +393,57 @@ export default function GradeMasterPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, daySlots, weekDays, monthDays, day, appointments, recurring, bookableSlots, simulateRenewal, horizonDate, filterInstructor, filterRoom]);
 
+  // ===== Adapter para a timeline visual =====
+  const toTimelineSlot = (s: MergedSlot): TimelineSlot => ({
+    key: s.key,
+    scheduled_at: s.scheduled_at,
+    duration_minutes: s.duration_minutes,
+    student_id: s.student_id,
+    instructor_id: s.instructor_id,
+    room_id: s.room_id,
+    isOpen: s.isOpen,
+    isVirtual: s.isVirtual,
+    isProjected: s.isProjected,
+    hasGrade: !!s.appointment?.sequence_id,
+    uncovered: isUncovered(s),
+    appointment_id: s.appointment?.id,
+    bookable_slot_id: s.bookable_slot_id,
+    recurring_id: s.recurring_id,
+  });
+
+  const handleTimelineDelete = (ts: TimelineSlot) => {
+    if (ts.appointment_id) remove.mutate(ts.appointment_id);
+    else if (ts.bookable_slot_id) removeBookable.mutate(ts.bookable_slot_id);
+  };
+
+  const handleTimelineSlotClick = (ts: TimelineSlot) => {
+    // Reconstrói minimal MergedSlot — encontra o original
+    const all = view === 'day' ? daySlots : weekDays.flatMap(slotsForDay);
+    const original = all.find((s) => s.key === ts.key);
+    if (original) openSlotDialog(original);
+  };
+
+  const handleCellClick = (d: Date, hour: number) => {
+    openNewClassAt(d, `${String(hour).padStart(2, '0')}:00`);
+  };
+
+  const renderTimelineInstructorPicker = (ts: TimelineSlot) => (
+    <InstructorPicker
+      appointmentId={ts.appointment_id}
+      bookableSlotId={ts.bookable_slot_id}
+      recurringId={!ts.appointment_id && ts.recurring_id ? ts.recurring_id : undefined}
+      currentInstructorId={ts.instructor_id}
+      instructors={instructors}
+      colorOf={colorOf}
+      clinicId={activeClinicId!}
+    >
+      <button className="px-2 py-1.5 rounded border text-[11px] hover:bg-muted inline-flex items-center gap-1">
+        <span className="h-2.5 w-2.5 rounded-full" style={{ background: ts.instructor_id ? colorOf(ts.instructor_id) : 'hsl(var(--muted-foreground))' }} />
+        Prof.
+      </button>
+    </InstructorPicker>
+  );
+
   return (
     <PageMotion className="min-h-screen">
       {/* Cabeçalho compacto */}
