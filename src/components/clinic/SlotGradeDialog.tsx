@@ -10,12 +10,16 @@ import {
   X,
   Save,
   Users as UsersIcon,
+  UserPlus,
+  DoorOpen,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -27,6 +31,9 @@ export interface SlotIdentity {
   scheduled_at: string;
   duration_minutes: number;
 }
+
+interface Room { id: string; name: string; capacity?: number | null }
+interface BookableSlotLite { id: string; scheduled_at: string; duration_minutes: number; room_id?: string | null; capacity?: number | null; active?: boolean }
 
 interface Props {
   open: boolean;
@@ -43,6 +50,10 @@ interface Props {
   students: Student[];
   equipment: Equipment[];
   sequences: ExerciseSequence[];
+  /** Salas da clínica para inferir capacidade do slot. */
+  rooms?: Room[];
+  /** Slots da grade para descobrir capacidade quando não há appointment ainda. */
+  bookableSlots?: BookableSlotLite[];
 
   onSaved: () => void;
 }
@@ -70,6 +81,8 @@ export function SlotGradeDialog({
   students,
   equipment,
   sequences,
+  rooms = [],
+  bookableSlots = [],
   onSaved,
 }: Props) {
   // Reúne os alunos do mesmo HH:mm do slot
@@ -135,10 +148,38 @@ export function SlotGradeDialog({
   const [rows, setRows] = useState<RowState[]>([]);
   const [saving, setSaving] = useState(false);
   const [showPropagate, setShowPropagate] = useState<{ row: RowState } | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   useEffect(() => {
     if (open) setRows(rowsInit);
   }, [open, rowsInit]);
+
+  // Descobre sala/capacidade do horário a partir de appointments existentes ou bookable_slot.
+  const slotRoomInfo = useMemo(() => {
+    if (!slot || !slotDate) return { roomId: null as string | null, capacity: null as number | null, roomName: null as string | null };
+    // 1) appointment do mesmo dia/hora
+    const appt = appointments.find((a) => {
+      const d = parseISO(a.scheduled_at);
+      return d.toISOString().slice(0, 10) === dayISO && d.getHours() === hh && d.getMinutes() === mm;
+    }) as any;
+    let roomId: string | null = appt?.room_id ?? null;
+    let capacity: number | null = null;
+
+    // 2) bookable_slot do mesmo horário
+    const bs = (bookableSlots || []).find((b) => {
+      if (b.active === false) return false;
+      const d = parseISO(b.scheduled_at);
+      return d.toISOString().slice(0, 10) === dayISO && d.getHours() === hh && d.getMinutes() === mm;
+    });
+    if (!roomId && bs?.room_id) roomId = bs.room_id;
+    if (bs?.capacity != null) capacity = bs.capacity;
+
+    // 3) capacidade da sala
+    const room = roomId ? rooms.find((r) => r.id === roomId) : null;
+    if (capacity == null && room?.capacity != null) capacity = room.capacity;
+
+    return { roomId, capacity, roomName: room?.name ?? null };
+  }, [slot, slotDate, dayISO, hh, mm, appointments, bookableSlots, rooms]);
 
   if (!slot || !slotDate) return null;
 
@@ -164,6 +205,49 @@ export function SlotGradeDialog({
 
   const studentName = (id: string) => students.find((s) => s.id === id)?.full_name || '—';
 
+  // ===== Adicionar aluno =====
+  const isFull = slotRoomInfo.capacity != null && rows.length >= slotRoomInfo.capacity;
+  const presentIds = new Set(rows.map((r) => r.student_id));
+  const availableStudents = students
+    .filter((s) => (s as any).active !== false)
+    .filter((s) => !presentIds.has(s.id))
+    .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+
+  const addStudent = (studentId: string) => {
+    if (isFull) {
+      toast.error(`Sala lotada (${rows.length}/${slotRoomInfo.capacity}). Não é possível adicionar mais alunos.`);
+      return;
+    }
+    if (presentIds.has(studentId)) {
+      toast.info('Aluno já está nesta aula.');
+      return;
+    }
+    setRows((rs) => [
+      ...rs,
+      {
+        student_id: studentId,
+        appointment_id: null,
+        recurring_id: null,
+        equipment_id: '',
+        sequence_id: '',
+        lock_equipment: false,
+      },
+    ]);
+    setAddOpen(false);
+    toast.success(`${studentName(studentId)} adicionado(a). Salve para confirmar.`);
+  };
+
+  const removeRow = (idx: number) => {
+    const r = rows[idx];
+    // Se é appointment já gravado, não remove aqui (precisa cancelamento próprio).
+    if (r.appointment_id) {
+      toast.info('Para remover um aluno já agendado, cancele a aula pelo card do horário.');
+      return;
+    }
+    setRows((rs) => rs.filter((_, i) => i !== idx));
+  };
+
+
   const materializeRow = async (r: RowState): Promise<string | null> => {
     if (r.appointment_id) return r.appointment_id;
     const { data, error } = await supabase
@@ -177,7 +261,8 @@ export function SlotGradeDialog({
         duration_minutes: slot.duration_minutes,
         created_by: userId,
         recurring_schedule_id: r.recurring_id,
-      })
+        room_id: slotRoomInfo.roomId ?? null,
+      } as any)
       .select('id')
       .single();
     if (error) {
@@ -190,6 +275,12 @@ export function SlotGradeDialog({
   const saveAll = async () => {
     setSaving(true);
     try {
+      // Valida capacidade da sala
+      if (slotRoomInfo.capacity != null && rows.length > slotRoomInfo.capacity) {
+        toast.error(`Sala lotada: ${rows.length} alunos para capacidade de ${slotRoomInfo.capacity}. Remova alguém antes de salvar.`);
+        setSaving(false);
+        return;
+      }
       // valida conflito de bloqueio: dois alunos com lock no mesmo equipamento → bloqueia
       const lockMap = new Map<string, string>();
       for (const r of rows) {
@@ -208,7 +299,7 @@ export function SlotGradeDialog({
       // salva cada linha
       let lastSavedRow: RowState | null = null;
       for (const r of rows) {
-        if (!r.equipment_id && !r.sequence_id) continue;
+        // Materializa o appointment se ainda não existe (mesmo sem equip/seq, pra reservar a vaga)
         const apptId = await materializeRow(r);
         if (!apptId) continue;
 
@@ -281,13 +372,67 @@ export function SlotGradeDialog({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="text-xs text-muted-foreground -mt-2">
-            Defina equipamento e sequência por aluno. Marque <strong>fixo</strong> para reservar o equipamento neste horário e bloquear para os demais.
+          <div className="flex items-center justify-between gap-2 -mt-1 flex-wrap">
+            <div className="text-xs text-muted-foreground">
+              Defina equipamento e sequência por aluno. Marque <strong>fixo</strong> para reservar o equipamento neste horário.
+            </div>
+            <div className="flex items-center gap-2">
+              {slotRoomInfo.roomName && (
+                <Badge variant="outline" className="gap-1 text-[11px]">
+                  <DoorOpen className="h-3 w-3" />
+                  {slotRoomInfo.roomName}
+                </Badge>
+              )}
+              <Badge
+                variant={isFull ? 'destructive' : 'secondary'}
+                className="gap-1 text-[11px] tabular-nums"
+                title={slotRoomInfo.capacity != null ? 'Alunos / capacidade da sala' : 'Sem capacidade definida'}
+              >
+                <UsersIcon className="h-3 w-3" />
+                {rows.length}
+                {slotRoomInfo.capacity != null ? ` / ${slotRoomInfo.capacity}` : ''}
+              </Badge>
+              <Popover open={addOpen} onOpenChange={setAddOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isFull || availableStudents.length === 0}
+                    title={isFull ? 'Sala lotada' : 'Adicionar aluno a esta aula'}
+                  >
+                    <UserPlus className="h-4 w-4 mr-1" />
+                    Adicionar aluno
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-0" align="end">
+                  <Command>
+                    <CommandInput placeholder="Buscar aluno…" />
+                    <CommandList>
+                      <CommandEmpty>Nenhum aluno disponível.</CommandEmpty>
+                      <CommandGroup>
+                        {availableStudents.map((s) => (
+                          <CommandItem key={s.id} value={s.full_name || s.id} onSelect={() => addStudent(s.id)}>
+                            {s.full_name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
+
+          {isFull && (
+            <div className="text-[11px] text-destructive flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              Sala lotada — para adicionar mais alunos aumente a capacidade da sala.
+            </div>
+          )}
 
           {rows.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              Nenhum aluno neste horário.
+              Nenhum aluno neste horário. Use <strong>Adicionar aluno</strong> acima.
             </p>
           ) : (
             <div className="space-y-3">
@@ -317,14 +462,28 @@ export function SlotGradeDialog({
                           </Badge>
                         )}
                       </div>
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                        <Checkbox
-                          checked={r.lock_equipment}
-                          onCheckedChange={(v) => updateRow(idx, { lock_equipment: !!v })}
-                        />
-                        <Lock className="h-3 w-3" />
-                        Equipamento fixo
-                      </label>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                          <Checkbox
+                            checked={r.lock_equipment}
+                            onCheckedChange={(v) => updateRow(idx, { lock_equipment: !!v })}
+                          />
+                          <Lock className="h-3 w-3" />
+                          Equipamento fixo
+                        </label>
+                        {!r.appointment_id && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-muted-foreground hover:text-destructive"
+                            onClick={() => removeRow(idx)}
+                            title="Remover aluno desta aula"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">

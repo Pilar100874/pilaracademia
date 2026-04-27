@@ -1281,6 +1281,8 @@ export default function GradeMasterPage() {
           students={students}
           equipment={equipment}
           sequences={sequences}
+          rooms={rooms as any}
+          bookableSlots={bookableSlots as any}
           onSaved={() => { /* react-query refetch via hooks */ }}
         />
       )}
