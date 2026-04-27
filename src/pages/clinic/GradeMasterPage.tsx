@@ -1242,7 +1242,7 @@ export default function GradeMasterPage() {
         <Card className="p-3 text-xs text-muted-foreground space-y-2">
           <div className="flex flex-wrap gap-4">
             <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border bg-card" />Aula real</span>
-            <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border border-dashed" />Horário fixo (virtual)</span>
+            <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border-2 border-l-4 border-l-primary" />Horário fixo (virtual)</span>
             <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border border-dashed border-amber-500 bg-amber-500/10" />Projeção pós-contrato</span>
             <span className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3 text-amber-600" />Sem grade definida</span>
             <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-primary" />Grade pronta</span>
