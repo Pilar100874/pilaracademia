@@ -7,14 +7,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
 import { useMarqueeSelection, type MarqueeRect } from '@/hooks/useMarqueeSelection';
 
-/** Empty-cell key for week view (compatible with day format): `${ISODate}|${hour}|none`. */
+/** Empty-cell key for week view. Compatible with RoomsTimeline format: `${ISODate}|${hour}|${roomId ?? 'none'}`. */
 export type WeekEmptyKey = string;
-export const makeWeekEmptyKey = (d: Date, hour: number) =>
-  `${d.toISOString().slice(0, 10)}|${hour}|none`;
+export const makeWeekEmptyKey = (d: Date, hour: number, roomId: string | null = null) =>
+  `${d.toISOString().slice(0, 10)}|${hour}|${roomId ?? 'none'}`;
 export const parseWeekEmptyKey = (k: WeekEmptyKey) => {
-  const [date, h] = k.split('|');
-  return { date, hour: parseInt(h, 10) };
+  const [date, h, roomId] = k.split('|');
+  return { date, hour: parseInt(h, 10), roomId: roomId === 'none' ? null : roomId };
 };
+
+interface RoomLite { id: string; name: string }
 
 export interface TimelineSlot {
   key: string;
