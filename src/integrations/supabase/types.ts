@@ -371,6 +371,7 @@ export type Database = {
           cancellation_min_hours: number
           clinic_id: string
           updated_at: string
+          wizard_completed_at: string | null
         }
         Insert: {
           allow_login_as_student?: boolean
@@ -378,6 +379,7 @@ export type Database = {
           cancellation_min_hours?: number
           clinic_id: string
           updated_at?: string
+          wizard_completed_at?: string | null
         }
         Update: {
           allow_login_as_student?: boolean
@@ -385,6 +387,7 @@ export type Database = {
           cancellation_min_hours?: number
           clinic_id?: string
           updated_at?: string
+          wizard_completed_at?: string | null
         }
         Relationships: [
           {
