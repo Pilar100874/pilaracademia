@@ -602,6 +602,20 @@ export default function GradeMasterPage() {
           onSaved={() => { /* react-query refetch via hooks */ }}
         />
       )}
+
+      {/* Dialog: nova aula (avulsa ou fixa) */}
+      {user && activeClinicId && (
+        <NewClassDialog
+          open={newClassOpen}
+          onClose={() => setNewClassOpen(false)}
+          clinicId={activeClinicId}
+          userId={user.id}
+          initialDate={day}
+          initialTime={newClassTime}
+          students={students as any}
+          equipment={equipment as any}
+        />
+      )}
     </PageMotion>
   );
 }
