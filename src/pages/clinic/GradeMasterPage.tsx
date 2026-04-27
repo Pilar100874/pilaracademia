@@ -271,6 +271,31 @@ export default function GradeMasterPage() {
     return (availability as any[]).filter((s) => s.day_of_week === dow && s.start_time <= hhmm && s.end_time > hhmm);
   };
 
+  /** Slot está sem professor? (sem instructor_id atribuído ou ninguém de plantão na hora) */
+  const isUncovered = (slot: MergedSlot) => {
+    if (slot.isOpen) return false; // slot livre não conta
+    if (!slot.instructor_id) return true;
+    return shiftsCovering(parseISO(slot.scheduled_at)).length === 0;
+  };
+
+  /** Cobertura por hora do dia: para cada hora 7..21 retorna {hora, profsDePlantao, aulas, semProf}. */
+  const dayCoverage = useMemo(() => {
+    if (view !== 'day') return [];
+    const dow = day.getDay();
+    return Array.from({ length: 15 }, (_, i) => {
+      const hour = 7 + i;
+      const hhmm = `${String(hour).padStart(2, '0')}:00:00`;
+      const shifts = (availability as any[]).filter(
+        (s) => s.day_of_week === dow && s.start_time <= hhmm && s.end_time > hhmm,
+      );
+      const slotsAt = daySlots.filter((s) => parseISO(s.scheduled_at).getHours() === hour && !s.isOpen);
+      const studentsCount = slotsAt.filter((s) => s.student_id).length;
+      const uncoveredCount = slotsAt.filter((s) => isUncovered(s)).length;
+      return { hour, shifts, studentsCount, uncoveredCount, hasAnyClass: slotsAt.length > 0 };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, day, availability, daySlots]);
+
   // Lista de professores presentes nos schedules (deduplicados via clinic_users via recurring/instructor)
   const instructorOptions = useMemo(() => {
     const ids = new Set<string>();
@@ -361,6 +386,7 @@ export default function GradeMasterPage() {
       classes: all.filter((s) => !s.isOpen).length,
       open: all.filter((s) => s.isOpen).length,
       projected: all.filter((s) => s.isProjected).length,
+      uncovered: all.filter((s) => isUncovered(s)).length,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, daySlots, weekDays, monthDays, day, appointments, recurring, bookableSlots, simulateRenewal, horizonDate, filterInstructor, filterRoom]);
@@ -380,9 +406,10 @@ export default function GradeMasterPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4">
         {/* TOP BAR: stats + view + filters */}
         <Card className="p-4 space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <Stat label="Total" value={stats.total} icon={CalendarDays} />
             <Stat label="Aulas marcadas" value={stats.classes} icon={CheckCircle2} tone="success" />
+            <Stat label="Sem professor" value={stats.uncovered} icon={AlertTriangle} tone={stats.uncovered > 0 ? 'danger' : 'muted'} />
             <Stat label="Horários livres" value={stats.open} icon={Plus} tone="warn" />
             <Stat label="Projeções" value={stats.projected} icon={RefreshCw} tone="muted" />
           </div>
@@ -468,8 +495,10 @@ export default function GradeMasterPage() {
             {weekDays.map((d) => {
               const slots = slotsForDay(d);
               const isToday = isSameDay(d, new Date());
+              const uncoveredCount = slots.filter((s) => isUncovered(s)).length;
+              const studentsCount = slots.filter((s) => !s.isOpen && s.student_id).length;
               return (
-                <Card key={d.toISOString()} className={cn('p-3 min-h-[200px]', isToday && 'border-primary border-2')}>
+                <Card key={d.toISOString()} className={cn('p-3 min-h-[200px]', isToday && 'border-primary border-2', uncoveredCount > 0 && 'border-destructive/40')}>
                   <button
                     onClick={() => { setDay(d); setView('day'); }}
                     className="w-full text-left mb-2 group"
@@ -480,7 +509,14 @@ export default function GradeMasterPage() {
                     <div className={cn('text-lg font-bold group-hover:text-primary transition', isToday && 'text-primary')}>
                       {format(d, 'd/MM')}
                     </div>
-                    <div className="text-[10px] text-muted-foreground">{slots.length} aula{slots.length !== 1 ? 's' : ''}</div>
+                    <div className="text-[10px] text-muted-foreground flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-0.5"><Users className="h-2.5 w-2.5" />{studentsCount}</span>
+                      {uncoveredCount > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-destructive font-semibold">
+                          <AlertTriangle className="h-2.5 w-2.5" />{uncoveredCount} sem prof.
+                        </span>
+                      )}
+                    </div>
                   </button>
                   <div className="space-y-1.5">
                     {slots.length === 0 && (
@@ -496,6 +532,7 @@ export default function GradeMasterPage() {
                         instructorName={instructorName(s.instructor_id)}
                         instructorColor={colorOf(s.instructor_id)}
                         occupancy={occupancyFor(slots, s)}
+                        uncovered={isUncovered(s)}
                         onClick={() => openSlotDialog(s)}
                       />
                     ))}
@@ -578,6 +615,70 @@ export default function GradeMasterPage() {
               <div className="text-[11px] text-muted-foreground">
                 Clique em um horário abaixo para adicionar uma aula (avulsa ou fixa)
               </div>
+            </div>
+
+            {/* Cobertura por hora — bate o olho e vê quem está e quantos alunos */}
+            <div className="mb-4 p-3 rounded-lg border bg-card">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[10px] uppercase tracking-wide font-bold text-muted-foreground">
+                  Cobertura do dia
+                </div>
+                <div className="text-[10px] text-muted-foreground flex items-center gap-3">
+                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-emerald-500/70" />com prof.</span>
+                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-destructive/70" />sem prof.</span>
+                  <span className="flex items-center gap-1"><Users className="h-3 w-3" />alunos</span>
+                </div>
+              </div>
+              <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' }}>
+                {dayCoverage.map((c) => {
+                  const covered = c.shifts.length > 0;
+                  const danger = c.hasAnyClass && !covered;
+                  return (
+                    <button
+                      key={c.hour}
+                      onClick={() => openNewClassAt(day, `${String(c.hour).padStart(2, '0')}:00`)}
+                      className={cn(
+                        'group flex flex-col items-stretch rounded border p-1 text-[10px] transition hover:ring-2 hover:ring-primary/30',
+                        danger && 'bg-destructive/10 border-destructive/40',
+                        !danger && covered && 'bg-emerald-500/5 border-emerald-500/30',
+                        !covered && !danger && 'bg-muted/30 border-dashed',
+                      )}
+                      title={
+                        covered
+                          ? `${c.shifts.map((s: any) => instructorName(s.instructor_id)).filter(Boolean).join(', ')}\n${c.studentsCount} aluno(s)`
+                          : c.hasAnyClass
+                            ? `⚠ ${c.studentsCount} aula(s) sem professor de plantão`
+                            : 'Sem professor / sem aulas'
+                      }
+                    >
+                      <div className="font-bold text-center">{String(c.hour).padStart(2, '0')}h</div>
+                      <div className="flex gap-px h-1.5 mt-0.5">
+                        {covered ? (
+                          c.shifts.slice(0, 4).map((s: any, i: number) => (
+                            <span key={i} className="flex-1 rounded-sm" style={{ background: colorOf(s.instructor_id) }} />
+                          ))
+                        ) : (
+                          <span className={cn('flex-1 rounded-sm', danger ? 'bg-destructive/60' : 'bg-muted-foreground/20')} />
+                        )}
+                      </div>
+                      <div className="flex items-center justify-center gap-0.5 mt-1 text-muted-foreground">
+                        <Users className="h-2.5 w-2.5" />
+                        <span className={cn('font-semibold', danger && 'text-destructive', c.studentsCount === 0 && 'opacity-40')}>
+                          {c.studentsCount}
+                        </span>
+                      </div>
+                      {danger && <AlertTriangle className="h-2.5 w-2.5 text-destructive mx-auto mt-0.5" />}
+                    </button>
+                  );
+                })}
+              </div>
+              {stats.uncovered > 0 && (
+                <div className="mt-2 text-[11px] text-destructive flex items-center gap-1.5">
+                  <AlertTriangle className="h-3 w-3" />
+                  {stats.uncovered} aula{stats.uncovered !== 1 ? 's' : ''} sem professor de plantão neste dia.
+                  <button onClick={() => setAvailOpen(true)} className="underline ml-1">cadastrar disponibilidade</button>
+                </div>
+              )}
             </div>
 
             {/* Faixa de horários clicáveis para criar aula */}
@@ -669,6 +770,11 @@ export default function GradeMasterPage() {
                               {instructorName(s.instructor_id)}
                             </span>
                           )}
+                          {!s.isOpen && isUncovered(s) && (
+                            <span className="inline-flex items-center gap-0.5 text-destructive font-semibold">
+                              <AlertTriangle className="h-3 w-3" />sem prof.
+                            </span>
+                          )}
                           {shifts.length > 0 && !s.isOpen && (
                             <span className="text-muted-foreground/70 text-[10px]">
                               · turno {shifts[0].start_time.slice(0,5)}–{shifts[0].end_time.slice(0,5)}
@@ -758,6 +864,7 @@ export default function GradeMasterPage() {
             <span className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3 text-amber-600" />Sem grade definida</span>
             <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-primary" />Grade pronta</span>
             <span className="flex items-center gap-1.5"><Users className="h-3 w-3" />Ocupação da sala</span>
+            <span className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3 text-destructive" />Sem professor de plantão</span>
           </div>
           {instructors.length > 0 && (
             <div className="flex flex-wrap gap-3 pt-2 border-t">
@@ -824,12 +931,13 @@ export default function GradeMasterPage() {
 }
 
 // ============ subcomponents ============
-function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; value: number; icon: any; tone?: 'default' | 'success' | 'warn' | 'muted' }) {
+function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; value: number; icon: any; tone?: 'default' | 'success' | 'warn' | 'muted' | 'danger' }) {
   const toneCls = {
     default: 'bg-primary/10 text-primary',
     success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
     warn: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
     muted: 'bg-muted text-muted-foreground',
+    danger: 'bg-destructive/15 text-destructive',
   }[tone];
   return (
     <div className="flex items-center gap-3 p-2">
@@ -844,7 +952,7 @@ function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; v
   );
 }
 
-function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, instructorColor, occupancy, onClick }: {
+function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, instructorColor, occupancy, uncovered, onClick }: {
   slot: MergedSlot;
   studentName: string;
   sequenceName: string | null | undefined;
@@ -852,6 +960,7 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, i
   instructorName?: string | null;
   instructorColor?: string;
   occupancy?: { used: number; cap: number } | null;
+  uncovered?: boolean;
   onClick: () => void;
 }) {
   const time = format(parseISO(slot.scheduled_at), 'HH:mm');
@@ -860,18 +969,24 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, i
   return (
     <button
       onClick={onClick}
-      style={instructorColor && !slot.isOpen ? { borderLeftColor: instructorColor, borderLeftWidth: 3 } : undefined}
+      style={instructorColor && !slot.isOpen ? { borderLeftColor: uncovered ? 'hsl(var(--destructive))' : instructorColor, borderLeftWidth: 3 } : undefined}
       className={cn(
         'w-full text-left p-1.5 rounded border text-[11px] hover:bg-muted/50 transition group block',
         slot.isVirtual && 'border-dashed',
         slot.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
         slot.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/10',
+        uncovered && !slot.isOpen && 'bg-destructive/5',
         status === 'completed' && 'opacity-60',
       )}
     >
       <div className="flex items-center justify-between gap-1">
         <span className="font-bold">{time}</span>
         <div className="flex items-center gap-0.5">
+          {uncovered && (
+            <span title="Sem professor de plantão" className="text-[9px] font-bold px-1 rounded bg-destructive/15 text-destructive flex items-center gap-0.5">
+              <AlertTriangle className="h-2.5 w-2.5" />sem prof
+            </span>
+          )}
           {occupancy && (
             <span
               className={cn(
