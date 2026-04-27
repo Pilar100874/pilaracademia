@@ -1013,6 +1013,7 @@ export default function GradeMasterPage() {
               dragActive={draggingInstructorId !== null}
               onDropInstructorOnCell={dropInstructorOnCell}
               onDropInstructorOnSlot={dropInstructorOnSlot}
+              onRoomHeaderClick={(roomId) => selectRoomColumn(roomId, [day])}
             />
 
             {/* Barra flutuante de ações de seleção */}
