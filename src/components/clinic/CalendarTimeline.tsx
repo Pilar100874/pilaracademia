@@ -166,20 +166,23 @@ export function CalendarTimeline({
               {splitByRoom && (
                 <div className="grid border-t border-border/40" style={{ gridTemplateColumns: `repeat(${colsPerDay}, minmax(0, 1fr))` }}>
                   {subCols.map((r, i) => (
-                    <div
+                    <button
                       key={r?.id ?? i}
+                      type="button"
+                      onClick={() => onRoomColumnClick?.(d, r?.id ?? null)}
                       className={cn(
-                        'px-1 py-1 text-[9px] font-semibold truncate text-center flex items-center justify-center gap-1',
+                        'px-1 py-1 text-[9px] font-semibold truncate text-center flex items-center justify-center gap-1 transition',
                         i > 0 && 'border-l border-border/40',
+                        onRoomColumnClick && 'hover:bg-primary/10 cursor-pointer',
                       )}
-                      title={r?.name}
+                      title={onRoomColumnClick ? `Selecionar coluna · ${r?.name ?? ''} · ${format(d, 'dd/MM')}` : r?.name}
                     >
                       <span
                         className="h-1.5 w-1.5 rounded-sm shrink-0 border"
                         style={{ background: roomColorOf?.(r?.id ?? null) || 'hsl(var(--muted))' }}
                       />
                       <span className="truncate">{r?.name ?? '—'}</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
