@@ -33,6 +33,7 @@ import { InstructorAvailabilityDialog } from '@/components/clinic/InstructorAvai
 import { InstructorPicker } from '@/components/clinic/InstructorPicker';
 import { CalendarTimeline, type TimelineSlot } from '@/components/clinic/CalendarTimeline';
 import { RoomsTimeline, makeEmptyKey, parseEmptyKey, type EmptyCellKey } from '@/components/clinic/RoomsTimeline';
+import { BulkAssignDialog, type BulkAssignValues } from '@/components/clinic/BulkAssignDialog';
 import { PageMotion } from '@/components/PageMotion';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; cls: string }> = {
