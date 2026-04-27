@@ -32,6 +32,9 @@ export interface SlotIdentity {
   duration_minutes: number;
 }
 
+interface Room { id: string; name: string; capacity?: number | null }
+interface BookableSlotLite { id: string; scheduled_at: string; duration_minutes: number; room_id?: string | null; capacity?: number | null; active?: boolean }
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -47,6 +50,10 @@ interface Props {
   students: Student[];
   equipment: Equipment[];
   sequences: ExerciseSequence[];
+  /** Salas da clínica para inferir capacidade do slot. */
+  rooms?: Room[];
+  /** Slots da grade para descobrir capacidade quando não há appointment ainda. */
+  bookableSlots?: BookableSlotLite[];
 
   onSaved: () => void;
 }
