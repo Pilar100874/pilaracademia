@@ -7,7 +7,9 @@ import { useRecurringSchedules, type RecurringSchedule } from '@/hooks/useRecurr
 import { useClinicRooms } from '@/hooks/useClinicRooms';
 import { useClinicStaff } from '@/hooks/useStaff';
 import { useBookableSlots } from '@/hooks/useBookableSlots';
+import { useInstructorAvailability, useInstructorColors, colorForInstructor } from '@/hooks/useInstructorAvailability';
 import { Card } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,7 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Plus, ChevronLeft, ChevronRight, CalendarDays, CheckCircle2, LogIn, Trash2,
-  Repeat, ListChecks, Sparkles, AlertTriangle, RefreshCw, Filter, DoorOpen,
+  Repeat, ListChecks, Sparkles, AlertTriangle, RefreshCw, Filter, DoorOpen, Users, UserCog,
 } from 'lucide-react';
 import { format, addDays, addMonths, isSameDay, parseISO, startOfWeek, startOfMonth, endOfMonth, endOfWeek, isSameMonth, differenceInCalendarDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -27,6 +29,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SlotGradeDialog } from '@/components/clinic/SlotGradeDialog';
 import { NewClassDialog } from '@/components/clinic/NewClassDialog';
+import { InstructorAvailabilityDialog } from '@/components/clinic/InstructorAvailabilityDialog';
 import { PageMotion } from '@/components/PageMotion';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; cls: string }> = {
@@ -149,6 +152,11 @@ export default function GradeMasterPage() {
   );
   const { data: recurring = [] } = useRecurringSchedules(activeClinicId);
   const { create: createPresc } = usePrescriptions({ clinicId: activeClinicId });
+  const { data: availability = [] } = useInstructorAvailability(activeClinicId);
+  const { data: instructorColors = [] } = useInstructorColors(activeClinicId);
+  const [availOpen, setAvailOpen] = useState(false);
+
+  const colorOf = (instructorId: string | null | undefined) => colorForInstructor(instructorId, instructorColors);
 
   const studentName = (id: string | null) => id ? (students.find((s) => s.id === id)?.full_name || '—') : '—';
   const studentAvatar = (id: string | null) => id ? (students.find((s) => s.id === id) as any)?.avatar_url : undefined;
@@ -239,6 +247,29 @@ export default function GradeMasterPage() {
   };
 
   const daySlots = view === 'day' ? slotsForDay(day) : [];
+
+  /** Agrupa slots por (HH:mm + sala) e calcula ocupação vs capacidade da sala. */
+  const occupancyFor = (slots: MergedSlot[], target: MergedSlot) => {
+    if (!target.room_id) return null;
+    const room = (rooms as any[]).find((r) => r.id === target.room_id);
+    const cap = room?.capacity as number | null | undefined;
+    if (!cap) return null;
+    const t = parseISO(target.scheduled_at);
+    const key = `${t.getHours()}:${t.getMinutes()}|${target.room_id}`;
+    const same = slots.filter((s) => {
+      if (s.isOpen) return false;
+      const st = parseISO(s.scheduled_at);
+      return `${st.getHours()}:${st.getMinutes()}|${s.room_id ?? ''}` === key;
+    });
+    return { used: same.length, cap, students: same.map((s) => s.student_id).filter(Boolean) as string[] };
+  };
+
+  /** Disponibilidade (turnos) que cobre o instante dado. */
+  const shiftsCovering = (d: Date) => {
+    const dow = d.getDay();
+    const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`;
+    return (availability as any[]).filter((s) => s.day_of_week === dow && s.start_time <= hhmm && s.end_time > hhmm);
+  };
 
   // Lista de professores presentes nos schedules (deduplicados via clinic_users via recurring/instructor)
   const instructorOptions = useMemo(() => {
@@ -398,6 +429,9 @@ export default function GradeMasterPage() {
                 )}
               </div>
 
+              <Button size="sm" variant="outline" onClick={() => setAvailOpen(true)}>
+                <UserCog className="h-4 w-4 mr-1" />Disponibilidade
+              </Button>
               <Button size="sm" onClick={() => openNewClassAt(day)}>
                 <Plus className="h-4 w-4 mr-1" />Nova aula
               </Button>
@@ -460,6 +494,8 @@ export default function GradeMasterPage() {
                         sequenceName={s.appointment?.sequence_id ? sequences.find((x) => x.id === s.appointment!.sequence_id)?.name : null}
                         roomName={roomName(s.room_id)}
                         instructorName={instructorName(s.instructor_id)}
+                        instructorColor={colorOf(s.instructor_id)}
+                        occupancy={occupancyFor(slots, s)}
                         onClick={() => openSlotDialog(s)}
                       />
                     ))}
@@ -583,9 +619,14 @@ export default function GradeMasterPage() {
                   const av = studentAvatar(s.student_id);
                   const stu = s.student_id ? students.find((x) => x.id === s.student_id) as any : null;
                   const expired = stu?.contract_end_date && new Date(stu.contract_end_date) < new Date();
+                  const occ = occupancyFor(daySlots, s);
+                  const instColor = colorOf(s.instructor_id);
+                  const studentsHere = occ ? occ.students.map((id) => studentName(id)) : [];
+                  const shifts = shiftsCovering(parseISO(s.scheduled_at));
                   return (
                     <div
                       key={s.key}
+                      style={!s.isOpen && instColor ? { borderLeftColor: instColor, borderLeftWidth: 4 } : undefined}
                       className={cn(
                         'flex items-center gap-3 p-3 rounded-lg border bg-card flex-wrap',
                         s.isVirtual && 'border-dashed',
@@ -623,7 +664,15 @@ export default function GradeMasterPage() {
                             <span className="inline-flex items-center gap-0.5"><DoorOpen className="h-3 w-3" />{roomName(s.room_id)}</span>
                           )}
                           {instructorName(s.instructor_id) && (
-                            <span>· {instructorName(s.instructor_id)}</span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="h-2 w-2 rounded-full" style={{ background: instColor }} />
+                              {instructorName(s.instructor_id)}
+                            </span>
+                          )}
+                          {shifts.length > 0 && !s.isOpen && (
+                            <span className="text-muted-foreground/70 text-[10px]">
+                              · turno {shifts[0].start_time.slice(0,5)}–{shifts[0].end_time.slice(0,5)}
+                            </span>
                           )}
                           {seqName && <span className="text-primary"><Sparkles className="h-3 w-3 inline mr-0.5" />{seqName}</span>}
                           {!seqName && !s.isProjected && !s.isOpen && (
@@ -633,6 +682,32 @@ export default function GradeMasterPage() {
                           )}
                         </div>
                       </div>
+                      {occ && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              className={cn(
+                                'inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded border hover:bg-muted/60',
+                                occ.used >= occ.cap ? 'bg-destructive/10 text-destructive border-destructive/30' : 'bg-primary/5 text-primary border-primary/20',
+                              )}
+                              title="Alunos nesta sala neste horário"
+                            >
+                              <Users className="h-3 w-3" /> {occ.used}/{occ.cap}
+                              {occ.used < occ.cap && <span className="text-[10px] font-normal text-muted-foreground">· {occ.cap - occ.used} vaga{occ.cap - occ.used !== 1 ? 's' : ''}</span>}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-56 p-2 text-xs">
+                            <div className="font-semibold mb-1">Alunos na sala</div>
+                            {studentsHere.length === 0 ? (
+                              <div className="text-muted-foreground italic">Nenhum</div>
+                            ) : (
+                              <ul className="space-y-0.5">
+                                {studentsHere.map((n, i) => <li key={i}>· {n}</li>)}
+                              </ul>
+                            )}
+                          </PopoverContent>
+                        </Popover>
+                      )}
                       <Badge className={sl.cls}>{sl.label}</Badge>
 
                       {s.isProjected && s.student_id && (
@@ -675,14 +750,41 @@ export default function GradeMasterPage() {
         )}
 
         {/* Legenda */}
-        <Card className="p-3 text-xs text-muted-foreground flex flex-wrap gap-4">
-          <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border bg-card" />Aula real</span>
-          <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border border-dashed" />Horário fixo (virtual)</span>
-          <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border border-dashed border-amber-500 bg-amber-500/10" />Projeção pós-contrato</span>
-          <span className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3 text-amber-600" />Sem grade definida</span>
-          <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-primary" />Grade pronta</span>
+        <Card className="p-3 text-xs text-muted-foreground space-y-2">
+          <div className="flex flex-wrap gap-4">
+            <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border bg-card" />Aula real</span>
+            <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border border-dashed" />Horário fixo (virtual)</span>
+            <span className="flex items-center gap-1.5"><div className="h-3 w-3 rounded border border-dashed border-amber-500 bg-amber-500/10" />Projeção pós-contrato</span>
+            <span className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3 text-amber-600" />Sem grade definida</span>
+            <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-primary" />Grade pronta</span>
+            <span className="flex items-center gap-1.5"><Users className="h-3 w-3" />Ocupação da sala</span>
+          </div>
+          {instructors.length > 0 && (
+            <div className="flex flex-wrap gap-3 pt-2 border-t">
+              <span className="font-semibold text-muted-foreground">Professores:</span>
+              {instructors.map((i) => (
+                <span key={i.user_id} className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded" style={{ background: colorOf(i.user_id) }} />
+                  {i.name}
+                </span>
+              ))}
+              <button onClick={() => setAvailOpen(true)} className="text-primary underline ml-2">editar cores</button>
+            </div>
+          )}
         </Card>
       </div>
+
+      {/* Dialog: disponibilidade + cores dos professores */}
+      {user && activeClinicId && (
+        <InstructorAvailabilityDialog
+          open={availOpen}
+          onClose={() => setAvailOpen(false)}
+          clinicId={activeClinicId}
+          userId={user.id}
+          instructors={instructors}
+          rooms={rooms as any}
+        />
+      )}
 
       {/* Dialog: alunos da aula + grade + propagação */}
       {slotDialog && user && activeClinicId && (
@@ -742,12 +844,14 @@ function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; v
   );
 }
 
-function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, onClick }: {
+function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, instructorColor, occupancy, onClick }: {
   slot: MergedSlot;
   studentName: string;
   sequenceName: string | null | undefined;
   roomName?: string | null;
   instructorName?: string | null;
+  instructorColor?: string;
+  occupancy?: { used: number; cap: number } | null;
   onClick: () => void;
 }) {
   const time = format(parseISO(slot.scheduled_at), 'HH:mm');
@@ -756,6 +860,7 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, o
   return (
     <button
       onClick={onClick}
+      style={instructorColor && !slot.isOpen ? { borderLeftColor: instructorColor, borderLeftWidth: 3 } : undefined}
       className={cn(
         'w-full text-left p-1.5 rounded border text-[11px] hover:bg-muted/50 transition group block',
         slot.isVirtual && 'border-dashed',
@@ -766,14 +871,27 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, o
     >
       <div className="flex items-center justify-between gap-1">
         <span className="font-bold">{time}</span>
-        {slot.isOpen && <Plus className="h-2.5 w-2.5 text-emerald-600" />}
-        {slot.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
-        {slot.isVirtual && !slot.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
-        {!slot.isOpen && (hasGrade ? (
-          <Sparkles className="h-2.5 w-2.5 text-primary" />
-        ) : (
-          <AlertTriangle className="h-2.5 w-2.5 text-amber-500" />
-        ))}
+        <div className="flex items-center gap-0.5">
+          {occupancy && (
+            <span
+              className={cn(
+                'text-[9px] font-bold px-1 rounded',
+                occupancy.used >= occupancy.cap ? 'bg-destructive/15 text-destructive' : 'bg-primary/10 text-primary',
+              )}
+              title={`${occupancy.used} de ${occupancy.cap} alunos na sala`}
+            >
+              {occupancy.used}/{occupancy.cap}
+            </span>
+          )}
+          {slot.isOpen && <Plus className="h-2.5 w-2.5 text-emerald-600" />}
+          {slot.isProjected && <RefreshCw className="h-2.5 w-2.5 text-amber-600" />}
+          {slot.isVirtual && !slot.isProjected && <Repeat className="h-2.5 w-2.5 text-muted-foreground" />}
+          {!slot.isOpen && (hasGrade ? (
+            <Sparkles className="h-2.5 w-2.5 text-primary" />
+          ) : (
+            <AlertTriangle className="h-2.5 w-2.5 text-amber-500" />
+          ))}
+        </div>
       </div>
       <div className="truncate font-medium">
         {slot.isOpen ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span> : studentName}

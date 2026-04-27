@@ -1334,6 +1334,81 @@ export type Database = {
         }
         Relationships: []
       }
+      instructor_availability: {
+        Row: {
+          active: boolean
+          clinic_id: string
+          color: string | null
+          created_at: string
+          created_by: string
+          day_of_week: number
+          end_time: string
+          id: string
+          instructor_id: string
+          notes: string | null
+          room_id: string | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          clinic_id: string
+          color?: string | null
+          created_at?: string
+          created_by: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          instructor_id: string
+          notes?: string | null
+          room_id?: string | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          clinic_id?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          instructor_id?: string
+          notes?: string | null
+          room_id?: string | null
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      instructor_colors: {
+        Row: {
+          clinic_id: string
+          color: string
+          created_at: string
+          id: string
+          instructor_id: string
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          color: string
+          created_at?: string
+          id?: string
+          instructor_id: string
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          color?: string
+          created_at?: string
+          id?: string
+          instructor_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       liquid_entries: {
         Row: {
           amount_ml: number
