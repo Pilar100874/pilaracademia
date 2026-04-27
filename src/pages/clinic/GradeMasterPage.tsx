@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { SlotGradeDialog } from '@/components/clinic/SlotGradeDialog';
 import { NewClassDialog } from '@/components/clinic/NewClassDialog';
 import { InstructorAvailabilityDialog } from '@/components/clinic/InstructorAvailabilityDialog';
+import { InstructorPicker } from '@/components/clinic/InstructorPicker';
 import { PageMotion } from '@/components/PageMotion';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; cls: string }> = {
@@ -534,6 +535,24 @@ export default function GradeMasterPage() {
                         occupancy={occupancyFor(slots, s)}
                         uncovered={isUncovered(s)}
                         onClick={() => openSlotDialog(s)}
+                        instructorPicker={
+                          <InstructorPicker
+                            appointmentId={s.appointment?.id}
+                            bookableSlotId={s.bookable_slot_id}
+                            recurringId={!s.appointment && s.recurring_id ? s.recurring_id : undefined}
+                            currentInstructorId={s.instructor_id}
+                            instructors={instructors}
+                            colorOf={colorOf}
+                            clinicId={activeClinicId!}
+                          >
+                            <span
+                              role="button"
+                              title="Atribuir professor"
+                              className="h-3.5 w-3.5 rounded-full border-2 border-card shadow cursor-pointer hover:scale-110 transition shrink-0"
+                              style={{ background: s.instructor_id ? colorOf(s.instructor_id) : 'hsl(var(--muted))' }}
+                            />
+                          </InstructorPicker>
+                        }
                       />
                     ))}
                     <button
@@ -814,6 +833,15 @@ export default function GradeMasterPage() {
                           </PopoverContent>
                         </Popover>
                       )}
+                      <InstructorPicker
+                        appointmentId={s.appointment?.id}
+                        bookableSlotId={s.bookable_slot_id}
+                        recurringId={!s.appointment && s.recurring_id ? s.recurring_id : undefined}
+                        currentInstructorId={s.instructor_id}
+                        instructors={instructors}
+                        colorOf={colorOf}
+                        clinicId={activeClinicId!}
+                      />
                       <Badge className={sl.cls}>{sl.label}</Badge>
 
                       {s.isProjected && s.student_id && (
@@ -952,7 +980,7 @@ function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; v
   );
 }
 
-function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, instructorColor, occupancy, uncovered, onClick }: {
+function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, instructorColor, occupancy, uncovered, onClick, instructorPicker }: {
   slot: MergedSlot;
   studentName: string;
   sequenceName: string | null | undefined;
@@ -962,16 +990,20 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, i
   occupancy?: { used: number; cap: number } | null;
   uncovered?: boolean;
   onClick: () => void;
+  instructorPicker?: React.ReactNode;
 }) {
   const time = format(parseISO(slot.scheduled_at), 'HH:mm');
   const status = slot.appointment?.status;
   const hasGrade = !!sequenceName;
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter') onClick(); }}
       style={instructorColor && !slot.isOpen ? { borderLeftColor: uncovered ? 'hsl(var(--destructive))' : instructorColor, borderLeftWidth: 3 } : undefined}
       className={cn(
-        'w-full text-left p-1.5 rounded border text-[11px] hover:bg-muted/50 transition group block',
+        'w-full text-left p-1.5 rounded border text-[11px] hover:bg-muted/50 transition group block cursor-pointer',
         slot.isVirtual && 'border-dashed',
         slot.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
         slot.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/10',
@@ -981,7 +1013,8 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, i
     >
       <div className="flex items-center justify-between gap-1">
         <span className="font-bold">{time}</span>
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-1">
+          {instructorPicker}
           {uncovered && (
             <span title="Sem professor de plantão" className="text-[9px] font-bold px-1 rounded bg-destructive/15 text-destructive flex items-center gap-0.5">
               <AlertTriangle className="h-2.5 w-2.5" />sem prof
@@ -1017,6 +1050,6 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, i
         </div>
       )}
       {sequenceName && <div className="truncate text-primary text-[10px]">{sequenceName}</div>}
-    </button>
+    </div>
   );
 }
