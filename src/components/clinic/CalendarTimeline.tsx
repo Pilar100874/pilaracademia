@@ -468,11 +468,18 @@ export function CalendarTimeline({
                       <PopoverContent className="w-64 p-2 text-xs space-y-2" onClick={(e) => e.stopPropagation()}>
                         <div>
                           <div className="font-semibold text-sm">
-                            {s.isBlocked ? 'Horário bloqueado' : s.isOpen ? 'Horário disponível' : studentName(s.student_id)}
+                            {s.blockedPeriodId
+                              ? (s.blockedPeriodName || 'Bloqueio padrão')
+                              : s.isBlocked ? 'Horário bloqueado' : s.isOpen ? 'Horário disponível' : studentName(s.student_id)}
                           </div>
                           <div className="text-muted-foreground text-[11px]">
                             {format(t, "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })} · {s.duration_minutes}min
                           </div>
+                          {s.blockedPeriodId && (
+                            <div className="text-[11px] text-muted-foreground italic">
+                              Bloqueio recorrente. Você pode liberar só este dia.
+                            </div>
+                          )}
                           {room && <div className="text-[11px]">📍 {room}</div>}
                           {instr && !s.isBlocked && (
                             <div className="text-[11px] flex items-center gap-1">
@@ -482,7 +489,16 @@ export function CalendarTimeline({
                           )}
                         </div>
                         <div className="flex gap-1 flex-wrap pt-1 border-t">
-                          {!s.isBlocked && (
+                          {s.blockedPeriodId && onDelete && (
+                            <button
+                              onClick={() => onDelete(s)}
+                              className="flex-1 px-2 py-1.5 rounded border border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/5 inline-flex items-center justify-center gap-1"
+                              title="Liberar este dia"
+                            >
+                              <Unlock className="h-3 w-3" />Liberar este dia
+                            </button>
+                          )}
+                          {!s.blockedPeriodId && !s.isBlocked && (
                             <button
                               onClick={() => onSlotClick(s)}
                               className="flex-1 px-2 py-1.5 rounded border text-[11px] hover:bg-muted text-center"
@@ -490,8 +506,8 @@ export function CalendarTimeline({
                               Abrir
                             </button>
                           )}
-                          {!s.isBlocked && renderInstructorPicker?.(s)}
-                          {onDelete && (s.appointment_id || s.bookable_slot_id) && (
+                          {!s.blockedPeriodId && !s.isBlocked && renderInstructorPicker?.(s)}
+                          {!s.blockedPeriodId && onDelete && (s.appointment_id || s.bookable_slot_id) && (
                             s.isBlocked ? (
                               <button
                                 onClick={() => onDelete(s)}
