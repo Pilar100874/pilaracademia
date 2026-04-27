@@ -971,7 +971,28 @@ function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; v
   );
 }
 
-function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, instructorColor, occupancy, uncovered, onClick, instructorPicker }: {
+function RoomsLegend({ rooms, roomColorOf }: { rooms: any[]; roomColorOf: (id: string | null | undefined) => string | null }) {
+  if (!rooms || rooms.length === 0) return null;
+  return (
+    <Card className="p-2 px-3">
+      <div className="flex items-center gap-3 flex-wrap text-[11px]">
+        <span className="inline-flex items-center gap-1 text-muted-foreground font-semibold uppercase tracking-wide text-[10px]">
+          <DoorOpen className="h-3 w-3" /> Salas
+        </span>
+        {rooms.map((r) => (
+          <span key={r.id} className="inline-flex items-center gap-1.5">
+            <span
+              className="h-2.5 w-2.5 rounded-sm border"
+              style={{ background: roomColorOf(r.id) || 'hsl(var(--muted))' }}
+            />
+            <span className="font-medium">{r.name}</span>
+            {r.capacity ? <span className="text-muted-foreground">· cap. {r.capacity}</span> : null}
+          </span>
+        ))}
+      </div>
+    </Card>
+  );
+}
   slot: MergedSlot;
   studentName: string;
   sequenceName: string | null | undefined;
