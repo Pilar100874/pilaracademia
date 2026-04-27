@@ -406,9 +406,10 @@ export default function GradeMasterPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4">
         {/* TOP BAR: stats + view + filters */}
         <Card className="p-4 space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <Stat label="Total" value={stats.total} icon={CalendarDays} />
             <Stat label="Aulas marcadas" value={stats.classes} icon={CheckCircle2} tone="success" />
+            <Stat label="Sem professor" value={stats.uncovered} icon={AlertTriangle} tone={stats.uncovered > 0 ? 'danger' : 'muted'} />
             <Stat label="Horários livres" value={stats.open} icon={Plus} tone="warn" />
             <Stat label="Projeções" value={stats.projected} icon={RefreshCw} tone="muted" />
           </div>
