@@ -1015,6 +1015,7 @@ export type Database = {
           image_urls: string[] | null
           is_global: boolean
           name: string
+          skill_level_id: string | null
           updated_at: string
           user_id: string
           video_end_seconds: number | null
@@ -1032,6 +1033,7 @@ export type Database = {
           image_urls?: string[] | null
           is_global?: boolean
           name: string
+          skill_level_id?: string | null
           updated_at?: string
           user_id: string
           video_end_seconds?: number | null
@@ -1049,6 +1051,7 @@ export type Database = {
           image_urls?: string[] | null
           is_global?: boolean
           name?: string
+          skill_level_id?: string | null
           updated_at?: string
           user_id?: string
           video_end_seconds?: number | null
