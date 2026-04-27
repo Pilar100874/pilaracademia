@@ -91,7 +91,7 @@ function expandRecurringForDayExt(
 export default function GradeMasterPage() {
   const { activeClinicId } = useUserRoles();
   const { user } = useAuth();
-  const [view, setView] = useState<'day' | 'week'>('week');
+  const [view, setView] = useState<'day' | 'week' | 'month'>('week');
   const [day, setDay] = useState(() => new Date());
   const [simulateRenewal, setSimulateRenewal] = useState(true);
   const [renewalMonths, setRenewalMonths] = useState(3);
