@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 import {
   Building2, DoorOpen, Dumbbell, GraduationCap, ShieldCheck, Layers,
   CalendarDays, Settings2, ArrowRight, ArrowLeft, Check, X, Loader2,
-  Sparkles, Plus, Trash2, KeyRound,
+  Sparkles, Plus, Trash2, KeyRound, Search,
 } from 'lucide-react';
 
 const WIZARD_STORAGE_PREFIX = 'pilar.setupWizard.completed.';
