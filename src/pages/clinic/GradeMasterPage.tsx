@@ -544,80 +544,20 @@ export default function GradeMasterPage() {
 
         {/* CONTEÚDO */}
         {view === 'week' ? (
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
-            {weekDays.map((d) => {
-              const slots = slotsForDay(d);
-              const isToday = isSameDay(d, new Date());
-              const uncoveredCount = slots.filter((s) => isUncovered(s)).length;
-              const studentsCount = slots.filter((s) => !s.isOpen && s.student_id).length;
-              return (
-                <Card key={d.toISOString()} className={cn('p-3 min-h-[200px]', isToday && 'border-primary border-2', uncoveredCount > 0 && 'border-destructive/40')}>
-                  <button
-                    onClick={() => { setDay(d); setView('day'); }}
-                    className="w-full text-left mb-2 group"
-                  >
-                    <div className="text-[10px] uppercase font-bold text-muted-foreground">
-                      {format(d, 'EEE', { locale: ptBR })}
-                    </div>
-                    <div className={cn('text-lg font-bold group-hover:text-primary transition', isToday && 'text-primary')}>
-                      {format(d, 'd/MM')}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground flex items-center gap-2 flex-wrap">
-                      <span className="inline-flex items-center gap-0.5"><Users className="h-2.5 w-2.5" />{studentsCount}</span>
-                      {uncoveredCount > 0 && (
-                        <span className="inline-flex items-center gap-0.5 text-destructive font-semibold">
-                          <AlertTriangle className="h-2.5 w-2.5" />{uncoveredCount} sem prof.
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                  <div className="space-y-1.5">
-                    {slots.length === 0 && (
-                      <div className="text-[10px] text-muted-foreground text-center py-2">—</div>
-                    )}
-                    {slots.map((s) => (
-                      <SlotMini
-                        key={s.key}
-                        slot={s}
-                        studentName={studentName(s.student_id)}
-                        sequenceName={s.appointment?.sequence_id ? sequences.find((x) => x.id === s.appointment!.sequence_id)?.name : null}
-                        roomName={roomName(s.room_id)}
-                        instructorName={instructorName(s.instructor_id)}
-                        instructorColor={colorOf(s.instructor_id)}
-                        occupancy={occupancyFor(slots, s)}
-                        uncovered={isUncovered(s)}
-                        onClick={() => openSlotDialog(s)}
-                        instructorPicker={
-                          <InstructorPicker
-                            appointmentId={s.appointment?.id}
-                            bookableSlotId={s.bookable_slot_id}
-                            recurringId={!s.appointment && s.recurring_id ? s.recurring_id : undefined}
-                            currentInstructorId={s.instructor_id}
-                            instructors={instructors}
-                            colorOf={colorOf}
-                            clinicId={activeClinicId!}
-                          >
-                            <span
-                              role="button"
-                              title="Atribuir professor"
-                              className="h-3.5 w-3.5 rounded-full border-2 border-card shadow cursor-pointer hover:scale-110 transition shrink-0"
-                              style={{ background: s.instructor_id ? colorOf(s.instructor_id) : 'hsl(var(--muted))' }}
-                            />
-                          </InstructorPicker>
-                        }
-                      />
-                    ))}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openNewClassAt(d); }}
-                      className="w-full text-[10px] py-1.5 mt-1 rounded border border-dashed text-muted-foreground hover:border-primary hover:text-primary transition flex items-center justify-center gap-1"
-                    >
-                      <Plus className="h-3 w-3" /> Nova aula
-                    </button>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+          <CalendarTimeline
+            days={weekDays}
+            startHour={6}
+            endHour={22}
+            slotsForDay={(d) => slotsForDay(d).map(toTimelineSlot)}
+            studentName={studentName}
+            instructorName={instructorName}
+            roomName={roomName}
+            colorOf={colorOf}
+            onCellClick={handleCellClick}
+            onSlotClick={handleTimelineSlotClick}
+            onDelete={handleTimelineDelete}
+            renderInstructorPicker={renderTimelineInstructorPicker}
+          />
         ) : view === 'month' ? (
           <Card className="p-3">
             <div className="grid grid-cols-7 gap-1 mb-2">
