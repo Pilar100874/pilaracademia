@@ -500,12 +500,40 @@ export default function GradeMasterPage() {
           </Card>
         ) : (
           <Card className="p-4">
-            <h2 className="font-semibold mb-3">
-              {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })} · {daySlots.length} aula{daySlots.length !== 1 ? 's' : ''}
-            </h2>
+            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+              <h2 className="font-semibold">
+                {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })} · {daySlots.length} aula{daySlots.length !== 1 ? 's' : ''}
+              </h2>
+              <div className="text-[11px] text-muted-foreground">
+                Clique em um horário abaixo para adicionar uma aula avulsa
+              </div>
+            </div>
+
+            {/* Faixa de horários clicáveis para criar aula avulsa */}
+            <div className="mb-4 p-2 rounded-lg border bg-muted/30">
+              <div className="text-[10px] uppercase tracking-wide font-bold text-muted-foreground mb-1.5 px-1">
+                + Aula avulsa às:
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {Array.from({ length: 15 }, (_, i) => 7 + i).map((h) => {
+                  const t = `${String(h).padStart(2, '0')}:00`;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => openAvulsoAt(day, t)}
+                      className="px-2 py-1 text-xs rounded border bg-card hover:border-primary hover:text-primary transition flex items-center gap-1"
+                    >
+                      <Plus className="h-3 w-3" />{t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {daySlots.length === 0 ? (
               <p className="text-sm text-muted-foreground py-8 text-center">Nenhuma aula nesse dia.</p>
             ) : (
+
               <div className="space-y-2">
                 {daySlots.map((s) => {
                   const sl = s.appointment ? STATUS_LABEL[s.appointment.status] : (
