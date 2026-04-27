@@ -447,7 +447,8 @@ export default function GradeMasterPage() {
     }
     if (selectedEmptyKeys.size === 0) return;
     let count = 0;
-    let lastError: string | null = null;
+    const conflicts: string[] = [];
+    const otherErrors: string[] = [];
     for (const k of selectedEmptyKeys) {
       const { date, hour, roomId: cellRoomId } = parseEmptyKey(k);
       const sched = new Date(`${date}T${String(hour).padStart(2, '0')}:00:00`);
@@ -458,8 +459,6 @@ export default function GradeMasterPage() {
           duration_minutes: values.durationMinutes,
           equipment_id: null,
           instructor_id: values.instructorId,
-          // Se o usuário escolheu uma sala explicitamente, ela vence;
-          // caso contrário usa a coluna onde clicou.
           room_id: values.roomId ?? cellRoomId,
           capacity: 1,
           notes: null,
@@ -467,16 +466,31 @@ export default function GradeMasterPage() {
         } as any);
         count++;
       } catch (e: any) {
-        lastError = e?.message || 'Erro ao criar horário';
+        const msg = e?.message || 'Erro ao criar horário';
+        const label = format(sched, 'dd/MM HH:mm');
+        if (/professor já/i.test(msg) || /already/i.test(msg)) {
+          conflicts.push(`${label} — ${msg.replace(/^.*?:\s*/, '')}`);
+        } else {
+          otherErrors.push(`${label}: ${msg}`);
+        }
         console.error('[GradeMaster] createBookable error', e);
       }
     }
-    // Força refetch dos dados visíveis para garantir que apareçam no dashboard
     await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
     await qc.invalidateQueries({ queryKey: ['appointments'] });
     if (count > 0) toast.success(`${count} horário(s) criado(s)`);
-    if (lastError && count === 0) toast.error(`Falha: ${lastError}`);
-    else if (lastError) toast.warning(`Alguns horários falharam: ${lastError}`);
+    if (conflicts.length > 0) {
+      toast.warning(
+        `${conflicts.length} horário(s) ignorado(s) — professor já ocupado`,
+        { description: conflicts.slice(0, 5).join('\n') + (conflicts.length > 5 ? `\n…e mais ${conflicts.length - 5}` : ''), duration: 8000 }
+      );
+    }
+    if (otherErrors.length > 0) {
+      toast.error(`${otherErrors.length} falha(s)`, { description: otherErrors.slice(0, 5).join('\n'), duration: 8000 });
+    }
+    if (count === 0 && conflicts.length === 0 && otherErrors.length === 0) {
+      toast.info('Nenhum horário processado.');
+    }
     exitSelection();
   };
 
@@ -484,7 +498,8 @@ export default function GradeMasterPage() {
     if (selectedSlotKeys.size === 0) return;
     const tsList = visibleSlotsForSelection().map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
     let updated = 0;
-    let lastError: string | null = null;
+    const conflicts: string[] = [];
+    const otherErrors: string[] = [];
     for (const t of tsList) {
       const patch: any = {};
       if (values.instructorId !== null) patch.instructor_id = values.instructorId;
@@ -506,14 +521,27 @@ export default function GradeMasterPage() {
         }
         updated++;
       } catch (e: any) {
-        lastError = e?.message || 'Erro ao atualizar';
+        const msg = e?.message || 'Erro ao atualizar';
+        const label = t.scheduled_at ? format(new Date(t.scheduled_at), 'dd/MM HH:mm') : '';
+        if (/professor já/i.test(msg)) {
+          conflicts.push(`${label} — ${msg.replace(/^.*?:\s*/, '')}`);
+        } else {
+          otherErrors.push(`${label}: ${msg}`);
+        }
       }
     }
     await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
     await qc.invalidateQueries({ queryKey: ['appointments'] });
     if (updated > 0) toast.success(`${updated} horário(s) atualizado(s)`);
-    if (lastError && updated === 0) toast.error(lastError);
-    else if (lastError) toast.warning(`Alguns horários falharam: ${lastError}`);
+    if (conflicts.length > 0) {
+      toast.warning(
+        `${conflicts.length} horário(s) ignorado(s) — professor já ocupado`,
+        { description: conflicts.slice(0, 5).join('\n') + (conflicts.length > 5 ? `\n…e mais ${conflicts.length - 5}` : ''), duration: 8000 }
+      );
+    }
+    if (otherErrors.length > 0) {
+      toast.error(`${otherErrors.length} falha(s)`, { description: otherErrors.slice(0, 5).join('\n'), duration: 8000 });
+    }
     exitSelection();
   };
 
@@ -629,7 +657,15 @@ export default function GradeMasterPage() {
       toast.success(`Horário criado em ${format(sched, 'dd/MM HH:mm')}`);
     } catch (e: any) {
       console.error('[GradeMaster] dropInstructorOnCell error', e);
-      toast.error(`Falha: ${e?.message || 'Erro ao criar horário'}`);
+      const msg = e?.message || 'Erro ao criar horário';
+      if (/professor já/i.test(msg)) {
+        toast.warning('Conflito de professor', {
+          description: `${format(sched, 'dd/MM HH:mm')} — ${msg.replace(/^.*?:\s*/, '')}`,
+          duration: 7000,
+        });
+      } else {
+        toast.error(`Falha: ${msg}`);
+      }
     } finally {
       setDraggingInstructorId(null);
     }
