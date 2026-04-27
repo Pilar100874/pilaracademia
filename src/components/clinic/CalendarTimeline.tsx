@@ -107,17 +107,40 @@ export function CalendarTimeline({
           return (
             <div key={d.toISOString()} className={cn('relative border-l', isToday && 'bg-primary/[0.02]')}>
               {/* linhas de hora clicáveis */}
-              {hours.map((h) => (
-                <button
-                  key={h}
-                  onClick={() => onCellClick(d, h)}
-                  title={`Adicionar aula às ${String(h).padStart(2, '0')}:00`}
-                  className="absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group"
-                  style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
-                >
-                  <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
-                </button>
-              ))}
+              {hours.map((h) => {
+                const cellKey = `cell-${d.toISOString()}-${h}`;
+                const isHover = hoverKey === cellKey;
+                return (
+                  <button
+                    key={h}
+                    onClick={() => onCellClick(d, h)}
+                    onDragOver={(e) => {
+                      if (!onDropInstructorOnCell) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'copy';
+                      if (hoverKey !== cellKey) setHoverKey(cellKey);
+                    }}
+                    onDragLeave={() => { if (hoverKey === cellKey) setHoverKey(null); }}
+                    onDrop={(e) => {
+                      if (!onDropInstructorOnCell) return;
+                      e.preventDefault();
+                      const id = readInstructor(e);
+                      setHoverKey(null);
+                      if (id) onDropInstructorOnCell(id, d, h);
+                    }}
+                    title={dragActive ? `Soltar professor às ${String(h).padStart(2, '0')}:00` : `Adicionar aula às ${String(h).padStart(2, '0')}:00`}
+                    className={cn(
+                      'absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group',
+                      dragActive && 'bg-primary/[0.03]',
+                      isHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
+                    )}
+                    style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
+                  >
+                    <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
+                  </button>
+                );
+              })}
+
 
               {/* now indicator */}
               {showNow && (
