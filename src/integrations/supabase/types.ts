@@ -189,7 +189,7 @@ export type Database = {
           active?: boolean
           clinic_id: string
           created_at?: string
-          equipment_type: string
+          equipment_type?: string
           id?: string
           identifier?: string | null
           maintenance_notes?: string | null
