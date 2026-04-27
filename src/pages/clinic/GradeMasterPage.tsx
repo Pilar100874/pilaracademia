@@ -1312,7 +1312,10 @@ export default function GradeMasterPage() {
           sequences={sequences}
           rooms={rooms as any}
           bookableSlots={bookableSlots as any}
-          onSaved={() => { /* react-query refetch via hooks */ }}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ['appointments'] });
+            qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+          }}
         />
       )}
 
