@@ -967,7 +967,7 @@ function StepGrade({
 
         <Button onClick={handleGenerate} disabled={creating} className="w-full">
           {creating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CalendarDays className="h-4 w-4 mr-1" />}
-          Gerar grade (4 semanas)
+          Gerar grade
         </Button>
       </div>
 
@@ -979,6 +979,58 @@ function StepGrade({
         </div>
         {totalSlots > 0 && <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"><Check className="h-3 w-3" /></Badge>}
       </div>
+
+      {/* Séries existentes */}
+      {series.length > 0 && (
+        <div className="rounded-xl border p-3 space-y-2 bg-card">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-semibold">Grades geradas</div>
+            <span className="text-[11px] text-muted-foreground">{series.length} série(s)</span>
+          </div>
+          <div className="space-y-1.5">
+            {series.map((s) => {
+              const first = new Date(s.first);
+              const last = new Date(s.last);
+              return (
+                <div key={s.series_id} className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-xs">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium">
+                      {first.toLocaleDateString('pt-BR')} → {last.toLocaleDateString('pt-BR')}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {s.active_count} de {s.count} ativos
+                    </div>
+                  </div>
+                  {s.active ? (
+                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">Ativa</Badge>
+                  ) : (
+                    <Badge variant="secondary">Suspensa</Badge>
+                  )}
+                  <div className="flex gap-1 ml-auto">
+                    <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={() => extendSeries(s.series_id)}>
+                      Estender
+                    </Button>
+                    {s.active ? (
+                      <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={() => suspendSeries(s.series_id)}>
+                        Suspender
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={() => reactivateSeries(s.series_id)}>
+                        Reativar
+                      </Button>
+                    )}
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteSeries(s.series_id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {loadingSeries && <div className="text-[11px] text-muted-foreground">Carregando…</div>}
+        </div>
+      )}
     </div>
   );
 }
