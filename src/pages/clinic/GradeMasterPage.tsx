@@ -760,6 +760,11 @@ export default function GradeMasterPage() {
                               {instructorName(s.instructor_id)}
                             </span>
                           )}
+                          {!s.isOpen && isUncovered(s) && (
+                            <span className="inline-flex items-center gap-0.5 text-destructive font-semibold">
+                              <AlertTriangle className="h-3 w-3" />sem prof.
+                            </span>
+                          )}
                           {shifts.length > 0 && !s.isOpen && (
                             <span className="text-muted-foreground/70 text-[10px]">
                               · turno {shifts[0].start_time.slice(0,5)}–{shifts[0].end_time.slice(0,5)}
