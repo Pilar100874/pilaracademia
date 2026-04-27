@@ -118,10 +118,17 @@ function expandRecurringForDayExt(
 }
 
 export default function GradeMasterPage() {
+  const navigate = useNavigate();
   const { activeClinicId } = useUserRoles();
   const { user } = useAuth();
   const qc = useQueryClient();
   const { confirm } = useConfirm();
+  const handlePlanClick = useCallback((s: any) => {
+    if (!s?.appointment_id) return;
+    const d = new Date(s.scheduled_at ?? Date.now());
+    const dateStr = format(d, 'yyyy-MM-dd');
+    navigate(`/clinica/planejar?date=${dateStr}&appointment=${s.appointment_id}`);
+  }, [navigate]);
   const [view, setView] = useState<'day' | 'week' | 'month'>('week');
   const [day, setDay] = useState(() => new Date());
   const [simulateRenewal, setSimulateRenewal] = useState(true);
