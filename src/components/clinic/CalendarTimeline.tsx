@@ -63,8 +63,10 @@ interface Props {
   onMarqueeEnd?: (info: { slotCount: number; emptyCount: number; additive: boolean }) => void;
   /** Quando informado e com pelo menos 1 sala, cada dia ganha sub-colunas por sala. */
   rooms?: RoomLite[];
-  /** Clique no sub-cabeçalho de uma sala (no dia D) — para selecionar a coluna. */
-  onRoomColumnClick?: (day: Date, roomId: string | null) => void;
+  /** Clique no sub-cabeçalho de uma sala (no dia D) — para selecionar a coluna.
+   * O segundo argumento `allDays` é true quando o usuário usou Shift/Ctrl/Cmd
+   * para indicar "selecionar essa sala em TODOS os dias visíveis". */
+  onRoomColumnClick?: (day: Date, roomId: string | null, allDays: boolean) => void;
 }
 
 export function CalendarTimeline({
