@@ -123,6 +123,18 @@ export default function GradeMasterPage() {
   }, [monthGridStart, monthGridEnd]);
   const fetchDayISO = view === 'day' ? day.toISOString() : undefined;
 
+  // Range para buscar bookable_slots conforme a vista
+  const rangeFromISO = useMemo(() => {
+    if (view === 'day') { const d = new Date(day); d.setHours(0,0,0,0); return d.toISOString(); }
+    if (view === 'week') return weekStart.toISOString();
+    return monthGridStart.toISOString();
+  }, [view, day, weekStart, monthGridStart]);
+  const rangeToISO = useMemo(() => {
+    if (view === 'day') { const d = new Date(day); d.setHours(23,59,59,999); return d.toISOString(); }
+    if (view === 'week') { const d = addDays(weekStart, 7); return d.toISOString(); }
+    return monthGridEnd.toISOString();
+  }, [view, day, weekStart, monthGridEnd]);
+
   // Quando view=week/month, buscamos sem filtro de dia e filtramos no cliente.
   const { data: appointments = [], updateStatus, remove } = useAppointments(activeClinicId, fetchDayISO);
   const { data: students = [] } = useStudents(activeClinicId);
@@ -130,6 +142,7 @@ export default function GradeMasterPage() {
   const { data: sequences = [] } = useSequences(activeClinicId);
   const { data: rooms = [] } = useClinicRooms(activeClinicId);
   const { data: staff = [] } = useClinicStaff(activeClinicId);
+  const { data: bookableSlots = [] } = useBookableSlots(activeClinicId, rangeFromISO, rangeToISO);
   const instructors = useMemo(
     () => staff.filter((s) => s.role === 'instructor' || s.role === 'clinic_admin').map((s) => ({ user_id: s.user_id, name: s.name })),
     [staff],
