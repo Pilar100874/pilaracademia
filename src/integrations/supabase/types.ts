@@ -122,6 +122,7 @@ export type Database = {
           notes: string | null
           prescription_id: string | null
           recurring_schedule_id: string | null
+          recurring_week_id: string | null
           scheduled_at: string
           sequence_id: string | null
           status: Database["public"]["Enums"]["appointment_status"]
@@ -145,6 +146,7 @@ export type Database = {
           notes?: string | null
           prescription_id?: string | null
           recurring_schedule_id?: string | null
+          recurring_week_id?: string | null
           scheduled_at: string
           sequence_id?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
@@ -168,13 +170,22 @@ export type Database = {
           notes?: string | null
           prescription_id?: string | null
           recurring_schedule_id?: string | null
+          recurring_week_id?: string | null
           scheduled_at?: string
           sequence_id?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
           student_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "class_appointments_recurring_week_id_fkey"
+            columns: ["recurring_week_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_schedule_weeks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clinic_equipment: {
         Row: {
@@ -1662,6 +1673,67 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_schedule_weeks: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          duration_minutes: number
+          equipment_id: string | null
+          id: string
+          instructor_id: string | null
+          recurring_schedule_id: string
+          room_id: string | null
+          start_time: string
+          week_of_month: number
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          duration_minutes?: number
+          equipment_id?: string | null
+          id?: string
+          instructor_id?: string | null
+          recurring_schedule_id: string
+          room_id?: string | null
+          start_time: string
+          week_of_month: number
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          duration_minutes?: number
+          equipment_id?: string | null
+          id?: string
+          instructor_id?: string | null
+          recurring_schedule_id?: string
+          room_id?: string | null
+          start_time?: string
+          week_of_month?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_schedule_weeks_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_schedule_weeks_recurring_schedule_id_fkey"
+            columns: ["recurring_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_schedule_weeks_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recurring_schedules: {
         Row: {
           active: boolean
@@ -1675,9 +1747,11 @@ export type Database = {
           id: string
           instructor_id: string | null
           notes: string | null
+          room_id: string | null
           start_date: string
           start_time: string
           student_id: string
+          title: string | null
           updated_at: string
         }
         Insert: {
@@ -1692,9 +1766,11 @@ export type Database = {
           id?: string
           instructor_id?: string | null
           notes?: string | null
+          room_id?: string | null
           start_date?: string
           start_time: string
           student_id: string
+          title?: string | null
           updated_at?: string
         }
         Update: {
@@ -1709,12 +1785,22 @@ export type Database = {
           id?: string
           instructor_id?: string | null
           notes?: string | null
+          room_id?: string | null
           start_date?: string
           start_time?: string
           student_id?: string
+          title?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "recurring_schedules_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sequence_share_links: {
         Row: {
