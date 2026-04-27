@@ -1448,7 +1448,7 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, i
       style={instructorColor && !slot.isOpen ? { borderLeftColor: uncovered ? 'hsl(var(--destructive))' : instructorColor, borderLeftWidth: 3 } : undefined}
       className={cn(
         'w-full text-left p-1.5 rounded border text-[11px] hover:bg-muted/50 transition group block cursor-pointer',
-        slot.isVirtual && 'border-dashed',
+        slot.isVirtual && 'border-solid',
         slot.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
         slot.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/10',
         uncovered && !slot.isOpen && 'bg-destructive/5',
