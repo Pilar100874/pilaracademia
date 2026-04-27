@@ -20,7 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Plus, ChevronLeft, ChevronRight, CalendarDays, CheckCircle2, LogIn, Trash2,
-  Repeat, ListChecks, Sparkles, AlertTriangle, RefreshCw, Filter, DoorOpen,
+  Repeat, ListChecks, Sparkles, AlertTriangle, RefreshCw, Filter, DoorOpen, Users, UserCog,
 } from 'lucide-react';
 import { format, addDays, addMonths, isSameDay, parseISO, startOfWeek, startOfMonth, endOfMonth, endOfWeek, isSameMonth, differenceInCalendarDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
