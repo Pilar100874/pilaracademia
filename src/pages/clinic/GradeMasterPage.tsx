@@ -598,7 +598,12 @@ export default function GradeMasterPage() {
   };
 
   const dropInstructorOnCell = async (raw: string, d: Date, hour: number, roomId: string | null = null) => {
-    if (!activeClinicId || !user) return;
+    console.log('[GradeMaster] dropInstructorOnCell', { raw, day: d.toISOString(), hour, roomId, activeClinicId, hasUser: !!user });
+    if (!activeClinicId || !user) {
+      toast.error('Sessão sem clínica ativa. Recarregue a página.');
+      setDraggingInstructorId(null);
+      return;
+    }
     const newInstructorId = resolveInstructor(raw);
     if (!newInstructorId) {
       toast.info('Arraste um professor para criar um horário.');
@@ -619,9 +624,11 @@ export default function GradeMasterPage() {
         notes: null,
         created_by: user.id,
       } as any);
-      toast.success('Horário criado com professor');
+      await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+      toast.success(`Horário criado em ${format(sched, 'dd/MM HH:mm')}`);
     } catch (e: any) {
-      toast.error(e?.message || 'Erro ao criar horário');
+      console.error('[GradeMaster] dropInstructorOnCell error', e);
+      toast.error(`Falha: ${e?.message || 'Erro ao criar horário'}`);
     } finally {
       setDraggingInstructorId(null);
     }
