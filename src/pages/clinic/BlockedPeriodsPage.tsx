@@ -121,6 +121,11 @@ export default function BlockedPeriodsPage() {
     freeSlotIds: string[];
     onConfirm: () => void;
   } | null>(null);
+  const [instructorDialog, setInstructorDialog] = useState<{
+    freeSlotIds: number;
+    onClear: () => void;
+    onSkip: () => void;
+  } | null>(null);
 
   const persistRules = async (form: BlockedFormState) => {
     const base = {
