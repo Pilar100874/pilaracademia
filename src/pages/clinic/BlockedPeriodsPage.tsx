@@ -194,7 +194,7 @@ function BlockedForm({
 }) {
   const [form, setForm] = useState<BlockedFormState>({
     name: initial?.name ?? '',
-    day_of_week: initial?.day_of_week ?? 1,
+    days_of_week: initial ? [initial.day_of_week] : [1],
     start_time: initial?.start_time?.slice(0, 5) ?? '12:00',
     end_time: initial?.end_time?.slice(0, 5) ?? '13:00',
     room_id: initial?.room_id ?? '',
