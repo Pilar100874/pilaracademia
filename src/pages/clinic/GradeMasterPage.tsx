@@ -537,7 +537,10 @@ export default function GradeMasterPage() {
         }
       }
     });
-    if (newEmpty.size === 0 && newSlots.size === 0) return;
+    if (newEmpty.size === 0 && newSlots.size === 0) {
+      toast.info('Nenhum horário disponível nessa coluna.');
+      return;
+    }
     replaceSelection(newSlots, newEmpty);
     // Prioriza criar horários vazios; se só houver existentes, vai para reassign
     if (newEmpty.size > 0) setBulkOpen('create');
