@@ -278,20 +278,15 @@ export default function GradeMasterPage() {
 
   return (
     <PageMotion className="min-h-screen">
-      {/* HERO — Editorial */}
-      <div className="hero-yellow">
-        <div className="max-w-7xl mx-auto px-6 py-12 sm:py-16">
-          <p className="eyebrow mb-4">Painel da clínica · 01</p>
-          <h1 className="display-xl text-foreground flex items-baseline gap-4">
-            <CalendarDays className="h-8 w-8 opacity-60" strokeWidth={1.25} />
-            Grade Master
-          </h1>
-          <p className="mt-4 text-muted-foreground max-w-2xl leading-relaxed text-pretty">
-            Toda a operação em uma tela — alunos fixos, contratos, renovações e prescrição da grade,
-            organizados como um arquivo editorial.
-          </p>
+      {/* Cabeçalho compacto */}
+      <div className="border-b bg-card/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+          <CalendarDays className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+          <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Grade Master</h1>
+          <span className="text-xs text-muted-foreground hidden sm:inline">· agenda da clínica</span>
         </div>
       </div>
+
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4">
         {/* TOP BAR: stats + view + filters */}
