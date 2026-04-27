@@ -573,12 +573,14 @@ export default function GradeMasterPage() {
                   const sl = s.appointment ? STATUS_LABEL[s.appointment.status] : (
                     s.isProjected
                       ? { label: 'Projetado', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30' }
-                      : { label: 'Fixo', cls: 'bg-secondary text-secondary-foreground' }
+                      : s.isOpen
+                        ? { label: 'Livre', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' }
+                        : { label: 'Fixo', cls: 'bg-secondary text-secondary-foreground' }
                   );
                   const seqId = s.appointment?.sequence_id;
                   const seqName = seqId ? sequences.find((x) => x.id === seqId)?.name : null;
                   const av = studentAvatar(s.student_id);
-                  const stu = students.find((x) => x.id === s.student_id) as any;
+                  const stu = s.student_id ? students.find((x) => x.id === s.student_id) as any : null;
                   const expired = stu?.contract_end_date && new Date(stu.contract_end_date) < new Date();
                   return (
                     <div
@@ -587,13 +589,18 @@ export default function GradeMasterPage() {
                         'flex items-center gap-3 p-3 rounded-lg border bg-card flex-wrap',
                         s.isVirtual && 'border-dashed',
                         s.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
+                        s.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5',
                       )}
                     >
                       <div className="text-center min-w-[60px]">
                         <div className="font-bold text-lg">{format(parseISO(s.scheduled_at), 'HH:mm')}</div>
                         <div className="text-[10px] text-muted-foreground">{s.duration_minutes}min</div>
                       </div>
-                      {av ? (
+                      {s.isOpen ? (
+                        <div className="h-9 w-9 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                          <Plus className="h-4 w-4" />
+                        </div>
+                      ) : av ? (
                         <img src={av} alt="" className="h-9 w-9 rounded-full object-cover" />
                       ) : (
                         <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
@@ -602,7 +609,7 @@ export default function GradeMasterPage() {
                       )}
                       <div className="flex-1 min-w-[180px]">
                         <div className="font-medium truncate flex items-center gap-1.5">
-                          {studentName(s.student_id)}
+                          {s.isOpen ? <span className="text-muted-foreground italic">Horário disponível</span> : studentName(s.student_id)}
                           {s.isVirtual && <span title="Horário fixo"><Repeat className="h-3 w-3 text-muted-foreground" /></span>}
                           {s.isProjected && <span title="Projeção pós-contrato"><RefreshCw className="h-3 w-3 text-amber-600" /></span>}
                           {expired && !s.appointment && (
@@ -618,7 +625,7 @@ export default function GradeMasterPage() {
                             <span>· {instructorName(s.instructor_id)}</span>
                           )}
                           {seqName && <span className="text-primary"><Sparkles className="h-3 w-3 inline mr-0.5" />{seqName}</span>}
-                          {!seqName && !s.isProjected && (
+                          {!seqName && !s.isProjected && !s.isOpen && (
                             <span className="text-amber-600 dark:text-amber-400">
                               <AlertTriangle className="h-3 w-3 inline mr-0.5" />sem grade
                             </span>
@@ -627,17 +634,23 @@ export default function GradeMasterPage() {
                       </div>
                       <Badge className={sl.cls}>{sl.label}</Badge>
 
-                      {s.isProjected && (
-                        <Button size="sm" variant="outline" onClick={() => renewContract(s.student_id)}>
+                      {s.isProjected && s.student_id && (
+                        <Button size="sm" variant="outline" onClick={() => renewContract(s.student_id!)}>
                           <RefreshCw className="h-3.5 w-3.5 mr-1" />Renovar
                         </Button>
                       )}
 
-                      <Button size="sm" variant={seqName ? 'outline' : 'default'} onClick={() => openSlotDialog(s)}>
-                        <ListChecks className="h-3.5 w-3.5 mr-1" />{seqName ? 'Trocar grade' : 'Definir grade'}
-                      </Button>
+                      {s.isOpen ? (
+                        <Button size="sm" onClick={() => openSlotDialog(s)}>
+                          <Plus className="h-3.5 w-3.5 mr-1" />Agendar aluno
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant={seqName ? 'outline' : 'default'} onClick={() => openSlotDialog(s)}>
+                          <ListChecks className="h-3.5 w-3.5 mr-1" />{seqName ? 'Trocar grade' : 'Definir grade'}
+                        </Button>
+                      )}
 
-                      {(!s.appointment || s.appointment.status === 'scheduled') && !s.isProjected && (
+                      {!s.isOpen && (!s.appointment || s.appointment.status === 'scheduled') && !s.isProjected && (
                         <Button size="sm" variant="outline" onClick={() => handleCheckIn(s)}>
                           <LogIn className="h-3.5 w-3.5 mr-1" />Check-in
                         </Button>
