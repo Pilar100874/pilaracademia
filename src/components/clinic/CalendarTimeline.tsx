@@ -41,7 +41,7 @@ interface Props {
 
 export function CalendarTimeline({
   days, startHour, endHour, hourHeight = 56,
-  slotsForDay, studentName, instructorName, roomName, colorOf,
+  slotsForDay, studentName, instructorName, roomName, roomColorOf, colorOf,
   onCellClick, onSlotClick, onDelete, renderInstructorPicker,
 }: Props) {
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
