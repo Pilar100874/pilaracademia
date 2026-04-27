@@ -1145,8 +1145,9 @@ export default function GradeMasterPage() {
           return undefined;
         })()}
         onConfirm={async (values) => {
-          if (bulkOpen === 'create') await createSelectedEmpty(values);
-          else if (bulkOpen === 'reassign') await reassignSelected(values);
+          // Sempre executa ambas as operações se houver seleção mista
+          if (selectedEmptyKeys.size > 0) await createSelectedEmpty(values);
+          if (selectedSlotKeys.size > 0) await reassignSelected(values);
         }}
       />
     </PageMotion>
