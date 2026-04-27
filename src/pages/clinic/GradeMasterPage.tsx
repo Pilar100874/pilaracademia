@@ -815,6 +815,15 @@ export default function GradeMasterPage() {
                           </PopoverContent>
                         </Popover>
                       )}
+                      <InstructorPicker
+                        appointmentId={s.appointment?.id}
+                        bookableSlotId={s.bookable_slot_id}
+                        recurringId={!s.appointment && s.recurring_id ? s.recurring_id : undefined}
+                        currentInstructorId={s.instructor_id}
+                        instructors={instructors}
+                        colorOf={colorOf}
+                        clinicId={activeClinicId!}
+                      />
                       <Badge className={sl.cls}>{sl.label}</Badge>
 
                       {s.isProjected && s.student_id && (
