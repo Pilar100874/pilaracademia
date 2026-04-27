@@ -162,12 +162,30 @@ export function CalendarTimeline({
                 const color = colorOf(s.instructor_id);
                 const instr = instructorName(s.instructor_id);
                 const room = roomName(s.room_id);
+                const slotKey = `slot-${s.key}`;
+                const isSlotHover = hoverKey === slotKey;
                 return (
                   <Popover key={s.key}>
                     <PopoverTrigger asChild>
                       <div
                         role="button"
                         tabIndex={0}
+                        onDragOver={(e) => {
+                          if (!onDropInstructorOnSlot) return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          e.dataTransfer.dropEffect = 'copy';
+                          if (hoverKey !== slotKey) setHoverKey(slotKey);
+                        }}
+                        onDragLeave={() => { if (hoverKey === slotKey) setHoverKey(null); }}
+                        onDrop={(e) => {
+                          if (!onDropInstructorOnSlot) return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const id = readInstructor(e);
+                          setHoverKey(null);
+                          if (id) onDropInstructorOnSlot(id, s);
+                        }}
                         style={{
                           top: top + 1,
                           height,
@@ -183,8 +201,10 @@ export function CalendarTimeline({
                                 ? 'bg-card border-dashed'
                                 : 'bg-card',
                           s.uncovered && !s.isOpen && 'bg-destructive/5',
+                          isSlotHover && 'ring-2 ring-primary bg-primary/15',
                         )}
                       >
+
                         <div className="flex items-center justify-between gap-1 leading-tight">
                           <span className="font-bold">{format(t, 'HH:mm')}</span>
                           <div className="flex items-center gap-0.5">
