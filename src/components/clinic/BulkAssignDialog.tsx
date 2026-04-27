@@ -222,9 +222,15 @@ export function BulkAssignDialog({
             {isCreate && <Badge variant="outline">{duration} min</Badge>}
           </div>
 
+          {missingRequired && (
+            <p className="text-[11px] text-destructive -mt-2">
+              Selecione um professor e uma sala para criar os horários.
+            </p>
+          )}
+
           <div className="flex gap-2 pt-2 border-t">
             <Button variant="outline" onClick={onClose} className="flex-1" disabled={saving}>Cancelar</Button>
-            <Button onClick={handleConfirm} className="flex-1" disabled={saving}>
+            <Button onClick={handleConfirm} className="flex-1" disabled={saving || missingRequired}>
               {saving ? 'Salvando...' : isCreate ? 'Criar horários' : 'Atribuir'}
             </Button>
           </div>
