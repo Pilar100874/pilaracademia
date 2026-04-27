@@ -372,13 +372,67 @@ export function SlotGradeDialog({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="text-xs text-muted-foreground -mt-2">
-            Defina equipamento e sequência por aluno. Marque <strong>fixo</strong> para reservar o equipamento neste horário e bloquear para os demais.
+          <div className="flex items-center justify-between gap-2 -mt-1 flex-wrap">
+            <div className="text-xs text-muted-foreground">
+              Defina equipamento e sequência por aluno. Marque <strong>fixo</strong> para reservar o equipamento neste horário.
+            </div>
+            <div className="flex items-center gap-2">
+              {slotRoomInfo.roomName && (
+                <Badge variant="outline" className="gap-1 text-[11px]">
+                  <DoorOpen className="h-3 w-3" />
+                  {slotRoomInfo.roomName}
+                </Badge>
+              )}
+              <Badge
+                variant={isFull ? 'destructive' : 'secondary'}
+                className="gap-1 text-[11px] tabular-nums"
+                title={slotRoomInfo.capacity != null ? 'Alunos / capacidade da sala' : 'Sem capacidade definida'}
+              >
+                <UsersIcon className="h-3 w-3" />
+                {rows.length}
+                {slotRoomInfo.capacity != null ? ` / ${slotRoomInfo.capacity}` : ''}
+              </Badge>
+              <Popover open={addOpen} onOpenChange={setAddOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isFull || availableStudents.length === 0}
+                    title={isFull ? 'Sala lotada' : 'Adicionar aluno a esta aula'}
+                  >
+                    <UserPlus className="h-4 w-4 mr-1" />
+                    Adicionar aluno
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-0" align="end">
+                  <Command>
+                    <CommandInput placeholder="Buscar aluno…" />
+                    <CommandList>
+                      <CommandEmpty>Nenhum aluno disponível.</CommandEmpty>
+                      <CommandGroup>
+                        {availableStudents.map((s) => (
+                          <CommandItem key={s.id} value={s.full_name || s.id} onSelect={() => addStudent(s.id)}>
+                            {s.full_name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
+
+          {isFull && (
+            <div className="text-[11px] text-destructive flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              Sala lotada — para adicionar mais alunos aumente a capacidade da sala.
+            </div>
+          )}
 
           {rows.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              Nenhum aluno neste horário.
+              Nenhum aluno neste horário. Use <strong>Adicionar aluno</strong> acima.
             </p>
           ) : (
             <div className="space-y-3">
