@@ -831,6 +831,28 @@ function StepGrade({
           </div>
         </div>
 
+        {/* Período da grade */}
+        <div className="rounded-lg border bg-card p-3 space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <Label className="text-xs uppercase tracking-wide">Período</Label>
+            <label className="flex items-center gap-2 text-xs cursor-pointer">
+              <Switch checked={noEndDate} onCheckedChange={setNoEndDate} />
+              <span>Sem data de término</span>
+            </label>
+          </div>
+          {!noEndDate ? (
+            <div>
+              <Label className="text-xs text-muted-foreground">Gerar até</Label>
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <p className="text-[11px] text-muted-foreground mt-1">A grade será criada de hoje até esta data.</p>
+            </div>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">
+              Serão gerados horários para as próximas <strong>12 semanas</strong>. Use "Estender" abaixo quando precisar de mais.
+            </p>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label className="text-xs">Sala</Label>
