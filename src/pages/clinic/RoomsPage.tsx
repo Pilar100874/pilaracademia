@@ -159,5 +159,6 @@ export default function RoomsPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }
