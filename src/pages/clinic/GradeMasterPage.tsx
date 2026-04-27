@@ -1302,6 +1302,7 @@ export default function GradeMasterPage() {
           onClose={() => setSlotDialog(null)}
           slot={slotDialog.slot}
           focusedStudentId={slotDialog.focusedStudentId}
+          autoOpenAdd={slotDialog.autoOpenAdd}
           clinicId={activeClinicId}
           userId={user.id}
           appointments={appointments as any}
