@@ -662,15 +662,35 @@ function StepGrade({
             </Select>
           </div>
           <div>
-            <Label className="text-xs">Equipamento</Label>
-            <Select value={equipmentId} onValueChange={setEquipmentId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent className="z-[300]">
-                <SelectItem value="any">Qualquer (definir depois)</SelectItem>
-                {equipment.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Label className="text-xs">Equipamentos</Label>
+            {equipment.length === 0 ? (
+              <div className="text-xs text-muted-foreground mt-2">Nenhum equipamento cadastrado. Será "qualquer".</div>
+            ) : (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {equipment.map((e) => {
+                  const active = equipmentIds.includes(e.id);
+                  return (
+                    <button
+                      key={e.id}
+                      type="button"
+                      onClick={() => toggleEquipment(e.id)}
+                      className={`h-9 px-3 rounded-lg border text-xs font-semibold transition ${
+                        active ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-muted'
+                      }`}
+                    >
+                      {e.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="text-[11px] text-muted-foreground mt-1">
+              {equipmentIds.length === 0
+                ? 'Nenhum selecionado → "qualquer" (definir depois)'
+                : `${equipmentIds.length} equipamento(s) por horário · capacidade = ${equipmentIds.length}`}
+            </div>
           </div>
+
         </div>
 
         <Button onClick={handleGenerate} disabled={creating} className="w-full">
