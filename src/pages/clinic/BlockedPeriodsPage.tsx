@@ -316,6 +316,53 @@ export default function BlockedPeriodsPage() {
           )}
         </Card>
       </div>
+
+      <Dialog open={!!conflictDialog} onOpenChange={(v) => { if (!v) setConflictDialog(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Conflitos encontrados
+            </DialogTitle>
+          </DialogHeader>
+          {conflictDialog && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Existem <strong>{conflictDialog.appointments.length} aula(s)</strong> agendada(s) dentro desse horário.
+                Elas <strong>não serão canceladas</strong> automaticamente — você precisa remarcá-las manualmente.
+                {conflictDialog.freeSlotIds.length > 0 && (
+                  <> Além disso, <strong>{conflictDialog.freeSlotIds.length} horário(s) livre(s) de professor</strong> serão liberados automaticamente.</>
+                )}
+              </p>
+              <div className="border rounded-md max-h-72 overflow-auto divide-y">
+                {conflictDialog.appointments.map((a) => {
+                  const d = new Date(a.scheduled_at);
+                  const room = (rooms as any[]).find((r) => r.id === a.room_id);
+                  return (
+                    <div key={a.id} className="p-2.5 text-sm flex items-start gap-2">
+                      <Clock className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium">{a.student_name}</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {DOW_FULL[d.getDay()]}, {d.toLocaleDateString('pt-BR')} às {d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          {a.instructor_name && <> · Prof. {a.instructor_name}</>}
+                          {room && <> · {room.name}</>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConflictDialog(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => conflictDialog?.onConfirm()}>
+              Criar bloqueio mesmo assim
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageMotion>
   );
 }
