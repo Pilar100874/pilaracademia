@@ -100,74 +100,103 @@ export default function ClinicLayout() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar desktop (lg+) */}
-      <aside className="hidden lg:flex w-64 flex-col border-r bg-card">
-        <div className="p-4 border-b flex items-center gap-3">
+      {/* Sidebar desktop/tablet (md+) — colapsável */}
+      <motion.aside
+        initial={false}
+        animate={{ width: sidebarCollapsed ? 64 : 256 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+        className="hidden md:flex flex-col border-r bg-card relative shrink-0"
+      >
+        <div className={cn('border-b flex items-center gap-3', sidebarCollapsed ? 'p-2 justify-center' : 'p-4')}>
           {activeClinic.logo_url ? (
-            <img src={activeClinic.logo_url} alt={activeClinic.name} className="h-12 w-12 rounded-lg object-contain bg-muted/30 shrink-0" />
-          ) : null}
-          <div className="min-w-0">
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">Clínica</div>
-            <div className="font-bold truncate">{activeClinic.name}</div>
-          </div>
+            <img
+              src={activeClinic.logo_url}
+              alt={activeClinic.name}
+              className={cn('rounded-lg object-contain bg-muted/30 shrink-0', sidebarCollapsed ? 'h-10 w-10' : 'h-12 w-12')}
+            />
+          ) : (
+            <div className={cn('rounded-lg bg-primary/10 flex items-center justify-center shrink-0', sidebarCollapsed ? 'h-10 w-10' : 'h-12 w-12')}>
+              <Home className="h-5 w-5 text-primary" />
+            </div>
+          )}
+          <AnimatePresence initial={false}>
+            {!sidebarCollapsed && (
+              <motion.div
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.18 }}
+                className="min-w-0"
+              >
+                <div className="text-xs text-muted-foreground uppercase tracking-wide">Clínica</div>
+                <div className="font-bold truncate">{activeClinic.name}</div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+
+        <nav className={cn('flex-1 overflow-y-auto', sidebarCollapsed ? 'p-2 space-y-1' : 'p-3 space-y-1')}>
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
+              title={sidebarCollapsed ? item.label : undefined}
               className={({ isActive }) => cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition',
+                'flex items-center rounded-xl text-sm transition',
+                sidebarCollapsed ? 'justify-center h-11 w-11 mx-auto' : 'gap-3 px-3 py-2.5',
                 isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-foreground'
               )}
             >
-              <item.icon className="h-4 w-4" />
-              {item.label}
+              <item.icon className={cn('shrink-0', sidebarCollapsed ? 'h-5 w-5' : 'h-4 w-4')} />
+              <AnimatePresence initial={false}>
+                {!sidebarCollapsed && (
+                  <motion.span
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: 'auto' }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="whitespace-nowrap overflow-hidden"
+                  >
+                    {item.label}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </NavLink>
           ))}
         </nav>
-        <div className="p-3 border-t space-y-1">
-          <Button variant="ghost" className="w-full justify-start" onClick={() => navigate('/')}>
-            <Home className="h-4 w-4 mr-2" />
-            Meu app pessoal
-          </Button>
-          <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Sair
-          </Button>
-        </div>
-      </aside>
 
-      {/* Sidebar mini-icon (tablet md..lg) */}
-      <aside className="hidden md:flex lg:hidden w-16 flex-col border-r bg-card items-center py-3 gap-1">
-        {activeClinic.logo_url ? (
-          <img src={activeClinic.logo_url} alt={activeClinic.name} className="h-10 w-10 rounded-lg object-contain bg-muted/30 mb-2" />
-        ) : (
-          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
-            <Home className="h-5 w-5 text-primary" />
-          </div>
-        )}
-        <div className="flex-1 w-full flex flex-col items-center gap-1 overflow-y-auto px-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              title={item.label}
-              className={({ isActive }) => cn(
-                'h-11 w-11 flex items-center justify-center rounded-xl transition',
-                isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              )}
-            >
-              <item.icon className="h-5 w-5" />
-            </NavLink>
-          ))}
+        <div className={cn('border-t space-y-1', sidebarCollapsed ? 'p-2' : 'p-3')}>
+          <Button
+            variant="ghost"
+            className={cn('w-full', sidebarCollapsed ? 'justify-center px-0' : 'justify-start')}
+            onClick={() => navigate('/')}
+            title={sidebarCollapsed ? 'Meu app pessoal' : undefined}
+          >
+            <Home className={cn('h-4 w-4', !sidebarCollapsed && 'mr-2')} />
+            {!sidebarCollapsed && 'Meu app pessoal'}
+          </Button>
+          <Button
+            variant="ghost"
+            className={cn('w-full text-destructive hover:text-destructive', sidebarCollapsed ? 'justify-center px-0' : 'justify-start')}
+            onClick={handleLogout}
+            title={sidebarCollapsed ? 'Sair' : undefined}
+          >
+            <LogOut className={cn('h-4 w-4', !sidebarCollapsed && 'mr-2')} />
+            {!sidebarCollapsed && 'Sair'}
+          </Button>
         </div>
-        <Button variant="ghost" size="icon" className="text-destructive" onClick={handleLogout} title="Sair">
-          <LogOut className="h-5 w-5" />
-        </Button>
-      </aside>
+
+        {/* Botão flutuante para encolher/expandir */}
+        <button
+          type="button"
+          onClick={() => setSidebarCollapsed((v) => !v)}
+          aria-label={sidebarCollapsed ? 'Expandir menu' : 'Encolher menu'}
+          className="absolute -right-3 top-6 h-6 w-6 rounded-full border bg-card shadow-sm flex items-center justify-center hover:bg-muted transition z-10"
+        >
+          {sidebarCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+        </button>
+      </motion.aside>
 
       {/* Main */}
       <main className="flex-1 min-w-0 flex flex-col">
