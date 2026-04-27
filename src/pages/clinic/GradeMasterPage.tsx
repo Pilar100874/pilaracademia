@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';
@@ -122,6 +122,36 @@ export default function GradeMasterPage() {
   const [filterInstructor, setFilterInstructor] = useState<string>('all');
   const [filterRoom, setFilterRoom] = useState<string>('all');
   const [focusMode, setFocusMode] = useState(false);
+  const fullscreenRef = useRef<HTMLDivElement>(null);
+
+  const toggleFocusMode = useCallback(async () => {
+    const el = fullscreenRef.current;
+    try {
+      if (!document.fullscreenElement) {
+        if (el?.requestFullscreen) {
+          await el.requestFullscreen();
+        }
+        setFocusMode(true);
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        }
+        setFocusMode(false);
+      }
+    } catch {
+      // Fallback: alterna apenas o layout caso a Fullscreen API falhe
+      setFocusMode((v) => !v);
+    }
+  }, []);
+
+  // Sincroniza estado quando o usuário sai do fullscreen via ESC
+  useEffect(() => {
+    const handler = () => {
+      if (!document.fullscreenElement) setFocusMode(false);
+    };
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
 
   const horizonDate = useMemo(() => addMonths(new Date(), renewalMonths), [renewalMonths]);
 
@@ -811,7 +841,7 @@ export default function GradeMasterPage() {
       )}
 
 
-      <div className={cn(focusMode ? 'w-full px-2 sm:px-3 py-2 space-y-2' : 'max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4')}>
+      <div ref={fullscreenRef} className={cn(focusMode ? 'w-full h-full overflow-auto bg-background px-2 sm:px-3 py-2 space-y-2' : 'max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4')}>
         {/* TOP BAR: stats + view + filters */}
         <Card className={cn(focusMode ? 'p-2 space-y-2' : 'p-4 space-y-4')}>
           {!focusMode && (
@@ -886,7 +916,7 @@ export default function GradeMasterPage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setFocusMode((v) => !v)}
+                onClick={toggleFocusMode}
                 title={focusMode ? 'Sair do modo foco' : 'Maximizar agenda'}
               >
                 {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
