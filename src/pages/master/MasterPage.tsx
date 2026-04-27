@@ -330,6 +330,11 @@ export default function MasterPage() {
                     size="sm"
                     title="Entrar como dono desta clínica"
                     onClick={async () => {
+                      // If the master is already the clinic owner, no impersonation needed
+                      if ((c as any).owner_user_id === user?.id) {
+                        navigate('/clinica');
+                        return;
+                      }
                       try {
                         toast.loading('Entrando na clínica...', { id: 'imp' });
                         await impersonate(
