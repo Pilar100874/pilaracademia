@@ -100,12 +100,22 @@ export default function GradeMasterPage() {
 
   const horizonDate = useMemo(() => addMonths(new Date(), renewalMonths), [renewalMonths]);
 
-  // Para a vista semanal, buscamos appointments cobrindo a semana inteira
+  // Para a vista semanal/mensal, buscamos appointments cobrindo o range inteiro
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+  const monthStart = useMemo(() => startOfMonth(day), [day]);
+  const monthEnd = useMemo(() => endOfMonth(day), [day]);
+  const monthGridStart = useMemo(() => startOfWeek(monthStart, { weekStartsOn: 1 }), [monthStart]);
+  const monthGridEnd = useMemo(() => endOfWeek(monthEnd, { weekStartsOn: 1 }), [monthEnd]);
+  const monthDays = useMemo(() => {
+    const days: Date[] = [];
+    const total = differenceInCalendarDays(monthGridEnd, monthGridStart) + 1;
+    for (let i = 0; i < total; i++) days.push(addDays(monthGridStart, i));
+    return days;
+  }, [monthGridStart, monthGridEnd]);
   const fetchDayISO = view === 'day' ? day.toISOString() : undefined;
 
-  // Quando view=week, buscamos sem filtro de dia e filtramos no cliente.
+  // Quando view=week/month, buscamos sem filtro de dia e filtramos no cliente.
   const { data: appointments = [], updateStatus, remove } = useAppointments(activeClinicId, fetchDayISO);
   const { data: students = [] } = useStudents(activeClinicId);
   const { data: equipment = [] } = useEquipment(activeClinicId);
