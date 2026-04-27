@@ -147,7 +147,7 @@ export default function GradeMasterPage() {
   const { data: sequences = [] } = useSequences(activeClinicId);
   const { data: rooms = [] } = useClinicRooms(activeClinicId);
   const { data: staff = [] } = useClinicStaff(activeClinicId);
-  const { data: bookableSlots = [] } = useBookableSlots(activeClinicId, rangeFromISO, rangeToISO);
+  const { data: bookableSlots = [], remove: removeBookable } = useBookableSlots(activeClinicId, rangeFromISO, rangeToISO);
   const instructors = useMemo(
     () => staff.filter((s) => s.role === 'instructor' || s.role === 'clinic_admin').map((s) => ({ user_id: s.user_id, name: s.name })),
     [staff],
