@@ -951,7 +951,7 @@ function Stat({ label, value, icon: Icon, tone = 'default' }: { label: string; v
   );
 }
 
-function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, instructorColor, occupancy, onClick }: {
+function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, instructorColor, occupancy, uncovered, onClick }: {
   slot: MergedSlot;
   studentName: string;
   sequenceName: string | null | undefined;
@@ -959,6 +959,7 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, i
   instructorName?: string | null;
   instructorColor?: string;
   occupancy?: { used: number; cap: number } | null;
+  uncovered?: boolean;
   onClick: () => void;
 }) {
   const time = format(parseISO(slot.scheduled_at), 'HH:mm');
@@ -967,18 +968,24 @@ function SlotMini({ slot, studentName, sequenceName, roomName, instructorName, i
   return (
     <button
       onClick={onClick}
-      style={instructorColor && !slot.isOpen ? { borderLeftColor: instructorColor, borderLeftWidth: 3 } : undefined}
+      style={instructorColor && !slot.isOpen ? { borderLeftColor: uncovered ? 'hsl(var(--destructive))' : instructorColor, borderLeftWidth: 3 } : undefined}
       className={cn(
         'w-full text-left p-1.5 rounded border text-[11px] hover:bg-muted/50 transition group block',
         slot.isVirtual && 'border-dashed',
         slot.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
         slot.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/10',
+        uncovered && !slot.isOpen && 'bg-destructive/5',
         status === 'completed' && 'opacity-60',
       )}
     >
       <div className="flex items-center justify-between gap-1">
         <span className="font-bold">{time}</span>
         <div className="flex items-center gap-0.5">
+          {uncovered && (
+            <span title="Sem professor de plantão" className="text-[9px] font-bold px-1 rounded bg-destructive/15 text-destructive flex items-center gap-0.5">
+              <AlertTriangle className="h-2.5 w-2.5" />sem prof
+            </span>
+          )}
           {occupancy && (
             <span
               className={cn(
