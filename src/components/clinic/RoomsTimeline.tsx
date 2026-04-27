@@ -186,7 +186,12 @@ export function RoomsTimeline({
         ))}
       </div>
 
-      <div className="grid relative overflow-x-auto" style={{ gridTemplateColumns: `60px repeat(${cols.length}, minmax(120px, 1fr))`, height: totalHeight }}>
+      <div
+        ref={marquee.containerRef}
+        onPointerDown={handlePointerDown}
+        className="grid relative overflow-x-auto select-none"
+        style={{ gridTemplateColumns: `60px repeat(${cols.length}, minmax(120px, 1fr))`, height: totalHeight }}
+      >
         <div className="relative">
           {hours.map((h) => (
             <div
