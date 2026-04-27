@@ -35,6 +35,7 @@ interface Props {
   userId: string;
   initialDate: Date;
   initialTime?: string;
+  initialRoomId?: string | null;
   students: Student[];
   equipment: Equipment[];
   rooms?: Room[];
@@ -95,14 +96,14 @@ function expandRule(rule: WeekRule, from: Date, to: Date): Date[] {
 }
 
 export function NewClassDialog({
-  open, onClose, clinicId, userId, initialDate, initialTime, students, equipment, rooms = [], instructors = [], onSaved,
+  open, onClose, clinicId, userId, initialDate, initialTime, initialRoomId, students, equipment, rooms = [], instructors = [], onSaved,
 }: Props) {
   const [mode, setMode] = useState<'avulsa' | 'fixa'>('avulsa');
   const [studentId, setStudentId] = useState('');
   const [time, setTime] = useState(initialTime ?? '08:00');
   const [duration, setDuration] = useState(50);
   const [equipmentId, setEquipmentId] = useState<string>('');
-  const [roomId, setRoomId] = useState<string>('');
+  const [roomId, setRoomId] = useState<string>(initialRoomId ?? '');
   const [instructorId, setInstructorId] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
@@ -121,7 +122,7 @@ export function NewClassDialog({
       setStudentId('');
       setDuration(50);
       setEquipmentId('');
-      setRoomId('');
+      setRoomId(initialRoomId ?? '');
       setInstructorId(userId);
       setNotes('');
       setConflicts(null);
@@ -135,12 +136,12 @@ export function NewClassDialog({
         day_of_week: initialDate.getDay(),
         start_time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
         duration_minutes: 50,
-        room_id: null,
+        room_id: initialRoomId ?? null,
         instructor_id: userId,
         equipment_id: null,
       }]);
     }
-  }, [open, initialDate, initialTime, userId]);
+  }, [open, initialDate, initialTime, initialRoomId, userId]);
 
   const student = useMemo(() => students.find((s) => s.id === studentId), [students, studentId]);
   const contractInfo = useMemo(() => {

@@ -32,6 +32,7 @@ import { NewClassDialog } from '@/components/clinic/NewClassDialog';
 import { InstructorAvailabilityDialog } from '@/components/clinic/InstructorAvailabilityDialog';
 import { InstructorPicker } from '@/components/clinic/InstructorPicker';
 import { CalendarTimeline, type TimelineSlot } from '@/components/clinic/CalendarTimeline';
+import { RoomsTimeline } from '@/components/clinic/RoomsTimeline';
 import { PageMotion } from '@/components/PageMotion';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; cls: string }> = {
@@ -335,9 +336,11 @@ export default function GradeMasterPage() {
   // ===== Nova aula (avulsa ou fixa) =====
   const [newClassOpen, setNewClassOpen] = useState(false);
   const [newClassTime, setNewClassTime] = useState<string | undefined>(undefined);
-  const openNewClassAt = (d: Date, time?: string) => {
+  const [newClassRoomId, setNewClassRoomId] = useState<string | null | undefined>(undefined);
+  const openNewClassAt = (d: Date, time?: string, roomId?: string | null) => {
     setDay(d);
     setNewClassTime(time);
+    setNewClassRoomId(roomId);
     setNewClassOpen(true);
   };
 
@@ -692,18 +695,18 @@ export default function GradeMasterPage() {
               )}
             </div>
 
-            {/* Timeline visual do dia */}
-            <CalendarTimeline
-              days={[day]}
+            {/* Timeline visual do dia — uma coluna por sala */}
+            <RoomsTimeline
+              day={day}
+              rooms={rooms as any}
               startHour={6}
               endHour={22}
               hourHeight={64}
-              slotsForDay={(d) => slotsForDay(d).map(toTimelineSlot)}
+              slots={daySlots.map(toTimelineSlot)}
               studentName={studentName}
               instructorName={instructorName}
-              roomName={roomName}
               colorOf={colorOf}
-              onCellClick={handleCellClick}
+              onCellClick={(d, hour, roomId) => openNewClassAt(d, `${String(hour).padStart(2, '0')}:00`, roomId)}
               onSlotClick={handleTimelineSlotClick}
               onDelete={handleTimelineDelete}
               renderInstructorPicker={renderTimelineInstructorPicker}
@@ -776,6 +779,7 @@ export default function GradeMasterPage() {
           userId={user.id}
           initialDate={day}
           initialTime={newClassTime}
+          initialRoomId={newClassRoomId ?? null}
           students={students as any}
           equipment={equipment as any}
           rooms={rooms as any}
