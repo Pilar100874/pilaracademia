@@ -70,7 +70,33 @@ export function useBookableSlots(clinicId: string | null, fromISO?: string, toIS
     onSuccess: () => qc.invalidateQueries({ queryKey: ['bookable-slots'] }),
   });
 
-  return { ...query, create, update, remove };
+  const block = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('bookable_slots' as any)
+        .update({ blocked: true, instructor_id: null } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+    },
+    onError: (e: any) => toast.error(e?.message || 'Erro ao bloquear horário'),
+  });
+
+  const unblock = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('bookable_slots' as any)
+        .update({ blocked: false } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['bookable-slots'] }),
+    onError: (e: any) => toast.error(e?.message || 'Erro ao desbloquear horário'),
+  });
+
+  return { ...query, create, update, remove, block, unblock };
 }
 
 export function useClinicSettings(clinicId: string | null) {
