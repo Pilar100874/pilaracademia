@@ -870,6 +870,17 @@ export default function GradeMasterPage() {
     if (original) openSlotDialog(original);
   };
 
+  const handleTimelineAddStudent = (ts: TimelineSlot) => {
+    const all = view === 'day' ? daySlots : weekDays.flatMap(slotsForDay);
+    const original = all.find((s) => s.key === ts.key);
+    if (!original) return;
+    setSlotDialog({
+      slot: { scheduled_at: original.scheduled_at, duration_minutes: original.duration_minutes },
+      focusedStudentId: original.student_id ?? '',
+      autoOpenAdd: true,
+    });
+  };
+
   const handleCellClick = (d: Date, hour: number) => {
     tryOpenNewClassAt(d, `${String(hour).padStart(2, '0')}:00`);
   };
