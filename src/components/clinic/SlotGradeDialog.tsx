@@ -81,6 +81,8 @@ export function SlotGradeDialog({
   students,
   equipment,
   sequences,
+  rooms = [],
+  bookableSlots = [],
   onSaved,
 }: Props) {
   // Reúne os alunos do mesmo HH:mm do slot
