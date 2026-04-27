@@ -867,7 +867,7 @@ export default function GradeMasterPage() {
       }
       const hh = String(t.getHours()).padStart(2, '0');
       const mm = String(t.getMinutes()).padStart(2, '0');
-      openNewClassAt(t, `${hh}:${mm}`, (slot as any).room_id ?? null);
+      openNewClassAt(t, `${hh}:${mm}`, (slot as any).room_id ?? null, (slot as any).instructor_id ?? null, slot.duration_minutes || 50, (slot as any).bookable_slot_id ?? null);
       return;
     }
     setSlotDialog({
@@ -1403,10 +1403,17 @@ export default function GradeMasterPage() {
           initialDate={day}
           initialTime={newClassTime}
           initialRoomId={newClassRoomId ?? null}
+          initialInstructorId={newClassInstructorId ?? null}
+          initialDurationMinutes={newClassDuration ?? null}
+          initialBookableSlotId={newClassBookableSlotId ?? null}
           students={students as any}
           equipment={equipment as any}
           rooms={rooms as any}
           instructors={instructors}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ['appointments'] });
+            qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+          }}
         />
       )}
 
@@ -1419,7 +1426,7 @@ export default function GradeMasterPage() {
           rooms={rooms as any}
           instructors={instructors}
           onPick={(p) => {
-            openNewClassAt(p.date, p.time, p.roomId);
+            openNewClassAt(p.date, p.time, p.roomId, p.instructorId, p.durationMinutes, p.bookableSlotId);
           }}
         />
       )}
