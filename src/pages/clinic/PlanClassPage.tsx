@@ -625,49 +625,56 @@ export default function PlanClassPage() {
                       <p>Nenhuma aula neste dia.</p>
                     </div>
                   )}
-                  {appointments.map((a) => {
-                    const st = studentById.get(a.student_id);
-                    const slot = a.bookable_slot_id ? (slotById.get(a.bookable_slot_id) as any) : null;
-                    const room = rooms.find((r) => r.id === slot?.room_id) ?? null;
-                    const isActive = a.id === selectedAppointmentId;
-                    const hasPlan = !!a.sequence_id;
+                  {groupedAppointments.map((g) => {
+                    const room = rooms.find((r) => r.id === g.room_id) ?? null;
+                    const isActiveGroup = g.apps.some((a) => a.id === selectedAppointmentId);
                     return (
-                      <button
-                        key={a.id}
-                        onClick={() => setSelectedAppointmentId(a.id)}
+                      <div
+                        key={g.key}
                         className={cn(
                           'w-full text-left p-2.5 rounded-md border transition-all',
-                          isActive
+                          isActiveGroup
                             ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                            : 'border-border hover:bg-muted/40'
+                            : 'border-border'
                         )}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-                              <span className="font-mono text-sm font-semibold">
-                                {format(new Date(a.scheduled_at), 'HH:mm')}
-                              </span>
-                              {hasPlan && (
-                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
-                                  <ListOrdered className="h-2.5 w-2.5 mr-0.5" />
-                                  Planejada
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="text-sm font-medium truncate mt-0.5">
-                              {st?.full_name ?? '—'}
-                            </div>
-                            {room && (
-                              <div className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
-                                <MapPin className="h-3 w-3" /> {room.name}
-                              </div>
-                            )}
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <span className="font-mono text-sm font-semibold">
+                            {format(new Date(g.scheduled_at), 'HH:mm')}
+                          </span>
+                          {room && (
+                            <span className="text-xs text-muted-foreground truncate flex items-center gap-1 ml-auto">
+                              <MapPin className="h-3 w-3" /> {room.name}
+                            </span>
+                          )}
                         </div>
-                      </button>
+                        <div className="space-y-1">
+                          {g.apps.map((a) => {
+                            const st = studentById.get(a.student_id);
+                            const isActive = a.id === selectedAppointmentId;
+                            const hasPlan = !!a.sequence_id;
+                            return (
+                              <button
+                                key={a.id}
+                                onClick={() => setSelectedAppointmentId(a.id)}
+                                className={cn(
+                                  'w-full text-left px-2 py-1.5 rounded border text-sm flex items-center gap-2 transition',
+                                  isActive
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-border hover:bg-muted/60'
+                                )}
+                              >
+                                <User className={cn('h-3 w-3 shrink-0', isActive ? '' : 'text-muted-foreground')} />
+                                <span className="truncate flex-1">{st?.full_name ?? '—'}</span>
+                                {hasPlan && (
+                                  <ListOrdered className={cn('h-3 w-3 shrink-0', isActive ? '' : 'text-primary')} />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
