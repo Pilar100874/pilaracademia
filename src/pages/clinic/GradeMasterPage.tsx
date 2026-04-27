@@ -165,6 +165,19 @@ export default function GradeMasterPage() {
   const studentAvatar = (id: string | null) => id ? (students.find((s) => s.id === id) as any)?.avatar_url : undefined;
   const equipmentName = (id: string | null) => equipment.find((e) => e.id === id)?.name || '—';
   const roomName = (id: string | null | undefined) => id ? (rooms as any[]).find((r) => r.id === id)?.name : null;
+  // Paleta fallback para salas sem cor cadastrada (HSL Editorial Cotton compat).
+  const ROOM_PALETTE = [
+    'hsl(20 70% 55%)',  'hsl(190 60% 45%)', 'hsl(140 45% 45%)',
+    'hsl(280 50% 55%)', 'hsl(40 75% 50%)',  'hsl(0 60% 55%)',
+    'hsl(220 55% 55%)', 'hsl(160 50% 40%)',
+  ];
+  const roomColorOf = (id: string | null | undefined) => {
+    if (!id) return null;
+    const r = (rooms as any[]).find((x) => x.id === id);
+    if (r?.color) return r.color as string;
+    const idx = (rooms as any[]).findIndex((x) => x.id === id);
+    return ROOM_PALETTE[(idx >= 0 ? idx : 0) % ROOM_PALETTE.length];
+  };
   const instructorName = (id: string | null | undefined) => id ? (instructors.find((i) => i.user_id === id)?.name || `Prof. ${id.slice(0, 4)}`) : null;
 
   /** Slots por dia (real + virtuais + projetados), com filtros */
