@@ -81,7 +81,7 @@ interface Props {
 export function CalendarTimeline({
   days, startHour, endHour, hourHeight = 56,
   slotsForDay, studentName, instructorName, roomName, roomColorOf, colorOf,
-  onCellClick, onSlotClick, onDelete, onPlanClick, renderInstructorPicker,
+  onCellClick, onSlotClick, onDelete, onPermanentDelete, onPlanClick, renderInstructorPicker,
   dragActive = false, onDropInstructorOnCell, onDropInstructorOnSlot,
   selectedSlotKeys, selectedEmptyKeys,
   onReplaceSelection, onAddSelection, onMarqueeEnd,
