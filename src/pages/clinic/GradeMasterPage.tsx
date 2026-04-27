@@ -903,7 +903,7 @@ export default function GradeMasterPage() {
       )}
 
 
-      <div ref={fullscreenRef} className={cn(focusMode ? 'w-full h-full overflow-auto bg-background px-2 sm:px-3 py-2 space-y-2' : 'max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4')}>
+      <div ref={fullscreenRef} className={cn(focusMode ? 'w-full h-full overflow-auto bg-background px-2 sm:px-3 py-2 space-y-2' : 'max-w-[1600px] mx-auto px-3 sm:px-5 lg:px-6 py-5 space-y-4')}>
         {/* TOP BAR: stats + view + filters */}
         <Card className={cn(focusMode ? 'p-2 space-y-2' : 'p-4 space-y-4')}>
           {/* Stats movidos para a linha de filtros (compactos) */}
