@@ -271,6 +271,31 @@ export default function GradeMasterPage() {
     return (availability as any[]).filter((s) => s.day_of_week === dow && s.start_time <= hhmm && s.end_time > hhmm);
   };
 
+  /** Slot está sem professor? (sem instructor_id atribuído ou ninguém de plantão na hora) */
+  const isUncovered = (slot: MergedSlot) => {
+    if (slot.isOpen) return false; // slot livre não conta
+    if (!slot.instructor_id) return true;
+    return shiftsCovering(parseISO(slot.scheduled_at)).length === 0;
+  };
+
+  /** Cobertura por hora do dia: para cada hora 7..21 retorna {hora, profsDePlantao, aulas, semProf}. */
+  const dayCoverage = useMemo(() => {
+    if (view !== 'day') return [];
+    const dow = day.getDay();
+    return Array.from({ length: 15 }, (_, i) => {
+      const hour = 7 + i;
+      const hhmm = `${String(hour).padStart(2, '0')}:00:00`;
+      const shifts = (availability as any[]).filter(
+        (s) => s.day_of_week === dow && s.start_time <= hhmm && s.end_time > hhmm,
+      );
+      const slotsAt = daySlots.filter((s) => parseISO(s.scheduled_at).getHours() === hour && !s.isOpen);
+      const studentsCount = slotsAt.filter((s) => s.student_id).length;
+      const uncoveredCount = slotsAt.filter((s) => isUncovered(s)).length;
+      return { hour, shifts, studentsCount, uncoveredCount, hasAnyClass: slotsAt.length > 0 };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, day, availability, daySlots]);
+
   // Lista de professores presentes nos schedules (deduplicados via clinic_users via recurring/instructor)
   const instructorOptions = useMemo(() => {
     const ids = new Set<string>();
