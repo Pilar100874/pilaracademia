@@ -330,13 +330,8 @@ export default function GradeMasterPage() {
           const sched = new Date(d);
           sched.setHours(Math.floor(m / 60), m % 60, 0, 0);
           roomIds.forEach((rid) => {
-            // Se a hora exata + sala já tem aula real/virtual ocupando, NÃO sobrepõe — apenas marca a hora vazia
-            const hasClass = merged.some((mm) => {
-              if (mm.isOpen || mm.isBlocked) return false;
-              const mt = parseISO(mm.scheduled_at);
-              return mt.getHours() === sched.getHours() && (mm.room_id ?? null) === (rid ?? null);
-            });
-            if (hasClass) return;
+            // Sempre injeta o bloqueio — ele é renderizado por cima das aulas existentes
+            // (z-index maior na timeline) para sinalizar visualmente o conflito.
             merged.push({
               key: `bp-${bp.id}-${sched.toISOString()}-${rid ?? 'all'}`,
               scheduled_at: sched.toISOString(),
