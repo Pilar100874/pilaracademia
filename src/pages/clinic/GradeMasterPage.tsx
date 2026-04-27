@@ -435,6 +435,7 @@ export default function GradeMasterPage() {
   const createSelectedEmpty = async (values: BulkAssignValues) => {
     if (selectedEmptyKeys.size === 0 || !activeClinicId || !user) return;
     let count = 0;
+    let errorMsg: string | null = null;
     for (const k of selectedEmptyKeys) {
       const { date, hour, roomId: cellRoomId } = parseEmptyKey(k);
       const sched = new Date(`${date}T${String(hour).padStart(2, '0')}:00:00`);
@@ -453,9 +454,15 @@ export default function GradeMasterPage() {
           created_by: user.id,
         } as any);
         count++;
-      } catch (e) { /* mutation toasts errors */ }
+      } catch (e: any) {
+        errorMsg = e?.message || 'Erro ao criar horário';
+      }
     }
-    toast.success(`${count} horário(s) criado(s)`);
+    // Força refetch dos dados visíveis para garantir que apareçam no dashboard
+    await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+    await qc.invalidateQueries({ queryKey: ['appointments'] });
+    if (count > 0) toast.success(`${count} horário(s) criado(s)`);
+    if (errorMsg && count === 0) toast.error(errorMsg);
     exitSelection();
   };
 
