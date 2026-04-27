@@ -245,6 +245,17 @@ export function CalendarTimeline({
               ? allSlots.filter((s) => (s.room_id ?? null) === subRoomId || (subIdx === 0 && !s.room_id && !subRoomId))
               : allSlots;
 
+            // Horas ocupadas por qualquer slot (aula, bloqueio, slot reservável) nesta sub-coluna.
+            // Essas horas não podem ser selecionadas para criação em massa.
+            const occupiedHours = new Set<number>();
+            slots.forEach((s) => {
+              const t = parseISO(s.scheduled_at);
+              const startH = t.getHours();
+              const endMin = t.getHours() * 60 + t.getMinutes() + (s.duration_minutes || 60);
+              const endH = Math.ceil(endMin / 60);
+              for (let hh = startH; hh < endH; hh++) occupiedHours.add(hh);
+            });
+
             // Ocupação por hora (apenas sub-colunas com sala + capacidade definida)
             const cap = subRoom?.capacity ?? null;
             const occupancyByHour = new Map<number, { used: number; ratio: number; status: 'free' | 'low' | 'mid' | 'full' }>();
