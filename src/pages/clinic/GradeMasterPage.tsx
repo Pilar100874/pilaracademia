@@ -947,15 +947,17 @@ export default function GradeMasterPage() {
           )}
         </Card>
 
-        {/* Paleta de professores arrastáveis */}
-        {!focusMode && instructors.length > 0 && (
-          <InstructorDragPalette
-            instructors={instructors}
-            colorOf={colorOf}
-            draggingId={draggingInstructorId}
-            onDragStart={(id) => setDraggingInstructorId(id)}
-            onDragEnd={() => setDraggingInstructorId(null)}
-          />
+        {/* Paleta de professores arrastáveis (visível inclusive em fullscreen) */}
+        {instructors.length > 0 && (
+          <div className={cn(focusMode && 'sticky top-0 z-30')}>
+            <InstructorDragPalette
+              instructors={instructors}
+              colorOf={colorOf}
+              draggingId={draggingInstructorId}
+              onDragStart={(id) => setDraggingInstructorId(id)}
+              onDragEnd={() => setDraggingInstructorId(null)}
+            />
+          </div>
         )}
 
         {/* CONTEÚDO */}
