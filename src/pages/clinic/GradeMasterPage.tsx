@@ -203,6 +203,7 @@ export default function GradeMasterPage() {
   const { create: createPresc } = usePrescriptions({ clinicId: activeClinicId });
   const { data: availability = [] } = useInstructorAvailability(activeClinicId);
   const { data: instructorColors = [] } = useInstructorColors(activeClinicId);
+  const { periods: blockedPeriods, exceptions: blockedExceptions, addException, removeException } = useBlockedPeriods(activeClinicId);
   const [availOpen, setAvailOpen] = useState(false);
 
   const colorOf = (instructorId: string | null | undefined) => colorForInstructor(instructorId, instructorColors);
