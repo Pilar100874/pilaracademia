@@ -1,10 +1,20 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { format, parseISO, isSameDay, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Plus, X, AlertTriangle, Repeat, Sparkles, Users, RefreshCw } from 'lucide-react';
+import { Plus, X, AlertTriangle, Repeat, Sparkles, Users, RefreshCw, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
+import { useMarqueeSelection, type MarqueeRect } from '@/hooks/useMarqueeSelection';
+
+/** Empty-cell key for week view (compatible with day format): `${ISODate}|${hour}|none`. */
+export type WeekEmptyKey = string;
+export const makeWeekEmptyKey = (d: Date, hour: number) =>
+  `${d.toISOString().slice(0, 10)}|${hour}|none`;
+export const parseWeekEmptyKey = (k: WeekEmptyKey) => {
+  const [date, h] = k.split('|');
+  return { date, hour: parseInt(h, 10) };
+};
 
 export interface TimelineSlot {
   key: string;
@@ -43,6 +53,12 @@ interface Props {
   dragActive?: boolean;
   onDropInstructorOnCell?: (instructorId: string, day: Date, hour: number) => void;
   onDropInstructorOnSlot?: (instructorId: string, slot: TimelineSlot) => void;
+  // Seleção múltipla (marquee + Shift/Ctrl)
+  selectedSlotKeys?: Set<string>;
+  selectedEmptyKeys?: Set<WeekEmptyKey>;
+  onReplaceSelection?: (slotKeys: Set<string>, emptyKeys: Set<WeekEmptyKey>) => void;
+  onAddSelection?: (slotKeys: Set<string>, emptyKeys: Set<WeekEmptyKey>) => void;
+  onMarqueeEnd?: (info: { slotCount: number; emptyCount: number; additive: boolean }) => void;
 }
 
 export function CalendarTimeline({
@@ -50,10 +66,62 @@ export function CalendarTimeline({
   slotsForDay, studentName, instructorName, roomName, roomColorOf, colorOf,
   onCellClick, onSlotClick, onDelete, renderInstructorPicker,
   dragActive = false, onDropInstructorOnCell, onDropInstructorOnSlot,
+  selectedSlotKeys, selectedEmptyKeys,
+  onReplaceSelection, onAddSelection, onMarqueeEnd,
 }: Props) {
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const readInstructor = (e: React.DragEvent) =>
     e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain') || '';
+
+  // ===== Marquee =====
+  const baseSlotKeysRef = useRef<Set<string>>(new Set());
+  const baseEmptyKeysRef = useRef<Set<WeekEmptyKey>>(new Set());
+  const collectInRect = (rect: MarqueeRect, container: HTMLElement) => {
+    const cRect = container.getBoundingClientRect();
+    const absLeft = cRect.left + rect.left - container.scrollLeft;
+    const absTop = cRect.top + rect.top - container.scrollTop;
+    const absRight = absLeft + rect.width;
+    const absBottom = absTop + rect.height;
+    const slotKeys = new Set<string>();
+    const emptyKeys = new Set<WeekEmptyKey>();
+    container.querySelectorAll<HTMLElement>('[data-cell-key],[data-slot-key]').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      const intersects = r.right >= absLeft && r.left <= absRight && r.bottom >= absTop && r.top <= absBottom;
+      if (!intersects) return;
+      const slotK = el.getAttribute('data-slot-key');
+      const cellK = el.getAttribute('data-cell-key');
+      if (slotK && el.getAttribute('data-selectable') !== 'false') slotKeys.add(slotK);
+      if (cellK) emptyKeys.add(cellK);
+    });
+    return { slotKeys, emptyKeys };
+  };
+  const marquee = useMarqueeSelection({
+    disabled: !(onReplaceSelection || onAddSelection),
+    onUpdate: (rect, additive) => {
+      const container = marquee.containerRef.current;
+      if (!container) return;
+      const { slotKeys, emptyKeys } = collectInRect(rect, container);
+      if (additive) {
+        const sk = new Set(baseSlotKeysRef.current); slotKeys.forEach((k) => sk.add(k));
+        const ek = new Set(baseEmptyKeysRef.current); emptyKeys.forEach((k) => ek.add(k));
+        onReplaceSelection?.(sk, ek);
+      } else {
+        onReplaceSelection?.(slotKeys, emptyKeys);
+      }
+    },
+    onEnd: (rect, additive) => {
+      const container = marquee.containerRef.current;
+      if (!container || !rect) return;
+      const { slotKeys, emptyKeys } = collectInRect(rect, container);
+      const total = slotKeys.size + emptyKeys.size;
+      if (total > 0) onMarqueeEnd?.({ slotCount: slotKeys.size, emptyCount: emptyKeys.size, additive });
+    },
+  });
+  const handlePointerDown = (e: React.PointerEvent) => {
+    baseSlotKeysRef.current = new Set(selectedSlotKeys ?? []);
+    baseEmptyKeysRef.current = new Set(selectedEmptyKeys ?? []);
+    marquee.onPointerDown(e);
+  };
 
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
   const totalHeight = hours.length * hourHeight;
@@ -84,7 +152,12 @@ export function CalendarTimeline({
       </div>
 
       {/* Grid principal com timeline */}
-      <div className="grid relative" style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(0, 1fr))`, height: totalHeight }}>
+      <div
+        ref={marquee.containerRef}
+        onPointerDown={handlePointerDown}
+        className="grid relative select-none"
+        style={{ gridTemplateColumns: `60px repeat(${days.length}, minmax(0, 1fr))`, height: totalHeight }}
+      >
         {/* Coluna de horas */}
         <div className="relative">
           {hours.map((h) => (
@@ -109,11 +182,22 @@ export function CalendarTimeline({
               {/* linhas de hora clicáveis */}
               {hours.map((h) => {
                 const cellKey = `cell-${d.toISOString()}-${h}`;
+                const weekKey = makeWeekEmptyKey(d, h);
                 const isHover = hoverKey === cellKey;
+                const isSelected = selectedEmptyKeys?.has(weekKey);
                 return (
                   <button
                     key={h}
-                    onClick={() => onCellClick(d, h)}
+                    data-cell-key={weekKey}
+                    onClick={(e) => {
+                      if (marquee.didDrag()) return;
+                      const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+                      if (additive) {
+                        onAddSelection?.(new Set(), new Set([weekKey]));
+                      } else {
+                        onCellClick(d, h);
+                      }
+                    }}
                     onDragOver={(e) => {
                       if (!onDropInstructorOnCell) return;
                       e.preventDefault();
@@ -133,10 +217,15 @@ export function CalendarTimeline({
                       'absolute left-0 right-0 border-t border-border/40 hover:bg-primary/5 transition group',
                       dragActive && 'bg-primary/[0.03]',
                       isHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
+                      isSelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
                     )}
                     style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
                   >
-                    <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
+                    {isSelected ? (
+                      <Check className="h-3.5 w-3.5 text-primary absolute top-1 right-1" />
+                    ) : (
+                      <Plus className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-70 absolute top-1 right-1" />
+                    )}
                   </button>
                 );
               })}
@@ -164,12 +253,22 @@ export function CalendarTimeline({
                 const room = roomName(s.room_id);
                 const slotKey = `slot-${s.key}`;
                 const isSlotHover = hoverKey === slotKey;
+                const isSelected = selectedSlotKeys?.has(s.key);
                 return (
                   <Popover key={s.key}>
                     <PopoverTrigger asChild>
                       <div
                         role="button"
                         tabIndex={0}
+                        data-slot-key={s.key}
+                        data-selectable={(s.appointment_id || s.bookable_slot_id) ? 'true' : 'false'}
+                        onClick={(e) => {
+                          if ((e.shiftKey || e.metaKey || e.ctrlKey) && (s.appointment_id || s.bookable_slot_id)) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onAddSelection?.(new Set([s.key]), new Set());
+                          }
+                        }}
                         onDragOver={(e) => {
                           if (!onDropInstructorOnSlot) return;
                           e.preventDefault();
@@ -202,6 +301,7 @@ export function CalendarTimeline({
                                 : 'bg-card',
                           s.uncovered && !s.isOpen && 'bg-destructive/5',
                           isSlotHover && 'ring-2 ring-primary bg-primary/15',
+                          isSelected && 'ring-2 ring-primary bg-primary/15',
                         )}
                       >
 
@@ -272,6 +372,19 @@ export function CalendarTimeline({
             </div>
           );
         })}
+
+        {/* Marquee selection rectangle */}
+        {marquee.state.active && marquee.state.rect && (
+          <div
+            className="absolute z-30 pointer-events-none border-2 border-primary bg-primary/10 rounded-sm"
+            style={{
+              left: marquee.state.rect.left,
+              top: marquee.state.rect.top,
+              width: marquee.state.rect.width,
+              height: marquee.state.rect.height,
+            }}
+          />
+        )}
       </div>
     </div>
   );

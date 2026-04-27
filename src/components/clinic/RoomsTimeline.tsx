@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -6,6 +6,7 @@ import { Plus, X, AlertTriangle, Repeat, Sparkles, RefreshCw, DoorOpen, Users, C
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { TimelineSlot } from './CalendarTimeline';
 import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
+import { useMarqueeSelection, type MarqueeRect } from '@/hooks/useMarqueeSelection';
 
 export interface Room {
   id: string;
@@ -46,6 +47,12 @@ interface Props {
   selectedEmptyKeys?: Set<EmptyCellKey>;
   onToggleSlot?: (s: TimelineSlot) => void;
   onToggleEmpty?: (key: EmptyCellKey) => void;
+  /** Substituir totalmente a seleção (usado pelo marquee não-aditivo). */
+  onReplaceSelection?: (slotKeys: Set<string>, emptyKeys: Set<EmptyCellKey>) => void;
+  /** Adicionar à seleção (usado pelo marquee aditivo Shift/Ctrl). */
+  onAddSelection?: (slotKeys: Set<string>, emptyKeys: Set<EmptyCellKey>) => void;
+  /** Disparado quando um arrasto de seleção termina e selecionou pelo menos 1 célula. */
+  onMarqueeEnd?: (info: { slotCount: number; emptyCount: number; additive: boolean }) => void;
 
   // ===== Drag & drop de professor =====
   /** Indica que há um professor sendo arrastado (para destacar drop targets). */
@@ -65,6 +72,9 @@ export function RoomsTimeline({
   selectedEmptyKeys,
   onToggleSlot,
   onToggleEmpty,
+  onReplaceSelection,
+  onAddSelection,
+  onMarqueeEnd,
   dragActive = false,
   onDropInstructorOnCell,
   onDropInstructorOnSlot,
@@ -72,6 +82,62 @@ export function RoomsTimeline({
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const readInstructor = (e: React.DragEvent) =>
     e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain') || '';
+
+  // ===== Marquee (Excel-style drag select) =====
+  const baseSlotKeysRef = useRef<Set<string>>(new Set());
+  const baseEmptyKeysRef = useRef<Set<EmptyCellKey>>(new Set());
+  const collectInRect = (rect: MarqueeRect, container: HTMLElement) => {
+    const cRect = container.getBoundingClientRect();
+    const absLeft = cRect.left + rect.left - container.scrollLeft;
+    const absTop = cRect.top + rect.top - container.scrollTop;
+    const absRight = absLeft + rect.width;
+    const absBottom = absTop + rect.height;
+    const slotKeys = new Set<string>();
+    const emptyKeys = new Set<EmptyCellKey>();
+    container.querySelectorAll<HTMLElement>('[data-cell-key],[data-slot-key]').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      const intersects = r.right >= absLeft && r.left <= absRight && r.bottom >= absTop && r.top <= absBottom;
+      if (!intersects) return;
+      const slotK = el.getAttribute('data-slot-key');
+      const cellK = el.getAttribute('data-cell-key');
+      if (slotK && el.getAttribute('data-selectable') !== 'false') slotKeys.add(slotK);
+      if (cellK) emptyKeys.add(cellK);
+    });
+    return { slotKeys, emptyKeys };
+  };
+
+  const marquee = useMarqueeSelection({
+    disabled: !(onReplaceSelection || onAddSelection),
+    onUpdate: (rect, additive) => {
+      const container = marquee.containerRef.current;
+      if (!container) return;
+      const { slotKeys, emptyKeys } = collectInRect(rect, container);
+      if (additive) {
+        const sk = new Set(baseSlotKeysRef.current);
+        slotKeys.forEach((k) => sk.add(k));
+        const ek = new Set(baseEmptyKeysRef.current);
+        emptyKeys.forEach((k) => ek.add(k));
+        onReplaceSelection?.(sk, ek);
+      } else {
+        onReplaceSelection?.(slotKeys, emptyKeys);
+      }
+    },
+    onEnd: (rect, additive) => {
+      const container = marquee.containerRef.current;
+      if (!container || !rect) return;
+      const { slotKeys, emptyKeys } = collectInRect(rect, container);
+      const total = slotKeys.size + emptyKeys.size;
+      if (total > 0) onMarqueeEnd?.({ slotCount: slotKeys.size, emptyCount: emptyKeys.size, additive });
+    },
+  });
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    // captura snapshot da seleção atual para modo aditivo
+    baseSlotKeysRef.current = new Set(selectedSlotKeys ?? []);
+    baseEmptyKeysRef.current = new Set(selectedEmptyKeys ?? []);
+    marquee.onPointerDown(e);
+  };
+
 
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
   const totalHeight = hours.length * hourHeight;
@@ -122,7 +188,12 @@ export function RoomsTimeline({
         ))}
       </div>
 
-      <div className="grid relative overflow-x-auto" style={{ gridTemplateColumns: `60px repeat(${cols.length}, minmax(120px, 1fr))`, height: totalHeight }}>
+      <div
+        ref={marquee.containerRef}
+        onPointerDown={handlePointerDown}
+        className="grid relative overflow-x-auto select-none"
+        style={{ gridTemplateColumns: `60px repeat(${cols.length}, minmax(120px, 1fr))`, height: totalHeight }}
+      >
         <div className="relative">
           {hours.map((h) => (
             <div
@@ -149,9 +220,16 @@ export function RoomsTimeline({
                 return (
                   <button
                     key={h}
-                    onClick={() => {
-                      if (selectionMode) {
-                        onToggleEmpty?.(emptyKey);
+                    data-cell-key={emptyKey}
+                    onClick={(e) => {
+                      if (marquee.didDrag()) return;
+                      const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+                      if (selectionMode || additive) {
+                        if (additive && onAddSelection) {
+                          onAddSelection(new Set(), new Set([emptyKey]));
+                        } else {
+                          onToggleEmpty?.(emptyKey);
+                        }
                       } else {
                         onCellClick(day, h, r.id);
                       }
@@ -230,6 +308,8 @@ export function RoomsTimeline({
                   <div
                     role="button"
                     tabIndex={0}
+                    data-slot-key={s.key}
+                    data-selectable={(s.appointment_id || s.bookable_slot_id) ? 'true' : 'false'}
                     onDragOver={(e) => {
                       if (!onDropInstructorOnSlot) return;
                       e.preventDefault();
@@ -245,6 +325,14 @@ export function RoomsTimeline({
                       const id = readInstructor(e);
                       setHoverKey(null);
                       if (id) onDropInstructorOnSlot(id, s);
+                    }}
+                    onClick={(e) => {
+                      // intercept Shift/Ctrl click for additive selection
+                      if ((e.shiftKey || e.metaKey || e.ctrlKey) && (s.appointment_id || s.bookable_slot_id)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onAddSelection?.(new Set([s.key]), new Set());
+                      }
                     }}
                     style={{
                       top: top + 1,
@@ -342,6 +430,19 @@ export function RoomsTimeline({
             </div>
           );
         })}
+
+        {/* Marquee selection rectangle */}
+        {marquee.state.active && marquee.state.rect && (
+          <div
+            className="absolute z-30 pointer-events-none border-2 border-primary bg-primary/10 rounded-sm"
+            style={{
+              left: marquee.state.rect.left,
+              top: marquee.state.rect.top,
+              width: marquee.state.rect.width,
+              height: marquee.state.rect.height,
+            }}
+          />
+        )}
       </div>
     </div>
   );

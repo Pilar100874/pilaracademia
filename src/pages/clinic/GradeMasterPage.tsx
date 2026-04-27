@@ -31,9 +31,10 @@ import { SlotGradeDialog } from '@/components/clinic/SlotGradeDialog';
 import { NewClassDialog } from '@/components/clinic/NewClassDialog';
 import { InstructorAvailabilityDialog } from '@/components/clinic/InstructorAvailabilityDialog';
 import { InstructorPicker } from '@/components/clinic/InstructorPicker';
-import { CalendarTimeline, type TimelineSlot } from '@/components/clinic/CalendarTimeline';
+import { CalendarTimeline, type TimelineSlot, makeWeekEmptyKey, parseWeekEmptyKey, type WeekEmptyKey } from '@/components/clinic/CalendarTimeline';
 import { RoomsTimeline, makeEmptyKey, parseEmptyKey, type EmptyCellKey } from '@/components/clinic/RoomsTimeline';
 import { BulkAssignDialog, type BulkAssignValues } from '@/components/clinic/BulkAssignDialog';
+import { MonthMarqueeGrid } from '@/components/clinic/MonthMarqueeGrid';
 import { InstructorDragPalette, CLEAR_INSTRUCTOR, INSTRUCTOR_DRAG_TYPE } from '@/components/clinic/InstructorDragPalette';
 import { PageMotion } from '@/components/PageMotion';
 
@@ -371,6 +372,7 @@ export default function GradeMasterPage() {
   };
 
   const toggleSlotSel = (s: TimelineSlot) => {
+    setSelectionMode(true);
     setSelectedSlotKeys((prev) => {
       const next = new Set(prev);
       if (next.has(s.key)) next.delete(s.key);
@@ -379,6 +381,7 @@ export default function GradeMasterPage() {
     });
   };
   const toggleEmptySel = (k: EmptyCellKey) => {
+    setSelectionMode(true);
     setSelectedEmptyKeys((prev) => {
       const next = new Set(prev);
       if (next.has(k)) next.delete(k);
@@ -386,11 +389,36 @@ export default function GradeMasterPage() {
       return next;
     });
   };
+  const replaceSelection = (slotKeys: Set<string>, emptyKeys: Set<EmptyCellKey>) => {
+    setSelectionMode(true);
+    setSelectedSlotKeys(slotKeys);
+    setSelectedEmptyKeys(emptyKeys);
+  };
+  const addSelection = (slotKeys: Set<string>, emptyKeys: Set<EmptyCellKey>) => {
+    setSelectionMode(true);
+    setSelectedSlotKeys((prev) => {
+      const n = new Set(prev);
+      slotKeys.forEach((k) => n.add(k));
+      return n;
+    });
+    setSelectedEmptyKeys((prev) => {
+      const n = new Set(prev);
+      emptyKeys.forEach((k) => n.add(k));
+      return n;
+    });
+  };
+
+  /** Slots visíveis na visualização atual (dia/semana/mês), usados para mapear seleção. */
+  const visibleSlotsForSelection = (): MergedSlot[] => {
+    if (view === 'day') return daySlots;
+    if (view === 'week') return weekDays.flatMap(slotsForDay);
+    return monthDays.flatMap(slotsForDay);
+  };
 
   const deleteSelected = async () => {
     if (selectedSlotKeys.size === 0) return;
     if (!confirm(`Excluir ${selectedSlotKeys.size} horário(s) selecionado(s)?`)) return;
-    const tsList = daySlots.map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
+    const tsList = visibleSlotsForSelection().map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
     for (const t of tsList) {
       if (t.appointment_id) await remove.mutateAsync(t.appointment_id);
       else if (t.bookable_slot_id) await removeBookable.mutateAsync(t.bookable_slot_id);
@@ -431,7 +459,7 @@ export default function GradeMasterPage() {
 
   const reassignSelected = async (values: BulkAssignValues) => {
     if (selectedSlotKeys.size === 0) return;
-    const tsList = daySlots.map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
+    const tsList = visibleSlotsForSelection().map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
     let updated = 0;
     for (const t of tsList) {
       const patch: any = {};
@@ -780,6 +808,14 @@ export default function GradeMasterPage() {
               dragActive={draggingInstructorId !== null}
               onDropInstructorOnCell={(id, d, h) => dropInstructorOnCell(id, d, h, null)}
               onDropInstructorOnSlot={dropInstructorOnSlot}
+              selectedSlotKeys={selectedSlotKeys}
+              selectedEmptyKeys={selectedEmptyKeys}
+              onReplaceSelection={replaceSelection}
+              onAddSelection={addSelection}
+              onMarqueeEnd={({ slotCount, emptyCount }) => {
+                if (emptyCount > 0) setBulkOpen('create');
+                else if (slotCount > 0) setBulkOpen('reassign');
+              }}
             />
           </div>
 
@@ -794,91 +830,23 @@ export default function GradeMasterPage() {
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-1">
-                {monthDays.map((d) => {
-                  const slots = slotsForDay(d);
-                  const isToday = isSameDay(d, new Date());
-                  const inMonth = isSameMonth(d, day);
-                  const visible = slots.slice(0, 3);
-                  const extra = slots.length - visible.length;
-                  // salas únicas usadas no dia
-                  const roomIds = Array.from(new Set(slots.map((s) => s.room_id).filter(Boolean))) as string[];
-                  return (
-                    <button
-                      key={d.toISOString()}
-                      onClick={() => { setDay(d); setView('day'); }}
-                      onDragOver={(e) => {
-                        if (draggingInstructorId === null) return;
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = 'copy';
-                      }}
-                      onDrop={(e) => {
-                        if (draggingInstructorId === null) return;
-                        e.preventDefault();
-                        const id = e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain');
-                        if (id) dropInstructorOnCell(id, d, 8, null);
-                      }}
-                      className={cn(
-                        'min-h-[100px] p-1.5 rounded border text-left flex flex-col gap-1 hover:border-primary transition',
-                        !inMonth && 'opacity-40 bg-muted/30',
-                        isToday && 'border-primary border-2',
-                        draggingInstructorId !== null && 'ring-1 ring-primary/30',
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className={cn('text-xs font-bold', isToday && 'text-primary')}>{format(d, 'd')}</span>
-                        {slots.length > 0 && (
-                          <span className="text-[9px] text-muted-foreground">{slots.length}</span>
-                        )}
-                      </div>
-                      {/* faixa de salas usadas */}
-                      {roomIds.length > 0 && (
-                        <div className="flex items-center gap-px h-1 -mt-0.5" title={`${roomIds.length} sala(s) usada(s)`}>
-                          {roomIds.map((rid) => (
-                            <span
-                              key={rid}
-                              className="flex-1 rounded-sm"
-                              style={{ background: roomColorOf(rid) || 'hsl(var(--muted))' }}
-                            />
-                          ))}
-                        </div>
-                      )}
-                      <div className="space-y-0.5 flex-1">
-                        {visible.map((s) => {
-                          const hasGrade = !!s.appointment?.sequence_id;
-                          const rcolor = roomColorOf(s.room_id);
-                          return (
-                            <div
-                              key={s.key}
-                              className={cn(
-                                'text-[9px] px-1 py-0.5 rounded truncate border flex items-center gap-1',
-                                s.isVirtual && 'border-dashed',
-                                s.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
-                                s.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400',
-                                !s.isOpen && (hasGrade ? 'bg-primary/10 text-primary' : 'bg-muted'),
-                              )}
-                            >
-                              {rcolor && (
-                                <span
-                                  className="h-1.5 w-1.5 rounded-full shrink-0"
-                                  style={{ background: rcolor }}
-                                  title={roomName(s.room_id) || ''}
-                                />
-                              )}
-                              <span className="truncate">
-                                {format(parseISO(s.scheduled_at), 'HH:mm')} {s.isOpen ? (roomName(s.room_id) || 'livre') : studentName(s.student_id).split(' ')[0]}
-                              </span>
-                            </div>
-                          );
-                        })}
-                        {extra > 0 && (
-                          <div className="text-[9px] text-muted-foreground px-1">+{extra} mais</div>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+              <MonthMarqueeGrid
+                monthDays={monthDays}
+                day={day}
+                roomColorOf={roomColorOf}
+                roomName={roomName}
+                studentName={studentName}
+                slotsForDay={slotsForDay}
+                draggingInstructorId={draggingInstructorId}
+                dropInstructorOnCell={dropInstructorOnCell}
+                selectedEmptyKeys={selectedEmptyKeys}
+                onReplaceSelection={replaceSelection}
+                onAddSelection={addSelection}
+                onMarqueeEnd={({ emptyCount }) => {
+                  if (emptyCount > 0) setBulkOpen('create');
+                }}
+                onCellOpen={(d) => { setDay(d); setView('day'); }}
+              />
             </Card>
           </div>
         ) : (
@@ -991,6 +959,13 @@ export default function GradeMasterPage() {
               selectedEmptyKeys={selectedEmptyKeys}
               onToggleSlot={toggleSlotSel}
               onToggleEmpty={toggleEmptySel}
+              onReplaceSelection={replaceSelection}
+              onAddSelection={addSelection}
+              onMarqueeEnd={({ slotCount, emptyCount }) => {
+                // Abre o diálogo direto após selecionar por arrasto
+                if (emptyCount > 0) setBulkOpen('create');
+                else if (slotCount > 0) setBulkOpen('reassign');
+              }}
               dragActive={draggingInstructorId !== null}
               onDropInstructorOnCell={dropInstructorOnCell}
               onDropInstructorOnSlot={dropInstructorOnSlot}
@@ -1110,7 +1085,7 @@ export default function GradeMasterPage() {
         initial={(() => {
           // Pré-preenche com a sala/prof do primeiro item selecionado.
           if (bulkOpen === 'reassign') {
-            const first = daySlots.map(toTimelineSlot).find((t) => selectedSlotKeys.has(t.key));
+            const first = visibleSlotsForSelection().map(toTimelineSlot).find((t) => selectedSlotKeys.has(t.key));
             return { roomId: first?.room_id ?? null, instructorId: first?.instructor_id ?? null, durationMinutes: 50 };
           }
           if (bulkOpen === 'create' && selectedEmptyKeys.size > 0) {
