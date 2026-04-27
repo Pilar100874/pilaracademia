@@ -642,7 +642,7 @@ function StepGrade({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
             <Label className="text-xs">Início</Label>
             <Input type="number" min={5} max={22} value={startHour} onChange={(e) => setStartHour(e.target.value)} />
@@ -654,6 +654,10 @@ function StepGrade({
           <div>
             <Label className="text-xs">Duração (min)</Label>
             <Input type="number" min={20} max={120} value={duration} onChange={(e) => setDuration(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs">Intervalo (min)</Label>
+            <Input type="number" min={0} max={60} value={breakMinutes} onChange={(e) => setBreakMinutes(e.target.value)} />
           </div>
         </div>
 
