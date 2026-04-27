@@ -553,21 +553,26 @@ function StepGrade({
     if (!user) return;
     if (days.length === 0) { toast.error('Escolha pelo menos um dia'); return; }
     const sh = Number(startHour), eh = Number(endHour), dur = Number(duration);
+    const brk = Math.max(0, Number(breakMinutes) || 0);
     if (eh <= sh) { toast.error('Hora final deve ser maior que a inicial'); return; }
+    if (dur <= 0) { toast.error('Duração inválida'); return; }
     setCreating(true);
     try {
       // Generate next 4 weeks of slots
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const rows: any[] = [];
       const primaryEquipmentId = equipmentIds[0] ?? null;
+      const stepMinutes = dur + brk;
+      const dayMinutes = (eh - sh) * 60;
       for (let week = 0; week < 4; week++) {
         for (const dow of days) {
           const date = new Date(today);
           const diff = (dow - today.getDay() + 7) % 7 + week * 7;
           date.setDate(today.getDate() + diff);
-          for (let h = sh; h < eh; h++) {
+          for (let offset = 0; offset + dur <= dayMinutes; offset += stepMinutes) {
             const sched = new Date(date);
-            sched.setHours(h, 0, 0, 0);
+            sched.setHours(sh, 0, 0, 0);
+            sched.setMinutes(sched.getMinutes() + offset);
             rows.push({
               clinic_id: clinicId,
               scheduled_at: sched.toISOString(),
