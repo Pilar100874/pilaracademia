@@ -807,10 +807,22 @@ export default function GradeMasterPage() {
                     <button
                       key={d.toISOString()}
                       onClick={() => { setDay(d); setView('day'); }}
+                      onDragOver={(e) => {
+                        if (draggingInstructorId === null) return;
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'copy';
+                      }}
+                      onDrop={(e) => {
+                        if (draggingInstructorId === null) return;
+                        e.preventDefault();
+                        const id = e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain');
+                        if (id) dropInstructorOnCell(id, d, 8, null);
+                      }}
                       className={cn(
                         'min-h-[100px] p-1.5 rounded border text-left flex flex-col gap-1 hover:border-primary transition',
                         !inMonth && 'opacity-40 bg-muted/30',
                         isToday && 'border-primary border-2',
+                        draggingInstructorId !== null && 'ring-1 ring-primary/30',
                       )}
                     >
                       <div className="flex items-center justify-between">
