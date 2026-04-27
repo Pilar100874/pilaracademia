@@ -800,6 +800,14 @@ export default function GradeMasterPage() {
               dragActive={draggingInstructorId !== null}
               onDropInstructorOnCell={(id, d, h) => dropInstructorOnCell(id, d, h, null)}
               onDropInstructorOnSlot={dropInstructorOnSlot}
+              selectedSlotKeys={selectedSlotKeys}
+              selectedEmptyKeys={selectedEmptyKeys}
+              onReplaceSelection={replaceSelection}
+              onAddSelection={addSelection}
+              onMarqueeEnd={({ slotCount, emptyCount }) => {
+                if (emptyCount > 0) setBulkOpen('create');
+                else if (slotCount > 0) setBulkOpen('reassign');
+              }}
             />
           </div>
 
