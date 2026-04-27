@@ -58,6 +58,7 @@ export type Database = {
       }
       bookable_slots: {
         Row: {
+          active: boolean
           capacity: number
           clinic_id: string
           created_at: string
@@ -69,8 +70,10 @@ export type Database = {
           notes: string | null
           room_id: string | null
           scheduled_at: string
+          series_id: string | null
         }
         Insert: {
+          active?: boolean
           capacity?: number
           clinic_id: string
           created_at?: string
@@ -82,8 +85,10 @@ export type Database = {
           notes?: string | null
           room_id?: string | null
           scheduled_at: string
+          series_id?: string | null
         }
         Update: {
+          active?: boolean
           capacity?: number
           clinic_id?: string
           created_at?: string
@@ -95,6 +100,7 @@ export type Database = {
           notes?: string | null
           room_id?: string | null
           scheduled_at?: string
+          series_id?: string | null
         }
         Relationships: []
       }
