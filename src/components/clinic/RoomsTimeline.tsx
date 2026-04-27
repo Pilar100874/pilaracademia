@@ -453,6 +453,15 @@ export function RoomsTimeline({
                             Abrir
                           </button>
                         )}
+                        {!s.isBlocked && s.appointment_id && onPlanClick && (
+                          <button
+                            onClick={() => onPlanClick(s)}
+                            className="flex-1 px-2 py-1.5 rounded border border-primary/40 text-primary text-[11px] hover:bg-primary/5 text-center inline-flex items-center justify-center gap-1"
+                            title="Planejar sequência de exercícios"
+                          >
+                            ✨ Planejar
+                          </button>
+                        )}
                         {!s.isBlocked && renderInstructorPicker?.(s)}
                         {onDelete && (s.appointment_id || s.bookable_slot_id) && (
                           s.isBlocked ? (
