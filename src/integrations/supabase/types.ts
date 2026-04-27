@@ -435,6 +435,7 @@ export type Database = {
           clinic_id: string
           color: string | null
           created_at: string
+          equipment_mode: string
           id: string
           name: string
           updated_at: string
@@ -445,6 +446,7 @@ export type Database = {
           clinic_id: string
           color?: string | null
           created_at?: string
+          equipment_mode?: string
           id?: string
           name: string
           updated_at?: string
@@ -455,6 +457,7 @@ export type Database = {
           clinic_id?: string
           color?: string | null
           created_at?: string
+          equipment_mode?: string
           id?: string
           name?: string
           updated_at?: string
@@ -1962,6 +1965,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      room_equipment: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          equipment_id: string
+          id: string
+          room_id: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          equipment_id: string
+          id?: string
+          room_id: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          equipment_id?: string
+          id?: string
+          room_id?: string
+        }
+        Relationships: []
       }
       sequence_share_links: {
         Row: {
