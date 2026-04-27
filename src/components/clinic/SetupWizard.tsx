@@ -788,7 +788,7 @@ function StepGrade({
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-muted-foreground">Gere automaticamente horários fixos da semana (próximas 4 semanas). Você pode editar depois em <em>Horários</em>.</p>
+      <p className="text-sm text-muted-foreground">Defina os horários fixos da semana e até quando devem ser gerados. Você pode suspender, estender ou excluir uma grade depois.</p>
 
       <div className="rounded-xl border p-4 space-y-4 bg-muted/20">
         <div>
