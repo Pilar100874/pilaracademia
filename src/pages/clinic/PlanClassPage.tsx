@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
-  CalendarDays, Clock, User, MapPin, Dumbbell, Sparkles, ListOrdered,
+  CalendarDays, Clock, User, Users, MapPin, Dumbbell, Sparkles, ListOrdered,
   ChevronRight, ChevronLeft, Plus, X, GripVertical, AlertTriangle, Save,
   Search, Loader2, Library, Filter, BookmarkPlus,
 } from 'lucide-react';
