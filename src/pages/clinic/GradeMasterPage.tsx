@@ -943,7 +943,7 @@ export default function GradeMasterPage() {
       {/* Cabeçalho compacto */}
       {!focusMode && (
         <div className="border-b bg-card/40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+          <div className="w-full px-3 sm:px-4 py-3 flex items-center gap-3">
             <CalendarDays className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
             <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Grade Master</h1>
             <span className="text-xs text-muted-foreground hidden sm:inline">· agenda da clínica</span>
@@ -952,7 +952,7 @@ export default function GradeMasterPage() {
       )}
 
 
-      <div ref={fullscreenRef} className={cn(focusMode ? 'w-full h-full overflow-auto bg-background px-2 sm:px-3 py-2 space-y-2' : 'max-w-[1600px] mx-auto px-3 sm:px-5 lg:px-6 py-5 space-y-4')}>
+      <div ref={fullscreenRef} className={cn(focusMode ? 'w-full h-full overflow-auto bg-background px-2 sm:px-3 py-2 space-y-2' : 'w-full px-2 sm:px-3 lg:px-4 py-4 space-y-4')}>
         {/* TOP BAR: stats + view + filters */}
         <Card className={cn(focusMode ? 'p-2 space-y-2' : 'p-4 space-y-4')}>
           {/* Stats movidos para a linha de filtros (compactos) */}
