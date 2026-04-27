@@ -385,7 +385,7 @@ export default function GradeMasterPage() {
                   </button>
                   <div className="space-y-1.5">
                     {slots.length === 0 && (
-                      <div className="text-[10px] text-muted-foreground text-center py-4">—</div>
+                      <div className="text-[10px] text-muted-foreground text-center py-2">—</div>
                     )}
                     {slots.map((s) => (
                       <SlotMini
@@ -396,6 +396,12 @@ export default function GradeMasterPage() {
                         onClick={() => openSlotDialog(s)}
                       />
                     ))}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openNewClassAt(d); }}
+                      className="w-full text-[10px] py-1.5 mt-1 rounded border border-dashed text-muted-foreground hover:border-primary hover:text-primary transition flex items-center justify-center gap-1"
+                    >
+                      <Plus className="h-3 w-3" /> Nova aula
+                    </button>
                   </div>
                 </Card>
               );
