@@ -239,6 +239,7 @@ export default function EquipmentPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 }
