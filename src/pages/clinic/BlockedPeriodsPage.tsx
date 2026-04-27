@@ -182,13 +182,29 @@ export default function BlockedPeriodsPage() {
 
     const { appointments, freeSlotIds } = await findConflicts(activeClinicId, rules);
 
-    const proceed = async () => {
-      await clearFreeSlots(freeSlotIds);
+    const proceed = async (clearSlots: boolean) => {
+      if (clearSlots) await clearFreeSlots(freeSlotIds);
       await persistRules(form);
     };
 
     if (appointments.length === 0) {
-      await proceed();
+      if (freeSlotIds.length === 0) {
+        await proceed(false);
+        return;
+      }
+      // Apenas horários de professor conflitam — perguntar o que fazer
+      setInstructorDialog({
+        freeSlotIds: freeSlotIds.length,
+        onClear: async () => {
+          setInstructorDialog(null);
+          await proceed(true);
+        },
+        onSkip: () => {
+          setInstructorDialog(null);
+          // Cancela a criação do bloqueio
+          toast.info('Bloqueio não criado. Horários do professor preservados.');
+        },
+      });
       return;
     }
 
@@ -197,7 +213,7 @@ export default function BlockedPeriodsPage() {
       freeSlotIds,
       onConfirm: async () => {
         setConflictDialog(null);
-        await proceed();
+        await proceed(true);
       },
     });
   };
