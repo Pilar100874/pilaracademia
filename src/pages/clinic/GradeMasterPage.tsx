@@ -979,6 +979,9 @@ export default function GradeMasterPage() {
               selectedEmptyKeys={selectedEmptyKeys}
               onToggleSlot={toggleSlotSel}
               onToggleEmpty={toggleEmptySel}
+              dragActive={draggingInstructorId !== null}
+              onDropInstructorOnCell={dropInstructorOnCell}
+              onDropInstructorOnSlot={dropInstructorOnSlot}
             />
 
             {/* Barra flutuante de ações de seleção */}
