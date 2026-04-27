@@ -152,11 +152,13 @@ export function SlotGradeDialog({
   const [saving, setSaving] = useState(false);
   const [showPropagate, setShowPropagate] = useState<{ row: RowState } | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [studentSearch, setStudentSearch] = useState('');
 
   useEffect(() => {
     if (open) {
       setRows(rowsInit);
       if (autoOpenAdd) setAddOpen(true);
+      setStudentSearch('');
     }
   }, [open, rowsInit, autoOpenAdd]);
 
@@ -220,6 +222,9 @@ export function SlotGradeDialog({
     .filter((s) => (s as any).active !== false)
     .filter((s) => !presentIds.has(s.id))
     .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+  const filteredStudents = availableStudents.filter((s) =>
+    (s.full_name || '').toLowerCase().includes(studentSearch.trim().toLowerCase())
+  );
 
   const addStudent = (studentId: string) => {
     if (isFull) {
