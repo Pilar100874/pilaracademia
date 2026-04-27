@@ -844,15 +844,7 @@ export default function GradeMasterPage() {
       <div ref={fullscreenRef} className={cn(focusMode ? 'w-full h-full overflow-auto bg-background px-2 sm:px-3 py-2 space-y-2' : 'max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4')}>
         {/* TOP BAR: stats + view + filters */}
         <Card className={cn(focusMode ? 'p-2 space-y-2' : 'p-4 space-y-4')}>
-          {!focusMode && (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <Stat label="Total" value={stats.total} icon={CalendarDays} />
-              <Stat label="Aulas marcadas" value={stats.classes} icon={CheckCircle2} tone="success" />
-              <Stat label="Sem professor" value={stats.uncovered} icon={AlertTriangle} tone={stats.uncovered > 0 ? 'danger' : 'muted'} />
-              <Stat label="Horários livres" value={stats.open} icon={Plus} tone="warn" />
-              <Stat label="Projeções" value={stats.projected} icon={RefreshCw} tone="muted" />
-            </div>
-          )}
+          {/* Stats movidos para a linha de filtros (compactos) */}
 
           <div className="flex flex-wrap items-center gap-3 pt-2 border-t">
             <Tabs value={view} onValueChange={(v) => setView(v as 'day' | 'week' | 'month')}>
