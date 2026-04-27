@@ -12,6 +12,7 @@ import { addMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useConfirm } from '@/components/ConfirmProvider';
 import { cn } from '@/lib/utils';
 
 interface Student {
@@ -98,6 +99,7 @@ function expandRule(rule: WeekRule, from: Date, to: Date): Date[] {
 export function NewClassDialog({
   open, onClose, clinicId, userId, initialDate, initialTime, initialRoomId, students, equipment, rooms = [], instructors = [], onSaved,
 }: Props) {
+  const { confirm } = useConfirm();
   const [mode, setMode] = useState<'avulsa' | 'fixa'>('avulsa');
   const [studentId, setStudentId] = useState('');
   const [time, setTime] = useState(initialTime ?? '08:00');
@@ -241,7 +243,12 @@ export function NewClassDialog({
           });
           if (overlap) {
             const sName = students.find((s) => s.id === overlap.student_id)?.full_name ?? 'outro aluno';
-            const ok = confirm(`Conflito detectado: já existe uma aula com este equipamento às ${format(new Date(overlap.scheduled_at), 'HH:mm')} (${sName}).\n\nDeseja agendar mesmo assim?`);
+            const ok = await confirm({
+              title: 'Conflito detectado',
+              description: `Já existe uma aula com este equipamento às ${format(new Date(overlap.scheduled_at), 'HH:mm')} (${sName}).\n\nDeseja agendar mesmo assim?`,
+              confirmText: 'Agendar mesmo assim',
+              destructive: true,
+            });
             if (!ok) { setSaving(false); return; }
           }
         }

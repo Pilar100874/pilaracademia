@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import { useConfirm } from '@/components/ConfirmProvider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
@@ -535,7 +536,7 @@ export default function SequencesPage() {
                         variant="ghost"
                         size="icon"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => { if (confirm('Excluir sequência?')) { remove.mutate(currentSeq.id); setSelected(null); } }}
+                        onClick={async () => { if (await confirm({ title: 'Excluir sequência', description: 'Excluir sequência?', destructive: true })) { remove.mutate(currentSeq.id); setSelected(null); } }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

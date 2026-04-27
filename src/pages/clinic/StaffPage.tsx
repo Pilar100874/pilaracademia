@@ -11,6 +11,7 @@ import { Plus, UserCog, Trash2, KeyRound, Copy, ShieldCheck, GraduationCap, Head
 import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useConfirm } from '@/components/ConfirmProvider';
 
 const ROLE_META: Record<string, { label: string; plural: string; icon: any; chip: string; ring: string; gradient: string }> = {
   clinic_admin: {
@@ -238,8 +239,8 @@ export default function StaffPage() {
                               variant="ghost"
                               className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-60 group-hover:opacity-100"
                               title="Remover desta clínica"
-                              onClick={() => {
-                                if (confirm(`Remover ${m.name || m.email} da clínica?`)) {
+                              onClick={async () => {
+                                if (await confirm({ title: 'Remover da clínica', description: `Remover ${m.name || m.email} da clínica?`, destructive: true })) {
                                   removeStaff.mutate({ user_id: m.user_id, role: m.role });
                                 }
                               }}

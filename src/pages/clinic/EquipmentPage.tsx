@@ -12,6 +12,7 @@ import { Dumbbell, Plus, Trash2, Copy, Wrench, CheckCircle2, Link2, DoorOpen } f
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useConfirm } from '@/components/ConfirmProvider';
 import { Link } from 'react-router-dom';
 import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 
@@ -196,7 +197,7 @@ export default function EquipmentPage() {
                       Manutenção
                     </Button>
                   )}
-                  <Button variant="ghost" size="icon" onClick={() => { if (confirm('Excluir equipamento?')) remove.mutate(eq.id); }}>
+                  <Button variant="ghost" size="icon" onClick={async () => { if (await confirm({ title: 'Excluir equipamento', description: 'Excluir equipamento?', destructive: true })) remove.mutate(eq.id); }}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

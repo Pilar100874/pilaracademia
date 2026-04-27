@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Loader2, Plus, Pencil, Trash2, ArrowLeft, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirm } from '@/components/ConfirmProvider';
 
 interface Plan {
   id: string;

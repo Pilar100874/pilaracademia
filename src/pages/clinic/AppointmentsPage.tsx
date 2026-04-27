@@ -17,6 +17,7 @@ import { format, addDays, isSameDay, parseISO, startOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useConfirm } from '@/components/ConfirmProvider';
 import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; variant: any }> = {
@@ -356,7 +357,7 @@ export default function AppointmentsPage() {
                     </Button>
                   )}
                   {s.appointment && (
-                    <Button size="icon" variant="ghost" onClick={() => { if (confirm('Excluir esta aula?')) remove.mutate(s.appointment!.id); }}>
+                    <Button size="icon" variant="ghost" onClick={async () => { if (await confirm({ title: 'Excluir aula', description: 'Excluir esta aula?', destructive: true })) remove.mutate(s.appointment!.id); }}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}

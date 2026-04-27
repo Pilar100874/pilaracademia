@@ -6,6 +6,7 @@ import { Plus, X, AlertTriangle, Repeat, Sparkles, Users, RefreshCw, Check, Lock
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
 import { useMarqueeSelection, type MarqueeRect } from '@/hooks/useMarqueeSelection';
+import { useConfirm } from '@/components/ConfirmProvider';
 
 /** Empty-cell key for week view. Compatible with RoomsTimeline format: `${ISODate}|${hour}|${roomId ?? 'none'}`. */
 export type WeekEmptyKey = string;
@@ -85,6 +86,7 @@ export function CalendarTimeline({
   const subCols: (RoomLite | null)[] = splitByRoom ? (rooms as RoomLite[]) : [null];
   const colsPerDay = subCols.length;
   const [hoverKey, setHoverKey] = useState<string | null>(null);
+  const { confirm } = useConfirm();
   const readInstructor = (e: React.DragEvent) =>
     e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain') || '';
 
@@ -432,11 +434,17 @@ export function CalendarTimeline({
                               </button>
                             ) : (
                               <button
-                                onClick={() => {
-                                  const msg = s.appointment_id
-                                    ? 'Cancelar esta aula?'
-                                    : 'Bloquear este horário? Ele continuará na grade mas ninguém poderá agendar.';
-                                  if (confirm(msg)) onDelete(s);
+                                onClick={async () => {
+                                  const isAppointment = !!s.appointment_id;
+                                  const ok = await confirm({
+                                    title: isAppointment ? 'Cancelar aula' : 'Bloquear horário',
+                                    description: isAppointment
+                                      ? 'Cancelar esta aula?'
+                                      : 'Bloquear este horário? Ele continuará na grade mas ninguém poderá agendar.',
+                                    destructive: isAppointment,
+                                    confirmText: isAppointment ? 'Cancelar aula' : 'Bloquear',
+                                  });
+                                  if (ok) onDelete(s);
                                 }}
                                 className="px-2 py-1.5 rounded border border-muted-foreground/30 text-muted-foreground hover:bg-muted inline-flex items-center gap-1"
                                 title={s.appointment_id ? 'Cancelar aula' : 'Bloquear horário'}

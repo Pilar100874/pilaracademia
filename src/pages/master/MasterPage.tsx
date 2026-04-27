@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ClinicLogoUploader } from "@/components/ClinicLogoUploader";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/ConfirmProvider";
 
 function useIsMaster() {
   const { user } = useAuth();

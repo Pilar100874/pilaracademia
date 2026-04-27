@@ -10,12 +10,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, DoorOpen, Trash2, Pencil, Loader2, Users } from 'lucide-react';
 import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import { toast } from 'sonner';
+import { useConfirm } from '@/components/ConfirmProvider';
 
 const COLOR_PRESETS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
 export default function RoomsPage() {
   const { activeClinicId } = useUserRoles();
   const { data: rooms = [], isLoading, create, update, remove } = useClinicRooms(activeClinicId);
+  const { confirm } = useConfirm();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ClinicRoom | null>(null);
@@ -101,8 +103,8 @@ export default function RoomsPage() {
                   size="sm"
                   variant="ghost"
                   className="text-destructive hover:text-destructive"
-                  onClick={() => {
-                    if (confirm(`Excluir sala "${r.name}"?`)) remove.mutate(r.id);
+                  onClick={async () => {
+                    if (await confirm({ title: 'Excluir sala', description: `Excluir sala "${r.name}"?`, destructive: true })) remove.mutate(r.id);
                   }}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
