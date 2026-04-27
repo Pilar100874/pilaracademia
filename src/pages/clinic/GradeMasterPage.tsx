@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { SlotGradeDialog } from '@/components/clinic/SlotGradeDialog';
 import { NewClassDialog } from '@/components/clinic/NewClassDialog';
+import { AvailableSlotsPickerDialog } from '@/components/clinic/AvailableSlotsPickerDialog';
 import { InstructorAvailabilityDialog } from '@/components/clinic/InstructorAvailabilityDialog';
 import { InstructorPicker } from '@/components/clinic/InstructorPicker';
 import { CalendarTimeline, type TimelineSlot, makeWeekEmptyKey, parseWeekEmptyKey, type WeekEmptyKey } from '@/components/clinic/CalendarTimeline';
