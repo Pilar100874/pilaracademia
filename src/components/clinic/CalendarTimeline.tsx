@@ -232,6 +232,23 @@ export function CalendarTimeline({
               ? allSlots.filter((s) => (s.room_id ?? null) === subRoomId || (subIdx === 0 && !s.room_id && !subRoomId))
               : allSlots;
 
+            // Ocupação por hora (apenas sub-colunas com sala + capacidade definida)
+            const cap = subRoom?.capacity ?? null;
+            const occupancyByHour = new Map<number, { used: number; ratio: number; status: 'free' | 'low' | 'mid' | 'full' }>();
+            if (cap && cap > 0) {
+              hours.forEach((h) => {
+                const used = slots.filter((s) => {
+                  if (s.isOpen || s.isBlocked) return false;
+                  const t = parseISO(s.scheduled_at);
+                  return t.getHours() === h;
+                }).length;
+                const ratio = Math.min(1, used / cap);
+                const status: 'free' | 'low' | 'mid' | 'full' =
+                  used === 0 ? 'free' : ratio >= 1 ? 'full' : ratio >= 0.66 ? 'mid' : 'low';
+                occupancyByHour.set(h, { used, ratio, status });
+              });
+            }
+
             return (
               <div
                 key={subRoom?.id ?? `sub-${subIdx}`}
