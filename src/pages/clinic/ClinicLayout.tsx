@@ -10,7 +10,7 @@ import { NotificationsBell } from '@/components/NotificationsBell';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { SetupWizard, setupWizardCompleted } from '@/components/clinic/SetupWizard';
+import { SetupWizard, setupWizardCompleted, markWizardCompleted, isWizardCompletedRemote } from '@/components/clinic/SetupWizard';
 
 const baseNavItems = [
   { to: '/clinica', icon: CalendarDays, label: 'Grade Master', end: true, primary: true },
@@ -47,9 +47,18 @@ export default function ClinicLayout() {
 
   // Open wizard automatically on first visit (per clinic, admin only)
   useEffect(() => {
-    if (!isLoading && isAdmin && activeClinicId && !setupWizardCompleted(activeClinicId)) {
-      setWizardOpen(true);
-    }
+    if (isLoading || !isAdmin || !activeClinicId) return;
+    if (setupWizardCompleted(activeClinicId)) return;
+    let cancelled = false;
+    isWizardCompletedRemote(activeClinicId).then((done) => {
+      if (cancelled) return;
+      if (done) {
+        markWizardCompleted(activeClinicId);
+      } else {
+        setWizardOpen(true);
+      }
+    });
+    return () => { cancelled = true; };
   }, [isLoading, isAdmin, activeClinicId]);
 
   const handleLogout = async () => {
