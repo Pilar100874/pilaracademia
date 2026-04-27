@@ -40,6 +40,7 @@ import { BulkAssignDialog, type BulkAssignValues } from '@/components/clinic/Bul
 import { MonthMarqueeGrid } from '@/components/clinic/MonthMarqueeGrid';
 import { InstructorDragPalette, CLEAR_INSTRUCTOR, INSTRUCTOR_DRAG_TYPE } from '@/components/clinic/InstructorDragPalette';
 import { PageMotion } from '@/components/PageMotion';
+import { useBlockedPeriods, findActiveBlockAt } from '@/hooks/useBlockedPeriods';
 
 const STATUS_LABEL: Record<AppointmentStatus, { label: string; cls: string }> = {
   scheduled:   { label: 'Agendado',  cls: 'bg-secondary text-secondary-foreground' },
