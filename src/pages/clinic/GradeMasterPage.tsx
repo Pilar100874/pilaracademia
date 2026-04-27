@@ -457,6 +457,7 @@ export default function GradeMasterPage() {
   const [slotDialog, setSlotDialog] = useState<{
     slot: { scheduled_at: string; duration_minutes: number };
     focusedStudentId: string;
+    autoOpenAdd?: boolean;
   } | null>(null);
 
   // ===== Nova aula (avulsa ou fixa) =====
