@@ -35,6 +35,7 @@ interface Props {
   userId: string;
   initialDate: Date;
   initialTime?: string;
+  initialRoomId?: string | null;
   students: Student[];
   equipment: Equipment[];
   rooms?: Room[];
