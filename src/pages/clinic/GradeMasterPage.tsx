@@ -1011,6 +1011,13 @@ export default function GradeMasterPage() {
               selectedEmptyKeys={selectedEmptyKeys}
               onToggleSlot={toggleSlotSel}
               onToggleEmpty={toggleEmptySel}
+              onReplaceSelection={replaceSelection}
+              onAddSelection={addSelection}
+              onMarqueeEnd={({ slotCount, emptyCount }) => {
+                // Abre o diálogo direto após selecionar por arrasto
+                if (emptyCount > 0) setBulkOpen('create');
+                else if (slotCount > 0) setBulkOpen('reassign');
+              }}
               dragActive={draggingInstructorId !== null}
               onDropInstructorOnCell={dropInstructorOnCell}
               onDropInstructorOnSlot={dropInstructorOnSlot}
