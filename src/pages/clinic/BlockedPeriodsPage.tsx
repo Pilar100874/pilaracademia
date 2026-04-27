@@ -27,10 +27,9 @@ export default function BlockedPeriodsPage() {
 
   const handleSave = async (form: BlockedFormState) => {
     if (!activeClinicId) return;
-    const payload = {
+    const base = {
       clinic_id: activeClinicId,
       name: form.name.trim() || 'Bloqueio',
-      day_of_week: form.day_of_week,
       start_time: form.start_time + ':00',
       end_time: form.end_time + ':00',
       room_id: form.room_id || null,
@@ -38,9 +37,12 @@ export default function BlockedPeriodsPage() {
       active: form.active,
     };
     if (editing) {
-      await update.mutateAsync({ id: editing.id, ...payload });
+      await update.mutateAsync({ id: editing.id, ...base, day_of_week: form.days_of_week[0] ?? editing.day_of_week });
     } else {
-      await create.mutateAsync(payload as any);
+      const days = form.days_of_week.length > 0 ? form.days_of_week : [1];
+      for (const dow of days) {
+        await create.mutateAsync({ ...base, day_of_week: dow } as any);
+      }
     }
     setEditing(null);
     setOpen(false);
