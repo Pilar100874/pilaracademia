@@ -538,8 +538,11 @@ function StepGrade({
   const [endHour, setEndHour] = useState('20');
   const [duration, setDuration] = useState('50');
   const [roomId, setRoomId] = useState<string>(rooms[0]?.id ?? '');
-  const [equipmentId, setEquipmentId] = useState<string>('any');
+  const [equipmentIds, setEquipmentIds] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
+
+  const toggleEquipment = (id: string) =>
+    setEquipmentIds((cur) => cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]);
 
   useEffect(() => { if (!roomId && rooms[0]) setRoomId(rooms[0].id); }, [rooms, roomId]);
 
@@ -555,6 +558,7 @@ function StepGrade({
       // Generate next 4 weeks of slots
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const rows: any[] = [];
+      const primaryEquipmentId = equipmentIds[0] ?? null;
       for (let week = 0; week < 4; week++) {
         for (const dow of days) {
           const date = new Date(today);
@@ -567,18 +571,36 @@ function StepGrade({
               clinic_id: clinicId,
               scheduled_at: sched.toISOString(),
               duration_minutes: dur,
-              equipment_id: equipmentId === 'any' ? null : equipmentId,
+              equipment_id: primaryEquipmentId,
               instructor_id: null,
               room_id: roomId || null,
-              capacity: 1,
+              capacity: Math.max(1, equipmentIds.length || 1),
               notes: null,
               created_by: user.id,
             });
           }
         }
       }
-      const { error } = await supabase.from('bookable_slots' as any).insert(rows);
+      const { data: insertedSlots, error } = await supabase
+        .from('bookable_slots' as any)
+        .insert(rows)
+        .select('id');
       if (error) throw error;
+
+      // Link multiple equipments per slot
+      if (equipmentIds.length > 1 && insertedSlots?.length) {
+        const links = (insertedSlots as any[]).flatMap((s) =>
+          equipmentIds.map((eid) => ({
+            clinic_id: clinicId,
+            bookable_slot_id: s.id,
+            equipment_id: eid,
+            created_by: user.id,
+          }))
+        );
+        const { error: linkErr } = await supabase.from('bookable_slot_equipment' as any).insert(links);
+        if (linkErr) throw linkErr;
+      }
+
       toast.success(`${rows.length} horários criados`);
       hook.refetch?.();
     } catch (e: any) {
@@ -640,15 +662,35 @@ function StepGrade({
             </Select>
           </div>
           <div>
-            <Label className="text-xs">Equipamento</Label>
-            <Select value={equipmentId} onValueChange={setEquipmentId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent className="z-[300]">
-                <SelectItem value="any">Qualquer (definir depois)</SelectItem>
-                {equipment.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Label className="text-xs">Equipamentos</Label>
+            {equipment.length === 0 ? (
+              <div className="text-xs text-muted-foreground mt-2">Nenhum equipamento cadastrado. Será "qualquer".</div>
+            ) : (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {equipment.map((e) => {
+                  const active = equipmentIds.includes(e.id);
+                  return (
+                    <button
+                      key={e.id}
+                      type="button"
+                      onClick={() => toggleEquipment(e.id)}
+                      className={`h-9 px-3 rounded-lg border text-xs font-semibold transition ${
+                        active ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-muted'
+                      }`}
+                    >
+                      {e.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="text-[11px] text-muted-foreground mt-1">
+              {equipmentIds.length === 0
+                ? 'Nenhum selecionado → "qualquer" (definir depois)'
+                : `${equipmentIds.length} equipamento(s) por horário · capacidade = ${equipmentIds.length}`}
+            </div>
           </div>
+
         </div>
 
         <Button onClick={handleGenerate} disabled={creating} className="w-full">
