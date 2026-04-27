@@ -859,7 +859,7 @@ export default function GradeMasterPage() {
                 if (emptyCount > 0) setBulkOpen('create');
                 else if (slotCount > 0) setBulkOpen('reassign');
               }}
-              onRoomColumnClick={(d, roomId) => selectRoomColumn(roomId, [d])}
+              onRoomColumnClick={(d, roomId, allDays) => selectRoomColumn(roomId, allDays ? weekDays : [d])}
             />
           </div>
 
