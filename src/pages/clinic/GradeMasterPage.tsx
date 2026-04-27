@@ -350,9 +350,9 @@ export default function GradeMasterPage() {
         {/* TOP BAR: stats + view + filters */}
         <Card className="p-4 space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Stat label="Aulas" value={stats.total} icon={CalendarDays} />
-            <Stat label="Com grade" value={stats.withGrade} icon={CheckCircle2} tone="success" />
-            <Stat label="Sem grade" value={stats.pending} icon={AlertTriangle} tone="warn" />
+            <Stat label="Total" value={stats.total} icon={CalendarDays} />
+            <Stat label="Aulas marcadas" value={stats.classes} icon={CheckCircle2} tone="success" />
+            <Stat label="Horários livres" value={stats.open} icon={Plus} tone="warn" />
             <Stat label="Projeções" value={stats.projected} icon={RefreshCw} tone="muted" />
           </div>
 
