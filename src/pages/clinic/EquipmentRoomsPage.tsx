@@ -102,6 +102,7 @@ export default function EquipmentRoomsPage() {
         {rooms.map((r) => renderRoomBlock(r, grouped.get(r.id) ?? []))}
         {renderRoomBlock(null, grouped.get(null) ?? [])}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
