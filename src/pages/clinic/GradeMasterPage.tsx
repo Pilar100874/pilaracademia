@@ -463,6 +463,79 @@ export default function GradeMasterPage() {
   };
 
 
+  // ===== Drag & drop de professor =====
+  const [draggingInstructorId, setDraggingInstructorId] = useState<string | null>(null);
+  const resolveInstructor = (raw: string): string | null => raw === CLEAR_INSTRUCTOR ? null : raw;
+
+  const dropInstructorOnSlot = async (raw: string, ts: TimelineSlot) => {
+    if (!activeClinicId || !user) return;
+    const newInstructorId = resolveInstructor(raw);
+    try {
+      if (ts.appointment_id) {
+        const { error } = await supabase.from('class_appointments')
+          .update({ instructor_id: newInstructorId })
+          .eq('id', ts.appointment_id);
+        if (error) throw error;
+      } else if (ts.bookable_slot_id) {
+        const { error } = await supabase.from('bookable_slots' as any)
+          .update({ instructor_id: newInstructorId })
+          .eq('id', ts.bookable_slot_id);
+        if (error) throw error;
+      } else if (ts.recurring_id) {
+        // Materializa a virtual como appointment já com o novo professor
+        const original = (view === 'day' ? daySlots : weekDays.flatMap(slotsForDay)).find((s) => s.key === ts.key);
+        if (!original?.student_id) { setDraggingInstructorId(null); return; }
+        const { error } = await supabase.from('class_appointments').insert({
+          clinic_id: activeClinicId,
+          student_id: original.student_id,
+          equipment_id: original.equipment_id,
+          instructor_id: newInstructorId,
+          scheduled_at: original.scheduled_at,
+          duration_minutes: original.duration_minutes,
+          notes: original.notes,
+          created_by: user.id,
+          recurring_schedule_id: original.recurring_id || null,
+        });
+        if (error) throw error;
+      }
+      toast.success(newInstructorId ? 'Professor atribuído' : 'Professor removido');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao atribuir professor');
+    } finally {
+      setDraggingInstructorId(null);
+    }
+  };
+
+  const dropInstructorOnCell = async (raw: string, d: Date, hour: number, roomId: string | null = null) => {
+    if (!activeClinicId || !user) return;
+    const newInstructorId = resolveInstructor(raw);
+    if (!newInstructorId) {
+      toast.info('Arraste um professor para criar um horário.');
+      setDraggingInstructorId(null);
+      return;
+    }
+    const sched = new Date(d);
+    sched.setHours(hour, 0, 0, 0);
+    try {
+      await createBookable.mutateAsync({
+        clinic_id: activeClinicId,
+        scheduled_at: sched.toISOString(),
+        duration_minutes: 50,
+        equipment_id: null,
+        instructor_id: newInstructorId,
+        room_id: roomId,
+        capacity: 1,
+        notes: null,
+        created_by: user.id,
+      } as any);
+      toast.success('Horário criado com professor');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao criar horário');
+    } finally {
+      setDraggingInstructorId(null);
+    }
+  };
+
 
   const openSlotDialog = (slot: MergedSlot) => {
     // Slot livre da grade → abre Nova aula com horário pré-preenchido
