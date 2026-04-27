@@ -634,6 +634,12 @@ export default function GradeMasterPage() {
   // ===== Atribuição em massa (criar / reatribuir) =====
   const [bulkOpen, setBulkOpen] = useState<null | 'create' | 'reassign'>(null);
 
+  // Drag & drop de professor (paleta) — stubs no-op (handlers reais a implementar)
+  const [draggingInstructorId, setDraggingInstructorId] = useState<string | null>(null);
+  const dropInstructorOnCell = (_id: string, _d: Date, _h: number, _roomId: string | null) => {};
+  const dropInstructorOnSlot = (_id: string, _ts: TimelineSlot) => {};
+  const selectRoomColumn = (_roomId: string, _days: Date[]) => {};
+
   // Relatório exibido após operação em massa quando há skips/erros
   type BulkReport = {
     title: string;
