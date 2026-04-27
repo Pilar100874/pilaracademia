@@ -1,10 +1,20 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { format, parseISO, isSameDay, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Plus, X, AlertTriangle, Repeat, Sparkles, Users, RefreshCw } from 'lucide-react';
+import { Plus, X, AlertTriangle, Repeat, Sparkles, Users, RefreshCw, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { INSTRUCTOR_DRAG_TYPE } from './InstructorDragPalette';
+import { useMarqueeSelection, type MarqueeRect } from '@/hooks/useMarqueeSelection';
+
+/** Empty-cell key for week view: `${ISODate}|${hour}` (no room column). */
+export type WeekEmptyKey = string;
+export const makeWeekEmptyKey = (d: Date, hour: number) =>
+  `${d.toISOString().slice(0, 10)}|${hour}`;
+export const parseWeekEmptyKey = (k: WeekEmptyKey) => {
+  const [date, h] = k.split('|');
+  return { date, hour: parseInt(h, 10) };
+};
 
 export interface TimelineSlot {
   key: string;
