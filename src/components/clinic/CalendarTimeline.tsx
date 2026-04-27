@@ -47,13 +47,13 @@ interface Props {
   /** Cor associada à sala (usado para chip visual de sala). */
   roomColorOf?: (id: string | null | undefined) => string | null;
   colorOf: (id: string | null | undefined) => string;
-  onCellClick: (d: Date, hour: number) => void;
+  onCellClick: (d: Date, hour: number, roomId?: string | null) => void;
   onSlotClick: (s: TimelineSlot) => void;
   onDelete?: (s: TimelineSlot) => void;
   renderInstructorPicker?: (s: TimelineSlot) => React.ReactNode;
   // Drag & drop de professor
   dragActive?: boolean;
-  onDropInstructorOnCell?: (instructorId: string, day: Date, hour: number) => void;
+  onDropInstructorOnCell?: (instructorId: string, day: Date, hour: number, roomId?: string | null) => void;
   onDropInstructorOnSlot?: (instructorId: string, slot: TimelineSlot) => void;
   // Seleção múltipla (marquee + Shift/Ctrl)
   selectedSlotKeys?: Set<string>;
@@ -61,6 +61,8 @@ interface Props {
   onReplaceSelection?: (slotKeys: Set<string>, emptyKeys: Set<WeekEmptyKey>) => void;
   onAddSelection?: (slotKeys: Set<string>, emptyKeys: Set<WeekEmptyKey>) => void;
   onMarqueeEnd?: (info: { slotCount: number; emptyCount: number; additive: boolean }) => void;
+  /** Quando informado e com pelo menos 1 sala, cada dia ganha sub-colunas por sala. */
+  rooms?: RoomLite[];
 }
 
 export function CalendarTimeline({
