@@ -943,7 +943,7 @@ export default function GradeMasterPage() {
       {/* Cabeçalho compacto */}
       {!focusMode && (
         <div className="border-b bg-card/40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+          <div className="w-full px-3 sm:px-4 py-3 flex items-center gap-3">
             <CalendarDays className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
             <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Grade Master</h1>
             <span className="text-xs text-muted-foreground hidden sm:inline">· agenda da clínica</span>
