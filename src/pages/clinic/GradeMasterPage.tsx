@@ -1348,11 +1348,96 @@ export default function GradeMasterPage() {
         })()}
         onConfirm={async (values) => {
           console.log('[GradeMaster] BulkAssignDialog confirm', { values, empty: selectedEmptyKeys.size, slots: selectedSlotKeys.size });
-          // Sempre executa ambas as operações se houver seleção mista
-          if (selectedEmptyKeys.size > 0) await createSelectedEmpty(values);
-          if (selectedSlotKeys.size > 0) await reassignSelected(values);
+          const isCreate = bulkOpen === 'create';
+          let createRes = { created: 0, requested: 0, conflicts: [] as string[], otherErrors: [] as string[] };
+          let reassignRes = { updated: 0, requested: 0, conflicts: [] as string[], otherErrors: [] as string[] };
+          if (selectedEmptyKeys.size > 0) createRes = await createSelectedEmpty(values);
+          if (selectedSlotKeys.size > 0) reassignRes = await reassignSelected(values);
+
+          const ok = createRes.created + reassignRes.updated;
+          const requested = createRes.requested + reassignRes.requested;
+          const conflicts = [...createRes.conflicts, ...reassignRes.conflicts];
+          const otherErrors = [...createRes.otherErrors, ...reassignRes.otherErrors];
+          const failed = conflicts.length + otherErrors.length;
+          const skipped = Math.max(0, requested - ok - failed);
+
+          // Abre relatório se algo não foi feito (popup explicativo)
+          if (requested > 0 && (ok < requested || failed > 0)) {
+            setBulkReport({
+              title: isCreate ? 'Resultado da criação de horários' : 'Resultado da reatribuição',
+              createdOrUpdated: ok,
+              requested,
+              conflicts,
+              otherErrors: [
+                ...otherErrors,
+                ...(skipped > 0 ? [`${skipped} horário(s) ignorado(s) sem detalhes — verifique se a sala/professor estão disponíveis e tente novamente.`] : []),
+              ],
+            });
+          }
         }}
       />
+
+      {/* Popup com motivo quando algum horário não foi criado/atualizado */}
+      <AlertDialog open={bulkReport !== null} onOpenChange={(v) => !v && setBulkReport(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              {bulkReport?.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <span className="font-semibold text-foreground">{bulkReport?.createdOrUpdated ?? 0}</span>
+                  {' de '}
+                  <span className="font-semibold text-foreground">{bulkReport?.requested ?? 0}</span>
+                  {' horário(s) processado(s) com sucesso.'}
+                </div>
+
+                {bulkReport && bulkReport.conflicts.length > 0 && (
+                  <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
+                    <div className="font-semibold text-amber-700 dark:text-amber-400 mb-1.5 flex items-center gap-1.5">
+                      <UserCog className="h-4 w-4" />
+                      Conflitos de professor ({bulkReport.conflicts.length})
+                    </div>
+                    <ul className="space-y-1 text-xs max-h-40 overflow-auto">
+                      {bulkReport.conflicts.slice(0, 20).map((c, i) => (
+                        <li key={i} className="text-muted-foreground">• {c}</li>
+                      ))}
+                      {bulkReport.conflicts.length > 20 && (
+                        <li className="text-muted-foreground italic">…e mais {bulkReport.conflicts.length - 20}</li>
+                      )}
+                    </ul>
+                    <div className="mt-2 text-[11px] text-muted-foreground">
+                      O professor selecionado já tinha aula em outro horário/sala neste mesmo momento.
+                    </div>
+                  </div>
+                )}
+
+                {bulkReport && bulkReport.otherErrors.length > 0 && (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
+                    <div className="font-semibold text-destructive mb-1.5 flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4" />
+                      Outras falhas ({bulkReport.otherErrors.length})
+                    </div>
+                    <ul className="space-y-1 text-xs max-h-40 overflow-auto">
+                      {bulkReport.otherErrors.slice(0, 20).map((c, i) => (
+                        <li key={i} className="text-muted-foreground">• {c}</li>
+                      ))}
+                      {bulkReport.otherErrors.length > 20 && (
+                        <li className="text-muted-foreground italic">…e mais {bulkReport.otherErrors.length - 20}</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setBulkReport(null)}>Entendi</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageMotion>
   );
 }
