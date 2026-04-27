@@ -135,6 +135,8 @@ export default function GradeMasterPage() {
   const studentName = (id: string) => students.find((s) => s.id === id)?.full_name || '—';
   const studentAvatar = (id: string) => (students.find((s) => s.id === id) as any)?.avatar_url;
   const equipmentName = (id: string | null) => equipment.find((e) => e.id === id)?.name || '—';
+  const roomName = (id: string | null | undefined) => id ? (rooms as any[]).find((r) => r.id === id)?.name : null;
+  const instructorName = (id: string | null | undefined) => id ? (instructors.find((i) => i.user_id === id)?.name || `Prof. ${id.slice(0, 4)}`) : null;
 
   /** Slots por dia (real + virtuais + projetados), com filtros */
   const slotsForDay = (d: Date): MergedSlot[] => {
