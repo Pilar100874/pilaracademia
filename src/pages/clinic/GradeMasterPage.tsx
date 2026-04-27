@@ -446,11 +446,17 @@ export default function GradeMasterPage() {
   const [newClassOpen, setNewClassOpen] = useState(false);
   const [newClassTime, setNewClassTime] = useState<string | undefined>(undefined);
   const [newClassRoomId, setNewClassRoomId] = useState<string | null | undefined>(undefined);
+  const [newClassInstructorId, setNewClassInstructorId] = useState<string | null | undefined>(undefined);
+  const [newClassDuration, setNewClassDuration] = useState<number | null | undefined>(undefined);
+  const [newClassBookableSlotId, setNewClassBookableSlotId] = useState<string | null | undefined>(undefined);
   const [availPickerOpen, setAvailPickerOpen] = useState(false);
-  const openNewClassAt = (d: Date, time?: string, roomId?: string | null) => {
+  const openNewClassAt = (d: Date, time?: string, roomId?: string | null, instructorId?: string | null, durationMinutes?: number | null, bookableSlotId?: string | null) => {
     setDay(d);
     setNewClassTime(time);
     setNewClassRoomId(roomId);
+    setNewClassInstructorId(instructorId);
+    setNewClassDuration(durationMinutes);
+    setNewClassBookableSlotId(bookableSlotId);
     setNewClassOpen(true);
   };
 
@@ -490,6 +496,36 @@ export default function GradeMasterPage() {
     });
   };
 
+  const findInstructorFor = (d: Date, hour: number, minute = 0, durationMin = 60, roomId?: string | null) => {
+    const dow = d.getDay();
+    const startMin = hour * 60 + minute;
+    const endMin = startMin + durationMin;
+    const toMin = (t: string) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + (m || 0);
+    };
+    const avail = (availability as any[]).find((a) => {
+      if (!a.active || !a.instructor_id) return false;
+      if (a.day_of_week !== dow) return false;
+      if (roomId && a.room_id && a.room_id !== roomId) return false;
+      const s = toMin(a.start_time);
+      const e = toMin(a.end_time);
+      return s <= startMin && e >= endMin;
+    });
+    if (avail?.instructor_id) return avail.instructor_id as string;
+
+    const targetStart = new Date(d); targetStart.setHours(hour, minute, 0, 0);
+    const targetEnd = new Date(targetStart.getTime() + durationMin * 60 * 1000);
+    const slot = (bookableSlots as any[]).find((s) => {
+      if (!s.instructor_id || s.active === false || s.blocked === true) return false;
+      if (roomId && s.room_id && s.room_id !== roomId) return false;
+      const sStart = new Date(s.scheduled_at).getTime();
+      const sEnd = sStart + (s.duration_minutes || 50) * 60 * 1000;
+      return sStart <= targetStart.getTime() && sEnd >= targetEnd.getTime();
+    });
+    return slot?.instructor_id ?? null;
+  };
+
   const tryOpenNewClassAt = (d: Date, time?: string, roomId?: string | null) => {
     if (time) {
       const [h, m] = time.split(':').map(Number);
@@ -505,7 +541,8 @@ export default function GradeMasterPage() {
         return;
       }
     }
-    openNewClassAt(d, time, roomId);
+    const instructorId = time ? findInstructorFor(d, Number(time.split(':')[0]), Number(time.split(':')[1] || 0), 60, roomId) : null;
+    openNewClassAt(d, time, roomId, instructorId, 50, null);
   };
 
   // ===== Seleção múltipla na timeline do dia =====
