@@ -537,6 +537,7 @@ function StepGrade({
   const [startHour, setStartHour] = useState('07');
   const [endHour, setEndHour] = useState('20');
   const [duration, setDuration] = useState('50');
+  const [breakMinutes, setBreakMinutes] = useState('10');
   const [roomId, setRoomId] = useState<string>(rooms[0]?.id ?? '');
   const [equipmentIds, setEquipmentIds] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
@@ -552,21 +553,26 @@ function StepGrade({
     if (!user) return;
     if (days.length === 0) { toast.error('Escolha pelo menos um dia'); return; }
     const sh = Number(startHour), eh = Number(endHour), dur = Number(duration);
+    const brk = Math.max(0, Number(breakMinutes) || 0);
     if (eh <= sh) { toast.error('Hora final deve ser maior que a inicial'); return; }
+    if (dur <= 0) { toast.error('Duração inválida'); return; }
     setCreating(true);
     try {
       // Generate next 4 weeks of slots
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const rows: any[] = [];
       const primaryEquipmentId = equipmentIds[0] ?? null;
+      const stepMinutes = dur + brk;
+      const dayMinutes = (eh - sh) * 60;
       for (let week = 0; week < 4; week++) {
         for (const dow of days) {
           const date = new Date(today);
           const diff = (dow - today.getDay() + 7) % 7 + week * 7;
           date.setDate(today.getDate() + diff);
-          for (let h = sh; h < eh; h++) {
+          for (let offset = 0; offset + dur <= dayMinutes; offset += stepMinutes) {
             const sched = new Date(date);
-            sched.setHours(h, 0, 0, 0);
+            sched.setHours(sh, 0, 0, 0);
+            sched.setMinutes(sched.getMinutes() + offset);
             rows.push({
               clinic_id: clinicId,
               scheduled_at: sched.toISOString(),
@@ -636,7 +642,7 @@ function StepGrade({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
             <Label className="text-xs">Início</Label>
             <Input type="number" min={5} max={22} value={startHour} onChange={(e) => setStartHour(e.target.value)} />
@@ -648,6 +654,10 @@ function StepGrade({
           <div>
             <Label className="text-xs">Duração (min)</Label>
             <Input type="number" min={20} max={120} value={duration} onChange={(e) => setDuration(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs">Intervalo (min)</Label>
+            <Input type="number" min={0} max={60} value={breakMinutes} onChange={(e) => setBreakMinutes(e.target.value)} />
           </div>
         </div>
 
