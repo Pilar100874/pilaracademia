@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Copy, MessageCircle, Trash2, Link2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirm } from '@/components/ConfirmProvider';
 
 const NO_STUDENT = '__none__';
 
@@ -48,6 +49,7 @@ function buildWhatsAppUrl(phone: string | null, message: string) {
 export function ShareSequenceDialog({ open, onOpenChange, clinicId, sequenceId, sequenceName, initialStudentId }: Props) {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { confirm } = useConfirm();
   const [studentId, setStudentId] = useState<string>(initialStudentId || NO_STUDENT);
   const [days, setDays] = useState<string>('30');
 
@@ -241,7 +243,7 @@ export function ShareSequenceDialog({ open, onOpenChange, clinicId, sequenceId, 
                         variant="ghost"
                         className="h-7 w-7 text-destructive hover:text-destructive"
                         title="Remover link"
-                        onClick={() => { if (confirm('Remover este link?')) removeLink.mutate(link.id); }}
+                        onClick={async () => { if (await confirm({ description: 'Remover este link?', destructive: true })) removeLink.mutate(link.id); }}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>

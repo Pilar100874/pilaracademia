@@ -49,6 +49,7 @@ import BillingPage from "@/pages/clinic/BillingPage";
 import ClinicExerciseLibraryPage from "@/pages/clinic/ClinicExerciseLibraryPage";
 import SharedSequencePage from "@/pages/SharedSequencePage";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { ConfirmProvider } from "@/components/ConfirmProvider";
 import { useMustChangePassword } from "@/hooks/useMustChangePassword";
 import { useUserClinicRole } from "@/hooks/useUserClinicRole";
 
@@ -149,10 +150,12 @@ const App = () => {
         {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
         <BrowserRouter>
           <AuthProvider>
-            <PaymentTestModeBanner />
-            <ImpersonationBanner />
-            <AppRoutes />
-            <InstallPrompt />
+            <ConfirmProvider>
+              <PaymentTestModeBanner />
+              <ImpersonationBanner />
+              <AppRoutes />
+              <InstallPrompt />
+            </ConfirmProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

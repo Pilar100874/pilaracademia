@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { ClinicLogoUploader } from '@/components/ClinicLogoUploader';
 import { toast } from 'sonner';
+import { useConfirm } from '@/components/ConfirmProvider';
 import {
   Building2, DoorOpen, Dumbbell, GraduationCap, ShieldCheck, Layers,
   CalendarDays, Settings2, ArrowRight, ArrowLeft, Check, X, Loader2,
@@ -553,6 +554,7 @@ function StepGrade({
   equipment: { id: string; name: string }[];
 }) {
   const { user } = useAuth();
+  const { confirm, prompt } = useConfirm();
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [startHour, setStartHour] = useState('07');
   const [endHour, setEndHour] = useState('20');
@@ -635,7 +637,7 @@ function StepGrade({
   };
 
   const deleteSeries = async (sid: string) => {
-    if (!confirm('Excluir todos os horários FUTUROS desta série? Os passados serão mantidos.')) return;
+    if (!(await confirm({ title: 'Excluir grade', description: 'Excluir todos os horários FUTUROS desta série? Os passados serão mantidos.', destructive: true }))) return;
     const todayISO = new Date().toISOString();
     const { error } = await supabase
       .from('bookable_slots' as any)
@@ -649,7 +651,7 @@ function StepGrade({
   };
 
   const extendSeries = async (sid: string) => {
-    const ans = prompt('Estender até qual data? (YYYY-MM-DD)');
+    const ans = await prompt({ title: 'Estender grade', description: 'Estender até qual data?', placeholder: 'YYYY-MM-DD', inputType: 'date' });
     if (!ans || !/^\d{4}-\d{2}-\d{2}$/.test(ans)) return;
     // Pega o template a partir do último slot da série
     const { data: lastSlots } = await supabase

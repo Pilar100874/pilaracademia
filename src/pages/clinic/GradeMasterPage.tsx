@@ -28,6 +28,7 @@ import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useConfirm } from '@/components/ConfirmProvider';
 import { SlotGradeDialog } from '@/components/clinic/SlotGradeDialog';
 import { NewClassDialog } from '@/components/clinic/NewClassDialog';
 import { InstructorAvailabilityDialog } from '@/components/clinic/InstructorAvailabilityDialog';
@@ -112,6 +113,7 @@ export default function GradeMasterPage() {
   const { activeClinicId } = useUserRoles();
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { confirm } = useConfirm();
   const [view, setView] = useState<'day' | 'week' | 'month'>('week');
   const [day, setDay] = useState(() => new Date());
   const [simulateRenewal, setSimulateRenewal] = useState(true);
@@ -424,7 +426,7 @@ export default function GradeMasterPage() {
 
   const deleteSelected = async () => {
     if (selectedSlotKeys.size === 0) return;
-    if (!confirm(`Bloquear ${selectedSlotKeys.size} horário(s) selecionado(s)? (aulas serão canceladas)`)) return;
+    if (!(await confirm({ title: 'Bloquear horários', description: `Bloquear ${selectedSlotKeys.size} horário(s) selecionado(s)? (aulas serão canceladas)`, destructive: true, confirmText: 'Bloquear' }))) return;
     const tsList = visibleSlotsForSelection().map(toTimelineSlot).filter((t) => selectedSlotKeys.has(t.key));
     for (const t of tsList) {
       if (t.appointment_id) await remove.mutateAsync(t.appointment_id);

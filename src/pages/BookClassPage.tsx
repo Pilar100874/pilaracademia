@@ -13,12 +13,14 @@ import { format, addDays, startOfWeek, isSameDay, parseISO, differenceInHours } 
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useConfirm } from '@/components/ConfirmProvider';
 
 export default function BookClassPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { activeClinicId } = useUserRoles();
   const qc = useQueryClient();
+  const { confirm } = useConfirm();
 
   const [day, setDay] = useState(() => new Date());
 
@@ -216,7 +218,7 @@ export default function BookClassPage() {
                     <>
                       <Badge>Reservada</Badge>
                       <Button size="sm" variant="outline" disabled={!canCancel || cancel.isPending}
-                        onClick={() => { if (confirm(`Cancelar a reserva de ${format(sched, 'dd/MM HH:mm')}?`)) cancel.mutate(myReserve.id); }}>
+                        onClick={async () => { if (await confirm({ title: 'Cancelar reserva', description: `Cancelar a reserva de ${format(sched, 'dd/MM HH:mm')}?`, destructive: true })) cancel.mutate(myReserve.id); }}>
                         {canCancel ? <><X className="h-3.5 w-3.5 mr-1" />Cancelar</> : <><Lock className="h-3.5 w-3.5 mr-1" />Min {minHours}h</>}
                       </Button>
                     </>

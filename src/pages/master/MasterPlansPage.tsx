@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Loader2, Plus, Pencil, Trash2, ArrowLeft, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirm } from '@/components/ConfirmProvider';
 
 interface Plan {
   id: string;
@@ -43,6 +44,7 @@ const empty: Omit<Plan, 'id'> = {
 export default function MasterPlansPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { confirm } = useConfirm();
   const [editing, setEditing] = useState<Plan | (Omit<Plan, 'id'> & { id?: string }) | null>(null);
 
   const { data: plans = [], isLoading } = useQuery({
@@ -153,7 +155,7 @@ export default function MasterPlansPage() {
                   <Button variant="ghost" size="icon" onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></Button>
                   <Button
                     variant="ghost" size="icon"
-                    onClick={() => { if (confirm(`Excluir "${p.name}"?`)) removeMut.mutate(p.id); }}
+                    onClick={async () => { if (await confirm({ title: 'Excluir plano', description: `Excluir "${p.name}"?`, destructive: true })) removeMut.mutate(p.id); }}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
