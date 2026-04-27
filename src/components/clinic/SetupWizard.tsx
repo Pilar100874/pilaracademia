@@ -537,6 +537,7 @@ function StepGrade({
   const [startHour, setStartHour] = useState('07');
   const [endHour, setEndHour] = useState('20');
   const [duration, setDuration] = useState('50');
+  const [breakMinutes, setBreakMinutes] = useState('10');
   const [roomId, setRoomId] = useState<string>(rooms[0]?.id ?? '');
   const [equipmentIds, setEquipmentIds] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
