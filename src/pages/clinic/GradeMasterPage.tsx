@@ -371,6 +371,7 @@ export default function GradeMasterPage() {
   };
 
   const toggleSlotSel = (s: TimelineSlot) => {
+    setSelectionMode(true);
     setSelectedSlotKeys((prev) => {
       const next = new Set(prev);
       if (next.has(s.key)) next.delete(s.key);
@@ -379,11 +380,30 @@ export default function GradeMasterPage() {
     });
   };
   const toggleEmptySel = (k: EmptyCellKey) => {
+    setSelectionMode(true);
     setSelectedEmptyKeys((prev) => {
       const next = new Set(prev);
       if (next.has(k)) next.delete(k);
       else next.add(k);
       return next;
+    });
+  };
+  const replaceSelection = (slotKeys: Set<string>, emptyKeys: Set<EmptyCellKey>) => {
+    setSelectionMode(true);
+    setSelectedSlotKeys(slotKeys);
+    setSelectedEmptyKeys(emptyKeys);
+  };
+  const addSelection = (slotKeys: Set<string>, emptyKeys: Set<EmptyCellKey>) => {
+    setSelectionMode(true);
+    setSelectedSlotKeys((prev) => {
+      const n = new Set(prev);
+      slotKeys.forEach((k) => n.add(k));
+      return n;
+    });
+    setSelectedEmptyKeys((prev) => {
+      const n = new Set(prev);
+      emptyKeys.forEach((k) => n.add(k));
+      return n;
     });
   };
 
