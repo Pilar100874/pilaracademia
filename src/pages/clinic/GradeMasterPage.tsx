@@ -779,6 +779,7 @@ export default function GradeMasterPage() {
           userId={user.id}
           initialDate={day}
           initialTime={newClassTime}
+          initialRoomId={newClassRoomId ?? null}
           students={students as any}
           equipment={equipment as any}
           rooms={rooms as any}
