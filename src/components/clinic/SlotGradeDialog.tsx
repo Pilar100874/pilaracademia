@@ -406,14 +406,22 @@ export function SlotGradeDialog({
                     Adicionar aluno
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-72 p-0" align="end">
+                <PopoverContent className="w-72 p-0" align="end" onOpenAutoFocus={(e) => e.preventDefault()}>
                   <Command>
                     <CommandInput placeholder="Buscar aluno…" />
                     <CommandList>
                       <CommandEmpty>Nenhum aluno disponível.</CommandEmpty>
                       <CommandGroup>
                         {availableStudents.map((s) => (
-                          <CommandItem key={s.id} value={s.full_name || s.id} onSelect={() => addStudent(s.id)}>
+                          <CommandItem
+                            key={s.id}
+                            value={s.full_name || s.id}
+                            onPointerDown={(e) => {
+                              e.preventDefault();
+                              addStudent(s.id);
+                            }}
+                            onSelect={() => addStudent(s.id)}
+                          >
                             {s.full_name}
                           </CommandItem>
                         ))}
