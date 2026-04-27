@@ -121,6 +121,7 @@ export default function GradeMasterPage() {
   const [renewalMonths, setRenewalMonths] = useState(3);
   const [filterInstructor, setFilterInstructor] = useState<string>('all');
   const [filterRoom, setFilterRoom] = useState<string>('all');
+  const [focusMode, setFocusMode] = useState(false);
 
   const horizonDate = useMemo(() => addMonths(new Date(), renewalMonths), [renewalMonths]);
 
