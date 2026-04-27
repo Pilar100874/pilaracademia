@@ -167,7 +167,7 @@ export function SlotGradeDialog({
 
   // Descobre sala/capacidade do horário a partir de appointments existentes ou bookable_slot.
   const slotRoomInfo = useMemo(() => {
-    if (!slot || !slotDate) return { roomId: null as string | null, capacity: null as number | null, roomName: null as string | null };
+    if (!slot || !slotDate) return { roomId: null as string | null, capacity: null as number | null, roomName: null as string | null, bookableSlotId: null as string | null };
     // 1) appointment do mesmo dia/hora
     const appt = appointments.find((a) => {
       const d = parseISO(a.scheduled_at);
@@ -191,7 +191,7 @@ export function SlotGradeDialog({
     if (roomCap != null && slotCap != null) capacity = Math.max(roomCap, slotCap);
     else capacity = roomCap ?? slotCap;
 
-    return { roomId, capacity, roomName: room?.name ?? null };
+    return { roomId, capacity, roomName: room?.name ?? null, bookableSlotId: (bs as any)?.id ?? null };
   }, [slot, slotDate, dayISO, hh, mm, appointments, bookableSlots, rooms]);
 
   if (!slot || !slotDate) return null;
@@ -229,7 +229,7 @@ export function SlotGradeDialog({
     (s.full_name || '').toLowerCase().includes(studentSearch.trim().toLowerCase())
   );
 
-  const addStudent = (studentId: string) => {
+  const addStudent = async (studentId: string) => {
     if (isFull) {
       toast.error(`Sala lotada (${rows.length}/${slotRoomInfo.capacity}). Não é possível adicionar mais alunos.`);
       return;
@@ -238,19 +238,24 @@ export function SlotGradeDialog({
       toast.info('Aluno já está nesta aula.');
       return;
     }
-    setRows((rs) => [
-      ...rs,
-      {
-        student_id: studentId,
-        appointment_id: null,
-        recurring_id: null,
-        equipment_id: '',
-        sequence_id: '',
-        lock_equipment: false,
-      },
-    ]);
+    const nextRow: RowState = {
+      student_id: studentId,
+      appointment_id: null,
+      recurring_id: null,
+      equipment_id: '',
+      sequence_id: '',
+      lock_equipment: false,
+    };
+    setRows((rs) => [...rs, nextRow]);
     setAddOpen(false);
-    toast.success(`${studentName(studentId)} adicionado(a). Salve para confirmar.`);
+    const apptId = await materializeRow(nextRow);
+    if (!apptId) {
+      setRows((rs) => rs.filter((r) => r.student_id !== studentId));
+      return;
+    }
+    setRows((rs) => rs.map((r) => (r.student_id === studentId ? { ...r, appointment_id: apptId } : r)));
+    onSaved();
+    toast.success(`${studentName(studentId)} adicionado(a) à aula.`);
   };
 
   const removeRow = (idx: number) => {
@@ -277,7 +282,7 @@ export function SlotGradeDialog({
         duration_minutes: slot.duration_minutes,
         created_by: userId,
         recurring_schedule_id: r.recurring_id,
-        room_id: slotRoomInfo.roomId ?? null,
+        bookable_slot_id: slotRoomInfo.bookableSlotId ?? null,
       } as any)
       .select('id')
       .single();
