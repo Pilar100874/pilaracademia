@@ -540,10 +540,19 @@ function StepGrade({
   const [breakMinutes, setBreakMinutes] = useState('10');
   const [roomId, setRoomId] = useState<string>(rooms[0]?.id ?? '');
   const [equipmentIds, setEquipmentIds] = useState<string[]>([]);
+  const [equipmentSearch, setEquipmentSearch] = useState('');
   const [creating, setCreating] = useState(false);
 
   const toggleEquipment = (id: string) =>
     setEquipmentIds((cur) => cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]);
+
+  const filteredEquipment = useMemo(() => {
+    const q = equipmentSearch.trim().toLowerCase();
+    if (!q) return equipment;
+    return equipment.filter((e: any) =>
+      e.name?.toLowerCase().includes(q) || e.equipment_type?.toLowerCase().includes(q)
+    );
+  }, [equipment, equipmentSearch]);
 
   useEffect(() => { if (!roomId && rooms[0]) setRoomId(rooms[0].id); }, [rooms, roomId]);
 
