@@ -279,7 +279,7 @@ export function SlotGradeDialog({
         clinic_id: clinicId,
         student_id: r.student_id,
         equipment_id: r.equipment_id || null,
-        instructor_id: userId,
+        instructor_id: slotRoomInfo.instructorId ?? userId,
         scheduled_at: slot.scheduled_at,
         duration_minutes: slot.duration_minutes,
         created_by: userId,
