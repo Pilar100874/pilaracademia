@@ -829,91 +829,23 @@ export default function GradeMasterPage() {
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-1">
-                {monthDays.map((d) => {
-                  const slots = slotsForDay(d);
-                  const isToday = isSameDay(d, new Date());
-                  const inMonth = isSameMonth(d, day);
-                  const visible = slots.slice(0, 3);
-                  const extra = slots.length - visible.length;
-                  // salas únicas usadas no dia
-                  const roomIds = Array.from(new Set(slots.map((s) => s.room_id).filter(Boolean))) as string[];
-                  return (
-                    <button
-                      key={d.toISOString()}
-                      onClick={() => { setDay(d); setView('day'); }}
-                      onDragOver={(e) => {
-                        if (draggingInstructorId === null) return;
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = 'copy';
-                      }}
-                      onDrop={(e) => {
-                        if (draggingInstructorId === null) return;
-                        e.preventDefault();
-                        const id = e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain');
-                        if (id) dropInstructorOnCell(id, d, 8, null);
-                      }}
-                      className={cn(
-                        'min-h-[100px] p-1.5 rounded border text-left flex flex-col gap-1 hover:border-primary transition',
-                        !inMonth && 'opacity-40 bg-muted/30',
-                        isToday && 'border-primary border-2',
-                        draggingInstructorId !== null && 'ring-1 ring-primary/30',
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className={cn('text-xs font-bold', isToday && 'text-primary')}>{format(d, 'd')}</span>
-                        {slots.length > 0 && (
-                          <span className="text-[9px] text-muted-foreground">{slots.length}</span>
-                        )}
-                      </div>
-                      {/* faixa de salas usadas */}
-                      {roomIds.length > 0 && (
-                        <div className="flex items-center gap-px h-1 -mt-0.5" title={`${roomIds.length} sala(s) usada(s)`}>
-                          {roomIds.map((rid) => (
-                            <span
-                              key={rid}
-                              className="flex-1 rounded-sm"
-                              style={{ background: roomColorOf(rid) || 'hsl(var(--muted))' }}
-                            />
-                          ))}
-                        </div>
-                      )}
-                      <div className="space-y-0.5 flex-1">
-                        {visible.map((s) => {
-                          const hasGrade = !!s.appointment?.sequence_id;
-                          const rcolor = roomColorOf(s.room_id);
-                          return (
-                            <div
-                              key={s.key}
-                              className={cn(
-                                'text-[9px] px-1 py-0.5 rounded truncate border flex items-center gap-1',
-                                s.isVirtual && 'border-dashed',
-                                s.isProjected && 'border-dashed border-amber-500/50 bg-amber-500/5',
-                                s.isOpen && 'border-dashed border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400',
-                                !s.isOpen && (hasGrade ? 'bg-primary/10 text-primary' : 'bg-muted'),
-                              )}
-                            >
-                              {rcolor && (
-                                <span
-                                  className="h-1.5 w-1.5 rounded-full shrink-0"
-                                  style={{ background: rcolor }}
-                                  title={roomName(s.room_id) || ''}
-                                />
-                              )}
-                              <span className="truncate">
-                                {format(parseISO(s.scheduled_at), 'HH:mm')} {s.isOpen ? (roomName(s.room_id) || 'livre') : studentName(s.student_id).split(' ')[0]}
-                              </span>
-                            </div>
-                          );
-                        })}
-                        {extra > 0 && (
-                          <div className="text-[9px] text-muted-foreground px-1">+{extra} mais</div>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+              <MonthMarqueeGrid
+                monthDays={monthDays}
+                day={day}
+                roomColorOf={roomColorOf}
+                roomName={roomName}
+                studentName={studentName}
+                slotsForDay={slotsForDay}
+                draggingInstructorId={draggingInstructorId}
+                dropInstructorOnCell={dropInstructorOnCell}
+                selectedEmptyKeys={selectedEmptyKeys}
+                onReplaceSelection={replaceSelection}
+                onAddSelection={addSelection}
+                onMarqueeEnd={({ emptyCount }) => {
+                  if (emptyCount > 0) setBulkOpen('create');
+                }}
+                onCellOpen={(d) => { setDay(d); setView('day'); }}
+              />
             </Card>
           </div>
         ) : (
