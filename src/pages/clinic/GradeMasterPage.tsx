@@ -327,12 +327,12 @@ export default function GradeMasterPage() {
           : monthDays.filter((d) => isSameMonth(d, day)).flatMap(slotsForDay);
     return {
       total: all.length,
-      withGrade: all.filter((s) => s.appointment?.sequence_id).length,
-      pending: all.filter((s) => !s.appointment?.sequence_id).length,
+      classes: all.filter((s) => !s.isOpen).length,
+      open: all.filter((s) => s.isOpen).length,
       projected: all.filter((s) => s.isProjected).length,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, daySlots, weekDays, monthDays, day, appointments, recurring, simulateRenewal, horizonDate, filterInstructor]);
+  }, [view, daySlots, weekDays, monthDays, day, appointments, recurring, bookableSlots, simulateRenewal, horizonDate, filterInstructor, filterRoom]);
 
   return (
     <PageMotion className="min-h-screen">
