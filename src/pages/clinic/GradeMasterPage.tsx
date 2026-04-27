@@ -679,6 +679,7 @@ export default function GradeMasterPage() {
     isOpen: s.isOpen,
     isVirtual: s.isVirtual,
     isProjected: s.isProjected,
+    isBlocked: s.isBlocked,
     hasGrade: !!s.appointment?.sequence_id,
     uncovered: isUncovered(s),
     appointment_id: s.appointment?.id,
@@ -686,9 +687,21 @@ export default function GradeMasterPage() {
     recurring_id: s.recurring_id,
   });
 
+  /**
+   * "Excluir" um horário NUNCA remove de fato.
+   * - Aulas reais (class_appointments) → cancelamento.
+   * - Slots livres (bookable_slots)    → bloqueio (blocked=true).
+   */
   const handleTimelineDelete = (ts: TimelineSlot) => {
-    if (ts.appointment_id) remove.mutate(ts.appointment_id);
-    else if (ts.bookable_slot_id) removeBookable.mutate(ts.bookable_slot_id);
+    if (ts.appointment_id) {
+      remove.mutate(ts.appointment_id);
+    } else if (ts.bookable_slot_id) {
+      if (ts.isBlocked) {
+        unblockBookable.mutate(ts.bookable_slot_id);
+      } else {
+        blockBookable.mutate(ts.bookable_slot_id);
+      }
+    }
   };
 
   const handleTimelineSlotClick = (ts: TimelineSlot) => {
