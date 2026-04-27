@@ -16,6 +16,7 @@ const baseNavItems = [
   { to: '/clinica', icon: CalendarDays, label: 'Grade Master', end: true, primary: true },
   { to: '/clinica/visao', icon: Activity, label: 'Visão' },
   { to: '/clinica/salas', icon: DoorOpen, label: 'Salas' },
+  { to: '/clinica/bloqueios', icon: Lock, label: 'Bloqueios', adminOnly: true },
   { to: '/clinica/alunos', icon: Users, label: 'Alunos', primary: true },
   { to: '/clinica/equipe', icon: GraduationCap, label: 'Equipe', adminOnly: true },
   { to: '/clinica/permissoes', icon: ShieldCheck, label: 'Permissões', adminOnly: true },
