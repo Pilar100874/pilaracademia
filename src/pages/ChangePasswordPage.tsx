@@ -23,21 +23,39 @@ export default function ChangePasswordPage() {
     if (pw1 !== pw2) { toast.error('Senhas não conferem'); return; }
     setLoading(true);
     try {
+      // Garante sessão fresca antes de trocar a senha
+      await supabase.auth.refreshSession().catch(() => {});
+
       const { error } = await supabase.auth.updateUser({ password: pw1 });
-      if (error) throw error;
+      if (error) {
+        // Sessão inválida/expirada — força novo login
+        if (/session|jwt|expired|not found/i.test(error.message)) {
+          toast.error('Sua sessão expirou. Faça login novamente com a senha temporária.');
+          await supabase.auth.signOut().catch(() => {});
+          navigate('/auth', { replace: true });
+          return;
+        }
+        throw error;
+      }
       if (user) {
-        await supabase.from('user_security_flags').upsert({
+        const { error: flagErr } = await supabase.from('user_security_flags').upsert({
           user_id: user.id,
           must_change_password: false,
           password_changed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id' });
+        if (flagErr) {
+          console.error('Erro ao salvar flag:', flagErr);
+          toast.error('Senha trocada, mas falhou ao limpar flag: ' + flagErr.message);
+          return;
+        }
       }
       toast.success('Senha atualizada!');
       await queryClient.invalidateQueries({ queryKey: ['must-change-password'] });
       await queryClient.refetchQueries({ queryKey: ['must-change-password'] });
       navigate('/', { replace: true });
     } catch (e: any) {
+      console.error('ChangePassword error:', e);
       toast.error(e?.message || 'Erro ao trocar senha');
     } finally {
       setLoading(false);
