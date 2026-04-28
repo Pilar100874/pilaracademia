@@ -698,6 +698,104 @@ export default function GradeMasterPage() {
       toast.error(e?.message || 'Não foi possível atualizar o professor');
     }
   };
+
+  /**
+   * Fill handle estilo Excel — usuário arrasta a alça de um slot verticalmente
+   * para propagar o `instructor_id` daquele slot a todas as horas no range,
+   * na MESMA sala. Cria horários novos onde não existirem.
+   */
+  const fillInstructorVertical = async (args: {
+    instructorId: string | null;
+    roomId: string | null;
+    day: Date;
+    fromHour: number;
+    toHour: number;
+  }) => {
+    if (!activeClinicId || !user) {
+      toast.error('Sessão sem clínica ativa. Recarregue a página.');
+      return;
+    }
+    const { instructorId, roomId, day: targetDay, fromHour, toHour } = args;
+    // Indexa os slots existentes do dia/sala por hora
+    const existing = daySlots
+      .map(toTimelineSlot)
+      .filter((t) => (t.room_id ?? null) === roomId);
+    const byHour = new Map<number, TimelineSlot>();
+    existing.forEach((t) => {
+      const h = new Date(t.scheduled_at).getHours();
+      if (!byHour.has(h)) byHour.set(h, t);
+    });
+
+    const hours: number[] = [];
+    for (let h = fromHour; h <= toHour; h++) hours.push(h);
+
+    let updated = 0;
+    let created = 0;
+    const errors: string[] = [];
+
+    for (const h of hours) {
+      const slot = byHour.get(h);
+      try {
+        if (slot) {
+          // Não toca o slot de origem (já tem o professor)
+          if (slot.instructor_id === instructorId) continue;
+          if (slot.appointment_id) {
+            const { error } = await supabase
+              .from('class_appointments')
+              .update({ instructor_id: instructorId })
+              .eq('id', slot.appointment_id);
+            if (error) throw error;
+          } else if (slot.bookable_slot_id) {
+            const { error } = await supabase
+              .from('bookable_slots' as any)
+              .update({ instructor_id: instructorId })
+              .eq('id', slot.bookable_slot_id);
+            if (error) throw error;
+          } else {
+            continue;
+          }
+          updated++;
+        } else {
+          if (!instructorId) continue; // não cria horários "vazios" sem professor
+          const sched = new Date(targetDay);
+          sched.setHours(h, 0, 0, 0);
+          // não cria no passado
+          if (sched.getTime() + 60 * 60 * 1000 <= Date.now()) continue;
+          await createBookable.mutateAsync({
+            clinic_id: activeClinicId,
+            scheduled_at: sched.toISOString(),
+            duration_minutes: 50,
+            equipment_id: null,
+            instructor_id: instructorId,
+            room_id: roomId,
+            capacity: 1,
+            notes: null,
+            created_by: user.id,
+          } as any);
+          created++;
+        }
+      } catch (e: any) {
+        errors.push(`${String(h).padStart(2, '0')}:00 — ${e?.message || 'erro'}`);
+      }
+    }
+
+    await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+    await qc.invalidateQueries({ queryKey: ['appointments'] });
+
+    const total = updated + created;
+    if (total > 0) {
+      toast.success(
+        `${total} horário${total !== 1 ? 's' : ''} preenchido${total !== 1 ? 's' : ''}` +
+        (created > 0 ? ` (${created} novo${created !== 1 ? 's' : ''})` : '')
+      );
+    } else if (errors.length === 0) {
+      toast.info('Nada a preencher.');
+    }
+    if (errors.length > 0) {
+      toast.error(`Conflitos em ${errors.length} horário(s): ${errors.slice(0, 3).join(' · ')}`);
+    }
+  };
+
   const selectRoomColumn = (_roomId: string, _days: Date[]) => {};
 
   // Relatório exibido após operação em massa quando há skips/erros
