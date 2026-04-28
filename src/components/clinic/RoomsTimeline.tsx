@@ -242,7 +242,12 @@ export function RoomsTimeline({
     const m = (date.getHours() - startHour) * 60 + date.getMinutes();
     return (m / 60) * hourHeight;
   };
-  const now = new Date();
+  // tick a cada 60s para atualizar o progresso das aulas em andamento
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
   const isToday = isSameDay(day, now);
 
   const hasOrphan = slots.some((s) => !s.room_id);
