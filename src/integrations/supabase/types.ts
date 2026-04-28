@@ -1698,6 +1698,102 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_automations: {
+        Row: {
+          action_config: Json | null
+          action_type: string
+          active: boolean
+          clinic_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          last_run_at: string | null
+          name: string
+          run_count: number
+          trigger_config: Json | null
+          trigger_type: string
+          updated_at: string
+          webhook_url: string | null
+        }
+        Insert: {
+          action_config?: Json | null
+          action_type?: string
+          active?: boolean
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          last_run_at?: string | null
+          name: string
+          run_count?: number
+          trigger_config?: Json | null
+          trigger_type?: string
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          action_config?: Json | null
+          action_type?: string
+          active?: boolean
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          last_run_at?: string | null
+          name?: string
+          run_count?: number
+          trigger_config?: Json | null
+          trigger_type?: string
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
+      marketing_bulk_sends: {
+        Row: {
+          channel: string
+          clinic_id: string
+          created_at: string
+          created_by: string
+          id: string
+          message: string
+          recipient_count: number
+          recipient_filter: Json | null
+          scheduled_for: string | null
+          status: string
+          webhook_url: string | null
+        }
+        Insert: {
+          channel?: string
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          message: string
+          recipient_count?: number
+          recipient_filter?: Json | null
+          scheduled_for?: string | null
+          status?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          channel?: string
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          message?: string
+          recipient_count?: number
+          recipient_filter?: Json | null
+          scheduled_for?: string | null
+          status?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       marketing_campaigns: {
         Row: {
           budget: number | null
@@ -1788,6 +1884,48 @@ export type Database = {
           is_active?: boolean
           updated_at?: string
           validation_status?: string
+        }
+        Relationships: []
+      }
+      marketing_media: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          folder: string | null
+          id: string
+          media_type: string
+          name: string
+          public_url: string
+          size_bytes: number | null
+          storage_path: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          folder?: string | null
+          id?: string
+          media_type?: string
+          name: string
+          public_url: string
+          size_bytes?: number | null
+          storage_path: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          folder?: string | null
+          id?: string
+          media_type?: string
+          name?: string
+          public_url?: string
+          size_bytes?: number | null
+          storage_path?: string
         }
         Relationships: []
       }
