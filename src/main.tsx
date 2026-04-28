@@ -18,7 +18,12 @@ const isPreviewOrIframe = (() => {
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator && isPreviewOrIframe) {
   navigator.serviceWorker
     .getRegistrations()
-    .then((registrations) => registrations.forEach((registration) => registration.unregister()))
+    .then((registrations) => Promise.all(registrations.map((r) => r.unregister())))
+    .then(() => {
+      if (typeof window !== "undefined" && "caches" in window) {
+        return caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))));
+      }
+    })
     .catch(() => {
       /* ignore */
     });
