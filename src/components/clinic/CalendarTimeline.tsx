@@ -647,6 +647,16 @@ export function CalendarTimeline({
                           {instr && height > 48 && !s.isBlocked && (
                             <div className="truncate text-muted-foreground text-[10px] mt-0.5">{instr}</div>
                           )}
+                          {canFillFrom && (
+                            <span
+                              role="presentation"
+                              title="Arraste para preencher horários abaixo/acima com este professor"
+                              onPointerDown={(ev) => startFillDrag(ev, s, d, color)}
+                              onClick={(ev) => { ev.stopPropagation(); }}
+                              className="absolute -bottom-1 -right-1 z-30 h-2.5 w-2.5 rounded-sm border border-card cursor-ns-resize hover:scale-125 transition-transform"
+                              style={{ background: color || 'hsl(var(--primary))' }}
+                            />
+                          )}
                         </div>
                       </PopoverTrigger>
                       <PopoverContent
