@@ -90,7 +90,11 @@ interface Props {
     day: Date;
     fromHour: number;
     toHour: number;
+    mode?: 'instructor' | 'block';
+    blockName?: string | null;
   }) => void;
+  /** Atualiza o nome (notes) de um bloqueio pontual (bookable_slot.blocked=true). */
+  onUpdateBlockName?: (bookableSlotId: string, name: string) => void;
 }
 
 export function CalendarTimeline({
@@ -103,6 +107,7 @@ export function CalendarTimeline({
   rooms,
   onRoomColumnClick,
   onFillInstructorVertical,
+  onUpdateBlockName,
 }: Props) {
   const splitByRoom = !!rooms && rooms.length > 0;
   // Sub-colunas: se houver salas, cada dia tem N colunas (1 por sala). Caso contrário, 1.
