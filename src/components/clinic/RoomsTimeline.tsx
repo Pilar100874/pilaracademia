@@ -534,6 +534,16 @@ export function RoomsTimeline({
                     {instr && height > 36 && !s.isBlocked && (
                       <div className="truncate text-muted-foreground">{instr}</div>
                     )}
+                    {canFillFrom && !selectionMode && (
+                      <span
+                        role="presentation"
+                        title="Arraste para preencher horários abaixo/acima com este professor"
+                        onPointerDown={(ev) => startFillDrag(ev, s, color)}
+                        onClick={(ev) => { ev.stopPropagation(); }}
+                        className="absolute -bottom-1 -right-1 z-20 h-2.5 w-2.5 rounded-sm border border-card cursor-ns-resize hover:scale-125 transition-transform"
+                        style={{ background: color || 'hsl(var(--primary))' }}
+                      />
+                    )}
                   </div>
                 );
 
