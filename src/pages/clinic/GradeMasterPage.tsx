@@ -44,7 +44,7 @@ import { CalendarTimeline, type TimelineSlot, makeWeekEmptyKey, parseWeekEmptyKe
 import { RoomsTimeline, makeEmptyKey, parseEmptyKey, type EmptyCellKey } from '@/components/clinic/RoomsTimeline';
 import { BulkAssignDialog, type BulkAssignValues } from '@/components/clinic/BulkAssignDialog';
 import { MonthMarqueeGrid } from '@/components/clinic/MonthMarqueeGrid';
-import { InstructorDragPalette, CLEAR_INSTRUCTOR, INSTRUCTOR_DRAG_TYPE } from '@/components/clinic/InstructorDragPalette';
+import { InstructorDragPalette, CLEAR_INSTRUCTOR, BLOCK_SLOT, INSTRUCTOR_DRAG_TYPE } from '@/components/clinic/InstructorDragPalette';
 import { PageMotion } from '@/components/PageMotion';
 import { useBlockedPeriods, findActiveBlockAt } from '@/hooks/useBlockedPeriods';
 
@@ -651,20 +651,22 @@ export default function GradeMasterPage() {
     }
     const sched = new Date(d);
     sched.setHours(h, 0, 0, 0);
+    const isBlock = id === BLOCK_SLOT;
     try {
       await createBookable.mutateAsync({
         clinic_id: activeClinicId,
         scheduled_at: sched.toISOString(),
         duration_minutes: 50,
         equipment_id: null,
-        instructor_id: id,
+        instructor_id: isBlock ? null : id,
         room_id: roomId,
         capacity: 1,
         notes: null,
         created_by: user.id,
+        ...(isBlock ? { blocked: true } : {}),
       } as any);
       await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
-      toast.success('Horário criado com professor');
+      toast.success(isBlock ? 'Horário bloqueado' : 'Horário criado com professor');
     } catch (e: any) {
       toast.error(e?.message || 'Não foi possível criar o horário');
     }
@@ -674,6 +676,26 @@ export default function GradeMasterPage() {
   const dropInstructorOnSlot = async (id: string, ts: TimelineSlot) => {
     setDraggingInstructorId(null);
     if (!activeClinicId) return;
+
+    // Bloqueio: aula → cancela; slot livre → marca blocked=true
+    if (id === BLOCK_SLOT) {
+      try {
+        if (ts.appointment_id) {
+          await remove.mutateAsync(ts.appointment_id);
+        } else if (ts.bookable_slot_id) {
+          await blockBookable.mutateAsync(ts.bookable_slot_id);
+        } else {
+          return;
+        }
+        await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+        await qc.invalidateQueries({ queryKey: ['appointments'] });
+        toast.success('Horário bloqueado');
+      } catch (e: any) {
+        toast.error(e?.message || 'Não foi possível bloquear o horário');
+      }
+      return;
+    }
+
     const newInstructorId: string | null = id === CLEAR_INSTRUCTOR ? null : id;
     try {
       if (ts.appointment_id) {

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { GripVertical, UserCog, X } from 'lucide-react';
+import { GripVertical, UserCog, X, Ban } from 'lucide-react';
 
 export const INSTRUCTOR_DRAG_TYPE = 'application/x-pilar-instructor';
 /** Valor especial para "limpar professor" via drop. */
 export const CLEAR_INSTRUCTOR = '__clear__';
+/** Valor especial para "bloquear horário" via drop. */
+export const BLOCK_SLOT = '__block__';
 
 interface Instructor { user_id: string; name: string | null }
 
@@ -92,6 +94,22 @@ export function InstructorDragPalette({ instructors, colorOf, draggingId, onDrag
               <span className="text-muted-foreground">Sem professor</span>
             </div>
           )}
+
+          {/* Chip "bloqueio" — solte sobre uma célula vazia ou existente para bloquear o horário */}
+          <div
+            draggable
+            onDragStart={(e) => handleStart(e, BLOCK_SLOT)}
+            onDragEnd={onDragEnd}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-dashed text-xs cursor-grab active:cursor-grabbing select-none transition',
+              'border-destructive/60 text-destructive hover:bg-destructive/10',
+              draggingId === BLOCK_SLOT && 'opacity-40 ring-2 ring-destructive',
+            )}
+            title="Arraste para bloquear um horário (vazio ou existente)"
+          >
+            <Ban className="h-3 w-3" />
+            <span className="font-medium">Bloqueio</span>
+          </div>
         </div>
       )}
     </div>
