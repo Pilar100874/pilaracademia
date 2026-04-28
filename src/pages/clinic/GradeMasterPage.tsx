@@ -676,6 +676,26 @@ export default function GradeMasterPage() {
   const dropInstructorOnSlot = async (id: string, ts: TimelineSlot) => {
     setDraggingInstructorId(null);
     if (!activeClinicId) return;
+
+    // Bloqueio: aula → cancela; slot livre → marca blocked=true
+    if (id === BLOCK_SLOT) {
+      try {
+        if (ts.appointment_id) {
+          await remove.mutateAsync(ts.appointment_id);
+        } else if (ts.bookable_slot_id) {
+          await blockBookable.mutateAsync(ts.bookable_slot_id);
+        } else {
+          return;
+        }
+        await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+        await qc.invalidateQueries({ queryKey: ['appointments'] });
+        toast.success('Horário bloqueado');
+      } catch (e: any) {
+        toast.error(e?.message || 'Não foi possível bloquear o horário');
+      }
+      return;
+    }
+
     const newInstructorId: string | null = id === CLEAR_INSTRUCTOR ? null : id;
     try {
       if (ts.appointment_id) {
