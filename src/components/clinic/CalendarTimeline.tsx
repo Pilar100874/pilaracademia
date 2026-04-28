@@ -489,16 +489,8 @@ export function CalendarTimeline({
                   );
                 })}
 
-                {/* now indicator (apenas na primeira sub-coluna) */}
-                {showNow && subIdx === 0 && (
-                  <div
-                    className="absolute left-0 right-0 z-20 pointer-events-none"
-                    style={{ top: minutesToTop(now) }}
-                  >
-                    <div className="h-px bg-destructive" />
-                    <div className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-destructive" />
-                  </div>
-                )}
+                {/* Linha do horário atual removida — o progresso é mostrado como
+                    preenchimento dentro de cada célula de aula. */}
 
                 {/* eventos */}
                 {slots.map((s) => {
