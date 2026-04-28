@@ -11,7 +11,7 @@ export function BottomNav() {
     { to: '/history', icon: Calendar, label: 'Histórico' },
     ...(isStudent ? [{ to: '/meu-pilates', icon: Activity, label: 'Pilates' }] : []),
     ...(isStaff ? [{ to: '/clinica', icon: Building2, label: 'Clínica' }] : []),
-    ...(isStaff ? [{ to: '/marketing', icon: Megaphone, label: 'Marketing' }] : []),
+    { to: '/marketing', icon: Megaphone, label: 'Marketing' },
     { to: '/health', icon: Heart, label: 'Saúde' },
     { to: '/profile', icon: User, label: 'Perfil' },
   ];
