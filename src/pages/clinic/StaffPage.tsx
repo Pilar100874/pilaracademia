@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useClinicStaff } from '@/hooks/useStaff';
 import { Card } from '@/components/ui/card';
