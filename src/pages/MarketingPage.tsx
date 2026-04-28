@@ -31,6 +31,12 @@ import MarketingCampanhas from '@/components/marketing/MarketingCampanhas';
 import MarketingEnvioMassa from '@/components/marketing/MarketingEnvioMassa';
 import MarketingGaleria from '@/components/marketing/MarketingGaleria';
 import MarketingAutomacoes from '@/components/marketing/MarketingAutomacoes';
+import MarketingAIStudio from '@/components/marketing/MarketingAIStudio';
+import MarketingPageBuilder from '@/components/marketing/MarketingPageBuilder';
+import MarketingStrategyEngine from '@/components/marketing/MarketingStrategyEngine';
+import MarketingCatalogo from '@/components/marketing/MarketingCatalogo';
+import MarketingCanvas from '@/components/marketing/MarketingCanvas';
+import MarketingVideoEditor from '@/components/marketing/MarketingVideoEditor';
 
 interface TabItem {
   id: string;
