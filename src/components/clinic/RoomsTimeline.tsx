@@ -69,6 +69,19 @@ interface Props {
 
   /** Clique no cabeçalho de uma sala — selecionar a coluna inteira. */
   onRoomHeaderClick?: (roomId: string | null) => void;
+
+  /**
+   * Fill handle estilo Excel — usuário arrasta a alça no canto de um slot
+   * verticalmente para propagar o instructor_id daquele slot às horas
+   * cobertas, na mesma sala.
+   */
+  onFillInstructorVertical?: (args: {
+    instructorId: string | null;
+    roomId: string | null;
+    day: Date;
+    fromHour: number;
+    toHour: number;
+  }) => void;
 }
 
 export function RoomsTimeline({
