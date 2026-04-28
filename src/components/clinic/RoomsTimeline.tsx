@@ -446,6 +446,19 @@ export function RoomsTimeline({
 
                 const slotHoverKey = `slot-${s.key}`;
                 const isSlotDropHover = hoverKey === slotHoverKey;
+                const slotHour = t.getHours();
+                const slotIsFillTarget = !!fillDrag
+                  && fillDrag.roomId === (s.room_id ?? null)
+                  && slotHour !== fillDrag.fromHour
+                  && slotHour >= Math.min(fillDrag.fromHour, fillDrag.currentHour)
+                  && slotHour <= Math.max(fillDrag.fromHour, fillDrag.currentHour);
+                const slotIsFillOrigin = !!fillDrag
+                  && fillDrag.roomId === (s.room_id ?? null)
+                  && slotHour === fillDrag.fromHour;
+                const canFillFrom = !!onFillInstructorVertical
+                  && !s.isBlocked
+                  && !s.isOpen
+                  && !!s.instructor_id;
                 const eventBox = (
                   <div
                     role="button"
