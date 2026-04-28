@@ -593,7 +593,25 @@ export function CalendarTimeline({
                             isSelected && 'ring-2 ring-primary bg-primary/15',
                           )}
                         >
-                          <div className="flex items-center justify-between gap-1 leading-tight">
+                          {/* Preenchimento de progresso da aula (vertical, top→bottom) */}
+                          {progressPct !== null && (
+                            <>
+                              <div
+                                className={cn(
+                                  'absolute inset-x-0 top-0 z-0 pointer-events-none transition-all',
+                                  progressPct >= 100 ? 'bg-muted-foreground/15' : 'bg-primary/15',
+                                )}
+                                style={{ height: `${progressPct}%` }}
+                                aria-hidden
+                              />
+                              {progressPct > 0 && progressPct < 100 && (
+                                <span className="absolute top-0.5 right-1.5 z-20 text-[9px] font-bold tabular-nums text-primary/80">
+                                  {progressPct}%
+                                </span>
+                              )}
+                            </>
+                          )}
+                          <div className="relative z-10 flex items-center justify-between gap-1 leading-tight">
                             <span className="font-bold tabular-nums text-[11px]">{format(t, 'HH:mm')}</span>
                             <div className="flex items-center gap-0.5">
                               {s.isBlocked && <Lock className="h-3 w-3 text-muted-foreground" />}
