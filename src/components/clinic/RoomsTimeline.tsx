@@ -242,7 +242,12 @@ export function RoomsTimeline({
     const m = (date.getHours() - startHour) * 60 + date.getMinutes();
     return (m / 60) * hourHeight;
   };
-  const now = new Date();
+  // tick a cada 60s para atualizar o progresso das aulas em andamento
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
   const isToday = isSameDay(day, now);
 
   const hasOrphan = slots.some((s) => !s.room_id);
@@ -407,15 +412,8 @@ export function RoomsTimeline({
 
               })}
 
-              {isToday && now.getHours() >= startHour && now.getHours() < endHour && (
-                <div
-                  className="absolute left-0 right-0 z-20 pointer-events-none"
-                  style={{ top: minutesToTop(now) }}
-                >
-                  <div className="h-px bg-destructive" />
-                  <div className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-destructive" />
-                </div>
-              )}
+              {/* Linha do horário atual removida — o progresso agora é mostrado
+                  como preenchimento dentro de cada célula de aula. */}
 
               {roomSlots.map((s) => {
                 const t = parseISO(s.scheduled_at);
@@ -441,6 +439,15 @@ export function RoomsTimeline({
                 const canFillFrom = !!onFillInstructorVertical
                   && !s.isBlocked
                   && !!s.instructor_id;
+                // Progresso da aula (0–100). Só para slots reais com aluno (appointment).
+                const slotEnd = new Date(t.getTime() + s.duration_minutes * 60_000);
+                const progressPct = (() => {
+                  if (s.isOpen || s.isBlocked || s.isProjected || s.isVirtual) return null;
+                  if (!isToday) return null;
+                  if (now <= t) return 0;
+                  if (now >= slotEnd) return 100;
+                  return Math.round(((now.getTime() - t.getTime()) / (s.duration_minutes * 60_000)) * 100);
+                })();
                 const eventBox = (
                   <div
                     role="button"
@@ -495,7 +502,25 @@ export function RoomsTimeline({
                       slotIsFillOrigin && 'ring-2 ring-primary',
                     )}
                   >
-                    <div className="flex items-center justify-between gap-1 leading-tight">
+                    {/* Preenchimento de progresso da aula (vertical, top→bottom) */}
+                    {progressPct !== null && (
+                      <>
+                        <div
+                          className={cn(
+                            'absolute inset-x-0 top-0 z-0 pointer-events-none transition-all',
+                            progressPct >= 100 ? 'bg-muted-foreground/15' : 'bg-primary/15',
+                          )}
+                          style={{ height: `${progressPct}%` }}
+                          aria-hidden
+                        />
+                        {progressPct > 0 && progressPct < 100 && (
+                          <span className="absolute top-0.5 right-1 z-10 text-[8.5px] font-bold tabular-nums text-primary/80">
+                            {progressPct}%
+                          </span>
+                        )}
+                      </>
+                    )}
+                    <div className="relative z-10 flex items-center justify-between gap-1 leading-tight">
                       <span className="font-bold">{format(t, 'HH:mm')}</span>
                       <div className="flex items-center gap-0.5">
                         {isSelected && <Check className="h-2.5 w-2.5 text-primary" />}
