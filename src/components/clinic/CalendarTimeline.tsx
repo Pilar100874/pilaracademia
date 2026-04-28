@@ -611,6 +611,8 @@ export function CalendarTimeline({
                                       : 'bg-card',
                             s.uncovered && !s.isOpen && !s.isBlocked && 'bg-destructive/5',
                             isSlotHover && 'ring-2 ring-primary bg-primary/15',
+                            slotIsFillTarget && 'ring-2 ring-primary bg-primary/15',
+                            slotIsFillOrigin && 'ring-2 ring-primary',
                             isSelected && 'ring-2 ring-primary bg-primary/15',
                           )}
                         >
