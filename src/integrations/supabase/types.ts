@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_studio_workflows: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          descricao: string | null
+          edges_data: Json
+          id: string
+          nodes_data: Json
+          nome: string
+          thumbnail: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          descricao?: string | null
+          edges_data?: Json
+          id?: string
+          nodes_data?: Json
+          nome: string
+          thumbnail?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          descricao?: string | null
+          edges_data?: Json
+          id?: string
+          nodes_data?: Json
+          nome?: string
+          thumbnail?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bookable_slot_equipment: {
         Row: {
           bookable_slot_id: string
@@ -2631,6 +2670,42 @@ export type Database = {
           instagram_api_key?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      video_projects: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          id: string
+          nome: string
+          thumbnail: string | null
+          timeline_data: Json
+          updated_at: string
+          user_id: string
+          video_config: Json
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          id?: string
+          nome?: string
+          thumbnail?: string | null
+          timeline_data?: Json
+          updated_at?: string
+          user_id: string
+          video_config?: Json
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          thumbnail?: string | null
+          timeline_data?: Json
+          updated_at?: string
+          user_id?: string
+          video_config?: Json
         }
         Relationships: []
       }
