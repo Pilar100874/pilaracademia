@@ -509,6 +509,8 @@ export function RoomsTimeline({
                       isSelected && 'ring-2 ring-primary bg-primary/10',
                       selectionMode && !canSelect && 'opacity-50',
                       isSlotDropHover && 'ring-2 ring-primary bg-primary/15',
+                      slotIsFillTarget && 'ring-2 ring-primary bg-primary/15',
+                      slotIsFillOrigin && 'ring-2 ring-primary',
                     )}
                   >
                     <div className="flex items-center justify-between gap-1 leading-tight">
