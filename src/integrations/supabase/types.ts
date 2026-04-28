@@ -1647,6 +1647,150 @@ export type Database = {
           },
         ]
       }
+      marketing_ai_api_keys: {
+        Row: {
+          api_key: string | null
+          api_secret: string | null
+          base_url: string | null
+          clinic_id: string
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          organization_id: string | null
+          project_id: string | null
+          provider: string
+          provider_display_name: string
+          updated_at: string
+          validation_status: string
+        }
+        Insert: {
+          api_key?: string | null
+          api_secret?: string | null
+          base_url?: string | null
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          project_id?: string | null
+          provider: string
+          provider_display_name: string
+          updated_at?: string
+          validation_status?: string
+        }
+        Update: {
+          api_key?: string | null
+          api_secret?: string | null
+          base_url?: string | null
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          project_id?: string | null
+          provider?: string
+          provider_display_name?: string
+          updated_at?: string
+          validation_status?: string
+        }
+        Relationships: []
+      }
+      marketing_campaigns: {
+        Row: {
+          budget: number | null
+          channel: string | null
+          clinic_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          end_date: string | null
+          goal: string | null
+          id: string
+          name: string
+          notes: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          budget?: number | null
+          channel?: string | null
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_date?: string | null
+          goal?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          budget?: number | null
+          channel?: string | null
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_date?: string | null
+          goal?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      marketing_integration_credentials: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string
+          credentials_json: Json
+          display_name: string
+          id: string
+          integration_name: string
+          integration_type: string
+          is_active: boolean
+          updated_at: string
+          validation_status: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          credentials_json?: Json
+          display_name: string
+          id?: string
+          integration_name: string
+          integration_type: string
+          is_active?: boolean
+          updated_at?: string
+          validation_status?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          credentials_json?: Json
+          display_name?: string
+          id?: string
+          integration_name?: string
+          integration_type?: string
+          is_active?: boolean
+          updated_at?: string
+          validation_status?: string
+        }
+        Relationships: []
+      }
       master_settings: {
         Row: {
           id: number

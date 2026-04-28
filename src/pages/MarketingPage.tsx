@@ -25,6 +25,9 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { BottomNav } from '@/components/BottomNav';
 import { PageMotion } from '@/components/PageMotion';
+import AIApiKeysManager from '@/components/marketing/AIApiKeysManager';
+import IntegrationCredentialsManager from '@/components/marketing/IntegrationCredentialsManager';
+import MarketingCampanhas from '@/components/marketing/MarketingCampanhas';
 
 interface TabItem {
   id: string;
@@ -171,7 +174,10 @@ const MarketingPage: React.FC = () => {
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="px-3 sm:px-6">
-                        <ComingSoon label={tab.label} />
+                        {tab.id === 'config-apis' ? <AIApiKeysManager /> :
+                         tab.id === 'integrations' ? <IntegrationCredentialsManager /> :
+                         tab.id === 'campanhas' ? <MarketingCampanhas /> :
+                         <ComingSoon label={tab.label} />}
                       </CardContent>
                     </Card>
                   </TabsContent>
