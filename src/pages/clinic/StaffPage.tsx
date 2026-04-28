@@ -70,14 +70,35 @@ export default function StaffPage() {
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
+      const created = data as any;
       setResult({
-        email: (data as any).email,
-        password: (data as any).password,
-        already_existed: !!(data as any).already_existed,
+        email: created.email,
+        password: created.password,
+        already_existed: !!created.already_existed,
       });
+
+      // Atualização otimista: insere o novo membro no cache imediatamente,
+      // sem esperar pela replicação do Postgres (que às vezes atrasa o read-after-write).
+      const newMember = {
+        user_id: created.user_id as string,
+        role: form.role,
+        name: form.full_name.trim(),
+        email: form.email.trim(),
+      };
+      qc.setQueryData(['clinic-staff', activeClinicId], (prev: any[] | undefined) => {
+        const list = prev ?? [];
+        if (list.some((m) => m.user_id === newMember.user_id && m.role === newMember.role)) return list;
+        return [...list, newMember];
+      });
+
       setForm({ full_name: '', email: '', role: 'instructor' });
       setOpen(false);
-      await qc.invalidateQueries({ queryKey: ['clinic-staff', activeClinicId] });
+
+      // Refetch com pequeno atraso para reconciliar com o servidor
+      // (cobre eventual lag de replica do banco).
+      setTimeout(() => {
+        qc.invalidateQueries({ queryKey: ['clinic-staff', activeClinicId] });
+      }, 800);
     } catch (e: any) {
       toast.error(e?.message || 'Erro ao cadastrar');
     } finally {
