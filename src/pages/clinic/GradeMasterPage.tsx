@@ -717,7 +717,7 @@ export default function GradeMasterPage() {
     }
     const { instructorId, roomId, day: targetDay, fromHour, toHour } = args;
     // Indexa os slots existentes do dia/sala por hora
-    const existing = daySlots
+    const existing = slotsForDay(targetDay)
       .map(toTimelineSlot)
       .filter((t) => (t.room_id ?? null) === roomId);
     const byHour = new Map<number, TimelineSlot>();
@@ -1230,6 +1230,7 @@ export default function GradeMasterPage() {
                 else if (slotCount > 0) setBulkOpen('reassign');
               }}
               onRoomColumnClick={(d, roomId, allDays) => selectRoomColumn(roomId, allDays ? weekDays : [d])}
+              onFillInstructorVertical={fillInstructorVertical}
             />
             </>;
             })()}
