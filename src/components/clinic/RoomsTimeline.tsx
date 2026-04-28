@@ -542,51 +542,103 @@ export function RoomsTimeline({
                   );
                 }
 
+                // Vagas: capacidade da sala - aulas já marcadas naquela hora/sala
+                const occInfo = occupancyAt(s.room_id ?? null, slotHour);
+                const vagas = occInfo ? Math.max(0, occInfo.cap - occInfo.used) : null;
+
                 return (
                   <Popover key={s.key}>
                     <PopoverTrigger asChild>{eventBox}</PopoverTrigger>
                     <PopoverContent
-                      className="w-72 p-0 text-xs overflow-hidden border-border shadow-lg"
+                      className="w-80 p-0 text-xs overflow-hidden rounded-xl border border-border/60 shadow-2xl bg-card backdrop-blur-sm"
                       onClick={(e) => e.stopPropagation()}
                       onOpenAutoFocus={(e) => e.preventDefault()}
                     >
-                      {/* Header */}
+                      {/* Header — moderno com gradiente sutil e barra colorida */}
                       <div
                         className={cn(
-                          'px-3 py-2.5 border-b',
-                          s.isBlocked ? 'bg-destructive/5' : s.isOpen ? 'bg-emerald-500/5' : 'bg-muted/40'
+                          'relative px-4 pt-3.5 pb-3 border-b border-border/50',
+                          s.isBlocked
+                            ? 'bg-gradient-to-br from-destructive/10 via-destructive/5 to-transparent'
+                            : s.isOpen
+                              ? 'bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent'
+                              : 'bg-gradient-to-br from-primary/10 via-primary/5 to-transparent'
                         )}
                       >
-                        <div className="font-serif text-[15px] leading-tight tracking-tight">
-                          {s.isBlocked
-                            ? 'Horário bloqueado'
-                            : s.isOpen
-                              ? 'Horário disponível'
-                              : studentName(s.student_id)}
-                        </div>
-                        <div className="mt-1 flex items-center gap-1 text-[10.5px] uppercase tracking-wider text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          <span className="font-medium">
-                            {format(t, "EEE dd/MM '·' HH:mm", { locale: ptBR })}
-                          </span>
-                          <span className="opacity-60">·</span>
-                          <span>{s.duration_minutes}min</span>
+                        <span
+                          className="absolute top-0 left-0 h-full w-1"
+                          style={{
+                            background: s.isBlocked
+                              ? 'hsl(var(--destructive))'
+                              : s.isOpen
+                                ? 'hsl(142 71% 45%)'
+                                : (color || 'hsl(var(--primary))'),
+                          }}
+                        />
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="font-serif text-[17px] leading-tight tracking-tight truncate">
+                              {s.isBlocked
+                                ? 'Horário bloqueado'
+                                : s.isOpen
+                                  ? 'Horário disponível'
+                                  : studentName(s.student_id)}
+                            </div>
+                            <div className="mt-1.5 flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              <span className="font-semibold tabular-nums">
+                                {format(t, "EEE dd/MM '·' HH:mm", { locale: ptBR })}
+                              </span>
+                              <span className="opacity-50">·</span>
+                              <span className="tabular-nums">{s.duration_minutes}min</span>
+                            </div>
+                          </div>
+                          {s.isOpen && vagas !== null && (
+                            <div
+                              className={cn(
+                                'shrink-0 flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 border shadow-sm',
+                                vagas === 0
+                                  ? 'bg-destructive/10 border-destructive/30 text-destructive'
+                                  : vagas <= 1
+                                    ? 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-400'
+                                    : 'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400'
+                              )}
+                              title={`${vagas} vaga(s) de ${occInfo!.cap}`}
+                            >
+                              <span className="text-[18px] font-bold leading-none tabular-nums">{vagas}</span>
+                              <span className="text-[8.5px] uppercase tracking-wider font-semibold mt-0.5">
+                                {vagas === 1 ? 'vaga' : 'vagas'}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
 
-                      {/* Meta */}
-                      <div className="px-3 py-2 space-y-1.5 border-b bg-background">
-                        <div className="flex items-center gap-1.5 text-[11.5px] text-foreground/80">
-                          <MapPin className="h-3 w-3 text-muted-foreground" />
-                          <span className="font-medium">{r.name}</span>
+                      {/* Meta — chips modernos */}
+                      <div className="px-4 py-2.5 space-y-2 border-b border-border/50 bg-background/60">
+                        <div className="flex items-center gap-2 text-[11.5px] text-foreground/85">
+                          <div className="h-6 w-6 rounded-md bg-muted/70 flex items-center justify-center">
+                            <MapPin className="h-3 w-3 text-muted-foreground" />
+                          </div>
+                          <span className="font-medium truncate">{r.name}</span>
+                          {s.isOpen && occInfo && (
+                            <span className="ml-auto text-[10px] font-semibold tabular-nums text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">
+                              {occInfo.used}/{occInfo.cap}
+                            </span>
+                          )}
                         </div>
                         {instr && !s.isBlocked && (
-                          <div className="flex items-center gap-1.5 text-[11.5px] text-foreground/80">
-                            <span
-                              className="h-2.5 w-2.5 rounded-full ring-1 ring-border shrink-0"
-                              style={{ background: color }}
-                            />
-                            <span>{instr}</span>
+                          <div className="flex items-center gap-2 text-[11.5px] text-foreground/85">
+                            <div
+                              className="h-6 w-6 rounded-md flex items-center justify-center ring-1 ring-border/60"
+                              style={{ background: `${color}22` }}
+                            >
+                              <span
+                                className="h-2.5 w-2.5 rounded-full"
+                                style={{ background: color }}
+                              />
+                            </div>
+                            <span className="font-medium truncate">{instr}</span>
                           </div>
                         )}
                       </div>
