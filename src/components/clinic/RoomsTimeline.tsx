@@ -120,6 +120,83 @@ export function RoomsTimeline({
   const fillDragRef = useRef<typeof fillDrag>(null);
   fillDragRef.current = fillDrag;
 
+  /** Inicia o fill drag a partir de um slot existente. */
+  const startFillDrag = (
+    e: React.PointerEvent,
+    slot: TimelineSlot,
+    instructorColor: string,
+  ) => {
+    if (!onFillInstructorVertical) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const slotHour = parseISO(slot.scheduled_at).getHours();
+    setFillDrag({
+      instructorId: slot.instructor_id ?? null,
+      roomId: slot.room_id ?? null,
+      fromHour: slotHour,
+      currentHour: slotHour,
+      instructorColor,
+    });
+  };
+
+  // Pointer global para acompanhar o arrasto do fill handle e finalizar.
+  useEffect(() => {
+    if (!fillDrag) return;
+    const handleMove = (ev: PointerEvent) => {
+      // Encontra a célula sob o cursor (mesma sala apenas)
+      const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+      if (!el) return;
+      const cell = el.closest<HTMLElement>('[data-cell-key],[data-slot-key]');
+      if (!cell) return;
+      const cellKey = cell.getAttribute('data-cell-key');
+      const slotKey = cell.getAttribute('data-slot-key');
+      let hour: number | null = null;
+      let roomId: string | null | undefined = undefined;
+      if (cellKey) {
+        const parsed = parseEmptyKey(cellKey);
+        hour = parsed.hour;
+        roomId = parsed.roomId;
+      } else if (slotKey) {
+        const slot = slots.find((s) => s.key === slotKey);
+        if (slot) {
+          hour = parseISO(slot.scheduled_at).getHours();
+          roomId = slot.room_id ?? null;
+        }
+      }
+      if (hour === null) return;
+      // Só atualiza se for na MESMA sala da origem
+      if (roomId !== fillDragRef.current?.roomId) return;
+      if (hour !== fillDragRef.current.currentHour) {
+        setFillDrag((prev) => (prev ? { ...prev, currentHour: hour! } : prev));
+      }
+    };
+    const handleUp = () => {
+      const fd = fillDragRef.current;
+      setFillDrag(null);
+      if (!fd) return;
+      const lo = Math.min(fd.fromHour, fd.currentHour);
+      const hi = Math.max(fd.fromHour, fd.currentHour);
+      // Se nada se moveu, não dispara
+      if (lo === hi) return;
+      onFillInstructorVertical?.({
+        instructorId: fd.instructorId,
+        roomId: fd.roomId,
+        day,
+        fromHour: lo,
+        toHour: hi,
+      });
+    };
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleUp);
+    return () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleUp);
+    };
+  }, [fillDrag, slots, day, onFillInstructorVertical]);
+
+
   // ===== Marquee (Excel-style drag select) =====
   const baseSlotKeysRef = useRef<Set<string>>(new Set());
   const baseEmptyKeysRef = useRef<Set<EmptyCellKey>>(new Set());
