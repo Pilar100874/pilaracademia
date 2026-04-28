@@ -739,50 +739,23 @@ export default function GradeMasterPage() {
 
     for (const h of hours) {
       const slot = byHour.get(h);
+      // Só cria onde está vazio. Horários existentes (aula, livre ou bloqueio) são preservados.
+      if (slot) continue;
       try {
-        if (!slot) {
-          // Célula vazia → cria novo horário "Livre" com o professor
-          const sched = new Date(targetDay);
-          sched.setHours(h, 0, 0, 0);
-          await createBookable.mutateAsync({
-            clinic_id: activeClinicId,
-            scheduled_at: sched.toISOString(),
-            duration_minutes: defaultDuration,
-            equipment_id: null,
-            instructor_id: instructorId,
-            room_id: roomId,
-            capacity: 1,
-            notes: null,
-            created_by: user.id,
-          } as any);
-          created++;
-          continue;
-        }
-        // Não toca o slot de origem (mesmo professor já)
-        if (slot.instructor_id === instructorId) continue;
-        // Bloqueado: ignorar
-        if (slot.isBlocked) continue;
-
-        if (slot.appointment_id) {
-          // Aula com aluno: atualiza professor da aula
-          const { error } = await supabase
-            .from('class_appointments')
-            .update({ instructor_id: instructorId })
-            .eq('id', slot.appointment_id);
-          if (error) throw error;
-          updated++;
-        } else if (slot.bookable_slot_id) {
-          // Horário "Livre" (vaga aberta): atualiza professor da vaga
-          const { error } = await supabase
-            .from('bookable_slots')
-            .update({ instructor_id: instructorId })
-            .eq('id', slot.bookable_slot_id);
-          if (error) throw error;
-          updated++;
-        } else {
-          // slot virtual/projetado sem persistência → pula
-          continue;
-        }
+        const sched = new Date(targetDay);
+        sched.setHours(h, 0, 0, 0);
+        await createBookable.mutateAsync({
+          clinic_id: activeClinicId,
+          scheduled_at: sched.toISOString(),
+          duration_minutes: defaultDuration,
+          equipment_id: null,
+          instructor_id: instructorId,
+          room_id: roomId,
+          capacity: 1,
+          notes: null,
+          created_by: user.id,
+        } as any);
+        created++;
       } catch (e: any) {
         errors.push(`${String(h).padStart(2, '0')}:00 — ${e?.message || 'erro'}`);
       }
