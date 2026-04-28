@@ -77,6 +77,7 @@ export default function StaffPage() {
       });
       setForm({ full_name: '', email: '', role: 'instructor' });
       setOpen(false);
+      await qc.invalidateQueries({ queryKey: ['clinic-staff', activeClinicId] });
     } catch (e: any) {
       toast.error(e?.message || 'Erro ao cadastrar');
     } finally {
