@@ -54,6 +54,7 @@ export default function StaffPage() {
   const [form, setForm] = useState({ full_name: '', email: '', role: 'instructor' as 'instructor' | 'receptionist' | 'clinic_admin' });
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ email: string; password: string; already_existed: boolean } | null>(null);
+  const qc = useQueryClient();
 
   const handleCreate = async () => {
     if (!activeClinicId || !form.full_name.trim() || !form.email.trim()) return;
