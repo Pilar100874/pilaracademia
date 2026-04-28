@@ -651,20 +651,22 @@ export default function GradeMasterPage() {
     }
     const sched = new Date(d);
     sched.setHours(h, 0, 0, 0);
+    const isBlock = id === BLOCK_SLOT;
     try {
       await createBookable.mutateAsync({
         clinic_id: activeClinicId,
         scheduled_at: sched.toISOString(),
         duration_minutes: 50,
         equipment_id: null,
-        instructor_id: id,
+        instructor_id: isBlock ? null : id,
         room_id: roomId,
         capacity: 1,
         notes: null,
         created_by: user.id,
+        ...(isBlock ? { blocked: true } : {}),
       } as any);
       await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
-      toast.success('Horário criado com professor');
+      toast.success(isBlock ? 'Horário bloqueado' : 'Horário criado com professor');
     } catch (e: any) {
       toast.error(e?.message || 'Não foi possível criar o horário');
     }
