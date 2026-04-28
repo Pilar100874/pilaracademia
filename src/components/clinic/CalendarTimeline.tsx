@@ -636,56 +636,102 @@ export function CalendarTimeline({
                         </div>
                       </PopoverTrigger>
                       <PopoverContent
-                        className="w-72 p-0 text-xs overflow-hidden border-border shadow-lg"
+                        className="w-80 p-0 text-xs overflow-hidden rounded-xl border border-border/60 shadow-2xl bg-card backdrop-blur-sm"
                         onClick={(e) => e.stopPropagation()}
                         onOpenAutoFocus={(e) => e.preventDefault()}
                       >
-                        {/* Header */}
+                        {/* Header — moderno com gradiente sutil e barra colorida */}
                         <div
                           className={cn(
-                            'px-3 py-2.5 border-b',
+                            'relative px-4 pt-3.5 pb-3 border-b border-border/50',
                             s.blockedPeriodId || s.isBlocked
-                              ? 'bg-destructive/5'
+                              ? 'bg-gradient-to-br from-destructive/10 via-destructive/5 to-transparent'
                               : s.isOpen
-                                ? 'bg-emerald-500/5'
-                                : 'bg-muted/40'
+                                ? 'bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent'
+                                : 'bg-gradient-to-br from-primary/10 via-primary/5 to-transparent'
                           )}
                         >
-                          <div className="font-serif text-[15px] leading-tight tracking-tight">
-                            {s.blockedPeriodId
-                              ? (s.blockedPeriodName || 'Bloqueio padrão')
-                              : s.isBlocked
-                                ? 'Horário bloqueado'
-                                : s.isOpen
-                                  ? 'Horário disponível'
-                                  : studentName(s.student_id)}
-                          </div>
-                          <div className="mt-1 flex items-center gap-1 text-[10.5px] uppercase tracking-wider text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            <span className="font-medium">
-                              {format(t, "EEE dd/MM '·' HH:mm", { locale: ptBR })}
-                            </span>
-                            <span className="opacity-60">·</span>
-                            <span>{s.duration_minutes}min</span>
+                          <span
+                            className="absolute top-0 left-0 h-full w-1"
+                            style={{
+                              background: s.blockedPeriodId
+                                ? (s.blockedPeriodColor || 'hsl(var(--destructive))')
+                                : s.isBlocked
+                                  ? 'hsl(var(--destructive))'
+                                  : s.isOpen
+                                    ? 'hsl(142 71% 45%)'
+                                    : (color || 'hsl(var(--primary))'),
+                            }}
+                          />
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="font-serif text-[17px] leading-tight tracking-tight truncate">
+                                {s.blockedPeriodId
+                                  ? (s.blockedPeriodName || 'Bloqueio padrão')
+                                  : s.isBlocked
+                                    ? 'Horário bloqueado'
+                                    : s.isOpen
+                                      ? 'Horário disponível'
+                                      : studentName(s.student_id)}
+                              </div>
+                              <div className="mt-1.5 flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                <span className="font-semibold tabular-nums">
+                                  {format(t, "EEE dd/MM '·' HH:mm", { locale: ptBR })}
+                                </span>
+                                <span className="opacity-50">·</span>
+                                <span className="tabular-nums">{s.duration_minutes}min</span>
+                              </div>
+                            </div>
+                            {s.isOpen && slotVagas !== null && cap && (
+                              <div
+                                className={cn(
+                                  'shrink-0 flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 border shadow-sm',
+                                  slotVagas === 0
+                                    ? 'bg-destructive/10 border-destructive/30 text-destructive'
+                                    : slotVagas <= 1
+                                      ? 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-400'
+                                      : 'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400'
+                                )}
+                                title={`${slotVagas} vaga(s) de ${cap}`}
+                              >
+                                <span className="text-[18px] font-bold leading-none tabular-nums">{slotVagas}</span>
+                                <span className="text-[8.5px] uppercase tracking-wider font-semibold mt-0.5">
+                                  {slotVagas === 1 ? 'vaga' : 'vagas'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
-                        {/* Meta */}
+                        {/* Meta — chips modernos */}
                         {(room || (instr && !s.isBlocked) || s.blockedPeriodId) && (
-                          <div className="px-3 py-2 space-y-1.5 border-b bg-background">
+                          <div className="px-4 py-2.5 space-y-2 border-b border-border/50 bg-background/60">
                             {room && (
-                              <div className="flex items-center gap-1.5 text-[11.5px] text-foreground/80">
-                                <MapPin className="h-3 w-3 text-muted-foreground" />
-                                <span className="font-medium">{room}</span>
+                              <div className="flex items-center gap-2 text-[11.5px] text-foreground/85">
+                                <div className="h-6 w-6 rounded-md bg-muted/70 flex items-center justify-center">
+                                  <MapPin className="h-3 w-3 text-muted-foreground" />
+                                </div>
+                                <span className="font-medium truncate">{room}</span>
+                                {s.isOpen && cap && slotOcc && (
+                                  <span className="ml-auto text-[10px] font-semibold tabular-nums text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">
+                                    {slotOcc.used}/{cap}
+                                  </span>
+                                )}
                               </div>
                             )}
                             {instr && !s.isBlocked && (
-                              <div className="flex items-center gap-1.5 text-[11.5px] text-foreground/80">
-                                <span
-                                  className="h-2.5 w-2.5 rounded-full ring-1 ring-border shrink-0"
-                                  style={{ background: color }}
-                                />
-                                <span>{instr}</span>
+                              <div className="flex items-center gap-2 text-[11.5px] text-foreground/85">
+                                <div
+                                  className="h-6 w-6 rounded-md flex items-center justify-center ring-1 ring-border/60"
+                                  style={{ background: `${color}22` }}
+                                >
+                                  <span
+                                    className="h-2.5 w-2.5 rounded-full"
+                                    style={{ background: color }}
+                                  />
+                                </div>
+                                <span className="font-medium truncate">{instr}</span>
                               </div>
                             )}
                             {s.blockedPeriodId && (
