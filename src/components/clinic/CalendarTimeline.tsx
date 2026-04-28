@@ -476,6 +476,7 @@ export function CalendarTimeline({
                         !isPast && statusBg,
                         dragActive && !isDisabled && 'bg-primary/[0.03]',
                         isHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
+                        isFillTarget && 'bg-primary/10 ring-1 ring-inset ring-primary/60',
                         isSelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
                       )}
                       style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
