@@ -556,11 +556,13 @@ export function RoomsTimeline({
                     {canFillFrom && !selectionMode && (
                       <span
                         role="presentation"
-                        title="Arraste para preencher horários abaixo/acima com este professor"
+                        title={s.isBlocked
+                          ? 'Arraste para replicar este bloqueio nos horários abaixo/acima'
+                          : 'Arraste para preencher horários abaixo/acima com este professor'}
                         onPointerDown={(ev) => startFillDrag(ev, s, color)}
                         onClick={(ev) => { ev.stopPropagation(); }}
                         className="absolute -bottom-1.5 -right-1.5 z-20 h-4 w-4 rounded-sm border-2 border-card cursor-ns-resize hover:scale-110 transition-transform"
-                        style={{ background: color || 'hsl(var(--primary))' }}
+                        style={{ background: s.isBlocked ? 'hsl(var(--destructive))' : (color || 'hsl(var(--primary))') }}
                       />
                     )}
                   </div>
