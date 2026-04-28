@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useClinic } from '@/contexts/ClinicContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUserClinicRole } from '@/hooks/useUserClinicRole';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -27,7 +27,7 @@ const detectType = (file: File): string => {
 };
 
 const MarketingGaleria: React.FC = () => {
-  const { activeClinicId } = useClinic();
+  const { data: clinicInfo } = useUserClinicRole(); const activeClinicId = clinicInfo?.clinicId ?? null;
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
