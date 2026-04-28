@@ -740,16 +740,31 @@ export default function GradeMasterPage() {
           // Sem horário existente → pula (não cria slots vazios)
           continue;
         }
-        // Não toca o slot de origem
+        // Não toca o slot de origem (mesmo professor já)
         if (slot.instructor_id === instructorId) continue;
-        // Só propaga em horários que JÁ TÊM aluno inserido (appointment)
-        if (!slot.appointment_id || !slot.student_id) continue;
-        const { error } = await supabase
-          .from('class_appointments')
-          .update({ instructor_id: instructorId })
-          .eq('id', slot.appointment_id);
-        if (error) throw error;
-        updated++;
+        // Bloqueado: ignorar
+        if (slot.isBlocked) continue;
+
+        if (slot.appointment_id) {
+          // Aula com aluno: atualiza professor da aula
+          const { error } = await supabase
+            .from('class_appointments')
+            .update({ instructor_id: instructorId })
+            .eq('id', slot.appointment_id);
+          if (error) throw error;
+          updated++;
+        } else if (slot.bookable_slot_id) {
+          // Horário "Livre" (vaga aberta): atualiza professor da vaga
+          const { error } = await supabase
+            .from('bookable_slots')
+            .update({ instructor_id: instructorId })
+            .eq('id', slot.bookable_slot_id);
+          if (error) throw error;
+          updated++;
+        } else {
+          // slot virtual/projetado sem persistência → pula
+          continue;
+        }
       } catch (e: any) {
         errors.push(`${String(h).padStart(2, '0')}:00 — ${e?.message || 'erro'}`);
       }
