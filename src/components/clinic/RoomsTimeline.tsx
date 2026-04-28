@@ -340,6 +340,12 @@ export function RoomsTimeline({
                 const emptySelected = selectionMode && selectedEmptyKeys?.has(emptyKey);
                 const cellHoverKey = `cell-${r.id ?? 'orphan'}-${h}`;
                 const isDropHover = hoverKey === cellHoverKey;
+                // Destaca células-alvo do fill handle (mesma sala, dentro do range)
+                const isFillTarget = !!fillDrag
+                  && fillDrag.roomId === r.id
+                  && h !== fillDrag.fromHour
+                  && h >= Math.min(fillDrag.fromHour, fillDrag.currentHour)
+                  && h <= Math.max(fillDrag.fromHour, fillDrag.currentHour);
                 // Horário passado: dia anterior ao hoje OU hora < agora no mesmo dia
                 const cellDate = new Date(day);
                 cellDate.setHours(h + 1, 0, 0, 0); // fim da hora
