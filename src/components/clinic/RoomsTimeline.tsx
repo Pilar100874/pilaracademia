@@ -143,31 +143,14 @@ export function RoomsTimeline({
   useEffect(() => {
     if (!fillDrag) return;
     const handleMove = (ev: PointerEvent) => {
-      // Encontra a célula sob o cursor (mesma sala apenas)
-      const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
-      if (!el) return;
-      const cell = el.closest<HTMLElement>('[data-cell-key],[data-slot-key]');
-      if (!cell) return;
-      const cellKey = cell.getAttribute('data-cell-key');
-      const slotKey = cell.getAttribute('data-slot-key');
-      let hour: number | null = null;
-      let roomId: string | null | undefined = undefined;
-      if (cellKey) {
-        const parsed = parseEmptyKey(cellKey);
-        hour = parsed.hour;
-        roomId = parsed.roomId;
-      } else if (slotKey) {
-        const slot = slots.find((s) => s.key === slotKey);
-        if (slot) {
-          hour = parseISO(slot.scheduled_at).getHours();
-          roomId = slot.room_id ?? null;
-        }
-      }
-      if (hour === null) return;
-      // Só atualiza se for na MESMA sala da origem
-      if (roomId !== fillDragRef.current?.roomId) return;
-      if (hour !== fillDragRef.current.currentHour) {
-        setFillDrag((prev) => (prev ? { ...prev, currentHour: hour! } : prev));
+      const container = marquee.containerRef.current;
+      const fd = fillDragRef.current;
+      if (!container || !fd) return;
+      const rect = container.getBoundingClientRect();
+      const y = Math.max(0, Math.min(totalHeight - 1, ev.clientY - rect.top));
+      const hour = Math.max(startHour, Math.min(endHour - 1, startHour + Math.floor(y / hourHeight)));
+      if (hour !== fd.currentHour) {
+        setFillDrag((prev) => (prev ? { ...prev, currentHour: hour } : prev));
       }
     };
     const handleUp = () => {
@@ -539,7 +522,7 @@ export function RoomsTimeline({
                         title="Arraste para preencher horários abaixo/acima com este professor"
                         onPointerDown={(ev) => startFillDrag(ev, s, color)}
                         onClick={(ev) => { ev.stopPropagation(); }}
-                        className="absolute -bottom-1 -right-1 z-20 h-2.5 w-2.5 rounded-sm border border-card cursor-ns-resize hover:scale-125 transition-transform"
+                        className="absolute -bottom-1.5 -right-1.5 z-20 h-4 w-4 rounded-sm border-2 border-card cursor-ns-resize hover:scale-110 transition-transform"
                         style={{ background: color || 'hsl(var(--primary))' }}
                       />
                     )}

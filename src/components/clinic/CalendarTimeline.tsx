@@ -146,40 +146,14 @@ export function CalendarTimeline({
   useEffect(() => {
     if (!fillDrag) return;
     const handleMove = (ev: PointerEvent) => {
-      const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
-      if (!el) return;
-      const cell = el.closest<HTMLElement>('[data-cell-key],[data-slot-key]');
-      if (!cell) return;
-      const cellKey = cell.getAttribute('data-cell-key');
-      const slotKey = cell.getAttribute('data-slot-key');
-      let hour: number | null = null;
-      let roomId: string | null | undefined = undefined;
-      let dayISO: string | undefined;
-      if (cellKey) {
-        const parsed = parseWeekEmptyKey(cellKey);
-        hour = parsed.hour;
-        roomId = parsed.roomId;
-        dayISO = parsed.date;
-      } else if (slotKey) {
-        // procura o slot em todos os dias visíveis
-        for (const d of days) {
-          const found = slotsForDay(d).find((s) => s.key === slotKey);
-          if (found) {
-            hour = parseISO(found.scheduled_at).getHours();
-            roomId = found.room_id ?? null;
-            dayISO = d.toISOString().slice(0, 10);
-            break;
-          }
-        }
-      }
-      if (hour === null || dayISO === undefined) return;
+      const container = marquee.containerRef.current;
       const fd = fillDragRef.current;
-      if (!fd) return;
-      // Restringe à mesma sala E mesmo dia da origem
-      if (roomId !== fd.roomId) return;
-      if (dayISO !== fd.dayISO) return;
+      if (!container || !fd) return;
+      const rect = container.getBoundingClientRect();
+      const y = Math.max(0, Math.min(totalHeight - 1, ev.clientY - rect.top));
+      const hour = Math.max(startHour, Math.min(endHour - 1, startHour + Math.floor(y / hourHeight)));
       if (hour !== fd.currentHour) {
-        setFillDrag((prev) => (prev ? { ...prev, currentHour: hour! } : prev));
+        setFillDrag((prev) => (prev ? { ...prev, currentHour: hour } : prev));
       }
     };
     const handleUp = () => {
@@ -652,7 +626,7 @@ export function CalendarTimeline({
                               title="Arraste para preencher horários abaixo/acima com este professor"
                               onPointerDown={(ev) => startFillDrag(ev, s, d, color)}
                               onClick={(ev) => { ev.stopPropagation(); }}
-                              className="absolute -bottom-1 -right-1 z-30 h-2.5 w-2.5 rounded-sm border border-card cursor-ns-resize hover:scale-125 transition-transform"
+                              className="absolute -bottom-1.5 -right-1.5 z-30 h-4 w-4 rounded-sm border-2 border-card cursor-ns-resize hover:scale-110 transition-transform"
                               style={{ background: color || 'hsl(var(--primary))' }}
                             />
                           )}
