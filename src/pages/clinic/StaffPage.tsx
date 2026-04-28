@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useClinicStaff } from '@/hooks/useStaff';
 import { Card } from '@/components/ui/card';
@@ -53,6 +54,7 @@ export default function StaffPage() {
   const [form, setForm] = useState({ full_name: '', email: '', role: 'instructor' as 'instructor' | 'receptionist' | 'clinic_admin' });
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ email: string; password: string; already_existed: boolean } | null>(null);
+  const qc = useQueryClient();
 
   const handleCreate = async () => {
     if (!activeClinicId || !form.full_name.trim() || !form.email.trim()) return;
@@ -75,6 +77,7 @@ export default function StaffPage() {
       });
       setForm({ full_name: '', email: '', role: 'instructor' });
       setOpen(false);
+      await qc.invalidateQueries({ queryKey: ['clinic-staff', activeClinicId] });
     } catch (e: any) {
       toast.error(e?.message || 'Erro ao cadastrar');
     } finally {
