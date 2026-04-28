@@ -1230,6 +1230,7 @@ export default function GradeMasterPage() {
                 else if (slotCount > 0) setBulkOpen('reassign');
               }}
               onRoomColumnClick={(d, roomId, allDays) => selectRoomColumn(roomId, allDays ? weekDays : [d])}
+              onFillInstructorVertical={fillInstructorVertical}
             />
             </>;
             })()}
