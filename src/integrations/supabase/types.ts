@@ -1698,6 +1698,45 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_ai_creations: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string
+          creation_type: string
+          id: string
+          metadata: Json | null
+          model: string | null
+          prompt: string
+          result_text: string | null
+          result_url: string | null
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          creation_type?: string
+          id?: string
+          metadata?: Json | null
+          model?: string | null
+          prompt: string
+          result_text?: string | null
+          result_url?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          creation_type?: string
+          id?: string
+          metadata?: Json | null
+          model?: string | null
+          prompt?: string
+          result_text?: string | null
+          result_url?: string | null
+        }
+        Relationships: []
+      }
       marketing_automations: {
         Row: {
           action_config: Json | null
@@ -1845,6 +1884,45 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_catalogs: {
+        Row: {
+          clinic_id: string
+          cover_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          items: Json
+          name: string
+          pdf_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          cover_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          items?: Json
+          name: string
+          pdf_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          items?: Json
+          name?: string
+          pdf_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       marketing_integration_credentials: {
         Row: {
           clinic_id: string
@@ -1887,6 +1965,51 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_landing_pages: {
+        Row: {
+          blocks: Json
+          clinic_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          slug: string
+          status: string
+          theme: Json | null
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          blocks?: Json
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          slug: string
+          status?: string
+          theme?: Json | null
+          title: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          blocks?: Json
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          slug?: string
+          status?: string
+          theme?: Json | null
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       marketing_media: {
         Row: {
           clinic_id: string
@@ -1926,6 +2049,45 @@ export type Database = {
           public_url?: string
           size_bytes?: number | null
           storage_path?: string
+        }
+        Relationships: []
+      }
+      marketing_strategies: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string
+          goal: string | null
+          id: string
+          name: string
+          plan: Json | null
+          status: string
+          target_audience: string | null
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          goal?: string | null
+          id?: string
+          name: string
+          plan?: Json | null
+          status?: string
+          target_audience?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          goal?: string | null
+          id?: string
+          name?: string
+          plan?: Json | null
+          status?: string
+          target_audience?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

@@ -31,6 +31,12 @@ import MarketingCampanhas from '@/components/marketing/MarketingCampanhas';
 import MarketingEnvioMassa from '@/components/marketing/MarketingEnvioMassa';
 import MarketingGaleria from '@/components/marketing/MarketingGaleria';
 import MarketingAutomacoes from '@/components/marketing/MarketingAutomacoes';
+import MarketingAIStudio from '@/components/marketing/MarketingAIStudio';
+import MarketingPageBuilder from '@/components/marketing/MarketingPageBuilder';
+import MarketingStrategyEngine from '@/components/marketing/MarketingStrategyEngine';
+import MarketingCatalogo from '@/components/marketing/MarketingCatalogo';
+import MarketingCanvas from '@/components/marketing/MarketingCanvas';
+import MarketingVideoEditor from '@/components/marketing/MarketingVideoEditor';
 
 interface TabItem {
   id: string;
@@ -183,6 +189,12 @@ const MarketingPage: React.FC = () => {
                          tab.id === 'envio-massa' ? <MarketingEnvioMassa /> :
                          tab.id === 'galeria' ? <MarketingGaleria /> :
                          tab.id === 'automacoes' ? <MarketingAutomacoes /> :
+                         tab.id === 'ai-studio' ? <MarketingAIStudio /> :
+                         tab.id === 'page-builder' ? <MarketingPageBuilder /> :
+                         tab.id === 'strategy-engine' ? <MarketingStrategyEngine /> :
+                         tab.id === 'catalogo' ? <MarketingCatalogo /> :
+                         tab.id === 'canvas' ? <MarketingCanvas /> :
+                         tab.id === 'video-editor' ? <MarketingVideoEditor /> :
                          <ComingSoon label={tab.label} />}
                       </CardContent>
                     </Card>
