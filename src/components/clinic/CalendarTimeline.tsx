@@ -126,6 +126,8 @@ export function CalendarTimeline({
     fromHour: number;
     currentHour: number;
     instructorColor: string;
+    mode: 'instructor' | 'block';
+    blockName?: string | null;
   }>(null);
   const fillDragRef = useRef<typeof fillDrag>(null);
   fillDragRef.current = fillDrag;
@@ -140,13 +142,16 @@ export function CalendarTimeline({
     e.preventDefault();
     e.stopPropagation();
     const slotHour = parseISO(slot.scheduled_at).getHours();
+    const isBlockOrigin = !!slot.isBlocked && !slot.blockedPeriodId;
     setFillDrag({
       instructorId: slot.instructor_id ?? null,
       roomId: slot.room_id ?? null,
       dayISO: slotDay.toISOString().slice(0, 10),
       fromHour: slotHour,
       currentHour: slotHour,
-      instructorColor,
+      instructorColor: isBlockOrigin ? 'hsl(var(--destructive))' : instructorColor,
+      mode: isBlockOrigin ? 'block' : 'instructor',
+      blockName: isBlockOrigin ? (slot.blockNotes ?? null) : null,
     });
   };
 
