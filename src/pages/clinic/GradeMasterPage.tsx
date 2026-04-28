@@ -1141,6 +1141,8 @@ export default function GradeMasterPage() {
       toast.error(e?.message || 'Erro ao atualizar nome');
     }
   };
+
+  const handleTimelineSlotClick = (ts: TimelineSlot) => {
     // Reconstrói minimal MergedSlot — encontra o original
     const all = view === 'day' ? daySlots : weekDays.flatMap(slotsForDay);
     const original = all.find((s) => s.key === ts.key);
