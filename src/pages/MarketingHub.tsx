@@ -40,7 +40,7 @@ import ResourceN8nGenerator from '@/components/marketing/ResourceN8nGenerator';
 import RailwayVariables from '@/components/marketing/RailwayVariables';
 import { N8nWorkflowEditor } from '@/components/marketing/n8n-editor';
 import { MarketingCatalogo } from '@/components/marketing/catalogo';
-import { EnvioMassaMarketing } from '@/components/marketing/EnvioMassaMarketing';
+import EnvioMassaMarketing from '@/components/marketing/EnvioMassaMarketing';
 import { AICreativeStudio } from '@/components/marketing/ai-studio';
 import { VideoTimelineEditor } from '@/components/marketing/video-editor';
 import AISettingsPage from '@/components/marketing/ai-studio/AISettingsPage';
