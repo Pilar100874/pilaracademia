@@ -1074,7 +1074,10 @@ export default function GradeMasterPage() {
               }}
               onRoomColumnClick={(d, roomId, allDays) => selectRoomColumn(roomId, allDays ? weekDays : [d])}
             />
+            </>;
+            })()}
           </div>
+
 
         ) : view === 'month' ? (
           <div className="space-y-3">
