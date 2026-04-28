@@ -189,6 +189,12 @@ const MarketingPage: React.FC = () => {
                          tab.id === 'envio-massa' ? <MarketingEnvioMassa /> :
                          tab.id === 'galeria' ? <MarketingGaleria /> :
                          tab.id === 'automacoes' ? <MarketingAutomacoes /> :
+                         tab.id === 'ai-studio' ? <MarketingAIStudio /> :
+                         tab.id === 'page-builder' ? <MarketingPageBuilder /> :
+                         tab.id === 'strategy-engine' ? <MarketingStrategyEngine /> :
+                         tab.id === 'catalogo' ? <MarketingCatalogo /> :
+                         tab.id === 'canvas' ? <MarketingCanvas /> :
+                         tab.id === 'video-editor' ? <MarketingVideoEditor /> :
                          <ComingSoon label={tab.label} />}
                       </CardContent>
                     </Card>
