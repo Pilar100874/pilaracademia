@@ -643,7 +643,7 @@ export function CalendarTimeline({
                             {s.blockedPeriodId
                               ? <span className="italic text-destructive/90">{s.blockedPeriodName || 'Bloqueado'}</span>
                               : s.isBlocked
-                                ? <span className="italic text-muted-foreground">Bloqueado</span>
+                                ? <span className="italic text-muted-foreground">{s.blockNotes || 'Bloqueado'}</span>
                                 : s.isOpen
                                   ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span>
                                   : studentName(s.student_id)}
