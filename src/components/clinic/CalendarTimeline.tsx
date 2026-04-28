@@ -524,9 +524,8 @@ export function CalendarTimeline({
                     && fillDrag.roomId === (s.room_id ?? null)
                     && slotHour === fillDrag.fromHour;
                   const canFillFrom = !!onFillInstructorVertical
-                    && !s.isBlocked
                     && !s.blockedPeriodId
-                    && !!s.instructor_id;
+                    && (!!s.instructor_id || (s.isBlocked && !!s.bookable_slot_id));
                   // Vagas para horário disponível — capacidade da sala - aulas naquela hora
                   const slotOcc = cap && cap > 0 ? occupancyByHour.get(slotHour) : undefined;
                   const slotVagas = (s.isOpen && cap && slotOcc) ? Math.max(0, cap - slotOcc.used) : null;
