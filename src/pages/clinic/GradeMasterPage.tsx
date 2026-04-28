@@ -1127,7 +1127,20 @@ export default function GradeMasterPage() {
     }
   };
 
-  const handleTimelineSlotClick = (ts: TimelineSlot) => {
+  /** Atualiza o nome (notes) de um bloqueio pontual (bookable_slot.blocked=true). */
+  const handleUpdateBlockName = async (bookableSlotId: string, name: string) => {
+    try {
+      const { error } = await supabase
+        .from('bookable_slots' as any)
+        .update({ notes: name || null } as any)
+        .eq('id', bookableSlotId);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+      toast.success('Nome do bloqueio atualizado');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao atualizar nome');
+    }
+  };
     // Reconstrói minimal MergedSlot — encontra o original
     const all = view === 'day' ? daySlots : weekDays.flatMap(slotsForDay);
     const original = all.find((s) => s.key === ts.key);
