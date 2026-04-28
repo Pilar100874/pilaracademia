@@ -985,6 +985,7 @@ export default function GradeMasterPage() {
     blockedPeriodId: s.blockedPeriodId,
     blockedPeriodName: s.blockedPeriodName,
     blockedPeriodColor: s.blockedPeriodColor,
+    blockNotes: s.isBlocked && !s.blockedPeriodId ? s.notes : null,
   });
 
   /**
