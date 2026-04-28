@@ -402,6 +402,7 @@ export function RoomsTimeline({
                       emptySelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
                       dragActive && !isPast && 'bg-primary/[0.04]',
                       isDropHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
+                      isFillTarget && 'bg-primary/10 ring-1 ring-inset ring-primary/60',
                     )}
                     style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
                   >
