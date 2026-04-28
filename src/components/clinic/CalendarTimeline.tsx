@@ -39,6 +39,8 @@ export interface TimelineSlot {
   blockedPeriodId?: string;
   blockedPeriodName?: string;
   blockedPeriodColor?: string | null;
+  /** Notas/título de um bloqueio pontual (bookable_slot.blocked=true). */
+  blockNotes?: string | null;
 }
 
 interface Props {
