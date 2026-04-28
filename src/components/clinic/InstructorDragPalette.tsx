@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { GripVertical, UserCog, X } from 'lucide-react';
+import { GripVertical, UserCog, X, Ban } from 'lucide-react';
 
 export const INSTRUCTOR_DRAG_TYPE = 'application/x-pilar-instructor';
 /** Valor especial para "limpar professor" via drop. */
 export const CLEAR_INSTRUCTOR = '__clear__';
+/** Valor especial para "bloquear horário" via drop. */
+export const BLOCK_SLOT = '__block__';
 
 interface Instructor { user_id: string; name: string | null }
 
