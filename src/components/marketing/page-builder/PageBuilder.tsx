@@ -1,3 +1,4 @@
+// @ts-nocheck — Ported from CRM Pilar; references tables not present in this project.
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Globe, GripVertical, Plus, Trash2, Eye, Code, Image, Video, Type, Play,

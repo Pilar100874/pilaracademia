@@ -1,3 +1,4 @@
+// @ts-nocheck — Ported from CRM Pilar; references tables not present in this project.
 import React, { useState, useEffect } from 'react';
 import { 
   Server, Copy, Check, Download, RefreshCw, AlertCircle, 

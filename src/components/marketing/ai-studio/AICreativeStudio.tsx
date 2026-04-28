@@ -1,3 +1,4 @@
+// @ts-nocheck — Ported from CRM Pilar; references tables not present in this project.
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';

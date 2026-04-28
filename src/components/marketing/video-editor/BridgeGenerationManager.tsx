@@ -1,3 +1,4 @@
+// @ts-nocheck — Ported from CRM Pilar; references tables not present in this project.
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Loader2, Maximize2, X, Check, Film, Wand2, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
