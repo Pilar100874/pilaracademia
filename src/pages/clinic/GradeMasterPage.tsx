@@ -1039,12 +1039,15 @@ export default function GradeMasterPage() {
         {/* CONTEÚDO */}
         {view === 'week' ? (
           <div className="space-y-3">
-            {rooms.length > 0 && <RoomsLegend rooms={rooms as any[]} roomColorOf={roomColorOf} />}
+             {(() => {
+              const visibleRooms = filterRoom === 'all' ? (rooms as any[]) : (rooms as any[]).filter((r) => r.id === filterRoom);
+              return <>
+            {visibleRooms.length > 0 && <RoomsLegend rooms={visibleRooms} roomColorOf={roomColorOf} />}
             <CalendarTimeline
               days={weekDays}
               startHour={6}
               endHour={22}
-              rooms={rooms as any[]}
+              rooms={visibleRooms}
               slotsForDay={(d) => slotsForDay(d).map(toTimelineSlot)}
               studentName={studentName}
               instructorName={instructorName}
