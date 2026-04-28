@@ -77,6 +77,18 @@ interface Props {
    * O segundo argumento `allDays` é true quando o usuário usou Shift/Ctrl/Cmd
    * para indicar "selecionar essa sala em TODOS os dias visíveis". */
   onRoomColumnClick?: (day: Date, roomId: string | null, allDays: boolean) => void;
+  /**
+   * Fill handle estilo Excel — usuário arrasta a alça no canto de um slot
+   * verticalmente para propagar o instructor_id daquele slot às horas
+   * cobertas, na mesma sala E no mesmo dia.
+   */
+  onFillInstructorVertical?: (args: {
+    instructorId: string | null;
+    roomId: string | null;
+    day: Date;
+    fromHour: number;
+    toHour: number;
+  }) => void;
 }
 
 export function CalendarTimeline({
