@@ -28,6 +28,9 @@ import { PageMotion } from '@/components/PageMotion';
 import AIApiKeysManager from '@/components/marketing/AIApiKeysManager';
 import IntegrationCredentialsManager from '@/components/marketing/IntegrationCredentialsManager';
 import MarketingCampanhas from '@/components/marketing/MarketingCampanhas';
+import MarketingEnvioMassa from '@/components/marketing/MarketingEnvioMassa';
+import MarketingGaleria from '@/components/marketing/MarketingGaleria';
+import MarketingAutomacoes from '@/components/marketing/MarketingAutomacoes';
 
 interface TabItem {
   id: string;
@@ -177,6 +180,9 @@ const MarketingPage: React.FC = () => {
                         {tab.id === 'config-apis' ? <AIApiKeysManager /> :
                          tab.id === 'integrations' ? <IntegrationCredentialsManager /> :
                          tab.id === 'campanhas' ? <MarketingCampanhas /> :
+                         tab.id === 'envio-massa' ? <MarketingEnvioMassa /> :
+                         tab.id === 'galeria' ? <MarketingGaleria /> :
+                         tab.id === 'automacoes' ? <MarketingAutomacoes /> :
                          <ComingSoon label={tab.label} />}
                       </CardContent>
                     </Card>
