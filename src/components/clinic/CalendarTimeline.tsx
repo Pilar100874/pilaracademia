@@ -703,16 +703,34 @@ export function CalendarTimeline({
                             }}
                           />
                           <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <div className="font-serif text-[17px] leading-tight tracking-tight truncate">
                                 {s.blockedPeriodId
                                   ? (s.blockedPeriodName || 'Bloqueio padrão')
                                   : s.isBlocked
-                                    ? 'Horário bloqueado'
+                                    ? (s.blockNotes || 'Horário bloqueado')
                                     : s.isOpen
                                       ? 'Horário disponível'
                                       : studentName(s.student_id)}
                               </div>
+                              {s.isBlocked && !s.blockedPeriodId && s.bookable_slot_id && onUpdateBlockName && (
+                                <input
+                                  type="text"
+                                  defaultValue={s.blockNotes || ''}
+                                  placeholder="Nome do bloqueio (ex: Almoço)"
+                                  onClick={(e) => e.stopPropagation()}
+                                  onBlur={(e) => {
+                                    const v = e.target.value.trim();
+                                    if (v !== (s.blockNotes || '')) {
+                                      onUpdateBlockName(s.bookable_slot_id!, v);
+                                    }
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                                  }}
+                                  className="mt-1.5 w-full text-[12px] px-2 py-1 rounded border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                              )}
                               <div className="mt-1.5 flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground">
                                 <Clock className="h-3 w-3" />
                                 <span className="font-semibold tabular-nums">
