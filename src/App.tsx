@@ -50,6 +50,7 @@ import BillingPage from "@/pages/clinic/BillingPage";
 import ClinicExerciseLibraryPage from "@/pages/clinic/ClinicExerciseLibraryPage";
 import PlanClassPage from "@/pages/clinic/PlanClassPage";
 import SharedSequencePage from "@/pages/SharedSequencePage";
+import MarketingPage from "@/pages/MarketingPage";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { ConfirmProvider } from "@/components/ConfirmProvider";
 import { useMustChangePassword } from "@/hooks/useMustChangePassword";
@@ -103,6 +104,7 @@ function AppRoutes() {
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/meu-pilates" element={<ProtectedRoute><MyPilatesPage /></ProtectedRoute>} />
       <Route path="/meu-pilates/agendar" element={<ProtectedRoute><BookClassPage /></ProtectedRoute>} />
+      <Route path="/marketing" element={<ProtectedRoute><MarketingPage /></ProtectedRoute>} />
       <Route path="/trocar-senha" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
 
       {/* Clinic panel */}
