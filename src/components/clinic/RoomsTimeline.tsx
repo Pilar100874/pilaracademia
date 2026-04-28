@@ -100,11 +100,25 @@ export function RoomsTimeline({
   onDropInstructorOnCell,
   onDropInstructorOnSlot,
   onRoomHeaderClick,
+  onFillInstructorVertical,
 }: Props) {
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const { confirm } = useConfirm();
   const readInstructor = (e: React.DragEvent) =>
     e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain') || '';
+
+  // ===== Fill handle (Excel-style) =====
+  // Pressionar a alça no canto de um slot e arrastar verticalmente destaca
+  // as horas cobertas na MESMA sala. Ao soltar, propaga o instructor_id.
+  const [fillDrag, setFillDrag] = useState<null | {
+    instructorId: string | null;
+    roomId: string | null;
+    fromHour: number;
+    currentHour: number;
+    instructorColor: string;
+  }>(null);
+  const fillDragRef = useRef<typeof fillDrag>(null);
+  fillDragRef.current = fillDrag;
 
   // ===== Marquee (Excel-style drag select) =====
   const baseSlotKeysRef = useRef<Set<string>>(new Set());
