@@ -497,7 +497,25 @@ export function RoomsTimeline({
                       slotIsFillOrigin && 'ring-2 ring-primary',
                     )}
                   >
-                    <div className="flex items-center justify-between gap-1 leading-tight">
+                    {/* Preenchimento de progresso da aula (vertical, top→bottom) */}
+                    {progressPct !== null && (
+                      <>
+                        <div
+                          className={cn(
+                            'absolute inset-x-0 top-0 z-0 pointer-events-none transition-all',
+                            progressPct >= 100 ? 'bg-muted-foreground/15' : 'bg-primary/15',
+                          )}
+                          style={{ height: `${progressPct}%` }}
+                          aria-hidden
+                        />
+                        {progressPct > 0 && progressPct < 100 && (
+                          <span className="absolute top-0.5 right-1 z-10 text-[8.5px] font-bold tabular-nums text-primary/80">
+                            {progressPct}%
+                          </span>
+                        )}
+                      </>
+                    )}
+                    <div className="relative z-10 flex items-center justify-between gap-1 leading-tight">
                       <span className="font-bold">{format(t, 'HH:mm')}</span>
                       <div className="flex items-center gap-0.5">
                         {isSelected && <Check className="h-2.5 w-2.5 text-primary" />}
