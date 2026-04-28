@@ -437,8 +437,8 @@ export function RoomsTimeline({
                   && fillDrag.roomId === (s.room_id ?? null)
                   && slotHour === fillDrag.fromHour;
                 const canFillFrom = !!onFillInstructorVertical
-                  && !s.isBlocked
-                  && !!s.instructor_id;
+                  && !s.blockedPeriodId
+                  && (!!s.instructor_id || (s.isBlocked && !!s.bookable_slot_id));
                 // Progresso da aula (0–100). Só para slots reais com aluno (appointment).
                 const slotEnd = new Date(t.getTime() + s.duration_minutes * 60_000);
                 const progressPct = (() => {
