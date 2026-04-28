@@ -65,8 +65,19 @@ export default function StudentsPage() {
     refetchSettings();
   };
 
-  const handleImpersonateStudent = async (studentId: string, name: string) => {
+  const handleImpersonateStudent = async (studentId: string, name: string, hasUser: boolean) => {
+    if (!hasUser) {
+      toast.error('Aluno ainda não tem login. Gere o acesso primeiro.');
+      return;
+    }
     try {
+      // Auto-activate setting if admin and not yet enabled (one-click UX)
+      if (isAdmin && !allowLoginAsStudent && activeClinicId) {
+        await supabase
+          .from('clinic_settings')
+          .upsert({ clinic_id: activeClinicId, allow_login_as_student: true }, { onConflict: 'clinic_id' });
+        await refetchSettings();
+      }
       toast.loading('Entrando como aluno...', { id: 'imp-st' });
       await impersonate(
         { mode: 'clinic_to_student', studentId },
