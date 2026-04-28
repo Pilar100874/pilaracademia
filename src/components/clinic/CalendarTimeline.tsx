@@ -400,6 +400,14 @@ export function CalendarTimeline({
                   const weekKey = makeWeekEmptyKey(d, h, subRoomId);
                   const isHover = hoverKey === cellKey;
                   const isSelected = selectedEmptyKeys?.has(weekKey);
+                  // Destaque do fill handle (mesma sala + mesmo dia + dentro do range)
+                  const dayISO = d.toISOString().slice(0, 10);
+                  const isFillTarget = !!fillDrag
+                    && fillDrag.dayISO === dayISO
+                    && fillDrag.roomId === subRoomId
+                    && h !== fillDrag.fromHour
+                    && h >= Math.min(fillDrag.fromHour, fillDrag.currentHour)
+                    && h <= Math.max(fillDrag.fromHour, fillDrag.currentHour);
                   const occ = occupancyByHour.get(h);
                   const isFull = occ?.status === 'full';
                   // Horário passado: fim da hora <= agora
