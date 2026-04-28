@@ -736,44 +736,20 @@ export default function GradeMasterPage() {
     for (const h of hours) {
       const slot = byHour.get(h);
       try {
-        if (slot) {
-          // Não toca o slot de origem (já tem o professor)
-          if (slot.instructor_id === instructorId) continue;
-          if (slot.appointment_id) {
-            const { error } = await supabase
-              .from('class_appointments')
-              .update({ instructor_id: instructorId })
-              .eq('id', slot.appointment_id);
-            if (error) throw error;
-          } else if (slot.bookable_slot_id) {
-            const { error } = await supabase
-              .from('bookable_slots' as any)
-              .update({ instructor_id: instructorId })
-              .eq('id', slot.bookable_slot_id);
-            if (error) throw error;
-          } else {
-            continue;
-          }
-          updated++;
-        } else {
-          if (!instructorId) continue; // não cria horários "vazios" sem professor
-          const sched = new Date(targetDay);
-          sched.setHours(h, 0, 0, 0);
-          // não cria no passado
-          if (sched.getTime() + 60 * 60 * 1000 <= Date.now()) continue;
-          await createBookable.mutateAsync({
-            clinic_id: activeClinicId,
-            scheduled_at: sched.toISOString(),
-            duration_minutes: 50,
-            equipment_id: null,
-            instructor_id: instructorId,
-            room_id: roomId,
-            capacity: 1,
-            notes: null,
-            created_by: user.id,
-          } as any);
-          created++;
+        if (!slot) {
+          // Sem horário existente → pula (não cria slots vazios)
+          continue;
         }
+        // Não toca o slot de origem
+        if (slot.instructor_id === instructorId) continue;
+        // Só propaga em horários que JÁ TÊM aluno inserido (appointment)
+        if (!slot.appointment_id || !slot.student_id) continue;
+        const { error } = await supabase
+          .from('class_appointments')
+          .update({ instructor_id: instructorId })
+          .eq('id', slot.appointment_id);
+        if (error) throw error;
+        updated++;
       } catch (e: any) {
         errors.push(`${String(h).padStart(2, '0')}:00 — ${e?.message || 'erro'}`);
       }
