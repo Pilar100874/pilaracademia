@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Calendar, Heart, User, Activity, Building2, Megaphone } from 'lucide-react';
+import { Home, Calendar, Heart, User, Activity, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserRoles } from '@/hooks/useUserRoles';
 
@@ -11,7 +11,6 @@ export function BottomNav() {
     { to: '/history', icon: Calendar, label: 'Histórico' },
     ...(isStudent ? [{ to: '/meu-pilates', icon: Activity, label: 'Pilates' }] : []),
     ...(isStaff ? [{ to: '/clinica', icon: Building2, label: 'Clínica' }] : []),
-    { to: '/marketing', icon: Megaphone, label: 'Marketing' },
     { to: '/health', icon: Heart, label: 'Saúde' },
     { to: '/profile', icon: User, label: 'Perfil' },
   ];

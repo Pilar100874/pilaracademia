@@ -1,4 +1,3 @@
-// @ts-nocheck — Ported from CRM Pilar; references tables not present in this project.
 import { useState, useEffect } from 'react';
 import { format, subDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

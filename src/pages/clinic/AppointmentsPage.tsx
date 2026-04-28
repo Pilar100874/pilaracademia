@@ -1,4 +1,3 @@
-// @ts-nocheck — Ported from CRM Pilar; references tables not present in this project.
 import { useState, useMemo } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';

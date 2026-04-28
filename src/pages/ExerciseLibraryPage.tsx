@@ -1,4 +1,3 @@
-// @ts-nocheck — Ported from CRM Pilar; references tables not present in this project.
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
