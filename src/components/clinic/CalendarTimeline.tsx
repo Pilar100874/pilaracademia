@@ -552,7 +552,6 @@ export function CalendarTimeline({
                     && slotHour === fillDrag.fromHour;
                   const canFillFrom = !!onFillInstructorVertical
                     && !s.isBlocked
-                    && !s.isOpen
                     && !s.blockedPeriodId
                     && !!s.instructor_id;
                   return (

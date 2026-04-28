@@ -457,7 +457,6 @@ export function RoomsTimeline({
                   && slotHour === fillDrag.fromHour;
                 const canFillFrom = !!onFillInstructorVertical
                   && !s.isBlocked
-                  && !s.isOpen
                   && !!s.instructor_id;
                 const eventBox = (
                   <div
