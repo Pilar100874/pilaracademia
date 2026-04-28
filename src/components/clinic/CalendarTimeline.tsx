@@ -538,6 +538,23 @@ export function CalendarTimeline({
                   const slotKey = `slot-${s.key}`;
                   const isSlotHover = hoverKey === slotKey;
                   const isSelected = selectedSlotKeys?.has(s.key);
+                  const slotHour = t.getHours();
+                  const slotDayISO = d.toISOString().slice(0, 10);
+                  const slotIsFillTarget = !!fillDrag
+                    && fillDrag.dayISO === slotDayISO
+                    && fillDrag.roomId === (s.room_id ?? null)
+                    && slotHour !== fillDrag.fromHour
+                    && slotHour >= Math.min(fillDrag.fromHour, fillDrag.currentHour)
+                    && slotHour <= Math.max(fillDrag.fromHour, fillDrag.currentHour);
+                  const slotIsFillOrigin = !!fillDrag
+                    && fillDrag.dayISO === slotDayISO
+                    && fillDrag.roomId === (s.room_id ?? null)
+                    && slotHour === fillDrag.fromHour;
+                  const canFillFrom = !!onFillInstructorVertical
+                    && !s.isBlocked
+                    && !s.isOpen
+                    && !s.blockedPeriodId
+                    && !!s.instructor_id;
                   return (
                     <Popover key={s.key}>
                       <PopoverTrigger asChild>
