@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -69,6 +69,19 @@ interface Props {
 
   /** Clique no cabeçalho de uma sala — selecionar a coluna inteira. */
   onRoomHeaderClick?: (roomId: string | null) => void;
+
+  /**
+   * Fill handle estilo Excel — usuário arrasta a alça no canto de um slot
+   * verticalmente para propagar o instructor_id daquele slot às horas
+   * cobertas, na mesma sala.
+   */
+  onFillInstructorVertical?: (args: {
+    instructorId: string | null;
+    roomId: string | null;
+    day: Date;
+    fromHour: number;
+    toHour: number;
+  }) => void;
 }
 
 export function RoomsTimeline({
@@ -87,11 +100,102 @@ export function RoomsTimeline({
   onDropInstructorOnCell,
   onDropInstructorOnSlot,
   onRoomHeaderClick,
+  onFillInstructorVertical,
 }: Props) {
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const { confirm } = useConfirm();
   const readInstructor = (e: React.DragEvent) =>
     e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain') || '';
+
+  // ===== Fill handle (Excel-style) =====
+  // Pressionar a alça no canto de um slot e arrastar verticalmente destaca
+  // as horas cobertas na MESMA sala. Ao soltar, propaga o instructor_id.
+  const [fillDrag, setFillDrag] = useState<null | {
+    instructorId: string | null;
+    roomId: string | null;
+    fromHour: number;
+    currentHour: number;
+    instructorColor: string;
+  }>(null);
+  const fillDragRef = useRef<typeof fillDrag>(null);
+  fillDragRef.current = fillDrag;
+
+  /** Inicia o fill drag a partir de um slot existente. */
+  const startFillDrag = (
+    e: React.PointerEvent,
+    slot: TimelineSlot,
+    instructorColor: string,
+  ) => {
+    if (!onFillInstructorVertical) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const slotHour = parseISO(slot.scheduled_at).getHours();
+    setFillDrag({
+      instructorId: slot.instructor_id ?? null,
+      roomId: slot.room_id ?? null,
+      fromHour: slotHour,
+      currentHour: slotHour,
+      instructorColor,
+    });
+  };
+
+  // Pointer global para acompanhar o arrasto do fill handle e finalizar.
+  useEffect(() => {
+    if (!fillDrag) return;
+    const handleMove = (ev: PointerEvent) => {
+      // Encontra a célula sob o cursor (mesma sala apenas)
+      const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+      if (!el) return;
+      const cell = el.closest<HTMLElement>('[data-cell-key],[data-slot-key]');
+      if (!cell) return;
+      const cellKey = cell.getAttribute('data-cell-key');
+      const slotKey = cell.getAttribute('data-slot-key');
+      let hour: number | null = null;
+      let roomId: string | null | undefined = undefined;
+      if (cellKey) {
+        const parsed = parseEmptyKey(cellKey);
+        hour = parsed.hour;
+        roomId = parsed.roomId;
+      } else if (slotKey) {
+        const slot = slots.find((s) => s.key === slotKey);
+        if (slot) {
+          hour = parseISO(slot.scheduled_at).getHours();
+          roomId = slot.room_id ?? null;
+        }
+      }
+      if (hour === null) return;
+      // Só atualiza se for na MESMA sala da origem
+      if (roomId !== fillDragRef.current?.roomId) return;
+      if (hour !== fillDragRef.current.currentHour) {
+        setFillDrag((prev) => (prev ? { ...prev, currentHour: hour! } : prev));
+      }
+    };
+    const handleUp = () => {
+      const fd = fillDragRef.current;
+      setFillDrag(null);
+      if (!fd) return;
+      const lo = Math.min(fd.fromHour, fd.currentHour);
+      const hi = Math.max(fd.fromHour, fd.currentHour);
+      // Se nada se moveu, não dispara
+      if (lo === hi) return;
+      onFillInstructorVertical?.({
+        instructorId: fd.instructorId,
+        roomId: fd.roomId,
+        day,
+        fromHour: lo,
+        toHour: hi,
+      });
+    };
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleUp);
+    return () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleUp);
+    };
+  }, [fillDrag, slots, day, onFillInstructorVertical]);
+
 
   // ===== Marquee (Excel-style drag select) =====
   const baseSlotKeysRef = useRef<Set<string>>(new Set());
@@ -236,6 +340,12 @@ export function RoomsTimeline({
                 const emptySelected = selectionMode && selectedEmptyKeys?.has(emptyKey);
                 const cellHoverKey = `cell-${r.id ?? 'orphan'}-${h}`;
                 const isDropHover = hoverKey === cellHoverKey;
+                // Destaca células-alvo do fill handle (mesma sala, dentro do range)
+                const isFillTarget = !!fillDrag
+                  && fillDrag.roomId === r.id
+                  && h !== fillDrag.fromHour
+                  && h >= Math.min(fillDrag.fromHour, fillDrag.currentHour)
+                  && h <= Math.max(fillDrag.fromHour, fillDrag.currentHour);
                 // Horário passado: dia anterior ao hoje OU hora < agora no mesmo dia
                 const cellDate = new Date(day);
                 cellDate.setHours(h + 1, 0, 0, 0); // fim da hora
@@ -292,6 +402,7 @@ export function RoomsTimeline({
                       emptySelected && 'bg-primary/15 ring-2 ring-inset ring-primary',
                       dragActive && !isPast && 'bg-primary/[0.04]',
                       isDropHover && 'bg-primary/20 ring-2 ring-inset ring-primary',
+                      isFillTarget && 'bg-primary/10 ring-1 ring-inset ring-primary/60',
                     )}
                     style={{ top: (h - startHour) * hourHeight, height: hourHeight }}
                   >
@@ -335,6 +446,19 @@ export function RoomsTimeline({
 
                 const slotHoverKey = `slot-${s.key}`;
                 const isSlotDropHover = hoverKey === slotHoverKey;
+                const slotHour = t.getHours();
+                const slotIsFillTarget = !!fillDrag
+                  && fillDrag.roomId === (s.room_id ?? null)
+                  && slotHour !== fillDrag.fromHour
+                  && slotHour >= Math.min(fillDrag.fromHour, fillDrag.currentHour)
+                  && slotHour <= Math.max(fillDrag.fromHour, fillDrag.currentHour);
+                const slotIsFillOrigin = !!fillDrag
+                  && fillDrag.roomId === (s.room_id ?? null)
+                  && slotHour === fillDrag.fromHour;
+                const canFillFrom = !!onFillInstructorVertical
+                  && !s.isBlocked
+                  && !s.isOpen
+                  && !!s.instructor_id;
                 const eventBox = (
                   <div
                     role="button"
@@ -385,6 +509,8 @@ export function RoomsTimeline({
                       isSelected && 'ring-2 ring-primary bg-primary/10',
                       selectionMode && !canSelect && 'opacity-50',
                       isSlotDropHover && 'ring-2 ring-primary bg-primary/15',
+                      slotIsFillTarget && 'ring-2 ring-primary bg-primary/15',
+                      slotIsFillOrigin && 'ring-2 ring-primary',
                     )}
                   >
                     <div className="flex items-center justify-between gap-1 leading-tight">
@@ -407,6 +533,16 @@ export function RoomsTimeline({
                     </div>
                     {instr && height > 36 && !s.isBlocked && (
                       <div className="truncate text-muted-foreground">{instr}</div>
+                    )}
+                    {canFillFrom && !selectionMode && (
+                      <span
+                        role="presentation"
+                        title="Arraste para preencher horários abaixo/acima com este professor"
+                        onPointerDown={(ev) => startFillDrag(ev, s, color)}
+                        onClick={(ev) => { ev.stopPropagation(); }}
+                        className="absolute -bottom-1 -right-1 z-20 h-2.5 w-2.5 rounded-sm border border-card cursor-ns-resize hover:scale-125 transition-transform"
+                        style={{ background: color || 'hsl(var(--primary))' }}
+                      />
                     )}
                   </div>
                 );
