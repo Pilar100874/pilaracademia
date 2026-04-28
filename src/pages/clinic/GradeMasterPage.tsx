@@ -1353,6 +1353,7 @@ export default function GradeMasterPage() {
               }}
               onRoomColumnClick={(d, roomId, allDays) => selectRoomColumn(roomId, allDays ? weekDays : [d])}
               onFillInstructorVertical={fillInstructorVertical}
+              onUpdateBlockName={handleUpdateBlockName}
             />
             </>;
             })()}
@@ -1514,6 +1515,7 @@ export default function GradeMasterPage() {
               onDropInstructorOnSlot={dropInstructorOnSlot}
               onRoomHeaderClick={(roomId) => selectRoomColumn(roomId, [day])}
               onFillInstructorVertical={fillInstructorVertical}
+              onUpdateBlockName={handleUpdateBlockName}
             />
 
             {/* Barra flutuante de ações de seleção */}
