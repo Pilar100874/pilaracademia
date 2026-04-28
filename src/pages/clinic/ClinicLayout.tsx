@@ -28,6 +28,7 @@ const baseNavItems = [
   { to: '/clinica/niveis', icon: Layers, label: 'Níveis' },
   { to: '/clinica/aula', icon: Activity, label: 'Aula' },
   { to: '/clinica/relatorios', icon: BarChart3, label: 'Relatórios' },
+  { to: '/marketing', icon: Megaphone, label: 'Marketing' },
 ];
 
 export default function ClinicLayout() {
