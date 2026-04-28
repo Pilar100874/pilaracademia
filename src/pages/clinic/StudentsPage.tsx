@@ -434,27 +434,42 @@ export default function StudentsPage() {
               const lv = levels.find((l) => l.id === s.skill_level_id);
               const isMine = myStudentIds?.has(s.id);
               return (
-                <button
+                <div
                   key={s.id}
-                  onClick={() => setSelectedStudent(s.id)}
-                  className={`w-full text-left p-3 rounded-lg flex items-center gap-2 hover:bg-muted ${selectedStudent === s.id ? 'bg-muted' : ''}`}
+                  className={`w-full p-2 rounded-lg flex items-center gap-2 hover:bg-muted ${selectedStudent === s.id ? 'bg-muted' : ''}`}
                 >
-                  {(s as any).avatar_url ? (
-                    <img src={(s as any).avatar_url} alt={s.full_name} className="h-9 w-9 rounded-full object-cover" />
-                  ) : (
-                    <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">
-                      {s.full_name.charAt(0).toUpperCase()}
+                  <button
+                    onClick={() => setSelectedStudent(s.id)}
+                    className="flex-1 min-w-0 flex items-center gap-2 text-left"
+                  >
+                    {(s as any).avatar_url ? (
+                      <img src={(s as any).avatar_url} alt={s.full_name} className="h-9 w-9 rounded-full object-cover" />
+                    ) : (
+                      <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">
+                        {s.full_name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate flex items-center gap-1">
+                        {s.full_name}
+                        {isMine && <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">meu</Badge>}
+                      </div>
+                      {lv && <div className="text-xs text-muted-foreground">{lv.name}</div>}
                     </div>
+                  </button>
+                  {(isAdmin || isInstructor) && s.user_id && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      title="Entrar como este aluno (calorias + pilates)"
+                      className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 shrink-0"
+                      onClick={(e) => { e.stopPropagation(); handleImpersonateStudent(s.id, s.full_name, !!s.user_id); }}
+                    >
+                      <LogIn className="h-4 w-4" />
+                    </Button>
                   )}
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate flex items-center gap-1">
-                      {s.full_name}
-                      {isMine && <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">meu</Badge>}
-                    </div>
-                    {lv && <div className="text-xs text-muted-foreground">{lv.name}</div>}
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </button>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                </div>
               );
             });
           })()}
