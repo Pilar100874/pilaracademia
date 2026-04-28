@@ -532,7 +532,7 @@ export default function StudentsPage() {
                     <Button
                       variant="default"
                       size="sm"
-                      onClick={() => handleImpersonateStudent(current.id, current.full_name)}
+                      onClick={() => handleImpersonateStudent(current.id, current.full_name, !!current.user_id)}
                       className="bg-amber-600 hover:bg-amber-700 text-white justify-start col-span-2 sm:col-span-1"
                     >
                       <LogIn className="h-3.5 w-3.5 mr-1 shrink-0" /><span className="truncate">Entrar como aluno</span>
