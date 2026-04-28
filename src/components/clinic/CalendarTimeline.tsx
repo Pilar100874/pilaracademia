@@ -528,6 +528,9 @@ export function CalendarTimeline({
                     && !s.isBlocked
                     && !s.blockedPeriodId
                     && !!s.instructor_id;
+                  // Vagas para horário disponível — capacidade da sala - aulas naquela hora
+                  const slotOcc = cap && cap > 0 ? occupancyByHour.get(slotHour) : undefined;
+                  const slotVagas = (s.isOpen && cap && slotOcc) ? Math.max(0, cap - slotOcc.used) : null;
                   return (
                     <Popover key={s.key}>
                       <PopoverTrigger asChild>
