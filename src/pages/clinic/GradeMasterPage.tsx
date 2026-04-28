@@ -733,11 +733,29 @@ export default function GradeMasterPage() {
     let created = 0;
     const errors: string[] = [];
 
+    // Duração padrão = a do slot de origem (se houver), senão 50min
+    const originSlot = byHour.get(fromHour);
+    const defaultDuration = originSlot?.duration_minutes ?? 50;
+
     for (const h of hours) {
       const slot = byHour.get(h);
       try {
         if (!slot) {
-          // Sem horário existente → pula (não cria slots vazios)
+          // Célula vazia → cria novo horário "Livre" com o professor
+          const sched = new Date(targetDay);
+          sched.setHours(h, 0, 0, 0);
+          await createBookable.mutateAsync({
+            clinic_id: activeClinicId,
+            scheduled_at: sched.toISOString(),
+            duration_minutes: defaultDuration,
+            equipment_id: null,
+            instructor_id: instructorId,
+            room_id: roomId,
+            capacity: 1,
+            notes: null,
+            created_by: user.id,
+          } as any);
+          created++;
           continue;
         }
         // Não toca o slot de origem (mesmo professor já)
