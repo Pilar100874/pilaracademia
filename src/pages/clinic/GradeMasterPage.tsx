@@ -722,9 +722,14 @@ export default function GradeMasterPage() {
   };
 
   /**
-   * Fill handle estilo Excel — usuário arrasta a alça de um slot verticalmente
-   * para propagar o `instructor_id` daquele slot a todas as horas no range,
-   * na MESMA sala. Cria horários novos onde não existirem.
+   * Fill handle estilo Excel — usuário arrasta a alça no canto de um slot
+   * verticalmente para propagar:
+   *   - mode 'instructor' → o `instructor_id` daquele slot às horas no range (cria onde vazio).
+   *   - mode 'block'      → bloqueio às horas no range:
+   *                          • vazia → cria bookable_slot blocked=true (com notes=blockName)
+   *                          • livre  → converte em bloqueio (block mutation)
+   *                          • aula   → pede confirmação; se ok, cancela e cria bloqueio
+   *                          • já bloqueada → mantém (atualiza notes se houver blockName)
    */
   const fillInstructorVertical = async (args: {
     instructorId: string | null;
@@ -732,12 +737,14 @@ export default function GradeMasterPage() {
     day: Date;
     fromHour: number;
     toHour: number;
+    mode?: 'instructor' | 'block';
+    blockName?: string | null;
   }) => {
     if (!activeClinicId || !user) {
       toast.error('Sessão sem clínica ativa. Recarregue a página.');
       return;
     }
-    const { instructorId, roomId, day: targetDay, fromHour, toHour } = args;
+    const { instructorId, roomId, day: targetDay, fromHour, toHour, mode = 'instructor', blockName } = args;
     // Indexa os slots existentes do dia/sala por hora
     const existing = slotsForDay(targetDay)
       .map(toTimelineSlot)
@@ -753,33 +760,126 @@ export default function GradeMasterPage() {
 
     let updated = 0;
     let created = 0;
+    let skipped = 0;
     const errors: string[] = [];
 
     // Duração padrão = a do slot de origem (se houver), senão 50min
     const originSlot = byHour.get(fromHour);
     const defaultDuration = originSlot?.duration_minutes ?? 50;
 
-    for (const h of hours) {
-      const slot = byHour.get(h);
-      // Só cria onde está vazio. Horários existentes (aula, livre ou bloqueio) são preservados.
-      if (slot) continue;
-      try {
-        const sched = new Date(targetDay);
-        sched.setHours(h, 0, 0, 0);
-        await createBookable.mutateAsync({
-          clinic_id: activeClinicId,
-          scheduled_at: sched.toISOString(),
-          duration_minutes: defaultDuration,
-          equipment_id: null,
-          instructor_id: instructorId,
-          room_id: roomId,
-          capacity: 1,
-          notes: null,
-          created_by: user.id,
-        } as any);
-        created++;
-      } catch (e: any) {
-        errors.push(`${String(h).padStart(2, '0')}:00 — ${e?.message || 'erro'}`);
+    if (mode === 'block') {
+      // Identifica horas com aula real para pedir confirmação em lote
+      const apptHours = hours.filter((h) => {
+        const slot = byHour.get(h);
+        return slot && slot.appointment_id && !slot.isBlocked;
+      });
+      let allowOverwriteAppt = false;
+      if (apptHours.length > 0) {
+        allowOverwriteAppt = await confirm({
+          title: 'Bloquear sobre aulas existentes',
+          description: `${apptHours.length} horário(s) selecionado(s) tem aulas. Cancelar essas aulas e bloquear?`,
+          destructive: true,
+          confirmText: 'Cancelar e bloquear',
+        });
+      }
+
+      for (const h of hours) {
+        const slot = byHour.get(h);
+        try {
+          // Já bloqueada (pontual) → atualiza nome se houver
+          if (slot?.isBlocked && slot.bookable_slot_id && !slot.blockedPeriodId) {
+            if (blockName) {
+              const { error } = await supabase
+                .from('bookable_slots' as any)
+                .update({ notes: blockName } as any)
+                .eq('id', slot.bookable_slot_id);
+              if (error) throw error;
+              updated++;
+            } else {
+              skipped++;
+            }
+            continue;
+          }
+          // Bloqueio recorrente → não toca
+          if (slot?.blockedPeriodId) { skipped++; continue; }
+          // Aula real
+          if (slot?.appointment_id) {
+            if (!allowOverwriteAppt) { skipped++; continue; }
+            await remove.mutateAsync(slot.appointment_id);
+            // depois cria bookable_slot bloqueado
+            const sched = new Date(targetDay);
+            sched.setHours(h, 0, 0, 0);
+            await createBookable.mutateAsync({
+              clinic_id: activeClinicId,
+              scheduled_at: sched.toISOString(),
+              duration_minutes: defaultDuration,
+              equipment_id: null,
+              instructor_id: null,
+              room_id: roomId,
+              capacity: 1,
+              notes: blockName ?? null,
+              created_by: user.id,
+              blocked: true,
+            } as any);
+            created++;
+            continue;
+          }
+          // Slot livre (bookable_slot sem appointment, !blocked) → bloqueia
+          if (slot?.bookable_slot_id) {
+            await blockBookable.mutateAsync(slot.bookable_slot_id);
+            if (blockName) {
+              const { error } = await supabase
+                .from('bookable_slots' as any)
+                .update({ notes: blockName } as any)
+                .eq('id', slot.bookable_slot_id);
+              if (error) throw error;
+            }
+            updated++;
+            continue;
+          }
+          // Vazio → cria bookable_slot bloqueado
+          const sched = new Date(targetDay);
+          sched.setHours(h, 0, 0, 0);
+          await createBookable.mutateAsync({
+            clinic_id: activeClinicId,
+            scheduled_at: sched.toISOString(),
+            duration_minutes: defaultDuration,
+            equipment_id: null,
+            instructor_id: null,
+            room_id: roomId,
+            capacity: 1,
+            notes: blockName ?? null,
+            created_by: user.id,
+            blocked: true,
+          } as any);
+          created++;
+        } catch (e: any) {
+          errors.push(`${String(h).padStart(2, '0')}:00 — ${e?.message || 'erro'}`);
+        }
+      }
+    } else {
+      // mode === 'instructor' — cria apenas onde está vazio
+      for (const h of hours) {
+        const slot = byHour.get(h);
+        if (slot) continue;
+        try {
+          const sched = new Date(targetDay);
+          sched.setHours(h, 0, 0, 0);
+          await createBookable.mutateAsync({
+            clinic_id: activeClinicId,
+            scheduled_at: sched.toISOString(),
+            duration_minutes: defaultDuration,
+            equipment_id: null,
+            instructor_id: instructorId,
+            room_id: roomId,
+            capacity: 1,
+            notes: null,
+            created_by: user.id,
+          } as any);
+          created++;
+        } catch (e: any) {
+          errors.push(`${String(h).padStart(2, '0')}:00 — ${e?.message || 'erro'}`);
+        }
       }
     }
 
@@ -789,8 +889,10 @@ export default function GradeMasterPage() {
     const total = updated + created;
     if (total > 0) {
       toast.success(
-        `${total} horário${total !== 1 ? 's' : ''} preenchido${total !== 1 ? 's' : ''}` +
-        (created > 0 ? ` (${created} novo${created !== 1 ? 's' : ''})` : '')
+        mode === 'block'
+          ? `${total} horário${total !== 1 ? 's' : ''} bloqueado${total !== 1 ? 's' : ''}`
+          : `${total} horário${total !== 1 ? 's' : ''} preenchido${total !== 1 ? 's' : ''}` +
+            (created > 0 ? ` (${created} novo${created !== 1 ? 's' : ''})` : '')
       );
     } else if (errors.length === 0) {
       toast.info('Nada a preencher.');
@@ -985,6 +1087,7 @@ export default function GradeMasterPage() {
     blockedPeriodId: s.blockedPeriodId,
     blockedPeriodName: s.blockedPeriodName,
     blockedPeriodColor: s.blockedPeriodColor,
+    blockNotes: s.isBlocked && !s.blockedPeriodId ? s.notes : null,
   });
 
   /**
@@ -1021,6 +1124,21 @@ export default function GradeMasterPage() {
       toast.success('Horário excluído');
     } catch (e: any) {
       toast.error(e?.message || 'Erro ao excluir horário');
+    }
+  };
+
+  /** Atualiza o nome (notes) de um bloqueio pontual (bookable_slot.blocked=true). */
+  const handleUpdateBlockName = async (bookableSlotId: string, name: string) => {
+    try {
+      const { error } = await supabase
+        .from('bookable_slots' as any)
+        .update({ notes: name || null } as any)
+        .eq('id', bookableSlotId);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+      toast.success('Nome do bloqueio atualizado');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao atualizar nome');
     }
   };
 
@@ -1235,6 +1353,7 @@ export default function GradeMasterPage() {
               }}
               onRoomColumnClick={(d, roomId, allDays) => selectRoomColumn(roomId, allDays ? weekDays : [d])}
               onFillInstructorVertical={fillInstructorVertical}
+              onUpdateBlockName={handleUpdateBlockName}
             />
             </>;
             })()}
@@ -1396,6 +1515,7 @@ export default function GradeMasterPage() {
               onDropInstructorOnSlot={dropInstructorOnSlot}
               onRoomHeaderClick={(roomId) => selectRoomColumn(roomId, [day])}
               onFillInstructorVertical={fillInstructorVertical}
+              onUpdateBlockName={handleUpdateBlockName}
             />
 
             {/* Barra flutuante de ações de seleção */}

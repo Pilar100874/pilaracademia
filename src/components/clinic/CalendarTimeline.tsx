@@ -39,6 +39,8 @@ export interface TimelineSlot {
   blockedPeriodId?: string;
   blockedPeriodName?: string;
   blockedPeriodColor?: string | null;
+  /** Notas/título de um bloqueio pontual (bookable_slot.blocked=true). */
+  blockNotes?: string | null;
 }
 
 interface Props {
@@ -88,7 +90,11 @@ interface Props {
     day: Date;
     fromHour: number;
     toHour: number;
+    mode?: 'instructor' | 'block';
+    blockName?: string | null;
   }) => void;
+  /** Atualiza o nome (notes) de um bloqueio pontual (bookable_slot.blocked=true). */
+  onUpdateBlockName?: (bookableSlotId: string, name: string) => void;
 }
 
 export function CalendarTimeline({
@@ -101,6 +107,7 @@ export function CalendarTimeline({
   rooms,
   onRoomColumnClick,
   onFillInstructorVertical,
+  onUpdateBlockName,
 }: Props) {
   const splitByRoom = !!rooms && rooms.length > 0;
   // Sub-colunas: se houver salas, cada dia tem N colunas (1 por sala). Caso contrário, 1.
@@ -119,6 +126,8 @@ export function CalendarTimeline({
     fromHour: number;
     currentHour: number;
     instructorColor: string;
+    mode: 'instructor' | 'block';
+    blockName?: string | null;
   }>(null);
   const fillDragRef = useRef<typeof fillDrag>(null);
   fillDragRef.current = fillDrag;
@@ -133,13 +142,16 @@ export function CalendarTimeline({
     e.preventDefault();
     e.stopPropagation();
     const slotHour = parseISO(slot.scheduled_at).getHours();
+    const isBlockOrigin = !!slot.isBlocked && !slot.blockedPeriodId;
     setFillDrag({
       instructorId: slot.instructor_id ?? null,
       roomId: slot.room_id ?? null,
       dayISO: slotDay.toISOString().slice(0, 10),
       fromHour: slotHour,
       currentHour: slotHour,
-      instructorColor,
+      instructorColor: isBlockOrigin ? 'hsl(var(--destructive))' : instructorColor,
+      mode: isBlockOrigin ? 'block' : 'instructor',
+      blockName: isBlockOrigin ? (slot.blockNotes ?? null) : null,
     });
   };
 
@@ -171,6 +183,8 @@ export function CalendarTimeline({
         day: targetDay,
         fromHour: lo,
         toHour: hi,
+        mode: fd.mode,
+        blockName: fd.blockName ?? null,
       });
     };
     window.addEventListener('pointermove', handleMove);
@@ -522,9 +536,8 @@ export function CalendarTimeline({
                     && fillDrag.roomId === (s.room_id ?? null)
                     && slotHour === fillDrag.fromHour;
                   const canFillFrom = !!onFillInstructorVertical
-                    && !s.isBlocked
                     && !s.blockedPeriodId
-                    && !!s.instructor_id;
+                    && (!!s.instructor_id || (s.isBlocked && !!s.bookable_slot_id));
                   // Vagas para horário disponível — capacidade da sala - aulas naquela hora
                   const slotOcc = cap && cap > 0 ? occupancyByHour.get(slotHour) : undefined;
                   const slotVagas = (s.isOpen && cap && slotOcc) ? Math.max(0, cap - slotOcc.used) : null;
@@ -630,7 +643,7 @@ export function CalendarTimeline({
                             {s.blockedPeriodId
                               ? <span className="italic text-destructive/90">{s.blockedPeriodName || 'Bloqueado'}</span>
                               : s.isBlocked
-                                ? <span className="italic text-muted-foreground">Bloqueado</span>
+                                ? <span className="italic text-muted-foreground">{s.blockNotes || 'Bloqueado'}</span>
                                 : s.isOpen
                                   ? <span className="italic text-emerald-700 dark:text-emerald-400">Livre</span>
                                   : studentName(s.student_id)}
@@ -650,11 +663,13 @@ export function CalendarTimeline({
                           {canFillFrom && (
                             <span
                               role="presentation"
-                              title="Arraste para preencher horários abaixo/acima com este professor"
+                              title={s.isBlocked
+                                ? 'Arraste para replicar este bloqueio nos horários abaixo/acima'
+                                : 'Arraste para preencher horários abaixo/acima com este professor'}
                               onPointerDown={(ev) => startFillDrag(ev, s, d, color)}
                               onClick={(ev) => { ev.stopPropagation(); }}
                               className="absolute -bottom-1.5 -right-1.5 z-30 h-4 w-4 rounded-sm border-2 border-card cursor-ns-resize hover:scale-110 transition-transform"
-                              style={{ background: color || 'hsl(var(--primary))' }}
+                              style={{ background: s.isBlocked ? 'hsl(var(--destructive))' : (color || 'hsl(var(--primary))') }}
                             />
                           )}
                         </div>
@@ -688,16 +703,34 @@ export function CalendarTimeline({
                             }}
                           />
                           <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <div className="font-serif text-[17px] leading-tight tracking-tight truncate">
                                 {s.blockedPeriodId
                                   ? (s.blockedPeriodName || 'Bloqueio padrão')
                                   : s.isBlocked
-                                    ? 'Horário bloqueado'
+                                    ? (s.blockNotes || 'Horário bloqueado')
                                     : s.isOpen
                                       ? 'Horário disponível'
                                       : studentName(s.student_id)}
                               </div>
+                              {s.isBlocked && !s.blockedPeriodId && s.bookable_slot_id && onUpdateBlockName && (
+                                <input
+                                  type="text"
+                                  defaultValue={s.blockNotes || ''}
+                                  placeholder="Nome do bloqueio (ex: Almoço)"
+                                  onClick={(e) => e.stopPropagation()}
+                                  onBlur={(e) => {
+                                    const v = e.target.value.trim();
+                                    if (v !== (s.blockNotes || '')) {
+                                      onUpdateBlockName(s.bookable_slot_id!, v);
+                                    }
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                                  }}
+                                  className="mt-1.5 w-full text-[12px] px-2 py-1 rounded border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                              )}
                               <div className="mt-1.5 flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground">
                                 <Clock className="h-3 w-3" />
                                 <span className="font-semibold tabular-nums">
