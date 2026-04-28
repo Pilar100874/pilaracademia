@@ -434,6 +434,15 @@ export function RoomsTimeline({
                 const canFillFrom = !!onFillInstructorVertical
                   && !s.isBlocked
                   && !!s.instructor_id;
+                // Progresso da aula (0–100). Só para slots reais com aluno (appointment).
+                const slotEnd = new Date(t.getTime() + s.duration_minutes * 60_000);
+                const progressPct = (() => {
+                  if (s.isOpen || s.isBlocked || s.isProjected || s.isVirtual) return null;
+                  if (!isToday) return null;
+                  if (now <= t) return 0;
+                  if (now >= slotEnd) return 100;
+                  return Math.round(((now.getTime() - t.getTime()) / (s.duration_minutes * 60_000)) * 100);
+                })();
                 const eventBox = (
                   <div
                     role="button"
