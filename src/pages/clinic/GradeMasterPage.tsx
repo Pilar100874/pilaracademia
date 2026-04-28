@@ -635,10 +635,69 @@ export default function GradeMasterPage() {
   // ===== Atribuição em massa (criar / reatribuir) =====
   const [bulkOpen, setBulkOpen] = useState<null | 'create' | 'reassign'>(null);
 
-  // Drag & drop de professor (paleta) — stubs no-op (handlers reais a implementar)
+  // Drag & drop de professor (paleta)
   const [draggingInstructorId, setDraggingInstructorId] = useState<string | null>(null);
-  const dropInstructorOnCell = (_id: string, _d: Date, _h: number, _roomId: string | null) => {};
-  const dropInstructorOnSlot = (_id: string, _ts: TimelineSlot) => {};
+
+  /** Solta um professor em uma célula vazia → cria bookable_slot novo de 50min com esse professor. */
+  const dropInstructorOnCell = async (id: string, d: Date, h: number, roomId: string | null) => {
+    setDraggingInstructorId(null);
+    if (!activeClinicId || !user) {
+      toast.error('Sessão sem clínica ativa. Recarregue a página.');
+      return;
+    }
+    if (id === CLEAR_INSTRUCTOR) {
+      toast.info('Arraste "Sem professor" sobre um horário existente para limpá-lo.');
+      return;
+    }
+    const sched = new Date(d);
+    sched.setHours(h, 0, 0, 0);
+    try {
+      await createBookable.mutateAsync({
+        clinic_id: activeClinicId,
+        scheduled_at: sched.toISOString(),
+        duration_minutes: 50,
+        equipment_id: null,
+        instructor_id: id,
+        room_id: roomId,
+        capacity: 1,
+        notes: null,
+        created_by: user.id,
+      } as any);
+      await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+      toast.success('Horário criado com professor');
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível criar o horário');
+    }
+  };
+
+  /** Solta um professor em um horário existente → atualiza instructor_id (no slot ou no appointment). */
+  const dropInstructorOnSlot = async (id: string, ts: TimelineSlot) => {
+    setDraggingInstructorId(null);
+    if (!activeClinicId) return;
+    const newInstructorId: string | null = id === CLEAR_INSTRUCTOR ? null : id;
+    try {
+      if (ts.appointment_id) {
+        const { error } = await supabase
+          .from('class_appointments')
+          .update({ instructor_id: newInstructorId })
+          .eq('id', ts.appointment_id);
+        if (error) throw error;
+      } else if (ts.bookable_slot_id) {
+        const { error } = await supabase
+          .from('bookable_slots' as any)
+          .update({ instructor_id: newInstructorId })
+          .eq('id', ts.bookable_slot_id);
+        if (error) throw error;
+      } else {
+        return;
+      }
+      await qc.invalidateQueries({ queryKey: ['bookable-slots'] });
+      await qc.invalidateQueries({ queryKey: ['appointments'] });
+      toast.success(newInstructorId ? 'Professor atribuído' : 'Professor removido');
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível atualizar o professor');
+    }
+  };
   const selectRoomColumn = (_roomId: string, _days: Date[]) => {};
 
   // Relatório exibido após operação em massa quando há skips/erros
