@@ -100,6 +100,7 @@ export function CalendarTimeline({
   onReplaceSelection, onAddSelection, onMarqueeEnd,
   rooms,
   onRoomColumnClick,
+  onFillInstructorVertical,
 }: Props) {
   const splitByRoom = !!rooms && rooms.length > 0;
   // Sub-colunas: se houver salas, cada dia tem N colunas (1 por sala). Caso contrário, 1.
@@ -109,6 +110,105 @@ export function CalendarTimeline({
   const { confirm } = useConfirm();
   const readInstructor = (e: React.DragEvent) =>
     e.dataTransfer.getData(INSTRUCTOR_DRAG_TYPE) || e.dataTransfer.getData('text/plain') || '';
+
+  // ===== Fill handle (Excel-style, vertical, mesmo dia+sala) =====
+  const [fillDrag, setFillDrag] = useState<null | {
+    instructorId: string | null;
+    roomId: string | null;
+    dayISO: string;
+    fromHour: number;
+    currentHour: number;
+    instructorColor: string;
+  }>(null);
+  const fillDragRef = useRef<typeof fillDrag>(null);
+  fillDragRef.current = fillDrag;
+
+  const startFillDrag = (
+    e: React.PointerEvent,
+    slot: TimelineSlot,
+    slotDay: Date,
+    instructorColor: string,
+  ) => {
+    if (!onFillInstructorVertical) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const slotHour = parseISO(slot.scheduled_at).getHours();
+    setFillDrag({
+      instructorId: slot.instructor_id ?? null,
+      roomId: slot.room_id ?? null,
+      dayISO: slotDay.toISOString().slice(0, 10),
+      fromHour: slotHour,
+      currentHour: slotHour,
+      instructorColor,
+    });
+  };
+
+  useEffect(() => {
+    if (!fillDrag) return;
+    const handleMove = (ev: PointerEvent) => {
+      const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+      if (!el) return;
+      const cell = el.closest<HTMLElement>('[data-cell-key],[data-slot-key]');
+      if (!cell) return;
+      const cellKey = cell.getAttribute('data-cell-key');
+      const slotKey = cell.getAttribute('data-slot-key');
+      let hour: number | null = null;
+      let roomId: string | null | undefined = undefined;
+      let dayISO: string | undefined;
+      if (cellKey) {
+        const parsed = parseWeekEmptyKey(cellKey);
+        hour = parsed.hour;
+        roomId = parsed.roomId;
+        dayISO = parsed.date;
+      } else if (slotKey) {
+        // procura o slot em todos os dias visíveis
+        for (const d of days) {
+          const found = slotsForDay(d).find((s) => s.key === slotKey);
+          if (found) {
+            hour = parseISO(found.scheduled_at).getHours();
+            roomId = found.room_id ?? null;
+            dayISO = d.toISOString().slice(0, 10);
+            break;
+          }
+        }
+      }
+      if (hour === null || dayISO === undefined) return;
+      const fd = fillDragRef.current;
+      if (!fd) return;
+      // Restringe à mesma sala E mesmo dia da origem
+      if (roomId !== fd.roomId) return;
+      if (dayISO !== fd.dayISO) return;
+      if (hour !== fd.currentHour) {
+        setFillDrag((prev) => (prev ? { ...prev, currentHour: hour! } : prev));
+      }
+    };
+    const handleUp = () => {
+      const fd = fillDragRef.current;
+      setFillDrag(null);
+      if (!fd) return;
+      const lo = Math.min(fd.fromHour, fd.currentHour);
+      const hi = Math.max(fd.fromHour, fd.currentHour);
+      if (lo === hi) return;
+      const targetDay = days.find((d) => d.toISOString().slice(0, 10) === fd.dayISO);
+      if (!targetDay) return;
+      onFillInstructorVertical?.({
+        instructorId: fd.instructorId,
+        roomId: fd.roomId,
+        day: targetDay,
+        fromHour: lo,
+        toHour: hi,
+      });
+    };
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleUp);
+    return () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleUp);
+    };
+  }, [fillDrag, days, slotsForDay, onFillInstructorVertical]);
+
 
   // ===== Marquee =====
   const baseSlotKeysRef = useRef<Set<string>>(new Set());
