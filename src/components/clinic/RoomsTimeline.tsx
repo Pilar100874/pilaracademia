@@ -105,6 +105,7 @@ export function RoomsTimeline({
   onDropInstructorOnSlot,
   onRoomHeaderClick,
   onFillInstructorVertical,
+  onUpdateBlockName,
 }: Props) {
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const { confirm } = useConfirm();
