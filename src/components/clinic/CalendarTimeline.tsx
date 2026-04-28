@@ -183,6 +183,8 @@ export function CalendarTimeline({
         day: targetDay,
         fromHour: lo,
         toHour: hi,
+        mode: fd.mode,
+        blockName: fd.blockName ?? null,
       });
     };
     window.addEventListener('pointermove', handleMove);
