@@ -17,6 +17,10 @@ export interface WorkoutExercise {
   video_start_seconds: number | null;
   video_end_seconds: number | null;
   created_at: string;
+  exercise_library_id?: string | null;
+  body_analysis?: Record<string, number> | null;
+  aesthetic_analysis?: Record<string, number> | null;
+  mobility_analysis?: Record<string, number> | null;
 }
 
 export interface WorkoutPlan {
