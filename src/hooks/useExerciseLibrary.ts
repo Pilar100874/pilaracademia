@@ -14,7 +14,10 @@ export interface LibraryExercise {
   video_url: string | null;
   video_start_seconds: number | null;
   video_end_seconds: number | null;
+  /** @deprecated Use category_ids — mantido por compatibilidade com código antigo */
   category_id: string | null;
+  /** Todas as categorias atribuídas ao exercício (multi). */
+  category_ids: string[];
   created_at: string;
   updated_at: string;
 }
@@ -28,14 +31,34 @@ export function useExerciseLibrary() {
     queryFn: async () => {
       if (!user) return [];
 
-      const { data, error } = await supabase
-        .from('exercise_library')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('name', { ascending: true });
+      // Fetch exercises and their category links in parallel
+      const [exRes, linkRes] = await Promise.all([
+        supabase
+          .from('exercise_library')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('name', { ascending: true }),
+        supabase
+          .from('exercise_library_categories')
+          .select('exercise_id, category_id'),
+      ]);
 
-      if (error) throw error;
-      return data as LibraryExercise[];
+      if (exRes.error) throw exRes.error;
+      if (linkRes.error) throw linkRes.error;
+
+      const linksByExercise = new Map<string, string[]>();
+      for (const link of linkRes.data ?? []) {
+        const arr = linksByExercise.get(link.exercise_id) ?? [];
+        arr.push(link.category_id);
+        linksByExercise.set(link.exercise_id, arr);
+      }
+
+      const rows = (exRes.data ?? []).map((ex: any) => ({
+        ...ex,
+        category_ids: linksByExercise.get(ex.id) ?? (ex.category_id ? [ex.category_id] : []),
+      })) as LibraryExercise[];
+
+      return rows;
     },
     enabled: !!user,
   });
