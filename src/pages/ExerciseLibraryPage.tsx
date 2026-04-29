@@ -715,7 +715,126 @@ export default function ExerciseLibraryPage() {
     }
   };
 
-  return (
+  /**
+   * Background auto-optimizer: recompresses legacy MP4 'upload' videos a few
+   * at a time while the user is on the library page. Runs only when the tab
+   * is visible to save bandwidth/battery. Marks attempted IDs in
+   * sessionStorage so failures aren't retried in a loop.
+   */
+  useEffect(() => {
+    if (!user) return;
+    if (isLoading) return;
+    if (recompressing) return;
+
+    const FAILED_KEY = 'pilar:autocompress-failed';
+    const getFailed = (): Set<string> => {
+      try {
+        const raw = sessionStorage.getItem(FAILED_KEY);
+        return new Set<string>(raw ? JSON.parse(raw) : []);
+      } catch {
+        return new Set();
+      }
+    };
+    const addFailed = (id: string) => {
+      try {
+        const s = getFailed();
+        s.add(id);
+        sessionStorage.setItem(FAILED_KEY, JSON.stringify([...s]));
+      } catch {
+        // ignore
+      }
+    };
+
+    const failed = getFailed();
+    const queue = exercises.filter(
+      (ex) =>
+        ex.video_type === 'upload' &&
+        !!ex.video_url &&
+        !ex.video_url.includes('.webm') &&
+        !failed.has(ex.id)
+    );
+    if (queue.length === 0) return;
+
+    let cancelled = false;
+
+    const runOne = async (ex: LibraryExercise): Promise<boolean> => {
+      try {
+        const url = ex.video_url!;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('download failed');
+        const blob = await res.blob();
+        const origSize = blob.size;
+        const inputFile = new File([blob], 'video.mp4', {
+          type: blob.type || 'video/mp4',
+        });
+        const compressed = await compressVideoFile(inputFile);
+        if (compressed === inputFile || compressed.size >= origSize) {
+          return false;
+        }
+        const path = `${user.id}/${Date.now()}-auto.webm`;
+        const { error: upErr } = await supabase.storage
+          .from('exercise-videos')
+          .upload(path, compressed, { contentType: 'video/webm', upsert: false });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage
+          .from('exercise-videos')
+          .getPublicUrl(path);
+        const { error: updErr } = await supabase
+          .from('exercise_library')
+          .update({ video_url: pub.publicUrl })
+          .eq('id', ex.id);
+        if (updErr) throw updErr;
+        try {
+          const marker = '/exercise-videos/';
+          const idx = url.indexOf(marker);
+          if (idx >= 0) {
+            const oldPath = url.substring(idx + marker.length).split('?')[0];
+            await supabase.storage.from('exercise-videos').remove([oldPath]);
+          }
+        } catch {
+          // ignore
+        }
+        return true;
+      } catch (err) {
+        console.warn('Auto-compress failed for', ex.id, err);
+        addFailed(ex.id);
+        return false;
+      }
+    };
+
+    let done = 0;
+    setRecompressing({ done: 0, total: queue.length, saved: 0 });
+
+    const loop = async () => {
+      for (const ex of queue) {
+        if (cancelled) return;
+        while (document.visibilityState === 'hidden' && !cancelled) {
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+        if (cancelled) return;
+        await runOne(ex);
+        done++;
+        if (!cancelled) {
+          setRecompressing((p) => (p ? { ...p, done } : p));
+        }
+        await new Promise((r) => setTimeout(r, 300));
+      }
+      if (!cancelled) {
+        setRecompressing(null);
+        queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+      }
+    };
+
+    const startTimer = window.setTimeout(loop, 2000);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(startTimer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, isLoading]);
+
+
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b">
