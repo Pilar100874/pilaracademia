@@ -838,6 +838,19 @@ export default function ExerciseLibraryPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end ml-auto">
+          {!selectionMode && pendingOptimizationCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!!recompressing}
+              onClick={optimizeAllVideos}
+              title={`${pendingOptimizationCount} vídeo(s) pendente(s) de otimização`}
+            >
+              {recompressing
+                ? `Otimizando... ${recompressing.done}/${recompressing.total}`
+                : `Otimizar ${pendingOptimizationCount} vídeo${pendingOptimizationCount !== 1 ? 's' : ''}`}
+            </Button>
+          )}
           {selectionMode ? (
             <>
               <Button variant="outline" size="sm" onClick={exitSelectionMode}>
