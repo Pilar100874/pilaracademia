@@ -244,6 +244,7 @@ export function useExerciseLibrary() {
     updateExercise,
     deleteExercise,
     moveExercises,
+    toggleExerciseCategory,
     uploadExerciseImage,
   };
 }
