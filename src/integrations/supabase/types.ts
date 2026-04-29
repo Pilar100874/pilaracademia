@@ -162,6 +162,7 @@ export type Database = {
           id: string
           instructor_id: string | null
           notes: string | null
+          origin: Database["public"]["Enums"]["appointment_origin"]
           prescription_id: string | null
           recurring_schedule_id: string | null
           recurring_week_id: string | null
@@ -186,6 +187,7 @@ export type Database = {
           id?: string
           instructor_id?: string | null
           notes?: string | null
+          origin?: Database["public"]["Enums"]["appointment_origin"]
           prescription_id?: string | null
           recurring_schedule_id?: string | null
           recurring_week_id?: string | null
@@ -210,6 +212,7 @@ export type Database = {
           id?: string
           instructor_id?: string | null
           notes?: string | null
+          origin?: Database["public"]["Enums"]["appointment_origin"]
           prescription_id?: string | null
           recurring_schedule_id?: string | null
           recurring_week_id?: string | null
@@ -1246,6 +1249,198 @@ export type Database = {
             columns: ["skill_level_id"]
             isOneToOne: false
             referencedRelation: "clinic_skill_levels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_pass_checkins: {
+        Row: {
+          amount: number | null
+          appointment_id: string | null
+          checkin_at: string
+          clinic_id: string
+          created_at: string
+          currency: string | null
+          dedupe_key: string
+          external_user_id: string | null
+          id: string
+          import_id: string
+          payment_status: string | null
+          platform: Database["public"]["Enums"]["external_pass_platform"]
+          raw_row: Json | null
+          student_document: string | null
+          student_email: string | null
+          student_id: string | null
+          student_name: string | null
+        }
+        Insert: {
+          amount?: number | null
+          appointment_id?: string | null
+          checkin_at: string
+          clinic_id: string
+          created_at?: string
+          currency?: string | null
+          dedupe_key: string
+          external_user_id?: string | null
+          id?: string
+          import_id: string
+          payment_status?: string | null
+          platform: Database["public"]["Enums"]["external_pass_platform"]
+          raw_row?: Json | null
+          student_document?: string | null
+          student_email?: string | null
+          student_id?: string | null
+          student_name?: string | null
+        }
+        Update: {
+          amount?: number | null
+          appointment_id?: string | null
+          checkin_at?: string
+          clinic_id?: string
+          created_at?: string
+          currency?: string | null
+          dedupe_key?: string
+          external_user_id?: string | null
+          id?: string
+          import_id?: string
+          payment_status?: string | null
+          platform?: Database["public"]["Enums"]["external_pass_platform"]
+          raw_row?: Json | null
+          student_document?: string | null
+          student_email?: string | null
+          student_id?: string | null
+          student_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_pass_checkins_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "class_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_pass_checkins_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_pass_checkins_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "external_pass_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_pass_checkins_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_pass_column_mappings: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string
+          id: string
+          mapping: Json
+          platform: Database["public"]["Enums"]["external_pass_platform"]
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          mapping: Json
+          platform: Database["public"]["Enums"]["external_pass_platform"]
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          mapping?: Json
+          platform?: Database["public"]["Enums"]["external_pass_platform"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_pass_column_mappings_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_pass_imports: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string
+          duplicate_rows: number
+          file_hash: string | null
+          file_name: string
+          id: string
+          imported_rows: number
+          matched_rows: number
+          notes: string | null
+          platform: Database["public"]["Enums"]["external_pass_platform"]
+          raw_columns: Json | null
+          reference_period: string | null
+          total_amount: number | null
+          total_rows: number
+          unmatched_rows: number
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          duplicate_rows?: number
+          file_hash?: string | null
+          file_name: string
+          id?: string
+          imported_rows?: number
+          matched_rows?: number
+          notes?: string | null
+          platform: Database["public"]["Enums"]["external_pass_platform"]
+          raw_columns?: Json | null
+          reference_period?: string | null
+          total_amount?: number | null
+          total_rows?: number
+          unmatched_rows?: number
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          duplicate_rows?: number
+          file_hash?: string | null
+          file_name?: string
+          id?: string
+          imported_rows?: number
+          matched_rows?: number
+          notes?: string | null
+          platform?: Database["public"]["Enums"]["external_pass_platform"]
+          raw_columns?: Json | null
+          reference_period?: string | null
+          total_amount?: number | null
+          total_rows?: number
+          unmatched_rows?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_pass_imports_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
             referencedColumns: ["id"]
           },
         ]
@@ -2879,6 +3074,12 @@ export type Database = {
         | "student"
         | "station"
         | "master_admin"
+      appointment_origin:
+        | "particular"
+        | "gympass"
+        | "totalpass"
+        | "classpass"
+        | "outro"
       appointment_status:
         | "scheduled"
         | "checked_in"
@@ -2887,6 +3088,7 @@ export type Database = {
         | "no_show"
         | "cancelled"
       billing_cycle: "monthly" | "yearly"
+      external_pass_platform: "gympass" | "totalpass" | "classpass" | "outro"
       invite_status: "pending" | "accepted" | "revoked"
       live_session_status:
         | "scheduled"
@@ -3042,6 +3244,13 @@ export const Constants = {
         "station",
         "master_admin",
       ],
+      appointment_origin: [
+        "particular",
+        "gympass",
+        "totalpass",
+        "classpass",
+        "outro",
+      ],
       appointment_status: [
         "scheduled",
         "checked_in",
@@ -3051,6 +3260,7 @@ export const Constants = {
         "cancelled",
       ],
       billing_cycle: ["monthly", "yearly"],
+      external_pass_platform: ["gympass", "totalpass", "classpass", "outro"],
       invite_status: ["pending", "accepted", "revoked"],
       live_session_status: [
         "scheduled",
