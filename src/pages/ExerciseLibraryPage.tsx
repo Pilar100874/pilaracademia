@@ -605,6 +605,7 @@ export default function ExerciseLibraryPage() {
         const { data: pub } = supabase.storage
           .from('exercise-videos')
           .getPublicUrl(path);
+        const optimizedAt = hasWebmUrl(pub.publicUrl) || toUpload === file ? new Date().toISOString() : null;
 
         await createExercise.mutateAsync({
           name: generateUniqueName(baseName, usedNames),
@@ -613,7 +614,7 @@ export default function ExerciseLibraryPage() {
           image_urls: [],
           video_type: 'upload',
           video_url: pub.publicUrl,
-          video_optimized_at: hasWebmUrl(pub.publicUrl) ? new Date().toISOString() : null,
+          video_optimized_at: optimizedAt,
           video_start_seconds: 0,
           video_end_seconds: null,
           category_id: targetCategoryId,
@@ -670,6 +671,11 @@ export default function ExerciseLibraryPage() {
 
         const compressed = await compressVideoFile(inputFile);
         if (compressed === inputFile || compressed.size >= origSize) {
+          const checkedAt = new Date().toISOString();
+          await supabase
+            .from('exercise_library')
+            .update({ video_optimized_at: checkedAt } as never)
+            .eq('id', ex.id);
           setRecompressing((p) => (p ? { ...p, done: p.done + 1 } : p));
           continue;
         }
