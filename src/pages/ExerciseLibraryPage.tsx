@@ -1048,10 +1048,11 @@ export default function ExerciseLibraryPage() {
 
         // Build flat list of categories for quick-pick pills
         const categoryOptions = [
-          { id: null as string | null, name: 'Sem categoria' },
-          ...orderedCategories.map(({ cat, depth }) => ({
+          { id: null as string | null, name: 'Sem categoria', parentId: null as string | null },
+          ...orderedCategories.map(({ cat }) => ({
             id: cat.id as string | null,
-            name: depth > 0 ? `${'— '.repeat(depth)}${cat.name}` : cat.name,
+            name: cat.name,
+            parentId: cat.parent_id ?? null,
           })),
         ];
 
