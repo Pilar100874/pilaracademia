@@ -1118,6 +1118,39 @@ export type Database = {
           },
         ]
       }
+      exercise_library_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          exercise_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          exercise_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          exercise_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_library_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercise_library_categories_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exercise_sequence_items: {
         Row: {
           created_at: string
