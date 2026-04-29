@@ -405,6 +405,7 @@ export default function ImportPassesPage() {
       setMapping({});
       queryClient.invalidateQueries({ queryKey: ['external-pass-imports'] });
       queryClient.invalidateQueries({ queryKey: ['epc-dedupe-keys'] });
+      queryClient.invalidateQueries({ queryKey: ['student-external-identities'] });
     },
     onError: (e: Error) => toast.error(`Erro ao importar: ${e.message}`),
   });
