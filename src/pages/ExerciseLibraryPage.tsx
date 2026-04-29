@@ -27,6 +27,7 @@ import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
 import { getStorageStatus } from '@/lib/videoCache';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
+import { compressVideoFile } from '@/lib/compressVideo';
 import {
   Dialog,
   DialogContent,
