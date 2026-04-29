@@ -201,6 +201,13 @@ export function VideoPreviewDialog({
           );
         })()}
 
+        <AnalysisOverlay
+          body={bodyAnalysis}
+          aesthetic={aestheticAnalysis}
+          mobility={mobilityAnalysis}
+          positionClass="top-20"
+        />
+
         {showNav && (
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4 pb-safe">
             <button
