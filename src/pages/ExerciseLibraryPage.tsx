@@ -816,6 +816,25 @@ export default function ExerciseLibraryPage() {
               <Button
                 variant="outline"
                 size="sm"
+                disabled={!!recompressing || !!bulkUploading}
+                onClick={handleRecompressExisting}
+                title="Recomprimir vídeos existentes para carregarem mais rápido"
+              >
+                {recompressing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    {recompressing.done}/{recompressing.total}
+                  </>
+                ) : (
+                  <>
+                    <VideoIconLucide className="h-4 w-4 mr-1" />
+                    Otimizar
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   setIgUrl('');
                   setIgNamePrefix('');
