@@ -74,7 +74,7 @@ export function SelectExerciseDialog({
     } else if (filterCategory !== ALL_CATEGORIES) {
       matchesCategory = ex.category_id === filterCategory;
     }
-    const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, bodyFilter);
+    const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, ex.mobility_analysis, bodyFilter);
     return matchesSearch && matchesCategory && matchesBody;
   });
 
