@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 export interface VideoPreviewCategoryOption {
   id: string | null; // null = sem categoria
   name: string;
+  parentId?: string | null;
 }
 
 interface VideoPreviewDialogProps {
