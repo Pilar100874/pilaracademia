@@ -163,7 +163,7 @@ export function VideoPreviewDialog({
                 <div className="flex gap-2 overflow-x-auto pb-1 px-1 scrollbar-thin">
                   {parents.map(renderPill)}
                 </div>
-                {[...activeParents].map((pid) => {
+                {parentsWithChildren.map((pid) => {
                   const subs = childrenByParent.get(pid) ?? [];
                   if (subs.length === 0) return null;
                   const parentName =
