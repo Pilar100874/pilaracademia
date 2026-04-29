@@ -644,7 +644,7 @@ export default function ExerciseLibraryPage() {
   ) => {
     if (!user) return;
     const candidates = list.filter(
-      (ex) => ex.video_type === 'upload' && !!ex.video_url
+      (ex) => ex.video_type === 'upload' && !!ex.video_url && !isUploadVideoOptimized(ex)
     );
     if (candidates.length === 0) {
       if (!opts.silent) toast.info('Nenhum vídeo para otimizar');
@@ -689,7 +689,7 @@ export default function ExerciseLibraryPage() {
 
         const { error: updErr } = await supabase
           .from('exercise_library')
-          .update({ video_url: pub.publicUrl })
+          .update({ video_url: pub.publicUrl, video_optimized_at: new Date().toISOString() } as any)
           .eq('id', ex.id);
         if (updErr) throw updErr;
 
