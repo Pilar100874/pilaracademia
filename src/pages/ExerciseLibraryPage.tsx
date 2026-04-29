@@ -27,6 +27,7 @@ import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
 import { getStorageStatus } from '@/lib/videoCache';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
+import { compressVideoFile } from '@/lib/compressVideo';
 import {
   Dialog,
   DialogContent,
@@ -37,7 +38,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2, CheckSquare, X, FolderInput, Pencil, FolderPlus, Instagram, KeyRound, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2, CheckSquare, X, FolderInput, Pencil, FolderPlus, Instagram, KeyRound, ExternalLink, CheckCircle2, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -63,6 +64,7 @@ export default function ExerciseLibraryPage() {
   const [videoPreview, setVideoPreview] = useState<LibraryExercise | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
   const [bulkUploading, setBulkUploading] = useState<{ done: number; total: number } | null>(null);
+  const [recompressing, setRecompressing] = useState<{ done: number; total: number; saved: number } | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
   const [bulkCategoryChoice, setBulkCategoryChoice] = useState<string>(NO_CATEGORY);
   const [newBulkCategoryName, setNewBulkCategoryName] = useState('');
@@ -560,11 +562,20 @@ export default function ExerciseLibraryPage() {
           continue;
         }
 
-        const ext = file.name.split('.').pop() || 'mp4';
+        // Compress to ~720p WebM in the browser before upload. Falls back
+        // to the original file if the browser can't transcode.
+        let toUpload: File = file;
+        try {
+          toUpload = await compressVideoFile(file);
+        } catch {
+          toUpload = file;
+        }
+
+        const ext = (toUpload.name.split('.').pop() || 'mp4').toLowerCase();
         const path = `${user.id}/${Date.now()}-${i}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from('exercise-videos')
-          .upload(path, file, { contentType: file.type, upsert: false });
+          .upload(path, toUpload, { contentType: toUpload.type || file.type, upsert: false });
         if (upErr) throw upErr;
 
         const { data: pub } = supabase.storage
@@ -594,6 +605,109 @@ export default function ExerciseLibraryPage() {
     setBulkUploading(null);
     if (successCount > 0) {
       toast.success(`${successCount} exercício(s) criado(s)`);
+    }
+  };
+
+  /**
+   * Reprocesses existing 'upload' videos in the current filter:
+   * downloads each video, re-encodes to 720p WebM in the browser, replaces
+   * the storage object, and updates the exercise's video_url. Skips videos
+   * that don't actually shrink.
+   */
+  const handleRecompressExisting = async () => {
+    if (!user) {
+      toast.error('Faça login');
+      return;
+    }
+    const candidates = filteredExercises.filter(
+      (ex) => ex.video_type === 'upload' && !!ex.video_url
+    );
+    if (candidates.length === 0) {
+      toast.info('Nenhum vídeo enviado nesta visão');
+      return;
+    }
+    const ok = window.confirm(
+      `Recomprimir ${candidates.length} vídeo(s)?\n\n` +
+        'Cada vídeo será baixado, re-codificado para 720p e re-enviado. ' +
+        'Pode levar alguns minutos. Mantenha esta aba aberta.'
+    );
+    if (!ok) return;
+
+    setRecompressing({ done: 0, total: candidates.length, saved: 0 });
+    let savedBytes = 0;
+    let successCount = 0;
+
+    for (let i = 0; i < candidates.length; i++) {
+      const ex = candidates[i];
+      try {
+        const url = ex.video_url!;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('download failed');
+        const blob = await res.blob();
+        const origSize = blob.size;
+        const origName = url.split('/').pop()?.split('?')[0] || `video-${i}.mp4`;
+        const inputFile = new File([blob], origName, {
+          type: blob.type || 'video/mp4',
+        });
+
+        const compressed = await compressVideoFile(inputFile);
+        if (compressed === inputFile || compressed.size >= origSize) {
+          // No gain — skip
+          setRecompressing((p) =>
+            p ? { ...p, done: p.done + 1 } : p
+          );
+          continue;
+        }
+
+        const path = `${user.id}/${Date.now()}-rc-${i}.webm`;
+        const { error: upErr } = await supabase.storage
+          .from('exercise-videos')
+          .upload(path, compressed, {
+            contentType: 'video/webm',
+            upsert: false,
+          });
+        if (upErr) throw upErr;
+
+        const { data: pub } = supabase.storage
+          .from('exercise-videos')
+          .getPublicUrl(path);
+
+        const { error: updErr } = await supabase
+          .from('exercise_library')
+          .update({ video_url: pub.publicUrl })
+          .eq('id', ex.id);
+        if (updErr) throw updErr;
+
+        // Best-effort delete of the old object
+        try {
+          const marker = '/exercise-videos/';
+          const idx = url.indexOf(marker);
+          if (idx >= 0) {
+            const oldPath = url.substring(idx + marker.length).split('?')[0];
+            await supabase.storage.from('exercise-videos').remove([oldPath]);
+          }
+        } catch {
+          // ignore — orphan cleanup
+        }
+
+        savedBytes += origSize - compressed.size;
+        successCount++;
+      } catch (err) {
+        console.error('Recompress error', err);
+      } finally {
+        setRecompressing((p) =>
+          p ? { ...p, done: p.done + 1, saved: savedBytes } : p
+        );
+      }
+    }
+
+    setRecompressing(null);
+    queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+    if (successCount > 0) {
+      const mb = (savedBytes / (1024 * 1024)).toFixed(1);
+      toast.success(`${successCount} vídeo(s) recomprimido(s) — ${mb} MB economizado(s)`);
+    } else {
+      toast.info('Nenhum vídeo precisou ser recomprimido');
     }
   };
 
@@ -696,6 +810,25 @@ export default function ExerciseLibraryPage() {
                   <>
                     <Upload className="h-4 w-4 mr-1" />
                     Vídeos
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!!recompressing || !!bulkUploading}
+                onClick={handleRecompressExisting}
+                title="Recomprimir vídeos existentes para carregarem mais rápido"
+              >
+                {recompressing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    {recompressing.done}/{recompressing.total}
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 mr-1" />
+                    Otimizar
                   </>
                 )}
               </Button>
@@ -846,6 +979,28 @@ export default function ExerciseLibraryPage() {
             </div>
             <Progress
               value={(bulkUploading.done / Math.max(bulkUploading.total, 1)) * 100}
+              className="h-2"
+            />
+          </div>
+        )}
+        {recompressing && (
+          <div className="px-4 pb-3 space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium flex items-center gap-1.5">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Otimizando vídeos... {recompressing.done}/{recompressing.total}
+                {recompressing.saved > 0 && (
+                  <span className="text-muted-foreground ml-1">
+                    (-{(recompressing.saved / (1024 * 1024)).toFixed(1)} MB)
+                  </span>
+                )}
+              </span>
+              <span className="text-muted-foreground tabular-nums">
+                {Math.round((recompressing.done / Math.max(recompressing.total, 1)) * 100)}%
+              </span>
+            </div>
+            <Progress
+              value={(recompressing.done / Math.max(recompressing.total, 1)) * 100}
               className="h-2"
             />
           </div>
