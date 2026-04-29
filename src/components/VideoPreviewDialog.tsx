@@ -1,7 +1,12 @@
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { useEffect } from 'react';
+
+export interface VideoPreviewCategoryOption {
+  id: string | null; // null = sem categoria
+  name: string;
+}
 
 interface VideoPreviewDialogProps {
   open: boolean;
@@ -16,6 +21,12 @@ interface VideoPreviewDialogProps {
   hasPrev?: boolean;
   hasNext?: boolean;
   position?: { current: number; total: number };
+  /** Categoria atualmente selecionada para o exercício em exibição */
+  currentCategoryId?: string | null;
+  /** Lista de categorias disponíveis para escolha rápida */
+  categoryOptions?: VideoPreviewCategoryOption[];
+  /** Handler chamado ao clicar em uma categoria. Após salvar, o caller deve avançar para o próximo. */
+  onSelectCategory?: (categoryId: string | null) => void;
 }
 
 /**
