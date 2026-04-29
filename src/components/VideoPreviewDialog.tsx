@@ -117,16 +117,11 @@ export function VideoPreviewDialog({
             }
           });
 
-          // Show subcategory rows for every parent that is either:
-          //  - currently selected, OR
-          //  - the parent of any currently selected subcategory
-          const activeParents = new Set<string>();
-          for (const opt of categoryOptions) {
-            if (selected.has(opt.id)) {
-              if (opt.parentId) activeParents.add(opt.parentId);
-              else if (childrenByParent.has(opt.id)) activeParents.add(opt.id);
-            }
-          }
+          // Show subcategory rows for ALL parents that have children,
+          // so the user can classify into any subcategory without selecting the parent first.
+          const parentsWithChildren = parents
+            .map((p) => p.id)
+            .filter((pid) => (childrenByParent.get(pid)?.length ?? 0) > 0);
 
           const renderPill = (opt: VideoPreviewCategoryOption) => {
             const active = selected.has(opt.id);
@@ -168,7 +163,7 @@ export function VideoPreviewDialog({
                 <div className="flex gap-2 overflow-x-auto pb-1 px-1 scrollbar-thin">
                   {parents.map(renderPill)}
                 </div>
-                {[...activeParents].map((pid) => {
+                {parentsWithChildren.map((pid) => {
                   const subs = childrenByParent.get(pid) ?? [];
                   if (subs.length === 0) return null;
                   const parentName =
