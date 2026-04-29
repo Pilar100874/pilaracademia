@@ -48,6 +48,7 @@ export function SelectExerciseDialog({
   const { categories } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
+  const [bodyFilter, setBodyFilter] = useState<BodyAnalysisFilterValue>(EMPTY_BODY_FILTER);
   // Ordered list of selected exercise ids — defines insertion order
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [zoomImages, setZoomImages] = useState<string[]>([]);
