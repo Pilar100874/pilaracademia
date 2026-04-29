@@ -158,6 +158,23 @@ export default function ImportPassesPage() {
     enabled: !!activeClinicId,
   });
 
+  // Identidades externas já vinculadas — match instantâneo por external_user_id / e-mail / documento
+  const { data: externalIdentities = [] } = useQuery({
+    queryKey: ['student-external-identities', activeClinicId, platform],
+    queryFn: async () => {
+      if (!activeClinicId) return [];
+      const { data, error } = await supabase
+        .from('student_external_identities')
+        .select('student_id, external_user_id, external_email, external_document')
+        .eq('clinic_id', activeClinicId)
+        .eq('platform', platform)
+        .eq('active', true);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!activeClinicId,
+  });
+
   const { data: imports = [] } = useQuery({
     queryKey: ['external-pass-imports', activeClinicId],
     queryFn: async () => {
