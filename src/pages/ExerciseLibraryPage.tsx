@@ -62,6 +62,24 @@ export default function ExerciseLibraryPage() {
   const { user } = useAuth();
   const { exercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise, toggleExerciseCategory } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
+
+  // Realtime: sincroniza alterações da biblioteca de exercícios entre dispositivos/abas
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('exercise-library-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'exercise_library', filter: `user_id=eq.${user.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['exercise-library', user.id] });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [dialogOpen, setDialogOpen] = useState(false);
