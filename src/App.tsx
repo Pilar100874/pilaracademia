@@ -132,6 +132,7 @@ function AppRoutes() {
         <Route path="relatorios" element={<ReportsPage />} />
         <Route path="billing" element={<BillingPage />} />
         <Route path="importar" element={<ImportPassesPage />} />
+        <Route path="conciliar" element={<ReconcileCheckinsPage />} />
       </Route>
 
       {/* Master admin panel */}
