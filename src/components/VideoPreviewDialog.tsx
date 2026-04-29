@@ -62,6 +62,9 @@ export function VideoPreviewDialog({
   currentCategoryIds,
   categoryOptions,
   onToggleCategory,
+  bodyAnalysis,
+  aestheticAnalysis,
+  mobilityAnalysis,
 }: VideoPreviewDialogProps) {
   useEffect(() => {
     if (!open) return;
