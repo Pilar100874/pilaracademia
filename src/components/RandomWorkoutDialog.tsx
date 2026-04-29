@@ -105,7 +105,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     const n = parseInt(count, 10);
     if (!name.trim()) return toast.error('Dê um nome para o treino');
     if (!n || n < 1) return toast.error('Quantidade inválida');
-    if (bodyKeys.size === 0 && aestheticKeys.size === 0) {
+    if (bodyKeys.size === 0 && aestheticKeys.size === 0 && mobilityKeys.size === 0) {
       return toast.error('Selecione ao menos uma classificação');
     }
     if (!pool.length) return toast.error('Nenhum exercício corresponde à classificação selecionada. Aguarde a análise dos vídeos terminar ou diminua o % mínimo.');
