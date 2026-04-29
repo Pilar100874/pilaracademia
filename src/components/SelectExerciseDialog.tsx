@@ -94,6 +94,7 @@ export function SelectExerciseDialog({
     setSelectedIds([]);
     setSearch('');
     setFilterCategory(ALL_CATEGORIES);
+    setBodyFilter(EMPTY_BODY_FILTER);
 
     (async () => {
       try {
