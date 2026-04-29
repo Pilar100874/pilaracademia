@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ClinicPageHeader } from '@/components/clinic/ClinicPageHeader';
 import { PageMotion } from '@/components/PageMotion';
-import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Trash2, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Trash2, X, FileUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -150,10 +150,10 @@ export default function ImportPassesPage() {
       if (!activeClinicId) return [];
       const { data, error } = await supabase
         .from('clinic_students')
-        .select('id, name, email, document_number')
+        .select('id, full_name, email')
         .eq('clinic_id', activeClinicId);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []).map((s) => ({ id: s.id, name: s.full_name, email: s.email }));
     },
     enabled: !!activeClinicId,
   });
@@ -221,7 +221,6 @@ export default function ImportPassesPage() {
     const studentByName = new Map<string, string>();
     students.forEach((s) => {
       if (s.email) studentByEmail.set(normalize(s.email), s.id);
-      if (s.document_number) studentByDoc.set(String(s.document_number).replace(/\D/g, ''), s.id);
       if (s.name) studentByName.set(normalize(s.name), s.id);
     });
 
@@ -328,7 +327,7 @@ export default function ImportPassesPage() {
           checkin_at: p.checkin_at!.toISOString(),
           amount: p.amount,
           payment_status: p.payment_status,
-          raw_row: p.raw,
+          raw_row: p.raw as Record<string, unknown> as never,
           dedupe_key: p.dedupe_key,
         }));
         const { error } = await supabase.from('external_pass_checkins').insert(batch);
@@ -377,7 +376,7 @@ export default function ImportPassesPage() {
   return (
     <PageMotion>
       <div className="container mx-auto px-4 py-6 max-w-5xl">
-        <ClinicPageHeader title="Importar check-ins" subtitle="Gympass · TotalPass · ClassPass — sincronize as planilhas mensais" />
+        <ClinicPageHeader icon={FileUp} title="Importar check-ins" subtitle="Gympass · TotalPass · ClassPass — sincronize as planilhas mensais" />
 
         <Card className="p-6 mb-6">
           <div className="grid sm:grid-cols-[200px_1fr] gap-4 items-end">
