@@ -34,6 +34,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   const [minPercent, setMinPercent] = useState('20');
   const [bodyKeys, setBodyKeys] = useState<Set<BodyAnalysisKey>>(new Set());
   const [aestheticKeys, setAestheticKeys] = useState<Set<AestheticAnalysisKey>>(new Set());
+  const [mobilityKeys, setMobilityKeys] = useState<Set<MobilityAnalysisKey>>(new Set());
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [generating, setGenerating] = useState(false);
 
