@@ -1045,6 +1045,33 @@ export default function ExerciseLibraryPage() {
           const next = videoList[currentIndex + delta];
           if (next) setVideoPreview(next);
         };
+
+        // Build flat list of categories for quick-pick pills
+        const categoryOptions = [
+          { id: null as string | null, name: 'Sem categoria' },
+          ...orderedCategories.map(({ cat, depth }) => ({
+            id: cat.id as string | null,
+            name: depth > 0 ? `${'— '.repeat(depth)}${cat.name}` : cat.name,
+          })),
+        ];
+
+        const handleSelectCategory = async (categoryId: string | null) => {
+          if (!videoPreview) return;
+          const previewing = videoPreview;
+          // Pre-advance to next video for snappy UX (don't wait for the mutation)
+          const nextEx = videoList[currentIndex + 1];
+          if (nextEx) setVideoPreview(nextEx);
+          try {
+            await updateExercise.mutateAsync({
+              id: previewing.id,
+              category_id: categoryId,
+            });
+          } catch {
+            // toast handled by hook; revert preview if no advance happened
+            if (!nextEx) setVideoPreview(previewing);
+          }
+        };
+
         return (
           <VideoPreviewDialog
             open={!!videoPreview}
@@ -1063,6 +1090,9 @@ export default function ExerciseLibraryPage() {
                 ? { current: currentIndex + 1, total: videoList.length }
                 : undefined
             }
+            currentCategoryId={videoPreview?.category_id ?? null}
+            categoryOptions={categoryOptions}
+            onSelectCategory={handleSelectCategory}
           />
         );
       })()}
