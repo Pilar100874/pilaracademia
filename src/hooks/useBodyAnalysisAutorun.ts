@@ -80,7 +80,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
             },
           });
           if (error) throw error;
-          if (!data?.body_analysis || !data?.aesthetic_analysis) {
+          if (!data?.body_analysis || !data?.aesthetic_analysis || !data?.mobility_analysis) {
             throw new Error('resposta inválida');
           }
           const analyzedAt = new Date().toISOString();
@@ -89,6 +89,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
             .update({
               body_analysis: data.body_analysis,
               aesthetic_analysis: data.aesthetic_analysis,
+              mobility_analysis: data.mobility_analysis,
               body_analyzed_at: analyzedAt,
             } as never)
             .eq('id', ex.id);
@@ -105,6 +106,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
                       ...e,
                       body_analysis: data.body_analysis,
                       aesthetic_analysis: data.aesthetic_analysis,
+                      mobility_analysis: data.mobility_analysis,
                       body_analyzed_at: analyzedAt,
                     }
                   : e
