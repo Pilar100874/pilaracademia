@@ -38,7 +38,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2, CheckSquare, X, FolderInput, Pencil, FolderPlus, Instagram, KeyRound, ExternalLink, CheckCircle2, Zap } from 'lucide-react';
+import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2, CheckSquare, X, FolderInput, Pencil, FolderPlus, Instagram, KeyRound, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -502,6 +502,22 @@ export default function ExerciseLibraryPage() {
         failed: partial.length,
         categoryId: targetCategoryId,
       });
+
+      // Auto-otimiza os vídeos recém-importados em background (re-codifica
+      // para 720p WebM no navegador para carregarem mais rápido).
+      const createdList = Array.isArray(data?.created) ? data.created : [];
+      if (createdList.length > 0) {
+        const toCompress: LibraryExercise[] = createdList.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          video_type: 'upload',
+          video_url: c.video_url,
+        } as LibraryExercise));
+        // Don't await — let it run in background while the user continues
+        recompressExercises(toCompress, { silent: true }).catch((err) =>
+          console.error('Auto-compress after IG import failed', err)
+        );
+      }
     } catch (e) {
       clearInterval(progressTimer);
       console.error(e);
@@ -609,29 +625,22 @@ export default function ExerciseLibraryPage() {
   };
 
   /**
-   * Reprocesses existing 'upload' videos in the current filter:
-   * downloads each video, re-encodes to 720p WebM in the browser, replaces
-   * the storage object, and updates the exercise's video_url. Skips videos
-   * that don't actually shrink.
+   * Re-encodes a list of 'upload' exercises in-browser to 720p WebM and
+   * replaces the storage object + video_url. Used automatically after
+   * Instagram imports (since the edge function uploads the original MP4).
    */
-  const handleRecompressExisting = async () => {
-    if (!user) {
-      toast.error('Faça login');
-      return;
-    }
-    const candidates = filteredExercises.filter(
+  const recompressExercises = async (
+    list: LibraryExercise[],
+    opts: { silent?: boolean } = {}
+  ) => {
+    if (!user) return;
+    const candidates = list.filter(
       (ex) => ex.video_type === 'upload' && !!ex.video_url
     );
     if (candidates.length === 0) {
-      toast.info('Nenhum vídeo enviado nesta visão');
+      if (!opts.silent) toast.info('Nenhum vídeo para otimizar');
       return;
     }
-    const ok = window.confirm(
-      `Recomprimir ${candidates.length} vídeo(s)?\n\n` +
-        'Cada vídeo será baixado, re-codificado para 720p e re-enviado. ' +
-        'Pode levar alguns minutos. Mantenha esta aba aberta.'
-    );
-    if (!ok) return;
 
     setRecompressing({ done: 0, total: candidates.length, saved: 0 });
     let savedBytes = 0;
@@ -652,10 +661,7 @@ export default function ExerciseLibraryPage() {
 
         const compressed = await compressVideoFile(inputFile);
         if (compressed === inputFile || compressed.size >= origSize) {
-          // No gain — skip
-          setRecompressing((p) =>
-            p ? { ...p, done: p.done + 1 } : p
-          );
+          setRecompressing((p) => (p ? { ...p, done: p.done + 1 } : p));
           continue;
         }
 
@@ -703,11 +709,9 @@ export default function ExerciseLibraryPage() {
 
     setRecompressing(null);
     queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
-    if (successCount > 0) {
+    if (!opts.silent && successCount > 0) {
       const mb = (savedBytes / (1024 * 1024)).toFixed(1);
-      toast.success(`${successCount} vídeo(s) recomprimido(s) — ${mb} MB economizado(s)`);
-    } else {
-      toast.info('Nenhum vídeo precisou ser recomprimido');
+      toast.success(`${successCount} vídeo(s) otimizado(s) — ${mb} MB economizado(s)`);
     }
   };
 
@@ -810,25 +814,6 @@ export default function ExerciseLibraryPage() {
                   <>
                     <Upload className="h-4 w-4 mr-1" />
                     Vídeos
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!!recompressing || !!bulkUploading}
-                onClick={handleRecompressExisting}
-                title="Recomprimir vídeos existentes para carregarem mais rápido"
-              >
-                {recompressing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                    {recompressing.done}/{recompressing.total}
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4 mr-1" />
-                    Otimizar
                   </>
                 )}
               </Button>
