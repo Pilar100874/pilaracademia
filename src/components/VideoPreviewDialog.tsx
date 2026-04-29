@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { useEffect } from 'react';
 
 export interface VideoPreviewCategoryOption {
-  id: string | null; // null = sem categoria
+  id: string; // category id (no "no category" option in multi-mode)
   name: string;
   parentId?: string | null;
 }
@@ -22,17 +22,24 @@ interface VideoPreviewDialogProps {
   hasPrev?: boolean;
   hasNext?: boolean;
   position?: { current: number; total: number };
-  /** Categoria atualmente selecionada para o exercício em exibição */
-  currentCategoryId?: string | null;
-  /** Lista de categorias disponíveis para escolha rápida */
+  /** Categorias atualmente atribuídas (multi). */
+  currentCategoryIds?: string[];
+  /** Lista achatada de categorias disponíveis. */
   categoryOptions?: VideoPreviewCategoryOption[];
-  /** Handler chamado ao clicar em uma categoria. Após salvar, o caller deve avançar para o próximo. */
-  onSelectCategory?: (categoryId: string | null) => void;
+  /**
+   * Toggle de uma categoria. NÃO avança automaticamente — a navegação acontece
+   * apenas pelos botões prev/next ou setas do teclado.
+   */
+  onToggleCategory?: (categoryId: string, checked: boolean) => void;
 }
 
 /**
  * Full-screen video preview dialog with floating title and large close button.
- * Optionally supports prev/next navigation between videos.
+ * Supports prev/next navigation and a multi-category quick-picker:
+ *  - Clicking a parent toggles it AND reveals/hides its children inline.
+ *  - Clicking a child toggles only that child.
+ *  - Subcategory groups for ALL currently selected parents are shown so the
+ *    user can fine-tune across multiple parents at once.
  */
 export function VideoPreviewDialog({
   open,
@@ -47,9 +54,9 @@ export function VideoPreviewDialog({
   hasPrev,
   hasNext,
   position,
-  currentCategoryId,
+  currentCategoryIds,
   categoryOptions,
-  onSelectCategory,
+  onToggleCategory,
 }: VideoPreviewDialogProps) {
   useEffect(() => {
     if (!open) return;
@@ -64,6 +71,7 @@ export function VideoPreviewDialog({
   if (!videoUrl || !videoType) return null;
 
   const showNav = !!(onPrev || onNext);
+  const selected = new Set(currentCategoryIds ?? []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,8 +105,8 @@ export function VideoPreviewDialog({
           </div>
         )}
 
-        {/* Quick category picker — pais na linha 1, subcategorias do pai ativo na linha 2 */}
-        {categoryOptions && categoryOptions.length > 0 && onSelectCategory && (() => {
+        {/* Multi-select quick category picker */}
+        {categoryOptions && categoryOptions.length > 0 && onToggleCategory && (() => {
           const parents = categoryOptions.filter((o) => !o.parentId);
           const childrenByParent = new Map<string, VideoPreviewCategoryOption[]>();
           categoryOptions.forEach((o) => {
@@ -109,27 +117,25 @@ export function VideoPreviewDialog({
             }
           });
 
-          // Determine which parent's children to show:
-          // - If current selection is a child, show that child's parent group
-          // - If current selection is a parent, show its children
-          // - Otherwise, show nothing in the second row
-          const currentOpt = categoryOptions.find(
-            (o) => (o.id ?? null) === (currentCategoryId ?? null)
-          );
-          const activeParentId = currentOpt?.parentId
-            ? currentOpt.parentId
-            : currentOpt?.id && childrenByParent.has(currentOpt.id)
-              ? currentOpt.id
-              : null;
-          const subs = activeParentId ? childrenByParent.get(activeParentId) ?? [] : [];
+          // Show subcategory rows for every parent that is either:
+          //  - currently selected, OR
+          //  - the parent of any currently selected subcategory
+          const activeParents = new Set<string>();
+          for (const opt of categoryOptions) {
+            if (selected.has(opt.id)) {
+              if (opt.parentId) activeParents.add(opt.parentId);
+              else if (childrenByParent.has(opt.id)) activeParents.add(opt.id);
+            }
+          }
 
           const renderPill = (opt: VideoPreviewCategoryOption) => {
-            const active = (opt.id ?? null) === (currentCategoryId ?? null);
+            const active = selected.has(opt.id);
+            const hasChildren = childrenByParent.has(opt.id);
             return (
               <button
-                key={opt.id ?? '__none__'}
+                key={opt.id}
                 type="button"
-                onClick={() => onSelectCategory(opt.id)}
+                onClick={() => onToggleCategory(opt.id, !active)}
                 className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium border backdrop-blur-2xl transition-all active:scale-95 ${
                   active
                     ? 'bg-white text-black border-white shadow-[0_4px_20px_rgba(255,255,255,0.4)]'
@@ -138,6 +144,13 @@ export function VideoPreviewDialog({
               >
                 {active && <Check className="h-3.5 w-3.5 stroke-[3]" />}
                 <span className="whitespace-nowrap">{opt.name}</span>
+                {hasChildren && !opt.parentId && (
+                  <span
+                    className={`text-[10px] leading-none ${active ? 'text-black/60' : 'text-white/50'}`}
+                  >
+                    ▾
+                  </span>
+                )}
               </button>
             );
           };
@@ -150,16 +163,28 @@ export function VideoPreviewDialog({
             >
               <div className="mx-auto max-w-3xl">
                 <p className="text-white/70 text-[11px] font-medium mb-1.5 text-center drop-shadow">
-                  Toque para alterar a categoria e ir para o próximo
+                  Toque para adicionar/remover. Use ◀ ▶ para mudar de vídeo.
                 </p>
                 <div className="flex gap-2 overflow-x-auto pb-1 px-1 scrollbar-thin">
                   {parents.map(renderPill)}
                 </div>
-                {subs.length > 0 && (
-                  <div className="mt-1.5 ml-2 flex gap-2 overflow-x-auto pb-1 px-1 pl-4 scrollbar-thin border-l-2 border-white/20">
-                    {subs.map(renderPill)}
-                  </div>
-                )}
+                {[...activeParents].map((pid) => {
+                  const subs = childrenByParent.get(pid) ?? [];
+                  if (subs.length === 0) return null;
+                  const parentName =
+                    parents.find((p) => p.id === pid)?.name ?? '';
+                  return (
+                    <div
+                      key={pid}
+                      className="mt-1.5 ml-2 flex items-center gap-2 overflow-x-auto pb-1 px-1 pl-3 scrollbar-thin border-l-2 border-white/20"
+                    >
+                      <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/50 font-semibold">
+                        {parentName}
+                      </span>
+                      {subs.map(renderPill)}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );

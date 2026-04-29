@@ -52,7 +52,7 @@ export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { exercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise } = useExerciseLibrary();
+  const { exercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise, toggleExerciseCategory } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
@@ -296,9 +296,10 @@ export default function ExerciseLibraryPage() {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
     let matchesCategory = true;
     if (filterCategory === NO_CATEGORY) {
-      matchesCategory = !ex.category_id;
+      matchesCategory = (ex.category_ids?.length ?? 0) === 0;
     } else if (filterCategory !== ALL_CATEGORIES) {
-      matchesCategory = ex.category_id === filterCategory;
+      // Multi-category: include exercise if it belongs to the selected category
+      matchesCategory = (ex.category_ids ?? []).includes(filterCategory);
     }
     return matchesSearch && matchesCategory;
   });
@@ -1305,32 +1306,20 @@ export default function ExerciseLibraryPage() {
           if (next) setVideoPreview(next);
         };
 
-        // Build flat list of categories for quick-pick pills
-        const categoryOptions = [
-          { id: null as string | null, name: 'Sem categoria', parentId: null as string | null },
-          ...orderedCategories.map(({ cat }) => ({
-            id: cat.id as string | null,
-            name: cat.name,
-            parentId: cat.parent_id ?? null,
-          })),
-        ];
+        // Build flat list of categories for the multi-pick pills (no "no category" option in multi-mode)
+        const categoryOptions = orderedCategories.map(({ cat }) => ({
+          id: cat.id,
+          name: cat.name,
+          parentId: cat.parent_id ?? null,
+        }));
 
-        const handleSelectCategory = async (categoryId: string | null) => {
+        const handleToggleCategory = (categoryId: string, checked: boolean) => {
           if (!videoPreview) return;
-          const previewing = videoPreview;
-          // Pre-advance to next video for snappy UX
-          const nextEx = videoList[currentIndex + 1];
-          if (nextEx) setVideoPreview(nextEx);
-          const { error } = await supabase
-            .from('exercise_library')
-            .update({ category_id: categoryId })
-            .eq('id', previewing.id);
-          if (error) {
-            toast.error('Erro ao atualizar categoria');
-            if (!nextEx) setVideoPreview(previewing);
-            return;
-          }
-          queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+          toggleExerciseCategory.mutate({
+            exerciseId: videoPreview.id,
+            categoryId,
+            checked,
+          });
         };
 
         return (
@@ -1351,9 +1340,13 @@ export default function ExerciseLibraryPage() {
                 ? { current: currentIndex + 1, total: videoList.length }
                 : undefined
             }
-            currentCategoryId={videoPreview?.category_id ?? null}
+            currentCategoryIds={
+              videoPreview
+                ? exercises.find((e) => e.id === videoPreview.id)?.category_ids ?? []
+                : []
+            }
             categoryOptions={categoryOptions}
-            onSelectCategory={handleSelectCategory}
+            onToggleCategory={handleToggleCategory}
           />
         );
       })()}
