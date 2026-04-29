@@ -117,11 +117,21 @@ export function VideoPreviewDialog({
             }
           });
 
-          // Show subcategory rows for ALL parents that have children,
-          // so the user can classify into any subcategory without selecting the parent first.
-          const parentsWithChildren = parents
-            .map((p) => p.id)
-            .filter((pid) => (childrenByParent.get(pid)?.length ?? 0) > 0);
+          // Walk all categories that have children (any depth) so we can render
+          // a sub-row per node — this exposes sub-subcategories too.
+          const nodesWithChildren: { id: string; name: string }[] = [];
+          const collectNodes = (parentId: string | null) => {
+            const list = parentId === null
+              ? parents
+              : (childrenByParent.get(parentId) ?? []);
+            list.forEach((opt) => {
+              if ((childrenByParent.get(opt.id)?.length ?? 0) > 0) {
+                nodesWithChildren.push({ id: opt.id, name: opt.name });
+              }
+              collectNodes(opt.id);
+            });
+          };
+          collectNodes(null);
 
           const renderPill = (opt: VideoPreviewCategoryOption) => {
             const active = selected.has(opt.id);
@@ -163,18 +173,16 @@ export function VideoPreviewDialog({
                 <div className="flex gap-2 overflow-x-auto pb-1 px-1 scrollbar-thin">
                   {parents.map(renderPill)}
                 </div>
-                {parentsWithChildren.map((pid) => {
-                  const subs = childrenByParent.get(pid) ?? [];
+                {nodesWithChildren.map((node) => {
+                  const subs = childrenByParent.get(node.id) ?? [];
                   if (subs.length === 0) return null;
-                  const parentName =
-                    parents.find((p) => p.id === pid)?.name ?? '';
                   return (
                     <div
-                      key={pid}
+                      key={node.id}
                       className="mt-1.5 ml-2 flex items-center gap-2 overflow-x-auto pb-1 px-1 pl-3 scrollbar-thin border-l-2 border-white/20"
                     >
                       <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/50 font-semibold">
-                        {parentName}
+                        {node.name}
                       </span>
                       {subs.map(renderPill)}
                     </div>
