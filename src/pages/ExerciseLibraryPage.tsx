@@ -1459,6 +1459,15 @@ export default function ExerciseLibraryPage() {
             }
             categoryOptions={categoryOptions}
             onToggleCategory={handleToggleCategory}
+            bodyAnalysis={
+              videoPreview ? exercises.find((e) => e.id === videoPreview.id)?.body_analysis ?? null : null
+            }
+            aestheticAnalysis={
+              videoPreview ? exercises.find((e) => e.id === videoPreview.id)?.aesthetic_analysis ?? null : null
+            }
+            mobilityAnalysis={
+              videoPreview ? exercises.find((e) => e.id === videoPreview.id)?.mobility_analysis ?? null : null
+            }
           />
         );
       })()}
