@@ -4,10 +4,11 @@ import { BottomNav } from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWorkoutPlans, WorkoutPlan } from '@/hooks/useWorkoutPlans';
-import { Plus, Dumbbell, Loader2, Library } from 'lucide-react';
+import { Plus, Dumbbell, Loader2, Library, Shuffle } from 'lucide-react';
 import { WorkoutPlanDialog } from '@/components/WorkoutPlanDialog';
 import { WorkoutPlanCard } from '@/components/WorkoutPlanCard';
 import { WorkoutViewerDialog } from '@/components/WorkoutViewerDialog';
+import { RandomWorkoutDialog } from '@/components/RandomWorkoutDialog';
 
 const DAYS_OF_WEEK = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -18,6 +19,7 @@ export function WorkoutsPage() {
   const [editingPlan, setEditingPlan] = useState<WorkoutPlan | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewingPlan, setViewingPlan] = useState<WorkoutPlan | null>(null);
+  const [randomOpen, setRandomOpen] = useState(false);
 
   const handleEdit = (plan: WorkoutPlan) => {
     setEditingPlan(plan);
@@ -55,6 +57,10 @@ export function WorkoutsPage() {
             <Button size="sm" variant="outline" onClick={() => navigate('/exercises')}>
               <Library className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Biblioteca</span>
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setRandomOpen(true)}>
+              <Shuffle className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Aleatório</span>
             </Button>
             <Button size="sm" onClick={() => setDialogOpen(true)}>
               <Plus className="h-4 w-4 sm:mr-1" />
@@ -132,6 +138,11 @@ export function WorkoutsPage() {
         open={dialogOpen}
         onOpenChange={handleCloseDialog}
         editingPlan={editingPlan}
+      />
+
+      <RandomWorkoutDialog
+        open={randomOpen}
+        onOpenChange={setRandomOpen}
       />
 
       {viewingPlan && (
