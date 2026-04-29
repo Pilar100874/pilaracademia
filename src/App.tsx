@@ -36,6 +36,7 @@ import StudentEvolutionPage from "@/pages/clinic/StudentEvolutionPage";
 import ReportsPage from "@/pages/clinic/ReportsPage";
 import BookableSlotsPage from "@/pages/clinic/BookableSlotsPage";
 import BlockedPeriodsPage from "@/pages/clinic/BlockedPeriodsPage";
+import ImportPassesPage from "@/pages/clinic/ImportPassesPage";
 import StationPage from "@/pages/StationPage";
 import MyPilatesPage from "@/pages/MyPilatesPage";
 import BookClassPage from "@/pages/BookClassPage";
@@ -129,6 +130,7 @@ function AppRoutes() {
         <Route path="exercicios" element={<ClinicExerciseLibraryPage />} />
         <Route path="relatorios" element={<ReportsPage />} />
         <Route path="billing" element={<BillingPage />} />
+        <Route path="importar" element={<ImportPassesPage />} />
       </Route>
 
       {/* Master admin panel */}
