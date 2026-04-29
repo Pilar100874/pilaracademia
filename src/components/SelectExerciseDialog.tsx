@@ -114,6 +114,7 @@ export function SelectExerciseDialog({
       setSelectedIds([]);
       setSearch('');
       setFilterCategory(ALL_CATEGORIES);
+      setBodyFilter(EMPTY_BODY_FILTER);
     }
     onOpenChange(isOpen);
   };
