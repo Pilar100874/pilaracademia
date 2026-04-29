@@ -117,11 +117,21 @@ export function VideoPreviewDialog({
             }
           });
 
-          // Show subcategory rows for ALL parents that have children,
-          // so the user can classify into any subcategory without selecting the parent first.
-          const parentsWithChildren = parents
-            .map((p) => p.id)
-            .filter((pid) => (childrenByParent.get(pid)?.length ?? 0) > 0);
+          // Walk all categories that have children (any depth) so we can render
+          // a sub-row per node — this exposes sub-subcategories too.
+          const nodesWithChildren: { id: string; name: string }[] = [];
+          const collectNodes = (parentId: string | null) => {
+            const list = parentId === null
+              ? parents
+              : (childrenByParent.get(parentId) ?? []);
+            list.forEach((opt) => {
+              if ((childrenByParent.get(opt.id)?.length ?? 0) > 0) {
+                nodesWithChildren.push({ id: opt.id, name: opt.name });
+              }
+              collectNodes(opt.id);
+            });
+          };
+          collectNodes(null);
 
           const renderPill = (opt: VideoPreviewCategoryOption) => {
             const active = selected.has(opt.id);
