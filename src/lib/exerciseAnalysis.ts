@@ -108,6 +108,18 @@ const BODY_LABEL_MAP: Record<BodyAnalysisKey, string> = BODY_GROUPS.flatMap((g) 
 
 export const labelForBodyKey = (k: BodyAnalysisKey): string => BODY_LABEL_MAP[k] ?? k;
 
+const AESTHETIC_LABEL_MAP: Record<AestheticAnalysisKey, string> = AESTHETIC_ITEMS.reduce(
+  (acc, it) => ({ ...acc, [it.key]: it.label }),
+  {} as Record<AestheticAnalysisKey, string>
+);
+export const labelForAestheticKey = (k: AestheticAnalysisKey): string => AESTHETIC_LABEL_MAP[k] ?? k;
+
+const MOBILITY_LABEL_MAP: Record<MobilityAnalysisKey, string> = MOBILITY_ITEMS.reduce(
+  (acc, it) => ({ ...acc, [it.key]: it.label }),
+  {} as Record<MobilityAnalysisKey, string>
+);
+export const labelForMobilityKey = (k: MobilityAnalysisKey): string => MOBILITY_LABEL_MAP[k] ?? k;
+
 /** Retorna as N áreas com maior % no body_analysis (ignora valores <= 0). */
 export function topBodyAreas(
   analysis: BodyAnalysis | null | undefined,
@@ -119,4 +131,60 @@ export function topBodyAreas(
     .sort((a, b) => b[1] - a[1])
     .slice(0, n)
     .map(([key, value]) => ({ key, label: labelForBodyKey(key), value }));
+}
+
+/**
+ * Agrega classificações de uma lista de exercícios (somando %) e retorna o top N
+ * para cada dimensão: body, aesthetic, mobility. Usado para resumo de um treino.
+ */
+export function summarizeWorkout(
+  exercises: Array<{
+    body_analysis?: Record<string, number> | null;
+    aesthetic_analysis?: Record<string, number> | null;
+    mobility_analysis?: Record<string, number> | null;
+  }>,
+  n = 3
+) {
+  const accBody: Record<string, number> = {};
+  const accAesth: Record<string, number> = {};
+  const accMob: Record<string, number> = {};
+  let analyzedCount = 0;
+
+  for (const ex of exercises) {
+    const hasAny = ex.body_analysis || ex.aesthetic_analysis || ex.mobility_analysis;
+    if (hasAny) analyzedCount++;
+    if (ex.body_analysis) {
+      for (const [k, v] of Object.entries(ex.body_analysis)) {
+        if (typeof v === 'number' && v > 0) accBody[k] = (accBody[k] ?? 0) + v;
+      }
+    }
+    if (ex.aesthetic_analysis) {
+      for (const [k, v] of Object.entries(ex.aesthetic_analysis)) {
+        if (typeof v === 'number' && v > 0) accAesth[k] = (accAesth[k] ?? 0) + v;
+      }
+    }
+    if (ex.mobility_analysis) {
+      for (const [k, v] of Object.entries(ex.mobility_analysis)) {
+        if (typeof v === 'number' && v > 0) accMob[k] = (accMob[k] ?? 0) + v;
+      }
+    }
+  }
+
+  const denom = Math.max(1, analyzedCount);
+  const pickTop = <T extends string>(
+    acc: Record<string, number>,
+    labelFn: (k: T) => string
+  ) =>
+    Object.entries(acc)
+      .map(([k, sum]) => ({ key: k as T, label: labelFn(k as T), value: Math.round(sum / denom) }))
+      .filter((x) => x.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, n);
+
+  return {
+    analyzedCount,
+    body: pickTop<BodyAnalysisKey>(accBody, labelForBodyKey),
+    aesthetic: pickTop<AestheticAnalysisKey>(accAesth, labelForAestheticKey),
+    mobility: pickTop<MobilityAnalysisKey>(accMob, labelForMobilityKey),
+  };
 }
