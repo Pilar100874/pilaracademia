@@ -1,7 +1,8 @@
 // Edge Function: analyze-exercise-video
-// Recebe a URL de um vídeo de exercício e retorna duas classificações em %:
+// Recebe a URL de um vídeo de exercício e retorna três classificações em %:
 //  - body_analysis: áreas trabalhadas (tronco/core, membros inferiores, membros superiores)
 //  - aesthetic_analysis: análise estética complementar (flacidez, retenção, etc.)
+//  - mobility_analysis: mobilidade e flexibilidade trabalhadas pelo movimento
 // Usa Lovable AI Gateway com Gemini 2.5 Flash + tool calling para output estruturado.
 
 const corsHeaders = {
@@ -41,15 +42,30 @@ const AESTHETIC_KEYS = [
   'definicao_muscular',
 ] as const;
 
-const bodyProperties: Record<string, { type: string; minimum: number; maximum: number; description: string }> = {};
-BODY_KEYS.forEach((k) => {
-  bodyProperties[k] = { type: 'integer', minimum: 0, maximum: 100, description: `Intensidade de trabalho em ${k} (0-100)` };
-});
+const MOBILITY_KEYS = [
+  'mobilidade_quadril',
+  'mobilidade_ombro',
+  'mobilidade_coluna',
+  'mobilidade_tornozelo',
+  'flexibilidade_posterior',
+  'flexibilidade_anterior_coxa',
+  'flexibilidade_adutores',
+  'flexibilidade_peitoral_ombro',
+  'amplitude_articular_geral',
+  'equilibrio_coordenacao',
+] as const;
 
-const aestheticProperties: Record<string, { type: string; minimum: number; maximum: number; description: string }> = {};
-AESTHETIC_KEYS.forEach((k) => {
-  aestheticProperties[k] = { type: 'integer', minimum: 0, maximum: 100, description: `Benefício/contribuição em ${k} (0-100)` };
-});
+const buildProps = (keys: readonly string[], desc: (k: string) => string) => {
+  const props: Record<string, { type: string; minimum: number; maximum: number; description: string }> = {};
+  keys.forEach((k) => {
+    props[k] = { type: 'integer', minimum: 0, maximum: 100, description: desc(k) };
+  });
+  return props;
+};
+
+const bodyProperties = buildProps(BODY_KEYS, (k) => `Intensidade de trabalho em ${k} (0-100)`);
+const aestheticProperties = buildProps(AESTHETIC_KEYS, (k) => `Benefício/contribuição em ${k} (0-100)`);
+const mobilityProperties = buildProps(MOBILITY_KEYS, (k) => `Demanda/benefício de ${k} (0-100)`);
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
@@ -72,7 +88,6 @@ Deno.serve(async (req) => {
     const contentType = videoRes.headers.get('content-type') || 'video/mp4';
     const buffer = new Uint8Array(await videoRes.arrayBuffer());
 
-    // Limita a vídeos razoáveis (~25MB) — vídeos otimizados em WebM ficam bem abaixo disso
     if (buffer.byteLength > 30 * 1024 * 1024) {
       return new Response(JSON.stringify({ error: 'Vídeo muito grande para análise (>30MB)' }), {
         status: 413,
@@ -80,7 +95,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Converte em base64 em chunks para evitar stack overflow
     let binary = '';
     const chunkSize = 0x8000;
     for (let i = 0; i < buffer.length; i += chunkSize) {
@@ -88,13 +102,15 @@ Deno.serve(async (req) => {
     }
     const base64 = btoa(binary);
 
-    const systemPrompt = `Você é um especialista em fisiologia do exercício e estética corporal. Sua tarefa é analisar um vídeo de exercício e classificar:
+    const systemPrompt = `Você é um especialista em fisiologia do exercício, biomecânica e estética corporal. Sua tarefa é analisar um vídeo de exercício e classificar em TRÊS dimensões:
 
-1) Em "body_analysis": para CADA grupo muscular/área da lista, atribua uma intensidade de trabalho de 0 a 100 (em %). 0 = não trabalha aquela área. 100 = trabalho muito intenso/principal. As áreas NÃO precisam somar 100 — cada uma é independente.
+1) "body_analysis": para CADA grupo muscular/área da lista, atribua uma intensidade de trabalho de 0 a 100 (em %). 0 = não trabalha aquela área. 100 = trabalho muito intenso/principal. As áreas NÃO precisam somar 100 — cada uma é independente.
 
-2) Em "aesthetic_analysis": para CADA item estético da lista, atribua uma porcentagem (0-100) representando o quanto este exercício contribui POSITIVAMENTE para melhorar aquele aspecto estético. 0 = sem benefício. 100 = altamente benéfico para esse aspecto.
+2) "aesthetic_analysis": para CADA item estético da lista, atribua uma porcentagem (0-100) representando o quanto este exercício contribui POSITIVAMENTE para melhorar aquele aspecto estético. 0 = sem benefício. 100 = altamente benéfico.
 
-Seja conservador: só atribua valores altos (>60) para áreas que são claramente o foco principal do movimento. Sempre retorne TODAS as chaves (use 0 quando não se aplica).`;
+3) "mobility_analysis": para CADA item de mobilidade/flexibilidade da lista, atribua uma porcentagem (0-100) representando o quanto este exercício DEMANDA ou DESENVOLVE aquela qualidade. 0 = não envolve aquela mobilidade/flexibilidade. 100 = altamente focado naquele tipo de mobilidade/flexibilidade. Considere amplitude articular, alongamento ativo, controle motor e equilíbrio.
+
+Seja conservador: só atribua valores altos (>60) para aspectos que são claramente o foco principal do movimento. Sempre retorne TODAS as chaves de TODAS as dimensões (use 0 quando não se aplica).`;
 
     const userText = `Analise este vídeo de exercício${exerciseName ? ` chamado "${exerciseName}"` : ''}${
       Array.isArray(categories) && categories.length ? ` (categorias: ${categories.join(', ')})` : ''
@@ -123,7 +139,7 @@ Seja conservador: só atribua valores altos (>60) para áreas que são clarament
             type: 'function',
             function: {
               name: 'classify_exercise',
-              description: 'Retorna as classificações corporal e estética do exercício analisado.',
+              description: 'Retorna as classificações corporal, estética e de mobilidade/flexibilidade do exercício analisado.',
               parameters: {
                 type: 'object',
                 properties: {
@@ -141,8 +157,15 @@ Seja conservador: só atribua valores altos (>60) para áreas que são clarament
                     required: AESTHETIC_KEYS as unknown as string[],
                     additionalProperties: false,
                   },
+                  mobility_analysis: {
+                    type: 'object',
+                    description: 'Mobilidade e flexibilidade trabalhadas pelo movimento (0-100 em cada item).',
+                    properties: mobilityProperties,
+                    required: MOBILITY_KEYS as unknown as string[],
+                    additionalProperties: false,
+                  },
                 },
-                required: ['body_analysis', 'aesthetic_analysis'],
+                required: ['body_analysis', 'aesthetic_analysis', 'mobility_analysis'],
                 additionalProperties: false,
               },
             },
@@ -182,6 +205,7 @@ Seja conservador: só atribua valores altos (>60) para áreas que são clarament
       JSON.stringify({
         body_analysis: parsed.body_analysis,
         aesthetic_analysis: parsed.aesthetic_analysis,
+        mobility_analysis: parsed.mobility_analysis,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
