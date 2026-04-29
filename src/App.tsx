@@ -48,11 +48,9 @@ import MasterExerciseLibraryPage from "@/pages/master/MasterExerciseLibraryPage"
 import MasterSequencesPage from "@/pages/master/MasterSequencesPage";
 import MasterPlansPage from "@/pages/master/MasterPlansPage";
 import MasterSettingsPage from "@/pages/master/MasterSettingsPage";
-import BillingPage from "@/pages/clinic/BillingPage";
 import ClinicExerciseLibraryPage from "@/pages/clinic/ClinicExerciseLibraryPage";
 import PlanClassPage from "@/pages/clinic/PlanClassPage";
 import SharedSequencePage from "@/pages/SharedSequencePage";
-import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { ConfirmProvider } from "@/components/ConfirmProvider";
 import { useMustChangePassword } from "@/hooks/useMustChangePassword";
 import { useUserClinicRole } from "@/hooks/useUserClinicRole";
@@ -130,7 +128,7 @@ function AppRoutes() {
         <Route path="aula" element={<LiveSessionPage />} />
         <Route path="exercicios" element={<ClinicExerciseLibraryPage />} />
         <Route path="relatorios" element={<ReportsPage />} />
-        <Route path="billing" element={<BillingPage />} />
+        
         <Route path="importar" element={<ImportPassesPage />} />
         <Route path="conciliar" element={<ReconcileCheckinsPage />} />
       </Route>
@@ -159,7 +157,6 @@ const App = () => {
         <BrowserRouter>
           <AuthProvider>
             <ConfirmProvider>
-              <PaymentTestModeBanner />
               <ImpersonationBanner />
               <AppRoutes />
               <InstallPrompt />
