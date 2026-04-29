@@ -42,7 +42,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { useMyClinicPermissions } from '@/hooks/useClinicPermissions';
 
 const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
@@ -52,11 +51,7 @@ export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { exercises, isLoading, deleteExercise, createExercise, moveExercises, scope } = useExerciseLibrary();
-  const isGlobalScope = scope.kind === 'global';
-  // Permission gating for clinic scope
-  const { data: myClinicPerms } = useMyClinicPermissions();
-  const canCreateInScope = scope.kind === 'clinic' ? !!myClinicPerms?.can_create_exercises : true;
+  const { exercises, isLoading, deleteExercise, createExercise, moveExercises } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
@@ -606,7 +601,7 @@ export default function ExerciseLibraryPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b">
         <div className="flex items-center gap-3 p-4 flex-wrap">
-          <Button variant="ghost" size="icon" onClick={() => navigate(scope.kind === 'global' ? '/master' : scope.kind === 'clinic' ? '/clinica' : '/workouts')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/workouts')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1 min-w-0">
@@ -728,7 +723,6 @@ export default function ExerciseLibraryPage() {
                 <Instagram className="h-4 w-4 mr-1" />
                 Instagram
               </Button>
-              {canCreateInScope && (
               <Button onClick={() => {
                 setEditingExercise(null);
                 setDialogOpen(true);
@@ -736,7 +730,6 @@ export default function ExerciseLibraryPage() {
                 <Plus className="h-4 w-4 mr-1" />
                 Novo
               </Button>
-              )}
             </>
           )}
           <input
@@ -878,7 +871,7 @@ export default function ExerciseLibraryPage() {
                   : 'Crie seus exercícios para usar nos treinos'}
               </p>
             </div>
-            {!search && filterCategory === ALL_CATEGORIES && canCreateInScope && (
+            {!search && filterCategory === ALL_CATEGORIES && (
               <Button onClick={() => {
                 setEditingExercise(null);
                 setDialogOpen(true);
@@ -980,38 +973,26 @@ export default function ExerciseLibraryPage() {
                       </div>
                     </div>
 
-                    {!selectionMode && (() => {
-                      const canEdit = isGlobalScope ? !!exercise.is_global : !exercise.is_global;
-                      if (!canEdit) {
-                        return (
-                          <div className="flex flex-col -mr-1 -mt-1 shrink-0 items-end">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200" title="Exercício da biblioteca global">
-                              Global
-                            </span>
-                          </div>
-                        );
-                      }
-                      return (
-                        <div className="flex flex-col -mr-1 -mt-1 shrink-0">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            onClick={(e) => { e.stopPropagation(); handleEdit(exercise); }}
-                          >
-                            <Edit className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-destructive hover:text-destructive"
-                            onClick={(e) => { e.stopPropagation(); handleDelete(exercise); }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      );
-                    })()}
+                    {!selectionMode && (
+                      <div className="flex flex-col -mr-1 -mt-1 shrink-0">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={(e) => { e.stopPropagation(); handleEdit(exercise); }}
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={(e) => { e.stopPropagation(); handleDelete(exercise); }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -1534,24 +1515,22 @@ export default function ExerciseLibraryPage() {
                   </div>
                 )}
 
-                {/* Configuração do token Apify — visível apenas no escopo Master (global) */}
-                {isGlobalScope && (
-                  <Collapsible>
-                    <CollapsibleTrigger
-                      className="flex w-full items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
-                      disabled={igImporting}
-                    >
-                      <span className="flex items-center gap-2">
-                        <Settings className="h-4 w-4" />
-                        Configurar token Apify (avançado)
-                      </span>
-                      <ChevronDown className="h-4 w-4" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pt-3">
-                      <ApifySettingsCard />
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
+                {/* Configuração do token Apify dentro do próprio diálogo */}
+                <Collapsible>
+                  <CollapsibleTrigger
+                    className="flex w-full items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
+                    disabled={igImporting}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      Configurar token Apify (avançado)
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-3">
+                    <ApifySettingsCard />
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
 
               {/* Barra de progresso durante o import */}

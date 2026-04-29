@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AuthPage } from "@/pages/AuthPage";
 import { ProfilePage } from "@/pages/ProfilePage";
@@ -13,134 +13,123 @@ import { WorkoutsPage } from "@/pages/WorkoutsPage";
 import ExerciseLibraryPage from "@/pages/ExerciseLibraryPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
-import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { SplashScreen } from "@/components/SplashScreen";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
-import ClinicLayout from "@/pages/clinic/ClinicLayout";
-import ClinicOverviewPage from "@/pages/clinic/ClinicOverviewPage";
-import GradeMasterPage from "@/pages/clinic/GradeMasterPage";
-import StudentsPage from "@/pages/clinic/StudentsPage";
-import StaffPage from "@/pages/clinic/StaffPage";
-import PermissionsPage from "@/pages/clinic/PermissionsPage";
-import RoomsPage from "@/pages/clinic/RoomsPage";
-import EquipmentPage from "@/pages/clinic/EquipmentPage";
-import EquipmentRoomsPage from "@/pages/clinic/EquipmentRoomsPage";
-import GradeEquipmentLinkPage from "@/pages/clinic/GradeEquipmentLinkPage";
-import SkillLevelsPage from "@/pages/clinic/SkillLevelsPage";
-import SequencesPage from "@/pages/clinic/SequencesPage";
-import LiveSessionPage from "@/pages/clinic/LiveSessionPage";
-import CreateClinicPage from "@/pages/clinic/CreateClinicPage";
-import AppointmentsPage from "@/pages/clinic/AppointmentsPage";
-import StudentEvolutionPage from "@/pages/clinic/StudentEvolutionPage";
-import ReportsPage from "@/pages/clinic/ReportsPage";
-import BookableSlotsPage from "@/pages/clinic/BookableSlotsPage";
-import BlockedPeriodsPage from "@/pages/clinic/BlockedPeriodsPage";
-import ImportPassesPage from "@/pages/clinic/ImportPassesPage";
-import ReconcileCheckinsPage from "@/pages/clinic/ReconcileCheckinsPage";
-import StationPage from "@/pages/StationPage";
-import MyPilatesPage from "@/pages/MyPilatesPage";
-import BookClassPage from "@/pages/BookClassPage";
-import OnboardingPage from "@/pages/OnboardingPage";
-import ChangePasswordPage from "@/pages/ChangePasswordPage";
-import MasterPage from "@/pages/master/MasterPage";
-import MasterExerciseLibraryPage from "@/pages/master/MasterExerciseLibraryPage";
-import MasterSequencesPage from "@/pages/master/MasterSequencesPage";
-import MasterPlansPage from "@/pages/master/MasterPlansPage";
-import MasterSettingsPage from "@/pages/master/MasterSettingsPage";
-import ClinicExerciseLibraryPage from "@/pages/clinic/ClinicExerciseLibraryPage";
-import PlanClassPage from "@/pages/clinic/PlanClassPage";
-import SharedSequencePage from "@/pages/SharedSequencePage";
-import { ConfirmProvider } from "@/components/ConfirmProvider";
-import { useMustChangePassword } from "@/hooks/useMustChangePassword";
-import { useUserClinicRole } from "@/hooks/useUserClinicRole";
-
-function HomeRedirect() {
-  const { data, isLoading } = useUserClinicRole();
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center gradient-hero"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  if (data?.isMasterAdmin) return <Navigate to="/master" replace />;
-  if (data?.hasClinicRole) return <Navigate to="/clinica" replace />;
-  return <Dashboard />;
-}
 
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-  const location = useLocation();
-  const { data: mustChange, isLoading: flagLoading } = useMustChangePassword();
-  if (isLoading || flagLoading) return <div className="min-h-screen flex items-center justify-center gradient-hero"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  if (!user) return <Navigate to="/auth" replace state={{ from: location }} />;
-  if (mustChange && window.location.pathname !== '/trocar-senha') return <Navigate to="/trocar-senha" replace />;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center gradient-hero">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
   return <>{children}</>;
 }
 
 function AuthRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-  const location = useLocation();
-  const from = (location.state as { from?: { pathname?: string; search?: string } } | null)?.from;
-  const redirectTo = `${from?.pathname ?? "/"}${from?.search ?? ""}`;
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center gradient-hero"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  if (user) return <Navigate to={redirectTo} replace />;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center gradient-hero">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+
   return <>{children}</>;
 }
 
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public station tablet route */}
-      <Route path="/estacao/:token" element={<StationPage />} />
-      {/* Public shared sequence (link sent via WhatsApp) */}
-      <Route path="/s/:token" element={<SharedSequencePage />} />
-
-      <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
-      <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
-      <Route path="/projections" element={<ProtectedRoute><ProjectionsPage /></ProtectedRoute>} />
-      <Route path="/health" element={<ProtectedRoute><HealthPage /></ProtectedRoute>} />
-      <Route path="/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
-      <Route path="/workouts" element={<ProtectedRoute><WorkoutsPage /></ProtectedRoute>} />
-      <Route path="/exercises" element={<ProtectedRoute><ExerciseLibraryPage /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-      <Route path="/meu-pilates" element={<ProtectedRoute><MyPilatesPage /></ProtectedRoute>} />
-      <Route path="/meu-pilates/agendar" element={<ProtectedRoute><BookClassPage /></ProtectedRoute>} />
-      <Route path="/trocar-senha" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
-
-      {/* Clinic panel */}
-      <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
-      <Route path="/clinica/criar" element={<ProtectedRoute><CreateClinicPage /></ProtectedRoute>} />
-      <Route path="/clinica" element={<ProtectedRoute><ClinicLayout /></ProtectedRoute>}>
-        <Route index element={<GradeMasterPage />} />
-        <Route path="visao" element={<ClinicOverviewPage />} />
-        <Route path="agenda" element={<AppointmentsPage />} />
-        <Route path="grades" element={<BookableSlotsPage />} />
-        <Route path="alunos" element={<StudentsPage />} />
-        <Route path="equipe" element={<StaffPage />} />
-        <Route path="permissoes" element={<PermissionsPage />} />
-        <Route path="salas" element={<RoomsPage />} />
-        <Route path="bloqueios" element={<BlockedPeriodsPage />} />
-        <Route path="evolucao" element={<StudentEvolutionPage />} />
-        <Route path="equipamentos" element={<EquipmentPage />} />
-        <Route path="equipamentos-salas" element={<EquipmentRoomsPage />} />
-        <Route path="grade-equipamentos" element={<GradeEquipmentLinkPage />} />
-        <Route path="niveis" element={<SkillLevelsPage />} />
-        <Route path="sequencias" element={<SequencesPage />} />
-        <Route path="planejar" element={<PlanClassPage />} />
-        <Route path="aula" element={<LiveSessionPage />} />
-        <Route path="exercicios" element={<ClinicExerciseLibraryPage />} />
-        <Route path="relatorios" element={<ReportsPage />} />
-        
-        <Route path="importar" element={<ImportPassesPage />} />
-        <Route path="conciliar" element={<ReconcileCheckinsPage />} />
-      </Route>
-
-      {/* Master admin panel */}
-      <Route path="/master" element={<ProtectedRoute><MasterPage /></ProtectedRoute>} />
-      <Route path="/master/exercicios" element={<ProtectedRoute><MasterExerciseLibraryPage /></ProtectedRoute>} />
-      <Route path="/master/sequencias" element={<ProtectedRoute><MasterSequencesPage /></ProtectedRoute>} />
-      <Route path="/master/planos" element={<ProtectedRoute><MasterPlansPage /></ProtectedRoute>} />
-      <Route path="/master/configuracoes" element={<ProtectedRoute><MasterSettingsPage /></ProtectedRoute>} />
-
-      <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/history"
+        element={
+          <ProtectedRoute>
+            <HistoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projections"
+        element={
+          <ProtectedRoute>
+            <ProjectionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/health"
+        element={
+          <ProtectedRoute>
+            <HealthPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/products"
+        element={
+          <ProtectedRoute>
+            <ProductsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/workouts"
+        element={
+          <ProtectedRoute>
+            <WorkoutsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/exercises"
+        element={
+          <ProtectedRoute>
+            <ExerciseLibraryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/auth"
+        element={
+          <AuthRoute>
+            <AuthPage />
+          </AuthRoute>
+        }
+      />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -156,16 +145,14 @@ const App = () => {
         {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
         <BrowserRouter>
           <AuthProvider>
-            <ConfirmProvider>
-              <ImpersonationBanner />
-              <AppRoutes />
-              <InstallPrompt />
-            </ConfirmProvider>
+            <AppRoutes />
+            <InstallPrompt />
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
 };
+
 
 export default App;

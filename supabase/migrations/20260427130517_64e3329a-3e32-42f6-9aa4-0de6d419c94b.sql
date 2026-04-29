@@ -1,1 +1,0 @@
-ALTER TABLE public.clinic_settings ADD COLUMN IF NOT EXISTS wizard_completed_at TIMESTAMPTZ;

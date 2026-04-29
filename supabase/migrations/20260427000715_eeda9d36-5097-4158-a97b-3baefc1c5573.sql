@@ -1,1 +1,0 @@
-ALTER TABLE public.clinic_equipment ALTER COLUMN equipment_type SET DEFAULT 'other';

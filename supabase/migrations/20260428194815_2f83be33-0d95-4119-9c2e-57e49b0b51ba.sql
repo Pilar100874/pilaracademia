@@ -1,1 +1,0 @@
-UPDATE public.user_security_flags SET must_change_password = false, password_changed_at = now(), updated_at = now() WHERE user_id = 'f9ec691b-5a1f-44f5-9119-9b8b92922600';
