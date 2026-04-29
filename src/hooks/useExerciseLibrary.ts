@@ -170,6 +170,54 @@ export function useExerciseLibrary() {
     onError: () => toast.error('Erro ao mover exercícios'),
   });
 
+  /**
+   * Toggles a single category for an exercise (multi-category support).
+   * If the link exists, removes it; otherwise creates it. Optimistically
+   * updates the cache so the UI feels instant in the full-screen picker.
+   */
+  const toggleExerciseCategory = useMutation({
+    mutationFn: async (vars: { exerciseId: string; categoryId: string; checked: boolean }) => {
+      if (vars.checked) {
+        const { error } = await supabase
+          .from('exercise_library_categories')
+          .insert({ exercise_id: vars.exerciseId, category_id: vars.categoryId });
+        if (error && (error as any).code !== '23505') throw error;
+      } else {
+        const { error } = await supabase
+          .from('exercise_library_categories')
+          .delete()
+          .eq('exercise_id', vars.exerciseId)
+          .eq('category_id', vars.categoryId);
+        if (error) throw error;
+      }
+    },
+    onMutate: async (vars) => {
+      const queryKey = ['exercise-library', user?.id];
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<LibraryExercise[]>(queryKey);
+      queryClient.setQueryData<LibraryExercise[]>(queryKey, (old = []) =>
+        old.map((ex) => {
+          if (ex.id !== vars.exerciseId) return ex;
+          const set = new Set(ex.category_ids);
+          if (vars.checked) set.add(vars.categoryId);
+          else set.delete(vars.categoryId);
+          const next = [...set];
+          return { ...ex, category_ids: next, category_id: next[0] ?? null };
+        })
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(['exercise-library', user?.id], ctx.previous);
+      }
+      toast.error('Erro ao atualizar categoria');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['exercise-library', user?.id] });
+    },
+  });
+
   const uploadExerciseImage = async (file: File): Promise<string> => {
     if (!user) throw new Error('User not authenticated');
 
