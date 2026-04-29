@@ -29,6 +29,7 @@ const baseNavItems = [
   { to: '/clinica/aula', icon: Activity, label: 'Aula' },
   { to: '/clinica/relatorios', icon: BarChart3, label: 'Relatórios' },
   { to: '/clinica/importar', icon: FileUp, label: 'Importar passes', adminOnly: true },
+  { to: '/clinica/conciliar', icon: Link2, label: 'Conciliar', adminOnly: true },
 ];
 
 export default function ClinicLayout() {
