@@ -781,6 +781,12 @@ export default function ExerciseLibraryPage() {
           .eq('id', ex.id);
         if (updErr) throw updErr;
         totalSaved += origSize - compressed.size;
+        // Atualiza o cache local imediatamente — assim, se o usuário fechar a aba,
+        // ao reabrir o vídeo já estará marcado como otimizado (.webm) e não será refeito.
+        queryClient.setQueryData<LibraryExercise[]>(
+          ['exercise-library', user.id],
+          (old) => old?.map((e) => (e.id === ex.id ? { ...e, video_url: pub.publicUrl } : e)) ?? old
+        );
         try {
           const marker = '/exercise-videos/';
           const idx = url.indexOf(marker);
