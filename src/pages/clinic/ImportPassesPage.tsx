@@ -291,7 +291,7 @@ export default function ImportPassesPage() {
         dedupe_key: dedupe,
       };
     });
-  }, [rows, mapping, students, existingKeys]);
+  }, [rows, mapping, students, existingKeys, externalIdentities]);
 
   const stats = useMemo(() => {
     const total = parsed.length;
