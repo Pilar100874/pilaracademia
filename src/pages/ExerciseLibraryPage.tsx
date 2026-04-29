@@ -689,7 +689,7 @@ export default function ExerciseLibraryPage() {
 
         const { error: updErr } = await supabase
           .from('exercise_library')
-          .update({ video_url: pub.publicUrl, video_optimized_at: new Date().toISOString() } as any)
+          .update({ video_url: pub.publicUrl, video_optimized_at: new Date().toISOString() } as never)
           .eq('id', ex.id);
         if (updErr) throw updErr;
 
@@ -778,7 +778,7 @@ export default function ExerciseLibraryPage() {
           const checkedAt = new Date().toISOString();
           const { error: updErr } = await supabase
             .from('exercise_library')
-            .update({ video_optimized_at: checkedAt } as any)
+            .update({ video_optimized_at: checkedAt } as never)
             .eq('id', ex.id);
           if (updErr) throw updErr;
           queryClient.setQueryData<LibraryExercise[]>(
@@ -798,7 +798,7 @@ export default function ExerciseLibraryPage() {
         const optimizedAt = new Date().toISOString();
         const { error: updErr } = await supabase
           .from('exercise_library')
-          .update({ video_url: pub.publicUrl, video_optimized_at: optimizedAt } as any)
+          .update({ video_url: pub.publicUrl, video_optimized_at: optimizedAt } as never)
           .eq('id', ex.id);
         if (updErr) throw updErr;
         totalSaved += origSize - compressed.size;
