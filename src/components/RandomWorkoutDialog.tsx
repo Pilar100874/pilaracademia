@@ -53,14 +53,18 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
       const v = ex.aesthetic_analysis?.[k];
       if (typeof v === 'number' && v >= min) score += v;
     }
+    for (const k of mobilityKeys) {
+      const v = ex.mobility_analysis?.[k];
+      if (typeof v === 'number' && v >= min) score += v;
+    }
     return score;
   };
 
   const pool = useMemo(() => {
-    if (bodyKeys.size === 0 && aestheticKeys.size === 0) return [];
+    if (bodyKeys.size === 0 && aestheticKeys.size === 0 && mobilityKeys.size === 0) return [];
     return exercises.filter((ex) => matchScore(ex) > 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exercises, bodyKeys, aestheticKeys, min]);
+  }, [exercises, bodyKeys, aestheticKeys, mobilityKeys, min]);
 
   const toggleBody = (k: BodyAnalysisKey) =>
     setBodyKeys((prev) => {
