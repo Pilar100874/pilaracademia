@@ -63,7 +63,7 @@ export function AnalysisOverlay({
   body,
   aesthetic,
   mobility,
-  bottomClass = 'bottom-24 sm:bottom-28',
+  positionClass = 'bottom-24 sm:bottom-28 left-1/2 -translate-x-1/2',
   minPercent = 1,
 }: AnalysisOverlayProps) {
   const [expanded, setExpanded] = useState(false);
