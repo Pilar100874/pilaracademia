@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3, CalendarPlus, Library, LogOut, GraduationCap, ShieldCheck, DoorOpen, MoreHorizontal, Menu, Sparkles, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import { Loader2, Users, Dumbbell, Layers, ListOrdered, Activity, ArrowLeft, Home, CalendarDays, TrendingUp, BarChart3, CalendarPlus, Library, LogOut, GraduationCap, ShieldCheck, DoorOpen, MoreHorizontal, Menu, Sparkles, ChevronLeft, ChevronRight, Lock, FileUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ const baseNavItems = [
   { to: '/clinica/niveis', icon: Layers, label: 'Níveis' },
   { to: '/clinica/aula', icon: Activity, label: 'Aula' },
   { to: '/clinica/relatorios', icon: BarChart3, label: 'Relatórios' },
+  { to: '/clinica/importar', icon: FileUp, label: 'Importar passes', adminOnly: true },
 ];
 
 export default function ClinicLayout() {
