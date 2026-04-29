@@ -91,11 +91,11 @@ export function useExerciseLibrary() {
         video_start_seconds: data.video_start_seconds ?? null,
         video_end_seconds: data.video_end_seconds ?? null,
         category_id: data.category_id ?? null,
-      } as any;
+      };
 
       const { data: exercise, error } = await supabase
         .from('exercise_library')
-        .insert(insertPayload)
+        .insert(insertPayload as never)
         .select()
         .single();
 
@@ -128,7 +128,7 @@ export function useExerciseLibrary() {
       const { id, ...updateData } = data;
       const { error } = await supabase
         .from('exercise_library')
-        .update(updateData as any)
+        .update(updateData as never)
         .eq('id', id);
 
       if (error) throw error;
