@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { AnalysisOverlay } from '@/components/AnalysisOverlay';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
 interface WorkoutViewerDialogProps {
@@ -139,6 +140,14 @@ export function WorkoutViewerDialog({
             </div>
           )}
         </div>
+
+        <AnalysisOverlay
+          body={(currentExercise as any).body_analysis}
+          aesthetic={(currentExercise as any).aesthetic_analysis}
+          mobility={(currentExercise as any).mobility_analysis}
+          positionClass="top-20"
+        />
+
         {/* Header overlay (on top of media) */}
         <div className="absolute top-4 left-4 right-20 z-40 pointer-events-none">
           <div className="inline-flex items-center gap-3 bg-black/40 backdrop-blur-xl rounded-2xl pl-2 pr-4 py-2 border border-white/10 shadow-xl">

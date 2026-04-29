@@ -1,5 +1,6 @@
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { AnalysisOverlay } from '@/components/AnalysisOverlay';
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { useEffect } from 'react';
 
@@ -31,6 +32,10 @@ interface VideoPreviewDialogProps {
    * apenas pelos botões prev/next ou setas do teclado.
    */
   onToggleCategory?: (categoryId: string, checked: boolean) => void;
+  /** AI classifications to display as floating overlay. */
+  bodyAnalysis?: Record<string, number> | null;
+  aestheticAnalysis?: Record<string, number> | null;
+  mobilityAnalysis?: Record<string, number> | null;
 }
 
 /**
@@ -57,6 +62,9 @@ export function VideoPreviewDialog({
   currentCategoryIds,
   categoryOptions,
   onToggleCategory,
+  bodyAnalysis,
+  aestheticAnalysis,
+  mobilityAnalysis,
 }: VideoPreviewDialogProps) {
   useEffect(() => {
     if (!open) return;
@@ -192,6 +200,13 @@ export function VideoPreviewDialog({
             </div>
           );
         })()}
+
+        <AnalysisOverlay
+          body={bodyAnalysis}
+          aesthetic={aestheticAnalysis}
+          mobility={mobilityAnalysis}
+          positionClass="top-20"
+        />
 
         {showNav && (
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4 pb-safe">
