@@ -102,7 +102,7 @@ export default function ExerciseLibraryPage() {
     | null
   >(null);
 
-
+  return (
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
