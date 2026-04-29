@@ -32,6 +32,10 @@ interface VideoPreviewDialogProps {
    * apenas pelos botões prev/next ou setas do teclado.
    */
   onToggleCategory?: (categoryId: string, checked: boolean) => void;
+  /** AI classifications to display as floating overlay. */
+  bodyAnalysis?: Record<string, number> | null;
+  aestheticAnalysis?: Record<string, number> | null;
+  mobilityAnalysis?: Record<string, number> | null;
 }
 
 /**
