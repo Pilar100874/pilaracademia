@@ -1059,6 +1059,7 @@ export type Database = {
           id: string
           image_urls: string[] | null
           is_global: boolean
+          mobility_analysis: Json | null
           name: string
           skill_level_id: string | null
           updated_at: string
@@ -1081,6 +1082,7 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           is_global?: boolean
+          mobility_analysis?: Json | null
           name: string
           skill_level_id?: string | null
           updated_at?: string
@@ -1103,6 +1105,7 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           is_global?: boolean
+          mobility_analysis?: Json | null
           name?: string
           skill_level_id?: string | null
           updated_at?: string
