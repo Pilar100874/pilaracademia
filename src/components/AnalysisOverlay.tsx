@@ -13,8 +13,9 @@ interface AnalysisOverlayProps {
   body?: BodyAnalysis | Record<string, number> | null;
   aesthetic?: AestheticAnalysis | Record<string, number> | null;
   mobility?: MobilityAnalysis | Record<string, number> | null;
-  /** Tailwind classes for vertical positioning (default: bottom-24). */
-  bottomClass?: string;
+  /** Tailwind classes that fully control positioning of the floating chip + panel.
+   * Default places it just above the bottom nav controls. */
+  positionClass?: string;
   /** Hide entirely if no analysis data is available. */
   minPercent?: number;
 }
