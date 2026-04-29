@@ -51,7 +51,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
 
     const queue = exercises.filter(
       (ex) =>
-        !ex.body_analyzed_at &&
+        (!ex.body_analyzed_at || !ex.mobility_analysis) &&
         !!ex.video_url &&
         !!ex.video_type &&
         ex.video_type !== 'instagram' && // Instagram embed: sem URL pública direta
