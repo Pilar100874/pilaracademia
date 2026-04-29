@@ -296,9 +296,10 @@ export default function ExerciseLibraryPage() {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
     let matchesCategory = true;
     if (filterCategory === NO_CATEGORY) {
-      matchesCategory = !ex.category_id;
+      matchesCategory = (ex.category_ids?.length ?? 0) === 0;
     } else if (filterCategory !== ALL_CATEGORIES) {
-      matchesCategory = ex.category_id === filterCategory;
+      // Multi-category: include exercise if it belongs to the selected category
+      matchesCategory = (ex.category_ids ?? []).includes(filterCategory);
     }
     return matchesSearch && matchesCategory;
   });
