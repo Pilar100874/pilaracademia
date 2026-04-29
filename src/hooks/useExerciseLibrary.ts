@@ -12,6 +12,7 @@ export interface LibraryExercise {
   default_reps: number;
   video_type: 'youtube' | 'upload' | 'instagram' | null;
   video_url: string | null;
+  video_optimized_at: string | null;
   video_start_seconds: number | null;
   video_end_seconds: number | null;
   /** @deprecated Use category_ids — mantido por compatibilidade com código antigo */
@@ -71,26 +72,30 @@ export function useExerciseLibrary() {
       default_reps?: number;
       video_type?: 'youtube' | 'upload' | 'instagram' | null;
       video_url?: string | null;
+      video_optimized_at?: string | null;
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;
       category_id?: string | null;
     }) => {
       if (!user) throw new Error('User not authenticated');
 
+      const insertPayload = {
+        user_id: user.id,
+        name: data.name,
+        image_urls: data.image_urls || [],
+        default_sets: data.default_sets || 3,
+        default_reps: data.default_reps || 12,
+        video_type: data.video_type ?? null,
+        video_url: data.video_url ?? null,
+        video_optimized_at: data.video_optimized_at ?? null,
+        video_start_seconds: data.video_start_seconds ?? null,
+        video_end_seconds: data.video_end_seconds ?? null,
+        category_id: data.category_id ?? null,
+      };
+
       const { data: exercise, error } = await supabase
         .from('exercise_library')
-        .insert({
-          user_id: user.id,
-          name: data.name,
-          image_urls: data.image_urls || [],
-          default_sets: data.default_sets || 3,
-          default_reps: data.default_reps || 12,
-          video_type: data.video_type ?? null,
-          video_url: data.video_url ?? null,
-          video_start_seconds: data.video_start_seconds ?? null,
-          video_end_seconds: data.video_end_seconds ?? null,
-          category_id: data.category_id ?? null,
-        })
+        .insert(insertPayload as never)
         .select()
         .single();
 
@@ -115,6 +120,7 @@ export function useExerciseLibrary() {
       default_reps?: number;
       video_type?: 'youtube' | 'upload' | 'instagram' | null;
       video_url?: string | null;
+      video_optimized_at?: string | null;
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;
       category_id?: string | null;
@@ -122,7 +128,7 @@ export function useExerciseLibrary() {
       const { id, ...updateData } = data;
       const { error } = await supabase
         .from('exercise_library')
-        .update(updateData)
+        .update(updateData as never)
         .eq('id', id);
 
       if (error) throw error;
