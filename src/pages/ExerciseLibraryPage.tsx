@@ -561,11 +561,20 @@ export default function ExerciseLibraryPage() {
           continue;
         }
 
-        const ext = file.name.split('.').pop() || 'mp4';
+        // Compress to ~720p WebM in the browser before upload. Falls back
+        // to the original file if the browser can't transcode.
+        let toUpload: File = file;
+        try {
+          toUpload = await compressVideoFile(file);
+        } catch {
+          toUpload = file;
+        }
+
+        const ext = (toUpload.name.split('.').pop() || 'mp4').toLowerCase();
         const path = `${user.id}/${Date.now()}-${i}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from('exercise-videos')
-          .upload(path, file, { contentType: file.type, upsert: false });
+          .upload(path, toUpload, { contentType: toUpload.type || file.type, upsert: false });
         if (upErr) throw upErr;
 
         const { data: pub } = supabase.storage
