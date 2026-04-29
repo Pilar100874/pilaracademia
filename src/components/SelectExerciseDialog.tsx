@@ -153,6 +153,7 @@ export function SelectExerciseDialog({
                 ))}
               </SelectContent>
             </Select>
+            <BodyAnalysisFilter value={bodyFilter} onChange={setBodyFilter} compact />
           </div>
 
           {selectedIds.length > 0 && (
