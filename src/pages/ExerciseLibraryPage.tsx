@@ -520,6 +520,7 @@ export default function ExerciseLibraryPage() {
           name: c.name,
           video_type: 'upload',
           video_url: c.video_url,
+          video_optimized_at: c.video_optimized_at ?? null,
         } as LibraryExercise));
         // Don't await — let it run in background while the user continues
         recompressExercises(toCompress, { silent: true }).catch((err) =>
