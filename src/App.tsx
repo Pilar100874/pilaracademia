@@ -37,6 +37,7 @@ import ReportsPage from "@/pages/clinic/ReportsPage";
 import BookableSlotsPage from "@/pages/clinic/BookableSlotsPage";
 import BlockedPeriodsPage from "@/pages/clinic/BlockedPeriodsPage";
 import ImportPassesPage from "@/pages/clinic/ImportPassesPage";
+import ReconcileCheckinsPage from "@/pages/clinic/ReconcileCheckinsPage";
 import StationPage from "@/pages/StationPage";
 import MyPilatesPage from "@/pages/MyPilatesPage";
 import BookClassPage from "@/pages/BookClassPage";
@@ -131,6 +132,7 @@ function AppRoutes() {
         <Route path="relatorios" element={<ReportsPage />} />
         <Route path="billing" element={<BillingPage />} />
         <Route path="importar" element={<ImportPassesPage />} />
+        <Route path="conciliar" element={<ReconcileCheckinsPage />} />
       </Route>
 
       {/* Master admin panel */}
