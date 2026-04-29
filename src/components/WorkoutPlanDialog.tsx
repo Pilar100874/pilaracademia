@@ -34,12 +34,16 @@ interface WorkoutPlanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingPlan: WorkoutPlan | null;
+  /** Called right after a brand-new plan is created. Page should switch the
+   * dialog into edit mode so the user can keep adding exercises. */
+  onCreated?: (plan: WorkoutPlan) => void;
 }
 
 export function WorkoutPlanDialog({
   open,
   onOpenChange,
   editingPlan,
+  onCreated,
 }: WorkoutPlanDialogProps) {
   const {
     workoutPlans,
