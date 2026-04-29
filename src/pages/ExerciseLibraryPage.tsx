@@ -1171,6 +1171,28 @@ export default function ExerciseLibraryPage() {
             />
           </div>
         )}
+        {analysisProgress && analysisProgress.total > 0 && (
+          <div className="px-4 pb-3 space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium flex items-center gap-1.5">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Analisando vídeos... {analysisProgress.done}/{analysisProgress.total}
+                {analysisProgress.current && (
+                  <span className="text-muted-foreground ml-1 truncate max-w-[200px]">
+                    — {analysisProgress.current}
+                  </span>
+                )}
+              </span>
+              <span className="text-muted-foreground tabular-nums">
+                {Math.round((analysisProgress.done / Math.max(analysisProgress.total, 1)) * 100)}%
+              </span>
+            </div>
+            <Progress
+              value={(analysisProgress.done / Math.max(analysisProgress.total, 1)) * 100}
+              className="h-2"
+            />
+          </div>
+        )}
       </div>
 
       {/* Content */}
