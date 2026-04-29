@@ -3,9 +3,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
-import { Edit, ChevronRight, ChevronLeft, Dumbbell, Play } from 'lucide-react';
+import { Edit, ChevronRight, ChevronLeft, Dumbbell, Play, Trash2 } from 'lucide-react';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 
 const DAYS_SHORT = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
@@ -21,6 +23,19 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const { deletePlan } = useWorkoutPlans();
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    deletePlan.mutate(plan.id, {
+      onSuccess: () => setConfirmOpen(false),
+    });
+  };
 
   const updateArrows = () => {
     const el = scrollerRef.current;
@@ -177,9 +192,27 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
             <Button size="icon" variant="ghost" onClick={onEdit} title="Editar">
               <Edit className="h-4 w-4" />
             </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleDelete}
+              title="Excluir treino"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </CardContent>
+
+      <ConfirmDeleteDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Excluir treino"
+        itemName={plan.name}
+        onConfirm={confirmDelete}
+        isDeleting={deletePlan.isPending}
+      />
     </Card>
   );
 }
