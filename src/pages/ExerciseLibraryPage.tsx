@@ -832,7 +832,7 @@ export default function ExerciseLibraryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, isLoading]);
 
-
+  return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b">
