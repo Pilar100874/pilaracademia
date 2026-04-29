@@ -81,6 +81,7 @@ export default function ExerciseLibraryPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [renameCategory, setRenameCategory] = useState<{ id: string; name: string } | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [renameParentId, setRenameParentId] = useState<string | null>(null);
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
   const [newCategoryValue, setNewCategoryValue] = useState('');
   const [newCategoryParentId, setNewCategoryParentId] = useState<string | null>(null);
