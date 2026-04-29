@@ -145,11 +145,19 @@ export function ExerciseVideoEditor({ value, onChange }: Props) {
 
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop() || 'mp4';
+      // Compress in-browser to ~720p WebM before uploading. Falls back to
+      // the original file if the browser cannot transcode.
+      let toUpload: File = file;
+      try {
+        toUpload = await compressVideoFile(file);
+      } catch {
+        toUpload = file;
+      }
+      const ext = (toUpload.name.split('.').pop() || 'mp4').toLowerCase();
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from('exercise-videos')
-        .upload(path, file, { contentType: file.type, upsert: false });
+        .upload(path, toUpload, { contentType: toUpload.type || file.type, upsert: false });
       if (error) throw error;
       const { data } = supabase.storage.from('exercise-videos').getPublicUrl(path);
       onChange({
