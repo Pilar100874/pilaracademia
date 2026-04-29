@@ -1061,6 +1061,7 @@ export type Database = {
           updated_at: string
           user_id: string
           video_end_seconds: number | null
+          video_optimized_at: string | null
           video_start_seconds: number | null
           video_type: string | null
           video_url: string | null
@@ -1079,6 +1080,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           video_end_seconds?: number | null
+          video_optimized_at?: string | null
           video_start_seconds?: number | null
           video_type?: string | null
           video_url?: string | null
@@ -1097,6 +1099,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           video_end_seconds?: number | null
+          video_optimized_at?: string | null
           video_start_seconds?: number | null
           video_type?: string | null
           video_url?: string | null
