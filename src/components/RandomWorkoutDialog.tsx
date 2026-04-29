@@ -254,18 +254,23 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                     </label>
                   ))}
                 </div>
-                <div className="space-y-1.5 pt-2 border-t">
+                <div className="space-y-2 pt-2 border-t">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     Mobilidade e flexibilidade
                   </p>
-                  {MOBILITY_ITEMS.map((it) => (
-                    <label key={it.key} className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox
-                        checked={mobilityKeys.has(it.key)}
-                        onCheckedChange={() => toggleMobility(it.key)}
-                      />
-                      <span className="text-sm">{it.label}</span>
-                    </label>
+                  {MOBILITY_GROUPS.map((mg) => (
+                    <div key={mg.group} className="space-y-1.5">
+                      <p className="text-[11px] font-medium text-muted-foreground/80">{mg.group}</p>
+                      {mg.items.map((it) => (
+                        <label key={it.key} className="flex items-center gap-2 cursor-pointer pl-1">
+                          <Checkbox
+                            checked={mobilityKeys.has(it.key)}
+                            onCheckedChange={() => toggleMobility(it.key)}
+                          />
+                          <span className="text-sm">{it.label}</span>
+                        </label>
+                      ))}
+                    </div>
                   ))}
                 </div>
               </div>
