@@ -102,8 +102,6 @@ export default function ExerciseLibraryPage() {
     | null
   >(null);
 
-  return (
-
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
