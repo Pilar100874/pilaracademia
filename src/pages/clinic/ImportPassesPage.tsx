@@ -241,6 +241,15 @@ export default function ImportPassesPage() {
       if (s.name) studentByName.set(normalize(s.name), s.id);
     });
 
+    const studentByExtId = new Map<string, string>();
+    const studentByExtEmail = new Map<string, string>();
+    const studentByExtDoc = new Map<string, string>();
+    externalIdentities.forEach((ei) => {
+      if (ei.external_user_id) studentByExtId.set(ei.external_user_id, ei.student_id);
+      if (ei.external_email) studentByExtEmail.set(normalize(ei.external_email), ei.student_id);
+      if (ei.external_document) studentByExtDoc.set(ei.external_document, ei.student_id);
+    });
+
     const seen = new Set<string>();
     return rows.map((r) => {
       const name = String(r[mapping.student_name!] ?? '').trim();
@@ -251,8 +260,12 @@ export default function ImportPassesPage() {
       const extId = mapping.external_user_id ? String(r[mapping.external_user_id] ?? '').trim() : '';
       const status = mapping.payment_status ? String(r[mapping.payment_status] ?? '').trim() : '';
 
+      // Ordem de match: identidade externa salva → e-mail/doc/nome do cadastro
       let matched: string | null = null;
-      if (email) matched = studentByEmail.get(normalize(email)) ?? null;
+      if (extId) matched = studentByExtId.get(extId) ?? null;
+      if (!matched && email) matched = studentByExtEmail.get(normalize(email)) ?? null;
+      if (!matched && doc) matched = studentByExtDoc.get(doc) ?? null;
+      if (!matched && email) matched = studentByEmail.get(normalize(email)) ?? null;
       if (!matched && doc) matched = studentByDoc.get(doc) ?? null;
       if (!matched && name) matched = studentByName.get(normalize(name)) ?? null;
 
