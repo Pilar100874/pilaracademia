@@ -14,6 +14,13 @@ import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary'
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { useBodyAnalysisAutorun } from '@/hooks/useBodyAnalysisAutorun';
 import { topBodyAreas } from '@/lib/exerciseAnalysis';
+import {
+  BodyAnalysisFilter,
+  EMPTY_BODY_FILTER,
+  bodyFilterIsActive,
+  bodyFilterMatches,
+  type BodyAnalysisFilterValue,
+} from '@/components/BodyAnalysisFilter';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ApifySettingsCard } from '@/components/ApifySettingsCard';
 import {
