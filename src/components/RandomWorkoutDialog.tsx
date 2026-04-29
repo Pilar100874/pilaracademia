@@ -12,8 +12,10 @@ import { toast } from 'sonner';
 import {
   BODY_GROUPS,
   AESTHETIC_ITEMS,
+  MOBILITY_ITEMS,
   BodyAnalysisKey,
   AestheticAnalysisKey,
+  MobilityAnalysisKey,
 } from '@/lib/exerciseAnalysis';
 
 interface RandomWorkoutDialogProps {
