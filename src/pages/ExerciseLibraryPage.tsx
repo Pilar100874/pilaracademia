@@ -1296,51 +1296,92 @@ export default function ExerciseLibraryPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Rename category dialog */}
+      {/* Rename / move category dialog */}
       <Dialog
         open={!!renameCategory}
         onOpenChange={(open) => {
           if (!open) {
             setRenameCategory(null);
             setRenameValue('');
+            setRenameParentId(null);
           }
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Renomear categoria</DialogTitle>
+            <DialogTitle>Editar categoria</DialogTitle>
             <DialogDescription>
-              Atualize o nome de "{renameCategory?.name}".
+              Renomeie ou mova "{renameCategory?.name}" para dentro de outra categoria.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label>Novo nome</Label>
-            <Input
-              autoFocus
-              value={renameValue}
-              onChange={(e) => setRenameValue(e.target.value)}
-              placeholder="Nome da categoria"
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome</Label>
+              <Input
+                autoFocus
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                placeholder="Nome da categoria"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Categoria pai</Label>
+              <Select
+                value={renameParentId ?? '__root__'}
+                onValueChange={(v) => setRenameParentId(v === '__root__' ? null : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__root__">— Sem pai (raiz) —</SelectItem>
+                  {(() => {
+                    if (!renameCategory) return null;
+                    // Disallow self and descendants to prevent cycles
+                    const forbidden =
+                      descendantsMap.get(renameCategory.id) ?? new Set([renameCategory.id]);
+                    return orderedCategories
+                      .filter(({ cat }) => !forbidden.has(cat.id))
+                      .map(({ cat, depth }) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {'— '.repeat(depth)}
+                          {cat.name}
+                        </SelectItem>
+                      ));
+                  })()}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRenameCategory(null)}>
               Cancelar
             </Button>
             <Button
-              disabled={
-                updateCategory.isPending ||
-                !renameValue.trim() ||
-                renameValue.trim() === renameCategory?.name
-              }
+              disabled={(() => {
+                if (updateCategory.isPending) return true;
+                if (!renameValue.trim()) return true;
+                const cat = categories.find((c) => c.id === renameCategory?.id);
+                const nameUnchanged = renameValue.trim() === cat?.name;
+                const parentUnchanged =
+                  (renameParentId ?? null) === (cat?.parent_id ?? null);
+                return nameUnchanged && parentUnchanged;
+              })()}
               onClick={async () => {
                 if (!renameCategory) return;
+                const cat = categories.find((c) => c.id === renameCategory.id);
+                const update: { id: string; name?: string; parent_id?: string | null } = {
+                  id: renameCategory.id,
+                };
+                if (renameValue.trim() !== cat?.name) update.name = renameValue.trim();
+                if ((renameParentId ?? null) !== (cat?.parent_id ?? null)) {
+                  update.parent_id = renameParentId;
+                }
                 try {
-                  await updateCategory.mutateAsync({
-                    id: renameCategory.id,
-                    name: renameValue.trim(),
-                  });
+                  await updateCategory.mutateAsync(update);
                   setRenameCategory(null);
                   setRenameValue('');
+                  setRenameParentId(null);
                 } catch {
                   // toast handled in hook
                 }
