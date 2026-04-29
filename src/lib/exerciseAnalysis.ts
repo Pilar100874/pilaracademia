@@ -28,8 +28,21 @@ export type AestheticAnalysisKey =
   | 'gordura_localizada'
   | 'definicao_muscular';
 
+export type MobilityAnalysisKey =
+  | 'mobilidade_quadril'
+  | 'mobilidade_ombro'
+  | 'mobilidade_coluna'
+  | 'mobilidade_tornozelo'
+  | 'flexibilidade_posterior'
+  | 'flexibilidade_anterior_coxa'
+  | 'flexibilidade_adutores'
+  | 'flexibilidade_peitoral_ombro'
+  | 'amplitude_articular_geral'
+  | 'equilibrio_coordenacao';
+
 export type BodyAnalysis = Record<BodyAnalysisKey, number>;
 export type AestheticAnalysis = Record<AestheticAnalysisKey, number>;
+export type MobilityAnalysis = Record<MobilityAnalysisKey, number>;
 
 export const BODY_GROUPS: { group: string; items: { key: BodyAnalysisKey; label: string }[] }[] = [
   {
@@ -73,6 +86,19 @@ export const AESTHETIC_ITEMS: { key: AestheticAnalysisKey; label: string }[] = [
   { key: 'postura', label: 'Postura' },
   { key: 'gordura_localizada', label: 'Gordura localizada' },
   { key: 'definicao_muscular', label: 'Definição muscular' },
+];
+
+export const MOBILITY_ITEMS: { key: MobilityAnalysisKey; label: string }[] = [
+  { key: 'mobilidade_quadril', label: 'Mobilidade de quadril' },
+  { key: 'mobilidade_ombro', label: 'Mobilidade de ombro' },
+  { key: 'mobilidade_coluna', label: 'Mobilidade de coluna' },
+  { key: 'mobilidade_tornozelo', label: 'Mobilidade de tornozelo' },
+  { key: 'flexibilidade_posterior', label: 'Flexibilidade posterior (cadeia)' },
+  { key: 'flexibilidade_anterior_coxa', label: 'Flexibilidade anterior de coxa' },
+  { key: 'flexibilidade_adutores', label: 'Flexibilidade de adutores' },
+  { key: 'flexibilidade_peitoral_ombro', label: 'Flexibilidade peitoral / ombro' },
+  { key: 'amplitude_articular_geral', label: 'Amplitude articular geral' },
+  { key: 'equilibrio_coordenacao', label: 'Equilíbrio e coordenação' },
 ];
 
 const BODY_LABEL_MAP: Record<BodyAnalysisKey, string> = BODY_GROUPS.flatMap((g) => g.items).reduce(

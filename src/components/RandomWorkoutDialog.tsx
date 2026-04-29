@@ -12,8 +12,10 @@ import { toast } from 'sonner';
 import {
   BODY_GROUPS,
   AESTHETIC_ITEMS,
+  MOBILITY_ITEMS,
   BodyAnalysisKey,
   AestheticAnalysisKey,
+  MobilityAnalysisKey,
 } from '@/lib/exerciseAnalysis';
 
 interface RandomWorkoutDialogProps {
@@ -32,6 +34,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   const [minPercent, setMinPercent] = useState('20');
   const [bodyKeys, setBodyKeys] = useState<Set<BodyAnalysisKey>>(new Set());
   const [aestheticKeys, setAestheticKeys] = useState<Set<AestheticAnalysisKey>>(new Set());
+  const [mobilityKeys, setMobilityKeys] = useState<Set<MobilityAnalysisKey>>(new Set());
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [generating, setGenerating] = useState(false);
 
@@ -50,14 +53,18 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
       const v = ex.aesthetic_analysis?.[k];
       if (typeof v === 'number' && v >= min) score += v;
     }
+    for (const k of mobilityKeys) {
+      const v = ex.mobility_analysis?.[k];
+      if (typeof v === 'number' && v >= min) score += v;
+    }
     return score;
   };
 
   const pool = useMemo(() => {
-    if (bodyKeys.size === 0 && aestheticKeys.size === 0) return [];
+    if (bodyKeys.size === 0 && aestheticKeys.size === 0 && mobilityKeys.size === 0) return [];
     return exercises.filter((ex) => matchScore(ex) > 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exercises, bodyKeys, aestheticKeys, min]);
+  }, [exercises, bodyKeys, aestheticKeys, mobilityKeys, min]);
 
   const toggleBody = (k: BodyAnalysisKey) =>
     setBodyKeys((prev) => {
@@ -67,6 +74,12 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     });
   const toggleAesthetic = (k: AestheticAnalysisKey) =>
     setAestheticKeys((prev) => {
+      const next = new Set(prev);
+      next.has(k) ? next.delete(k) : next.add(k);
+      return next;
+    });
+  const toggleMobility = (k: MobilityAnalysisKey) =>
+    setMobilityKeys((prev) => {
       const next = new Set(prev);
       next.has(k) ? next.delete(k) : next.add(k);
       return next;
@@ -84,6 +97,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     setMinPercent('20');
     setBodyKeys(new Set());
     setAestheticKeys(new Set());
+    setMobilityKeys(new Set());
     setSelectedDays([]);
   };
 
@@ -91,7 +105,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     const n = parseInt(count, 10);
     if (!name.trim()) return toast.error('Dê um nome para o treino');
     if (!n || n < 1) return toast.error('Quantidade inválida');
-    if (bodyKeys.size === 0 && aestheticKeys.size === 0) {
+    if (bodyKeys.size === 0 && aestheticKeys.size === 0 && mobilityKeys.size === 0) {
       return toast.error('Selecione ao menos uma classificação');
     }
     if (!pool.length) return toast.error('Nenhum exercício corresponde à classificação selecionada. Aguarde a análise dos vídeos terminar ou diminua o % mínimo.');
@@ -198,7 +212,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
               </div>
             </div>
 
-            {(bodyKeys.size > 0 || aestheticKeys.size > 0) && (
+            {(bodyKeys.size > 0 || aestheticKeys.size > 0 || mobilityKeys.size > 0) && (
               <p className="text-xs text-muted-foreground">
                 {pool.length} exercício(s) compatível(eis) na biblioteca
               </p>
@@ -235,6 +249,20 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                       <Checkbox
                         checked={aestheticKeys.has(it.key)}
                         onCheckedChange={() => toggleAesthetic(it.key)}
+                      />
+                      <span className="text-sm">{it.label}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="space-y-1.5 pt-2 border-t">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Mobilidade e flexibilidade
+                  </p>
+                  {MOBILITY_ITEMS.map((it) => (
+                    <label key={it.key} className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={mobilityKeys.has(it.key)}
+                        onCheckedChange={() => toggleMobility(it.key)}
                       />
                       <span className="text-sm">{it.label}</span>
                     </label>

@@ -51,7 +51,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
 
     const queue = exercises.filter(
       (ex) =>
-        !ex.body_analyzed_at &&
+        (!ex.body_analyzed_at || !ex.mobility_analysis) &&
         !!ex.video_url &&
         !!ex.video_type &&
         ex.video_type !== 'instagram' && // Instagram embed: sem URL pública direta
@@ -80,7 +80,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
             },
           });
           if (error) throw error;
-          if (!data?.body_analysis || !data?.aesthetic_analysis) {
+          if (!data?.body_analysis || !data?.aesthetic_analysis || !data?.mobility_analysis) {
             throw new Error('resposta inválida');
           }
           const analyzedAt = new Date().toISOString();
@@ -89,6 +89,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
             .update({
               body_analysis: data.body_analysis,
               aesthetic_analysis: data.aesthetic_analysis,
+              mobility_analysis: data.mobility_analysis,
               body_analyzed_at: analyzedAt,
             } as never)
             .eq('id', ex.id);
@@ -105,6 +106,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
                       ...e,
                       body_analysis: data.body_analysis,
                       aesthetic_analysis: data.aesthetic_analysis,
+                      mobility_analysis: data.mobility_analysis,
                       body_analyzed_at: analyzedAt,
                     }
                   : e
@@ -132,7 +134,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
       document.removeEventListener('visibilitychange', onVis);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, exercises.map((e) => `${e.id}:${e.body_analyzed_at ?? ''}:${e.video_url ?? ''}`).join('|')]);
+  }, [user?.id, exercises.map((e) => `${e.id}:${e.body_analyzed_at ?? ''}:${e.mobility_analysis ? '1' : '0'}:${e.video_url ?? ''}`).join('|')]);
 
   return progress;
 }

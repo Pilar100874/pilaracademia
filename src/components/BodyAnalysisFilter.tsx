@@ -8,42 +8,51 @@ import { Sparkles, X } from 'lucide-react';
 import {
   BODY_GROUPS,
   AESTHETIC_ITEMS,
+  MOBILITY_ITEMS,
   BodyAnalysisKey,
   AestheticAnalysisKey,
+  MobilityAnalysisKey,
   BodyAnalysis,
   AestheticAnalysis,
+  MobilityAnalysis,
 } from '@/lib/exerciseAnalysis';
 
 export interface BodyAnalysisFilterValue {
   bodyKeys: BodyAnalysisKey[];
   aestheticKeys: AestheticAnalysisKey[];
+  mobilityKeys: MobilityAnalysisKey[];
   minPercent: number;
 }
 
 export const EMPTY_BODY_FILTER: BodyAnalysisFilterValue = {
   bodyKeys: [],
   aestheticKeys: [],
+  mobilityKeys: [],
   minPercent: 20,
 };
 
 export function bodyFilterIsActive(v: BodyAnalysisFilterValue) {
-  return v.bodyKeys.length > 0 || v.aestheticKeys.length > 0;
+  return v.bodyKeys.length > 0 || v.aestheticKeys.length > 0 || v.mobilityKeys.length > 0;
 }
 
 export function bodyFilterMatches(
   body: BodyAnalysis | null | undefined,
   aesthetic: AestheticAnalysis | null | undefined,
+  mobility: MobilityAnalysis | null | undefined,
   filter: BodyAnalysisFilterValue
 ): boolean {
   if (!bodyFilterIsActive(filter)) return true;
   const min = filter.minPercent;
-  // OR semantics across selected keys: exercise matches if any selected key passes the threshold
   for (const k of filter.bodyKeys) {
     const v = body?.[k];
     if (typeof v === 'number' && v >= min) return true;
   }
   for (const k of filter.aestheticKeys) {
     const v = aesthetic?.[k];
+    if (typeof v === 'number' && v >= min) return true;
+  }
+  for (const k of filter.mobilityKeys) {
+    const v = mobility?.[k];
     if (typeof v === 'number' && v >= min) return true;
   }
   return false;
@@ -57,7 +66,7 @@ interface Props {
 }
 
 export function BodyAnalysisFilter({ value, onChange, compact }: Props) {
-  const totalSelected = value.bodyKeys.length + value.aestheticKeys.length;
+  const totalSelected = value.bodyKeys.length + value.aestheticKeys.length + value.mobilityKeys.length;
   const active = totalSelected > 0;
 
   const toggleBody = (k: BodyAnalysisKey) => {
@@ -71,6 +80,12 @@ export function BodyAnalysisFilter({ value, onChange, compact }: Props) {
     if (set.has(k)) set.delete(k);
     else set.add(k);
     onChange({ ...value, aestheticKeys: Array.from(set) });
+  };
+  const toggleMobility = (k: MobilityAnalysisKey) => {
+    const set = new Set(value.mobilityKeys);
+    if (set.has(k)) set.delete(k);
+    else set.add(k);
+    onChange({ ...value, mobilityKeys: Array.from(set) });
   };
 
   const clear = () => onChange(EMPTY_BODY_FILTER);
@@ -114,7 +129,7 @@ export function BodyAnalysisFilter({ value, onChange, compact }: Props) {
             className="h-8 text-sm"
           />
         </div>
-        <ScrollArea className="h-[340px]">
+        <ScrollArea className="h-[360px]">
           <div className="p-3 space-y-3">
             {BODY_GROUPS.map((g) => (
               <div key={g.group} className="space-y-1.5">
@@ -141,6 +156,20 @@ export function BodyAnalysisFilter({ value, onChange, compact }: Props) {
                   <Checkbox
                     checked={value.aestheticKeys.includes(it.key)}
                     onCheckedChange={() => toggleAesthetic(it.key)}
+                  />
+                  <span className="text-sm">{it.label}</span>
+                </label>
+              ))}
+            </div>
+            <div className="space-y-1.5 pt-2 border-t">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Mobilidade e flexibilidade
+              </p>
+              {MOBILITY_ITEMS.map((it) => (
+                <label key={it.key} className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={value.mobilityKeys.includes(it.key)}
+                    onCheckedChange={() => toggleMobility(it.key)}
                   />
                   <span className="text-sm">{it.label}</span>
                 </label>
