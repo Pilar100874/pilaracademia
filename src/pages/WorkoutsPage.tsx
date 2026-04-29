@@ -138,6 +138,7 @@ export function WorkoutsPage() {
         open={dialogOpen}
         onOpenChange={handleCloseDialog}
         editingPlan={editingPlan}
+        onCreated={(plan) => setEditingPlan(plan)}
       />
 
       <RandomWorkoutDialog
