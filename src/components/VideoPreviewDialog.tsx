@@ -173,18 +173,16 @@ export function VideoPreviewDialog({
                 <div className="flex gap-2 overflow-x-auto pb-1 px-1 scrollbar-thin">
                   {parents.map(renderPill)}
                 </div>
-                {parentsWithChildren.map((pid) => {
-                  const subs = childrenByParent.get(pid) ?? [];
+                {nodesWithChildren.map((node) => {
+                  const subs = childrenByParent.get(node.id) ?? [];
                   if (subs.length === 0) return null;
-                  const parentName =
-                    parents.find((p) => p.id === pid)?.name ?? '';
                   return (
                     <div
-                      key={pid}
+                      key={node.id}
                       className="mt-1.5 ml-2 flex items-center gap-2 overflow-x-auto pb-1 px-1 pl-3 scrollbar-thin border-l-2 border-white/20"
                     >
                       <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/50 font-semibold">
-                        {parentName}
+                        {node.name}
                       </span>
                       {subs.map(renderPill)}
                     </div>
