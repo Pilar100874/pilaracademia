@@ -101,6 +101,34 @@ export const MOBILITY_ITEMS: { key: MobilityAnalysisKey; label: string }[] = [
   { key: 'equilibrio_coordenacao', label: 'Equilíbrio e coordenação' },
 ];
 
+export const MOBILITY_GROUPS: { group: string; items: { key: MobilityAnalysisKey; label: string }[] }[] = [
+  {
+    group: 'Mobilidade articular',
+    items: [
+      { key: 'mobilidade_quadril', label: 'Quadril' },
+      { key: 'mobilidade_ombro', label: 'Ombro' },
+      { key: 'mobilidade_coluna', label: 'Coluna' },
+      { key: 'mobilidade_tornozelo', label: 'Tornozelo' },
+    ],
+  },
+  {
+    group: 'Flexibilidade muscular',
+    items: [
+      { key: 'flexibilidade_posterior', label: 'Cadeia posterior (isquios/lombar)' },
+      { key: 'flexibilidade_anterior_coxa', label: 'Anterior de coxa (quadríceps)' },
+      { key: 'flexibilidade_adutores', label: 'Adutores (parte interna)' },
+      { key: 'flexibilidade_peitoral_ombro', label: 'Peitoral / ombro' },
+    ],
+  },
+  {
+    group: 'Geral',
+    items: [
+      { key: 'amplitude_articular_geral', label: 'Amplitude articular geral' },
+      { key: 'equilibrio_coordenacao', label: 'Equilíbrio e coordenação' },
+    ],
+  },
+];
+
 const BODY_LABEL_MAP: Record<BodyAnalysisKey, string> = BODY_GROUPS.flatMap((g) => g.items).reduce(
   (acc, it) => ({ ...acc, [it.key]: it.label }),
   {} as Record<BodyAnalysisKey, string>
