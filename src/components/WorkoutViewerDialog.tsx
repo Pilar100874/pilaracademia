@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { AnalysisOverlay } from '@/components/AnalysisOverlay';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
 interface WorkoutViewerDialogProps {
