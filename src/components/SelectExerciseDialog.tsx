@@ -21,6 +21,12 @@ import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { LazyVideoPreview } from '@/components/LazyVideoPreview';
 import { Dumbbell, Search, Plus, Check, ImageIcon, Tag } from 'lucide-react';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
+import {
+  BodyAnalysisFilter,
+  EMPTY_BODY_FILTER,
+  bodyFilterMatches,
+  type BodyAnalysisFilterValue,
+} from '@/components/BodyAnalysisFilter';
 
 interface SelectExerciseDialogProps {
   open: boolean;
