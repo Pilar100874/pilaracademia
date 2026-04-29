@@ -22,6 +22,7 @@ export interface LibraryExercise {
   category_ids: string[];
   body_analysis: BodyAnalysis | null;
   aesthetic_analysis: AestheticAnalysis | null;
+  mobility_analysis: MobilityAnalysis | null;
   body_analyzed_at: string | null;
   created_at: string;
   updated_at: string;
