@@ -298,8 +298,9 @@ export default function ExerciseLibraryPage() {
     if (filterCategory === NO_CATEGORY) {
       matchesCategory = (ex.category_ids?.length ?? 0) === 0;
     } else if (filterCategory !== ALL_CATEGORIES) {
-      // Multi-category: include exercise if it belongs to the selected category
-      matchesCategory = (ex.category_ids ?? []).includes(filterCategory);
+      // Include exercises that belong to the selected category OR any of its descendants
+      const allowed = descendantsMap.get(filterCategory) ?? new Set([filterCategory]);
+      matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
     }
     return matchesSearch && matchesCategory;
   });
