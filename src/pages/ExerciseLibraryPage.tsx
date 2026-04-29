@@ -613,6 +613,7 @@ export default function ExerciseLibraryPage() {
           image_urls: [],
           video_type: 'upload',
           video_url: pub.publicUrl,
+          video_optimized_at: hasWebmUrl(pub.publicUrl) ? new Date().toISOString() : null,
           video_start_seconds: 0,
           video_end_seconds: null,
           category_id: targetCategoryId,
