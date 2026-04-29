@@ -82,6 +82,10 @@ export default function ExerciseLibraryPage() {
       supabase.removeChannel(channel);
     };
   }, [user, queryClient]);
+
+  // Auto-análise corporal em background (Gemini) — um vídeo por vez.
+  const analysisProgress = useBodyAnalysisAutorun(exercises);
+
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [dialogOpen, setDialogOpen] = useState(false);
