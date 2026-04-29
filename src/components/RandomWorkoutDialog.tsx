@@ -212,7 +212,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
               </div>
             </div>
 
-            {(bodyKeys.size > 0 || aestheticKeys.size > 0) && (
+            {(bodyKeys.size > 0 || aestheticKeys.size > 0 || mobilityKeys.size > 0) && (
               <p className="text-xs text-muted-foreground">
                 {pool.length} exercício(s) compatível(eis) na biblioteca
               </p>
