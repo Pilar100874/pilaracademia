@@ -126,8 +126,43 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
               ))}
             </div>
 
+            {/* Resumo das classificações da IA */}
+            {summary.analyzedCount > 0 && (summary.body.length > 0 || summary.aesthetic.length > 0 || summary.mobility.length > 0) && (
+              <div className="mb-3 space-y-1.5">
+                {summary.body.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-1">Foco</span>
+                    {summary.body.map((t) => (
+                      <span key={t.key} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-foreground">
+                        {t.label} <span className="font-semibold">{t.value}%</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {summary.mobility.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-1">Mob.</span>
+                    {summary.mobility.map((t) => (
+                      <span key={t.key} className="text-[10px] px-1.5 py-0.5 rounded bg-accent/40 text-foreground">
+                        {t.label} <span className="font-semibold">{t.value}%</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {summary.aesthetic.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-1">Estética</span>
+                    {summary.aesthetic.map((t) => (
+                      <span key={t.key} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground">
+                        {t.label} <span className="font-semibold">{t.value}%</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Exercise preview with arrows */}
-            {plan.exercises && plan.exercises.length > 0 && (
               <div className="relative">
                 <div
                   ref={scrollerRef}
