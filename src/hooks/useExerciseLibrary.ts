@@ -120,6 +120,7 @@ export function useExerciseLibrary() {
       default_reps?: number;
       video_type?: 'youtube' | 'upload' | 'instagram' | null;
       video_url?: string | null;
+      video_optimized_at?: string | null;
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;
       category_id?: string | null;
@@ -127,7 +128,7 @@ export function useExerciseLibrary() {
       const { id, ...updateData } = data;
       const { error } = await supabase
         .from('exercise_library')
-        .update(updateData)
+        .update(updateData as any)
         .eq('id', id);
 
       if (error) throw error;
