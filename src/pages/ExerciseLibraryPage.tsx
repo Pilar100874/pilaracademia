@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/select';
 import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
+import { useBodyAnalysisAutorun } from '@/hooks/useBodyAnalysisAutorun';
+import { topBodyAreas } from '@/lib/exerciseAnalysis';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ApifySettingsCard } from '@/components/ApifySettingsCard';
 import {
