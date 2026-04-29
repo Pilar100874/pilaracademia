@@ -810,6 +810,7 @@ export default function ExerciseLibraryPage() {
                     const cat = categories.find((c) => c.id === filterCategory);
                     if (cat) {
                       setRenameValue(cat.name);
+                      setRenameParentId(cat.parent_id ?? null);
                       setRenameCategory({ id: cat.id, name: cat.name });
                     }
                   }}
