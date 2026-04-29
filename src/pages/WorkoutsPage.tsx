@@ -45,26 +45,26 @@ export function WorkoutsPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-30 glass border-b border-border/50 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Dumbbell className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold">Meus Treinos</h1>
+      <header className="sticky top-0 z-30 glass border-b border-border/50 px-3 sm:px-4 py-3">
+        <div className="mx-auto max-w-5xl flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Dumbbell className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
+            <h1 className="text-lg sm:text-xl font-bold truncate">Meus Treinos</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             <Button size="sm" variant="outline" onClick={() => navigate('/exercises')}>
-              <Library className="h-4 w-4 mr-1" />
-              Biblioteca
+              <Library className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Biblioteca</span>
             </Button>
             <Button size="sm" onClick={() => setDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" />
-              Novo
+              <Plus className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Novo</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="p-4 space-y-4">
+      <main className="mx-auto max-w-5xl p-3 sm:p-4 space-y-4">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -113,14 +113,16 @@ export function WorkoutsPage() {
               <h2 className="font-semibold text-muted-foreground">
                 Todos os Treinos
               </h2>
-              {workoutPlans.map((plan) => (
-                <WorkoutPlanCard
-                  key={plan.id}
-                  plan={plan}
-                  onEdit={() => handleEdit(plan)}
-                  onStart={() => handleStart(plan)}
-                />
-              ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {workoutPlans.map((plan) => (
+                  <WorkoutPlanCard
+                    key={plan.id}
+                    plan={plan}
+                    onEdit={() => handleEdit(plan)}
+                    onStart={() => handleStart(plan)}
+                  />
+                ))}
+              </div>
             </div>
           </>
         )}
