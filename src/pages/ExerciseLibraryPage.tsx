@@ -341,7 +341,7 @@ export default function ExerciseLibraryPage() {
       const allowed = descendantsMap.get(filterCategory) ?? new Set([filterCategory]);
       matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
     }
-    const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, bodyFilter);
+    const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, ex.mobility_analysis, bodyFilter);
     return matchesSearch && matchesCategory && matchesBody;
   });
 
