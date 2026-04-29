@@ -50,18 +50,25 @@ export function useWorkoutPlans() {
 
       if (plansError) throw plansError;
 
-      // Fetch exercises for each plan
+      // Fetch exercises for each plan + analyses from exercise_library
       const plansWithExercises = await Promise.all(
         (plans || []).map(async (plan) => {
           const { data: exercises } = await supabase
             .from('workout_exercises')
-            .select('*')
+            .select('*, exercise_library:exercise_library_id (body_analysis, aesthetic_analysis, mobility_analysis)')
             .eq('workout_plan_id', plan.id)
             .order('order_index', { ascending: true });
 
+          const merged = (exercises || []).map((ex: any) => ({
+            ...ex,
+            body_analysis: ex.exercise_library?.body_analysis ?? null,
+            aesthetic_analysis: ex.exercise_library?.aesthetic_analysis ?? null,
+            mobility_analysis: ex.exercise_library?.mobility_analysis ?? null,
+          }));
+
           return {
             ...plan,
-            exercises: exercises || [],
+            exercises: merged,
           };
         })
       );
