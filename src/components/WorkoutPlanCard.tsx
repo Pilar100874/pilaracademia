@@ -27,6 +27,11 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { deletePlan } = useWorkoutPlans();
 
+  const summary = useMemo(
+    () => summarizeWorkout(plan.exercises ?? [], 3),
+    [plan.exercises]
+  );
+
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     setConfirmOpen(true);
