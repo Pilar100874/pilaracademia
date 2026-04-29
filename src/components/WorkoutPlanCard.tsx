@@ -192,9 +192,27 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
             <Button size="icon" variant="ghost" onClick={onEdit} title="Editar">
               <Edit className="h-4 w-4" />
             </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleDelete}
+              title="Excluir treino"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </CardContent>
+
+      <ConfirmDeleteDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Excluir treino"
+        itemName={plan.name}
+        onConfirm={confirmDelete}
+        isDeleting={deletePlan.isPending}
+      />
     </Card>
   );
 }
