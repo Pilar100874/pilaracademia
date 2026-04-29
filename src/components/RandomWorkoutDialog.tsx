@@ -78,6 +78,12 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
       next.has(k) ? next.delete(k) : next.add(k);
       return next;
     });
+  const toggleMobility = (k: MobilityAnalysisKey) =>
+    setMobilityKeys((prev) => {
+      const next = new Set(prev);
+      next.has(k) ? next.delete(k) : next.add(k);
+      return next;
+    });
 
   const toggleDay = (idx: number) => {
     setSelectedDays((prev) =>
