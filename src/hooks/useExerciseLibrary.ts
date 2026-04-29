@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import type { BodyAnalysis, AestheticAnalysis } from '@/lib/exerciseAnalysis';
 
 export interface LibraryExercise {
   id: string;
@@ -19,6 +20,9 @@ export interface LibraryExercise {
   category_id: string | null;
   /** Todas as categorias atribuídas ao exercício (multi). */
   category_ids: string[];
+  body_analysis: BodyAnalysis | null;
+  aesthetic_analysis: AestheticAnalysis | null;
+  body_analyzed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -100,7 +104,7 @@ export function useExerciseLibrary() {
         .single();
 
       if (error) throw error;
-      return { ...exercise, category_ids: data.category_id ? [data.category_id] : [] } as LibraryExercise;
+      return { ...exercise, category_ids: data.category_id ? [data.category_id] : [] } as unknown as LibraryExercise;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exercise-library'] });

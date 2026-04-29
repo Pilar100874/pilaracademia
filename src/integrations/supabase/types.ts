@@ -1048,6 +1048,9 @@ export type Database = {
       }
       exercise_library: {
         Row: {
+          aesthetic_analysis: Json | null
+          body_analysis: Json | null
+          body_analyzed_at: string | null
           category_id: string | null
           clinic_id: string | null
           created_at: string
@@ -1067,6 +1070,9 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          aesthetic_analysis?: Json | null
+          body_analysis?: Json | null
+          body_analyzed_at?: string | null
           category_id?: string | null
           clinic_id?: string | null
           created_at?: string
@@ -1086,6 +1092,9 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          aesthetic_analysis?: Json | null
+          body_analysis?: Json | null
+          body_analyzed_at?: string | null
           category_id?: string | null
           clinic_id?: string | null
           created_at?: string
