@@ -74,7 +74,8 @@ export function SelectExerciseDialog({
     } else if (filterCategory !== ALL_CATEGORIES) {
       matchesCategory = ex.category_id === filterCategory;
     }
-    return matchesSearch && matchesCategory;
+    const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, bodyFilter);
+    return matchesSearch && matchesCategory && matchesBody;
   });
 
   const toggleSelect = (id: string) => {
