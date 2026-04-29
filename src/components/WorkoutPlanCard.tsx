@@ -132,7 +132,7 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
                     return (
                       <div
                         key={exercise.id}
-                        className="shrink-0 w-20 h-20 rounded-xl bg-muted overflow-hidden relative [&_.absolute]:hidden"
+                        className="shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-muted overflow-hidden relative [&_.absolute]:hidden"
                       >
                         {exercise.video_url && exercise.video_type ? (
                           <VideoThumbnail
