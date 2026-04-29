@@ -51,7 +51,7 @@ export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { exercises, isLoading, deleteExercise, createExercise, moveExercises } = useExerciseLibrary();
+  const { exercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
@@ -1045,6 +1045,34 @@ export default function ExerciseLibraryPage() {
           const next = videoList[currentIndex + delta];
           if (next) setVideoPreview(next);
         };
+
+        // Build flat list of categories for quick-pick pills
+        const categoryOptions = [
+          { id: null as string | null, name: 'Sem categoria' },
+          ...orderedCategories.map(({ cat, depth }) => ({
+            id: cat.id as string | null,
+            name: depth > 0 ? `${'— '.repeat(depth)}${cat.name}` : cat.name,
+          })),
+        ];
+
+        const handleSelectCategory = async (categoryId: string | null) => {
+          if (!videoPreview) return;
+          const previewing = videoPreview;
+          // Pre-advance to next video for snappy UX
+          const nextEx = videoList[currentIndex + 1];
+          if (nextEx) setVideoPreview(nextEx);
+          const { error } = await supabase
+            .from('exercise_library')
+            .update({ category_id: categoryId })
+            .eq('id', previewing.id);
+          if (error) {
+            toast.error('Erro ao atualizar categoria');
+            if (!nextEx) setVideoPreview(previewing);
+            return;
+          }
+          queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+        };
+
         return (
           <VideoPreviewDialog
             open={!!videoPreview}
@@ -1063,6 +1091,9 @@ export default function ExerciseLibraryPage() {
                 ? { current: currentIndex + 1, total: videoList.length }
                 : undefined
             }
+            currentCategoryId={videoPreview?.category_id ?? null}
+            categoryOptions={categoryOptions}
+            onSelectCategory={handleSelectCategory}
           />
         );
       })()}

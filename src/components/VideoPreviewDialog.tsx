@@ -1,7 +1,12 @@
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { useEffect } from 'react';
+
+export interface VideoPreviewCategoryOption {
+  id: string | null; // null = sem categoria
+  name: string;
+}
 
 interface VideoPreviewDialogProps {
   open: boolean;
@@ -16,6 +21,12 @@ interface VideoPreviewDialogProps {
   hasPrev?: boolean;
   hasNext?: boolean;
   position?: { current: number; total: number };
+  /** Categoria atualmente selecionada para o exercício em exibição */
+  currentCategoryId?: string | null;
+  /** Lista de categorias disponíveis para escolha rápida */
+  categoryOptions?: VideoPreviewCategoryOption[];
+  /** Handler chamado ao clicar em uma categoria. Após salvar, o caller deve avançar para o próximo. */
+  onSelectCategory?: (categoryId: string | null) => void;
 }
 
 /**
@@ -35,6 +46,9 @@ export function VideoPreviewDialog({
   hasPrev,
   hasNext,
   position,
+  currentCategoryId,
+  categoryOptions,
+  onSelectCategory,
 }: VideoPreviewDialogProps) {
   useEffect(() => {
     if (!open) return;
@@ -78,6 +92,42 @@ export function VideoPreviewDialog({
                   {position.current} / {position.total}
                 </p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Quick category picker — pills horizontalmente roláveis */}
+        {categoryOptions && categoryOptions.length > 0 && onSelectCategory && (
+          <div
+            className={`absolute left-0 right-0 z-40 px-3 ${
+              showNav ? 'bottom-24 sm:bottom-28' : 'bottom-6 pb-safe'
+            }`}
+          >
+            <div className="mx-auto max-w-3xl">
+              <p className="text-white/70 text-[11px] font-medium mb-1.5 text-center drop-shadow">
+                Toque para alterar a categoria e ir para o próximo
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-1 px-1 scrollbar-thin">
+                {categoryOptions.map((opt) => {
+                  const active =
+                    (opt.id ?? null) === (currentCategoryId ?? null);
+                  return (
+                    <button
+                      key={opt.id ?? '__none__'}
+                      type="button"
+                      onClick={() => onSelectCategory(opt.id)}
+                      className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium border backdrop-blur-2xl transition-all active:scale-95 ${
+                        active
+                          ? 'bg-white text-black border-white shadow-[0_4px_20px_rgba(255,255,255,0.4)]'
+                          : 'bg-black/50 text-white border-white/25 hover:bg-black/70 hover:border-white/40'
+                      }`}
+                    >
+                      {active && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                      <span className="whitespace-nowrap">{opt.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
