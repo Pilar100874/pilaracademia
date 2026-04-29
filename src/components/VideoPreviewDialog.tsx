@@ -1,5 +1,6 @@
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
+import { AnalysisOverlay } from '@/components/AnalysisOverlay';
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { useEffect } from 'react';
 
