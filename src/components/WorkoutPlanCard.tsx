@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
+import { summarizeWorkout } from '@/lib/exerciseAnalysis';
 
 const DAYS_SHORT = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
@@ -25,6 +26,11 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { deletePlan } = useWorkoutPlans();
+
+  const summary = useMemo(
+    () => summarizeWorkout(plan.exercises ?? [], 3),
+    [plan.exercises]
+  );
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -119,6 +125,42 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
                 </span>
               ))}
             </div>
+
+            {/* Resumo das classificações da IA */}
+            {summary.analyzedCount > 0 && (summary.body.length > 0 || summary.aesthetic.length > 0 || summary.mobility.length > 0) && (
+              <div className="mb-3 space-y-1.5">
+                {summary.body.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-1">Foco</span>
+                    {summary.body.map((t) => (
+                      <span key={t.key} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-foreground">
+                        {t.label} <span className="font-semibold">{t.value}%</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {summary.mobility.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-1">Mob.</span>
+                    {summary.mobility.map((t) => (
+                      <span key={t.key} className="text-[10px] px-1.5 py-0.5 rounded bg-accent/40 text-foreground">
+                        {t.label} <span className="font-semibold">{t.value}%</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {summary.aesthetic.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-1">Estética</span>
+                    {summary.aesthetic.map((t) => (
+                      <span key={t.key} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground">
+                        {t.label} <span className="font-semibold">{t.value}%</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Exercise preview with arrows */}
             {plan.exercises && plan.exercises.length > 0 && (
