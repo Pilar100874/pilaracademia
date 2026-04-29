@@ -46,6 +46,9 @@ export function VideoPreviewDialog({
   hasPrev,
   hasNext,
   position,
+  currentCategoryId,
+  categoryOptions,
+  onSelectCategory,
 }: VideoPreviewDialogProps) {
   useEffect(() => {
     if (!open) return;
