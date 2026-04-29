@@ -363,6 +363,38 @@ export default function ImportPassesPage() {
         const { error } = await supabase.from('external_pass_checkins').insert(batch);
         if (error) throw error;
       }
+
+      // Auto-vincula identidades externas para os alunos casados nesta importação
+      // (assim, na próxima planilha o match é instantâneo via external_user_id)
+      const identitiesToLink = new Map<string, {
+        clinic_id: string; student_id: string; platform: Platform;
+        external_user_id: string | null; external_email: string | null;
+        external_document: string | null; external_name: string;
+        linked_by: string;
+      }>();
+      for (const p of importable) {
+        if (!p.matched_student_id) continue;
+        const key = `${p.matched_student_id}|${p.external_user_id ?? p.student_email ?? p.student_document ?? p.student_name}`;
+        if (identitiesToLink.has(key)) continue;
+        identitiesToLink.set(key, {
+          clinic_id: activeClinicId,
+          student_id: p.matched_student_id,
+          platform,
+          external_user_id: p.external_user_id,
+          external_email: p.student_email,
+          external_document: p.student_document,
+          external_name: p.student_name,
+          linked_by: userId,
+        });
+      }
+      const identitiesArr = Array.from(identitiesToLink.values());
+      if (identitiesArr.length > 0) {
+        // Insere ignorando conflitos pela chave única (clinic_id, platform, external_user_id)
+        await supabase
+          .from('student_external_identities')
+          .upsert(identitiesArr, { onConflict: 'clinic_id,platform,external_user_id', ignoreDuplicates: true });
+      }
+
       return imp;
     },
     onSuccess: () => {
