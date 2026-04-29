@@ -97,6 +97,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     setMinPercent('20');
     setBodyKeys(new Set());
     setAestheticKeys(new Set());
+    setMobilityKeys(new Set());
     setSelectedDays([]);
   };
 
