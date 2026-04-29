@@ -102,7 +102,7 @@ export function AnalysisOverlay({
 
   return (
     <div
-      className={`absolute ${positionClass} left-2 right-2 z-40 max-w-3xl mx-auto`}
+      className={`absolute left-2 right-2 ${positionClass} z-40 max-w-3xl mx-auto`}
       onClick={(e) => e.stopPropagation()}
     >
       <div className="rounded-2xl bg-black/60 backdrop-blur-xl border border-white/15 shadow-[0_4px_20px_rgba(0,0,0,0.6)] overflow-hidden">
