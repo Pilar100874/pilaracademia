@@ -21,6 +21,12 @@ import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { LazyVideoPreview } from '@/components/LazyVideoPreview';
 import { Dumbbell, Search, Plus, Check, ImageIcon, Tag } from 'lucide-react';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
+import {
+  BodyAnalysisFilter,
+  EMPTY_BODY_FILTER,
+  bodyFilterMatches,
+  type BodyAnalysisFilterValue,
+} from '@/components/BodyAnalysisFilter';
 
 interface SelectExerciseDialogProps {
   open: boolean;
@@ -42,6 +48,7 @@ export function SelectExerciseDialog({
   const { categories } = useExerciseCategories();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
+  const [bodyFilter, setBodyFilter] = useState<BodyAnalysisFilterValue>(EMPTY_BODY_FILTER);
   // Ordered list of selected exercise ids — defines insertion order
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [zoomImages, setZoomImages] = useState<string[]>([]);
@@ -67,7 +74,8 @@ export function SelectExerciseDialog({
     } else if (filterCategory !== ALL_CATEGORIES) {
       matchesCategory = ex.category_id === filterCategory;
     }
-    return matchesSearch && matchesCategory;
+    const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, bodyFilter);
+    return matchesSearch && matchesCategory && matchesBody;
   });
 
   const toggleSelect = (id: string) => {
@@ -86,6 +94,7 @@ export function SelectExerciseDialog({
     setSelectedIds([]);
     setSearch('');
     setFilterCategory(ALL_CATEGORIES);
+    setBodyFilter(EMPTY_BODY_FILTER);
 
     (async () => {
       try {
@@ -105,6 +114,7 @@ export function SelectExerciseDialog({
       setSelectedIds([]);
       setSearch('');
       setFilterCategory(ALL_CATEGORIES);
+      setBodyFilter(EMPTY_BODY_FILTER);
     }
     onOpenChange(isOpen);
   };
@@ -145,6 +155,7 @@ export function SelectExerciseDialog({
                 ))}
               </SelectContent>
             </Select>
+            <BodyAnalysisFilter value={bodyFilter} onChange={setBodyFilter} compact />
           </div>
 
           {selectedIds.length > 0 && (

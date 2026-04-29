@@ -14,6 +14,13 @@ import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary'
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { useBodyAnalysisAutorun } from '@/hooks/useBodyAnalysisAutorun';
 import { topBodyAreas } from '@/lib/exerciseAnalysis';
+import {
+  BodyAnalysisFilter,
+  EMPTY_BODY_FILTER,
+  bodyFilterIsActive,
+  bodyFilterMatches,
+  type BodyAnalysisFilterValue,
+} from '@/components/BodyAnalysisFilter';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ApifySettingsCard } from '@/components/ApifySettingsCard';
 import {
@@ -88,6 +95,7 @@ export default function ExerciseLibraryPage() {
 
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
+  const [bodyFilter, setBodyFilter] = useState<BodyAnalysisFilterValue>(EMPTY_BODY_FILTER);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<LibraryExercise | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -330,11 +338,11 @@ export default function ExerciseLibraryPage() {
     if (filterCategory === NO_CATEGORY) {
       matchesCategory = (ex.category_ids?.length ?? 0) === 0;
     } else if (filterCategory !== ALL_CATEGORIES) {
-      // Include exercises that belong to the selected category OR any of its descendants
       const allowed = descendantsMap.get(filterCategory) ?? new Set([filterCategory]);
       matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
     }
-    return matchesSearch && matchesCategory;
+    const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, bodyFilter);
+    return matchesSearch && matchesCategory && matchesBody;
   });
 
   const handleEdit = (exercise: LibraryExercise) => {
@@ -1085,6 +1093,7 @@ export default function ExerciseLibraryPage() {
             >
               <FolderPlus className="h-4 w-4" />
             </Button>
+            <BodyAnalysisFilter value={bodyFilter} onChange={setBodyFilter} compact />
             {filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY && (
               <>
                 <Button
