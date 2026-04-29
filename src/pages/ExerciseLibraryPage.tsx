@@ -827,7 +827,7 @@ export default function ExerciseLibraryPage() {
                   </>
                 ) : (
                   <>
-                    <VideoIconLucide className="h-4 w-4 mr-1" />
+                    <Zap className="h-4 w-4 mr-1" />
                     Otimizar
                   </>
                 )}
