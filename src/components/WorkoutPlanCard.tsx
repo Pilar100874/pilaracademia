@@ -23,6 +23,19 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const { deletePlan } = useWorkoutPlans();
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    deletePlan.mutate(plan.id, {
+      onSuccess: () => setConfirmOpen(false),
+    });
+  };
 
   const updateArrows = () => {
     const el = scrollerRef.current;
