@@ -15,9 +15,10 @@ export interface ExerciseCategory {
 export function useExerciseCategories() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const queryKey = ['exercise-categories', user?.id];
 
   const { data: categories = [], isLoading } = useQuery({
-    queryKey: ['exercise-categories', user?.id],
+    queryKey,
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
@@ -29,6 +30,7 @@ export function useExerciseCategories() {
       return data as ExerciseCategory[];
     },
     enabled: !!user,
+    staleTime: 5 * 60 * 1000,
   });
 
   const createCategory = useMutation({
@@ -45,11 +47,38 @@ export function useExerciseCategories() {
       if (error) throw error;
       return data as ExerciseCategory;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['exercise-categories'] });
+    // Optimistic update: insere localmente para UI responder na hora
+    onMutate: async (input) => {
+      if (!user) return;
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<ExerciseCategory[]>(queryKey);
+      const payload = typeof input === 'string'
+        ? { name: input.trim(), parent_id: null }
+        : { name: input.name.trim(), parent_id: input.parent_id ?? null };
+      const tempId = `temp-${Date.now()}`;
+      const optimistic: ExerciseCategory = {
+        id: tempId,
+        user_id: user.id,
+        name: payload.name,
+        parent_id: payload.parent_id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      queryClient.setQueryData<ExerciseCategory[]>(queryKey, (old = []) =>
+        [...old, optimistic].sort((a, b) => a.name.localeCompare(b.name))
+      );
+      return { previous, tempId };
+    },
+    onSuccess: (created, _vars, context) => {
+      // Substitui o item temporário pelo real sem refetch
+      queryClient.setQueryData<ExerciseCategory[]>(queryKey, (old = []) => {
+        const filtered = old.filter((c) => c.id !== context?.tempId);
+        return [...filtered, created].sort((a, b) => a.name.localeCompare(b.name));
+      });
       toast.success('Categoria criada!');
     },
-    onError: (e: any) => {
+    onError: (e: any, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
       if (e?.code === '23505') toast.error('Categoria já existe');
       else toast.error('Erro ao criar categoria');
     },
@@ -66,12 +95,30 @@ export function useExerciseCategories() {
         .eq('id', data.id);
       if (error) throw error;
     },
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<ExerciseCategory[]>(queryKey);
+      queryClient.setQueryData<ExerciseCategory[]>(queryKey, (old = []) =>
+        old.map((c) =>
+          c.id === data.id
+            ? {
+                ...c,
+                ...(data.name !== undefined ? { name: data.name.trim() } : {}),
+                ...(data.parent_id !== undefined ? { parent_id: data.parent_id } : {}),
+                updated_at: new Date().toISOString(),
+              }
+            : c
+        ).sort((a, b) => a.name.localeCompare(b.name))
+      );
+      return { previous };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['exercise-categories'] });
-      queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
       toast.success('Categoria atualizada!');
     },
-    onError: () => toast.error('Erro ao atualizar categoria'),
+    onError: (_e, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
+      toast.error('Erro ao atualizar categoria');
+    },
   });
 
   const deleteCategory = useMutation({
@@ -82,12 +129,23 @@ export function useExerciseCategories() {
         .eq('id', id);
       if (error) throw error;
     },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<ExerciseCategory[]>(queryKey);
+      queryClient.setQueryData<ExerciseCategory[]>(queryKey, (old = []) =>
+        old.filter((c) => c.id !== id)
+      );
+      return { previous };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['exercise-categories'] });
+      // Exercícios podem ter ficado sem categoria — invalida em background
       queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
       toast.success('Categoria excluída!');
     },
-    onError: () => toast.error('Erro ao excluir categoria'),
+    onError: (_e, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
+      toast.error('Erro ao excluir categoria');
+    },
   });
 
   return { categories, isLoading, createCategory, updateCategory, deleteCategory };
