@@ -3,9 +3,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
-import { Edit, ChevronRight, ChevronLeft, Dumbbell, Play } from 'lucide-react';
+import { Edit, ChevronRight, ChevronLeft, Dumbbell, Play, Trash2 } from 'lucide-react';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 
 const DAYS_SHORT = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
