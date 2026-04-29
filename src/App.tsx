@@ -128,7 +128,7 @@ function AppRoutes() {
         <Route path="aula" element={<LiveSessionPage />} />
         <Route path="exercicios" element={<ClinicExerciseLibraryPage />} />
         <Route path="relatorios" element={<ReportsPage />} />
-        <Route path="billing" element={<BillingPage />} />
+        
         <Route path="importar" element={<ImportPassesPage />} />
         <Route path="conciliar" element={<ReconcileCheckinsPage />} />
       </Route>
@@ -157,7 +157,6 @@ const App = () => {
         <BrowserRouter>
           <AuthProvider>
             <ConfirmProvider>
-              <PaymentTestModeBanner />
               <ImpersonationBanner />
               <AppRoutes />
               <InstallPrompt />
