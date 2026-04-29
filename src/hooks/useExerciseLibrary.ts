@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-import type { BodyAnalysis, AestheticAnalysis } from '@/lib/exerciseAnalysis';
+import type { BodyAnalysis, AestheticAnalysis, MobilityAnalysis } from '@/lib/exerciseAnalysis';
 
 export interface LibraryExercise {
   id: string;
