@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { parseYouTubeId, formatSeconds, buildYouTubeEmbedUrl, parseTimeToSeconds } from '@/lib/youtubeUtils';
+import { compressVideoFile } from '@/lib/compressVideo';
 
 export interface ExerciseVideoData {
   video_type: 'youtube' | 'upload' | 'instagram' | null;
