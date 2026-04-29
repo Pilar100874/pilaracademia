@@ -742,7 +742,7 @@ export default function ExerciseLibraryPage() {
       (ex) =>
         ex.video_type === 'upload' &&
         !!ex.video_url &&
-        !ex.video_url.includes('.webm')
+        !isUploadVideoOptimized(ex)
     );
     if (queue.length === 0) {
       toast.success('Não há vídeos pendentes de otimização.');
@@ -760,9 +760,10 @@ export default function ExerciseLibraryPage() {
 
     let totalSaved = 0;
     let successCount = 0;
+    let skippedCount = 0;
     let failCount = 0;
 
-    const runOne = async (ex: LibraryExercise): Promise<boolean> => {
+    const runOne = async (ex: LibraryExercise): Promise<'converted' | 'checked' | 'failed'> => {
       try {
         const url = ex.video_url!;
         const res = await fetch(url);
@@ -774,7 +775,17 @@ export default function ExerciseLibraryPage() {
         });
         const compressed = await compressVideoFile(inputFile);
         if (compressed === inputFile || compressed.size >= origSize) {
-          return false;
+          const checkedAt = new Date().toISOString();
+          const { error: updErr } = await supabase
+            .from('exercise_library')
+            .update({ video_optimized_at: checkedAt } as any)
+            .eq('id', ex.id);
+          if (updErr) throw updErr;
+          queryClient.setQueryData<LibraryExercise[]>(
+            ['exercise-library', user.id],
+            (old) => old?.map((e) => (e.id === ex.id ? { ...e, video_optimized_at: checkedAt } : e)) ?? old
+          );
+          return 'checked';
         }
         const path = `${user.id}/${Date.now()}-auto.webm`;
         const { error: upErr } = await supabase.storage
@@ -784,9 +795,10 @@ export default function ExerciseLibraryPage() {
         const { data: pub } = supabase.storage
           .from('exercise-videos')
           .getPublicUrl(path);
+        const optimizedAt = new Date().toISOString();
         const { error: updErr } = await supabase
           .from('exercise_library')
-          .update({ video_url: pub.publicUrl })
+          .update({ video_url: pub.publicUrl, video_optimized_at: optimizedAt } as any)
           .eq('id', ex.id);
         if (updErr) throw updErr;
         totalSaved += origSize - compressed.size;
@@ -794,7 +806,7 @@ export default function ExerciseLibraryPage() {
         // ao reabrir o vídeo já estará marcado como otimizado (.webm) e não será refeito.
         queryClient.setQueryData<LibraryExercise[]>(
           ['exercise-library', user.id],
-          (old) => old?.map((e) => (e.id === ex.id ? { ...e, video_url: pub.publicUrl } : e)) ?? old
+          (old) => old?.map((e) => (e.id === ex.id ? { ...e, video_url: pub.publicUrl, video_optimized_at: optimizedAt } : e)) ?? old
         );
         try {
           const marker = '/exercise-videos/';
@@ -804,26 +816,28 @@ export default function ExerciseLibraryPage() {
             await supabase.storage.from('exercise-videos').remove([oldPath]);
           }
         } catch { /* ignore */ }
-        return true;
+        return 'converted';
       } catch (err) {
         console.warn('Optimize failed for', ex.id, err);
         addFailed(ex.id);
-        return false;
+        return 'failed';
       }
     };
 
     setRecompressing({ done: 0, total: queue.length, saved: 0 });
     let done = 0;
     for (const ex of queue) {
-      const ok = await runOne(ex);
-      if (ok) successCount++; else failCount++;
+      const result = await runOne(ex);
+      if (result === 'converted') successCount++;
+      else if (result === 'checked') skippedCount++;
+      else failCount++;
       done++;
       setRecompressing({ done, total: queue.length, saved: totalSaved });
     }
     setRecompressing(null);
     queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
     toast.success(
-      `Otimização concluída: ${successCount} convertidos, ${failCount} falharam${
+      `Otimização concluída: ${successCount} convertidos, ${skippedCount} já estavam no melhor formato, ${failCount} falharam${
         totalSaved > 0 ? ` — ${(totalSaved / (1024 * 1024)).toFixed(1)} MB economizados` : ''
       }.`
     );
@@ -833,7 +847,7 @@ export default function ExerciseLibraryPage() {
     (ex) =>
       ex.video_type === 'upload' &&
       !!ex.video_url &&
-      !ex.video_url.includes('.webm')
+      !isUploadVideoOptimized(ex)
   ).length;
 
 
