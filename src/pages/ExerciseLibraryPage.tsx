@@ -807,12 +807,11 @@ export default function ExerciseLibraryPage() {
     }
     setRecompressing(null);
     queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
-    toast({
-      title: 'Otimização concluída',
-      description: `${successCount} convertidos, ${failCount} falharam${
+    toast.success(
+      `Otimização concluída: ${successCount} convertidos, ${failCount} falharam${
         totalSaved > 0 ? ` — ${(totalSaved / (1024 * 1024)).toFixed(1)} MB economizados` : ''
-      }.`,
-    });
+      }.`
+    );
   };
 
   const pendingOptimizationCount = exercises.filter(
