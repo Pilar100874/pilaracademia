@@ -736,7 +736,7 @@ export default function ExerciseLibraryPage() {
         !ex.video_url.includes('.webm')
     );
     if (queue.length === 0) {
-      toast({ title: 'Tudo certo!', description: 'Não há vídeos pendentes de otimização.' });
+      toast.success('Não há vídeos pendentes de otimização.');
       return;
     }
 
