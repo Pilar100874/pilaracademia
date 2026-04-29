@@ -1058,18 +1058,19 @@ export default function ExerciseLibraryPage() {
         const handleSelectCategory = async (categoryId: string | null) => {
           if (!videoPreview) return;
           const previewing = videoPreview;
-          // Pre-advance to next video for snappy UX (don't wait for the mutation)
+          // Pre-advance to next video for snappy UX
           const nextEx = videoList[currentIndex + 1];
           if (nextEx) setVideoPreview(nextEx);
-          try {
-            await updateExercise.mutateAsync({
-              id: previewing.id,
-              category_id: categoryId,
-            });
-          } catch {
-            // toast handled by hook; revert preview if no advance happened
+          const { error } = await supabase
+            .from('exercise_library')
+            .update({ category_id: categoryId })
+            .eq('id', previewing.id);
+          if (error) {
+            toast.error('Erro ao atualizar categoria');
             if (!nextEx) setVideoPreview(previewing);
+            return;
           }
+          queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
         };
 
         return (
