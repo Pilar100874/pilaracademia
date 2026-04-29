@@ -338,11 +338,11 @@ export default function ExerciseLibraryPage() {
     if (filterCategory === NO_CATEGORY) {
       matchesCategory = (ex.category_ids?.length ?? 0) === 0;
     } else if (filterCategory !== ALL_CATEGORIES) {
-      // Include exercises that belong to the selected category OR any of its descendants
       const allowed = descendantsMap.get(filterCategory) ?? new Set([filterCategory]);
       matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
     }
-    return matchesSearch && matchesCategory;
+    const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, bodyFilter);
+    return matchesSearch && matchesCategory && matchesBody;
   });
 
   const handleEdit = (exercise: LibraryExercise) => {
