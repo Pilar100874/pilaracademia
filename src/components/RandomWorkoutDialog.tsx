@@ -5,11 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
-import { Shuffle, Loader2 } from 'lucide-react';
+import { Shuffle, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  BODY_GROUPS,
+  AESTHETIC_ITEMS,
+  BodyAnalysisKey,
+  AestheticAnalysisKey,
+} from '@/lib/exerciseAnalysis';
 
 interface RandomWorkoutDialogProps {
   open: boolean;
@@ -19,46 +24,53 @@ interface RandomWorkoutDialogProps {
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogProps) {
-  const { categories } = useExerciseCategories();
   const { exercises } = useExerciseLibrary();
   const { createPlan, addExercise } = useWorkoutPlans();
 
   const [name, setName] = useState('');
   const [count, setCount] = useState('10');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [minPercent, setMinPercent] = useState('20');
+  const [bodyKeys, setBodyKeys] = useState<Set<BodyAnalysisKey>>(new Set());
+  const [aestheticKeys, setAestheticKeys] = useState<Set<AestheticAnalysisKey>>(new Set());
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [generating, setGenerating] = useState(false);
 
-  // Build hierarchy: top-level categories with children grouped under them
-  const topLevel = useMemo(
-    () => categories.filter((c) => !c.parent_id),
-    [categories]
-  );
-  const childrenByParent = useMemo(() => {
-    const map = new Map<string, typeof categories>();
-    for (const c of categories) {
-      if (c.parent_id) {
-        const arr = map.get(c.parent_id) ?? [];
-        arr.push(c);
-        map.set(c.parent_id, arr);
-      }
+  const min = useMemo(() => {
+    const n = parseInt(minPercent, 10);
+    return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
+  }, [minPercent]);
+
+  const matchScore = (ex: typeof exercises[number]): number => {
+    let score = 0;
+    for (const k of bodyKeys) {
+      const v = ex.body_analysis?.[k];
+      if (typeof v === 'number' && v >= min) score += v;
     }
-    return map;
-  }, [categories]);
-
-  const availableCount = useMemo(() => {
-    if (!selectedCategories.length) return 0;
-    const set = new Set(selectedCategories);
-    return exercises.filter((ex) =>
-      ex.category_ids.some((cid) => set.has(cid))
-    ).length;
-  }, [exercises, selectedCategories]);
-
-  const toggleCategory = (id: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
-    );
+    for (const k of aestheticKeys) {
+      const v = ex.aesthetic_analysis?.[k];
+      if (typeof v === 'number' && v >= min) score += v;
+    }
+    return score;
   };
+
+  const pool = useMemo(() => {
+    if (bodyKeys.size === 0 && aestheticKeys.size === 0) return [];
+    return exercises.filter((ex) => matchScore(ex) > 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exercises, bodyKeys, aestheticKeys, min]);
+
+  const toggleBody = (k: BodyAnalysisKey) =>
+    setBodyKeys((prev) => {
+      const next = new Set(prev);
+      next.has(k) ? next.delete(k) : next.add(k);
+      return next;
+    });
+  const toggleAesthetic = (k: AestheticAnalysisKey) =>
+    setAestheticKeys((prev) => {
+      const next = new Set(prev);
+      next.has(k) ? next.delete(k) : next.add(k);
+      return next;
+    });
 
   const toggleDay = (idx: number) => {
     setSelectedDays((prev) =>
@@ -69,42 +81,40 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   const reset = () => {
     setName('');
     setCount('10');
-    setSelectedCategories([]);
+    setMinPercent('20');
+    setBodyKeys(new Set());
+    setAestheticKeys(new Set());
     setSelectedDays([]);
   };
 
   const handleGenerate = async () => {
     const n = parseInt(count, 10);
-    if (!name.trim()) {
-      toast.error('Dê um nome para o treino');
-      return;
+    if (!name.trim()) return toast.error('Dê um nome para o treino');
+    if (!n || n < 1) return toast.error('Quantidade inválida');
+    if (bodyKeys.size === 0 && aestheticKeys.size === 0) {
+      return toast.error('Selecione ao menos uma classificação');
     }
-    if (!n || n < 1) {
-      toast.error('Quantidade inválida');
-      return;
-    }
-    if (!selectedCategories.length) {
-      toast.error('Selecione ao menos uma categoria');
-      return;
-    }
+    if (!pool.length) return toast.error('Nenhum exercício corresponde à classificação selecionada. Aguarde a análise dos vídeos terminar ou diminua o % mínimo.');
 
-    const set = new Set(selectedCategories);
-    const pool = exercises.filter((ex) =>
-      ex.category_ids.some((cid) => set.has(cid))
-    );
-
-    if (!pool.length) {
-      toast.error('Nenhum exercício na(s) categoria(s) selecionada(s)');
-      return;
+    // Weighted random by score (higher % = mais provável de ser sorteado)
+    const remaining = pool.map((ex) => ({ ex, score: matchScore(ex) }));
+    const picked: typeof exercises = [];
+    const target = Math.min(n, remaining.length);
+    for (let i = 0; i < target; i++) {
+      const total = remaining.reduce((s, r) => s + r.score, 0);
+      if (total <= 0) break;
+      let r = Math.random() * total;
+      let idx = 0;
+      for (let j = 0; j < remaining.length; j++) {
+        r -= remaining[j].score;
+        if (r <= 0) {
+          idx = j;
+          break;
+        }
+      }
+      picked.push(remaining[idx].ex);
+      remaining.splice(idx, 1);
     }
-
-    // Shuffle (Fisher-Yates) then take up to n
-    const shuffled = [...pool];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    const picked = shuffled.slice(0, Math.min(n, shuffled.length));
 
     setGenerating(true);
     try {
@@ -112,7 +122,6 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
         name: name.trim(),
         days_of_week: selectedDays,
       });
-
       await Promise.all(
         picked.map((ex, idx) =>
           addExercise.mutateAsync({
@@ -130,7 +139,6 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
           })
         )
       );
-
       toast.success(`Treino gerado com ${picked.length} exercício(s)!`);
       reset();
       onOpenChange(false);
@@ -148,10 +156,10 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shuffle className="h-5 w-5 text-primary" />
-            Gerar treino aleatório
+            Gerar treino por classificação
           </DialogTitle>
           <DialogDescription>
-            Sorteia exercícios das categorias escolhidas.
+            Escolha o tipo de treino — o sistema sorteia exercícios analisados pela IA cuja % atinja o mínimo.
           </DialogDescription>
         </DialogHeader>
 
@@ -167,59 +175,72 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="rand-count">Quantidade de exercícios</Label>
-              <Input
-                id="rand-count"
-                inputMode="numeric"
-                value={count}
-                onChange={(e) => setCount(e.target.value.replace(/\D/g, ''))}
-                placeholder="10"
-              />
-              {selectedCategories.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {availableCount} exercício(s) disponível(eis) na seleção
-                </p>
-              )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="rand-count">Qtd. exercícios</Label>
+                <Input
+                  id="rand-count"
+                  inputMode="numeric"
+                  value={count}
+                  onChange={(e) => setCount(e.target.value.replace(/\D/g, ''))}
+                  placeholder="10"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rand-min">% mínimo</Label>
+                <Input
+                  id="rand-min"
+                  inputMode="numeric"
+                  value={minPercent}
+                  onChange={(e) => setMinPercent(e.target.value.replace(/\D/g, ''))}
+                  placeholder="20"
+                />
+              </div>
             </div>
 
+            {(bodyKeys.size > 0 || aestheticKeys.size > 0) && (
+              <p className="text-xs text-muted-foreground">
+                {pool.length} exercício(s) compatível(eis) na biblioteca
+              </p>
+            )}
+
             <div className="space-y-2">
-              <Label>Categorias</Label>
-              {categories.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Nenhuma categoria criada ainda.
-                </p>
-              ) : (
-                <div className="border rounded-md p-3 space-y-2 max-h-60 overflow-y-auto">
-                  {topLevel.map((parent) => {
-                    const children = childrenByParent.get(parent.id) ?? [];
-                    return (
-                      <div key={parent.id} className="space-y-1">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <Checkbox
-                            checked={selectedCategories.includes(parent.id)}
-                            onCheckedChange={() => toggleCategory(parent.id)}
-                          />
-                          <span className="text-sm font-medium">{parent.name}</span>
-                        </label>
-                        {children.length > 0 && (
-                          <div className="pl-6 space-y-1">
-                            {children.map((child) => (
-                              <label key={child.id} className="flex items-center gap-2 cursor-pointer">
-                                <Checkbox
-                                  checked={selectedCategories.includes(child.id)}
-                                  onCheckedChange={() => toggleCategory(child.id)}
-                                />
-                                <span className="text-sm text-muted-foreground">{child.name}</span>
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+              <Label className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                Áreas trabalhadas
+              </Label>
+              <div className="border rounded-md p-3 space-y-3 max-h-72 overflow-y-auto">
+                {BODY_GROUPS.map((g) => (
+                  <div key={g.group} className="space-y-1.5">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {g.group}
+                    </p>
+                    {g.items.map((it) => (
+                      <label key={it.key} className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          checked={bodyKeys.has(it.key)}
+                          onCheckedChange={() => toggleBody(it.key)}
+                        />
+                        <span className="text-sm">{it.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                ))}
+                <div className="space-y-1.5 pt-2 border-t">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Análise estética
+                  </p>
+                  {AESTHETIC_ITEMS.map((it) => (
+                    <label key={it.key} className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={aestheticKeys.has(it.key)}
+                        onCheckedChange={() => toggleAesthetic(it.key)}
+                      />
+                      <span className="text-sm">{it.label}</span>
+                    </label>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="space-y-2">
