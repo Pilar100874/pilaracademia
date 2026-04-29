@@ -134,7 +134,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
       document.removeEventListener('visibilitychange', onVis);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, exercises.map((e) => `${e.id}:${e.body_analyzed_at ?? ''}:${e.video_url ?? ''}`).join('|')]);
+  }, [user?.id, exercises.map((e) => `${e.id}:${e.body_analyzed_at ?? ''}:${e.mobility_analysis ? '1' : '0'}:${e.video_url ?? ''}`).join('|')]);
 
   return progress;
 }
