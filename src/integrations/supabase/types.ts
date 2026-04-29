@@ -2716,6 +2716,57 @@ export type Database = {
         }
         Relationships: []
       }
+      student_external_identities: {
+        Row: {
+          active: boolean
+          clinic_id: string
+          created_at: string
+          external_document: string | null
+          external_email: string | null
+          external_name: string | null
+          external_user_id: string | null
+          id: string
+          linked_at: string
+          linked_by: string | null
+          notes: string | null
+          platform: Database["public"]["Enums"]["appointment_origin"]
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          clinic_id: string
+          created_at?: string
+          external_document?: string | null
+          external_email?: string | null
+          external_name?: string | null
+          external_user_id?: string | null
+          id?: string
+          linked_at?: string
+          linked_by?: string | null
+          notes?: string | null
+          platform: Database["public"]["Enums"]["appointment_origin"]
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          clinic_id?: string
+          created_at?: string
+          external_document?: string | null
+          external_email?: string | null
+          external_name?: string | null
+          external_user_id?: string | null
+          id?: string
+          linked_at?: string
+          linked_by?: string | null
+          notes?: string | null
+          platform?: Database["public"]["Enums"]["appointment_origin"]
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       student_instructors: {
         Row: {
           clinic_id: string

@@ -158,6 +158,23 @@ export default function ImportPassesPage() {
     enabled: !!activeClinicId,
   });
 
+  // Identidades externas já vinculadas — match instantâneo por external_user_id / e-mail / documento
+  const { data: externalIdentities = [] } = useQuery({
+    queryKey: ['student-external-identities', activeClinicId, platform],
+    queryFn: async () => {
+      if (!activeClinicId) return [];
+      const { data, error } = await supabase
+        .from('student_external_identities')
+        .select('student_id, external_user_id, external_email, external_document')
+        .eq('clinic_id', activeClinicId)
+        .eq('platform', platform)
+        .eq('active', true);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!activeClinicId,
+  });
+
   const { data: imports = [] } = useQuery({
     queryKey: ['external-pass-imports', activeClinicId],
     queryFn: async () => {
@@ -224,6 +241,15 @@ export default function ImportPassesPage() {
       if (s.name) studentByName.set(normalize(s.name), s.id);
     });
 
+    const studentByExtId = new Map<string, string>();
+    const studentByExtEmail = new Map<string, string>();
+    const studentByExtDoc = new Map<string, string>();
+    externalIdentities.forEach((ei) => {
+      if (ei.external_user_id) studentByExtId.set(ei.external_user_id, ei.student_id);
+      if (ei.external_email) studentByExtEmail.set(normalize(ei.external_email), ei.student_id);
+      if (ei.external_document) studentByExtDoc.set(ei.external_document, ei.student_id);
+    });
+
     const seen = new Set<string>();
     return rows.map((r) => {
       const name = String(r[mapping.student_name!] ?? '').trim();
@@ -234,8 +260,12 @@ export default function ImportPassesPage() {
       const extId = mapping.external_user_id ? String(r[mapping.external_user_id] ?? '').trim() : '';
       const status = mapping.payment_status ? String(r[mapping.payment_status] ?? '').trim() : '';
 
+      // Ordem de match: identidade externa salva → e-mail/doc/nome do cadastro
       let matched: string | null = null;
-      if (email) matched = studentByEmail.get(normalize(email)) ?? null;
+      if (extId) matched = studentByExtId.get(extId) ?? null;
+      if (!matched && email) matched = studentByExtEmail.get(normalize(email)) ?? null;
+      if (!matched && doc) matched = studentByExtDoc.get(doc) ?? null;
+      if (!matched && email) matched = studentByEmail.get(normalize(email)) ?? null;
       if (!matched && doc) matched = studentByDoc.get(doc) ?? null;
       if (!matched && name) matched = studentByName.get(normalize(name)) ?? null;
 
@@ -261,7 +291,7 @@ export default function ImportPassesPage() {
         dedupe_key: dedupe,
       };
     });
-  }, [rows, mapping, students, existingKeys]);
+  }, [rows, mapping, students, existingKeys, externalIdentities]);
 
   const stats = useMemo(() => {
     const total = parsed.length;
@@ -333,6 +363,38 @@ export default function ImportPassesPage() {
         const { error } = await supabase.from('external_pass_checkins').insert(batch);
         if (error) throw error;
       }
+
+      // Auto-vincula identidades externas para os alunos casados nesta importação
+      // (assim, na próxima planilha o match é instantâneo via external_user_id)
+      const identitiesToLink = new Map<string, {
+        clinic_id: string; student_id: string; platform: Platform;
+        external_user_id: string | null; external_email: string | null;
+        external_document: string | null; external_name: string;
+        linked_by: string;
+      }>();
+      for (const p of importable) {
+        if (!p.matched_student_id) continue;
+        const key = `${p.matched_student_id}|${p.external_user_id ?? p.student_email ?? p.student_document ?? p.student_name}`;
+        if (identitiesToLink.has(key)) continue;
+        identitiesToLink.set(key, {
+          clinic_id: activeClinicId,
+          student_id: p.matched_student_id,
+          platform,
+          external_user_id: p.external_user_id,
+          external_email: p.student_email,
+          external_document: p.student_document,
+          external_name: p.student_name,
+          linked_by: userId,
+        });
+      }
+      const identitiesArr = Array.from(identitiesToLink.values());
+      if (identitiesArr.length > 0) {
+        // Insere ignorando conflitos pela chave única (clinic_id, platform, external_user_id)
+        await supabase
+          .from('student_external_identities')
+          .upsert(identitiesArr, { onConflict: 'clinic_id,platform,external_user_id', ignoreDuplicates: true });
+      }
+
       return imp;
     },
     onSuccess: () => {
@@ -343,6 +405,7 @@ export default function ImportPassesPage() {
       setMapping({});
       queryClient.invalidateQueries({ queryKey: ['external-pass-imports'] });
       queryClient.invalidateQueries({ queryKey: ['epc-dedupe-keys'] });
+      queryClient.invalidateQueries({ queryKey: ['student-external-identities'] });
     },
     onError: (e: Error) => toast.error(`Erro ao importar: ${e.message}`),
   });
