@@ -48,6 +48,14 @@ const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
 const NEW_CATEGORY = '__new__';
 
+const hasWebmUrl = (url?: string | null) =>
+  !!url && lowerNoQuery(url).endsWith('.webm');
+
+const lowerNoQuery = (url: string) => url.split('?')[0].toLowerCase();
+
+const isUploadVideoOptimized = (ex: Pick<LibraryExercise, 'video_type' | 'video_url' | 'video_optimized_at'>) =>
+  ex.video_type === 'upload' && !!ex.video_url && (!!ex.video_optimized_at || hasWebmUrl(ex.video_url));
+
 export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
