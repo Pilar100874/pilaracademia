@@ -64,6 +64,7 @@ export default function ExerciseLibraryPage() {
   const [videoPreview, setVideoPreview] = useState<LibraryExercise | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
   const [bulkUploading, setBulkUploading] = useState<{ done: number; total: number } | null>(null);
+  const [recompressing, setRecompressing] = useState<{ done: number; total: number; saved: number } | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
   const [bulkCategoryChoice, setBulkCategoryChoice] = useState<string>(NO_CATEGORY);
   const [newBulkCategoryName, setNewBulkCategoryName] = useState('');
