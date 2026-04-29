@@ -163,6 +163,7 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
             )}
 
             {/* Exercise preview with arrows */}
+            {plan.exercises && plan.exercises.length > 0 && (
               <div className="relative">
                 <div
                   ref={scrollerRef}
