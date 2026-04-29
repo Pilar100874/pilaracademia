@@ -1305,32 +1305,20 @@ export default function ExerciseLibraryPage() {
           if (next) setVideoPreview(next);
         };
 
-        // Build flat list of categories for quick-pick pills
-        const categoryOptions = [
-          { id: null as string | null, name: 'Sem categoria', parentId: null as string | null },
-          ...orderedCategories.map(({ cat }) => ({
-            id: cat.id as string | null,
-            name: cat.name,
-            parentId: cat.parent_id ?? null,
-          })),
-        ];
+        // Build flat list of categories for the multi-pick pills (no "no category" option in multi-mode)
+        const categoryOptions = orderedCategories.map(({ cat }) => ({
+          id: cat.id,
+          name: cat.name,
+          parentId: cat.parent_id ?? null,
+        }));
 
-        const handleSelectCategory = async (categoryId: string | null) => {
+        const handleToggleCategory = (categoryId: string, checked: boolean) => {
           if (!videoPreview) return;
-          const previewing = videoPreview;
-          // Pre-advance to next video for snappy UX
-          const nextEx = videoList[currentIndex + 1];
-          if (nextEx) setVideoPreview(nextEx);
-          const { error } = await supabase
-            .from('exercise_library')
-            .update({ category_id: categoryId })
-            .eq('id', previewing.id);
-          if (error) {
-            toast.error('Erro ao atualizar categoria');
-            if (!nextEx) setVideoPreview(previewing);
-            return;
-          }
-          queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+          toggleExerciseCategory.mutate({
+            exerciseId: videoPreview.id,
+            categoryId,
+            checked,
+          });
         };
 
         return (
@@ -1351,9 +1339,13 @@ export default function ExerciseLibraryPage() {
                 ? { current: currentIndex + 1, total: videoList.length }
                 : undefined
             }
-            currentCategoryId={videoPreview?.category_id ?? null}
+            currentCategoryIds={
+              videoPreview
+                ? exercises.find((e) => e.id === videoPreview.id)?.category_ids ?? []
+                : []
+            }
             categoryOptions={categoryOptions}
-            onSelectCategory={handleSelectCategory}
+            onToggleCategory={handleToggleCategory}
           />
         );
       })()}
