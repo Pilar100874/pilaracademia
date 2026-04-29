@@ -104,14 +104,21 @@ export function WorkoutPlanDialog({
         name: name.trim(),
         days_of_week: selectedDays,
       });
+      onOpenChange(false);
     } else {
-      await createPlan.mutateAsync({
+      const created = await createPlan.mutateAsync({
         name: name.trim(),
         days_of_week: selectedDays,
       });
+      // Keep the dialog open in edit mode and immediately open the
+      // exercise selector so the user can start adding exercises.
+      if (created && onCreated) {
+        onCreated(created as WorkoutPlan);
+        setSelectExerciseOpen(true);
+      } else {
+        onOpenChange(false);
+      }
     }
-
-    onOpenChange(false);
   };
 
   const handleDelete = async () => {
