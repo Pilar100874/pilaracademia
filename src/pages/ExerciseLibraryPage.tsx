@@ -502,6 +502,22 @@ export default function ExerciseLibraryPage() {
         failed: partial.length,
         categoryId: targetCategoryId,
       });
+
+      // Auto-otimiza os vídeos recém-importados em background (re-codifica
+      // para 720p WebM no navegador para carregarem mais rápido).
+      const createdList = Array.isArray(data?.created) ? data.created : [];
+      if (createdList.length > 0) {
+        const toCompress: LibraryExercise[] = createdList.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          video_type: 'upload',
+          video_url: c.video_url,
+        } as LibraryExercise));
+        // Don't await — let it run in background while the user continues
+        recompressExercises(toCompress, { silent: true }).catch((err) =>
+          console.error('Auto-compress after IG import failed', err)
+        );
+      }
     } catch (e) {
       clearInterval(progressTimer);
       console.error(e);
