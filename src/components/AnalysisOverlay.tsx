@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Sparkles, Activity, Dumbbell, Flame, X } from 'lucide-react';
 import {
   BodyAnalysis,
@@ -186,10 +187,10 @@ export function AnalysisOverlay({
 
   const panelPosition =
     variant === 'inline-icon'
-      ? 'fixed left-3 right-3 bottom-24 sm:left-auto sm:right-4 sm:bottom-28 sm:w-[340px]'
+      ? 'fixed left-2 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:left-auto sm:right-4 sm:bottom-28 sm:w-[360px] sm:max-w-[360px]'
       : `absolute ${positionClass} w-[min(calc(100vw-1.5rem),340px)]`;
 
-  return (
+  const panel = (
     <div
       className={`${panelPosition} z-50 animate-scale-in`}
       onClick={(e) => e.stopPropagation()}
@@ -227,4 +228,15 @@ export function AnalysisOverlay({
       </div>
     </div>
   );
+
+  if (variant === 'inline-icon' && typeof document !== 'undefined') {
+    return (
+      <>
+        <span className="h-12 w-12 shrink-0" aria-hidden="true" />
+        {createPortal(panel, document.body)}
+      </>
+    );
+  }
+
+  return panel;
 }
