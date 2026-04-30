@@ -59,6 +59,9 @@ export function TypedFoodDialog({
   const [customName, setCustomName] = useState('');
   const [originalItemsState, setOriginalItemsState] = useState<FoodItem[]>([]);
 
+  const itemRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const { errorOf, setError, clearError, clearIf } = useFieldError();
+
   // Atualizar estado quando abrir para edição
   useEffect(() => {
     if (open) {
@@ -119,11 +122,23 @@ export function TypedFoodDialog({
 
   const handleAnalyze = async () => {
     const validItems = items.filter(item => item.food.trim() && item.quantity.trim());
-    
+
     if (validItems.length === 0) {
-      toast.error('Adicione pelo menos um alimento com quantidade');
+      // Foca no primeiro item incompleto
+      const target = items.find(it => !it.food.trim()) || items.find(it => !it.quantity.trim()) || items[0];
+      const field = target.food.trim() ? 'qty' : 'food';
+      const el = itemRefs.current[`${target.id}-${field}`];
+      if (el) {
+        try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch { el.scrollIntoView(); }
+        setTimeout(() => { try { el.focus({ preventScroll: true }); } catch { el.focus(); } }, 80);
+      }
+      setError(
+        `${target.id}-${field}`,
+        field === 'food' ? 'Informe o alimento' : 'Informe a quantidade'
+      );
       return;
     }
+    clearError();
 
     // If editing and nothing changed, just close without re-analyzing
     if (isEditing && !hasItemsChanged() && customName.trim() === (initialName || '')) {
