@@ -35,12 +35,14 @@ const EXAMPLES = [
 
 export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
   const { exercises } = useExerciseLibrary();
+  const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
 
   const [name, setName] = useState('');
   const [prompt, setPrompt] = useState('');
   const [count, setCount] = useState('8');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
 
   const reset = () => {
@@ -48,7 +50,44 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
     setPrompt('');
     setCount('8');
     setSelectedDays([]);
+    setSelectedCategoryIds([]);
   };
+
+  const toggleCategory = (id: string) => {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
+  };
+
+  // Sort: parents first (alpha), then their children indented
+  const sortedCategories = (() => {
+    const parents = categories.filter((c) => !c.parent_id).sort((a, b) => a.name.localeCompare(b.name));
+    const result: { id: string; name: string; isChild: boolean; parentName?: string }[] = [];
+    for (const p of parents) {
+      result.push({ id: p.id, name: p.name, isChild: false });
+      const children = categories
+        .filter((c) => c.parent_id === p.id)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      for (const c of children) {
+        result.push({ id: c.id, name: c.name, isChild: true, parentName: p.name });
+      }
+    }
+    // orphan children (parent deleted)
+    const orphans = categories.filter(
+      (c) => c.parent_id && !parents.find((p) => p.id === c.parent_id)
+    );
+    for (const o of orphans) result.push({ id: o.id, name: o.name, isChild: false });
+    return result;
+  })();
+
+  // Filter exercises by selected categories (any match)
+  const filteredExercises =
+    selectedCategoryIds.length === 0
+      ? exercises
+      : exercises.filter((ex) =>
+          (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id))
+        );
+
 
   const toggleDay = (idx: number) => {
     setSelectedDays((prev) =>
