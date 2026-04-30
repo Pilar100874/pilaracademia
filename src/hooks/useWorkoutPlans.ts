@@ -33,6 +33,15 @@ export interface WorkoutPlan {
   exercises?: WorkoutExercise[];
 }
 
+type LibraryMediaFields = Partial<Pick<WorkoutExercise,
+  'image_urls' | 'video_type' | 'video_url' | 'video_start_seconds' | 'video_end_seconds' |
+  'body_analysis' | 'aesthetic_analysis' | 'mobility_analysis'
+>>;
+
+type WorkoutExerciseWithLibrary = WorkoutExercise & {
+  exercise_library?: LibraryMediaFields | null;
+};
+
 export function useWorkoutPlans() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -59,7 +68,7 @@ export function useWorkoutPlans() {
             .eq('workout_plan_id', plan.id)
             .order('order_index', { ascending: true });
 
-          const merged = (exercises || []).map((ex: any) => {
+          const merged = ((exercises || []) as WorkoutExerciseWithLibrary[]).map((ex) => {
             const library = ex.exercise_library;
             const libraryImages = Array.isArray(library?.image_urls) ? library.image_urls : [];
             const exerciseImages = Array.isArray(ex.image_urls) ? ex.image_urls : [];
