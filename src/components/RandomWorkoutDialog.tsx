@@ -207,10 +207,13 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
               <Label htmlFor="rand-name" className="text-xs font-medium">Nome do treino</Label>
               <Input
                 id="rand-name"
+                ref={nameRef}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); clearIf('name'); }}
                 placeholder="Ex.: Treino A"
+                aria-invalid={!!errorOf('name')}
               />
+              <FieldError message={errorOf('name')} />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -218,11 +221,14 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                 <Label htmlFor="rand-count" className="text-xs font-medium">Qtd. exercícios</Label>
                 <Input
                   id="rand-count"
+                  ref={countRef}
                   inputMode="numeric"
                   value={count}
-                  onChange={(e) => setCount(e.target.value.replace(/\D/g, ''))}
+                  onChange={(e) => { setCount(e.target.value.replace(/\D/g, '')); clearIf('count'); }}
                   placeholder="10"
+                  aria-invalid={!!errorOf('count')}
                 />
+                <FieldError message={errorOf('count')} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="rand-min" className="text-xs font-medium">% mínimo</Label>
