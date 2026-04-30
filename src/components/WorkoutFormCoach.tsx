@@ -41,6 +41,10 @@ export function WorkoutFormCoach({
   const gestureStreakRef = useRef<{ next: number; prev: number }>({ next: 0, prev: 0 });
   // Smoothed bounding box (normalized 0-1) used for auto-framing the next capture.
   const bboxRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  // Last small grayscale sample for motion detection between frames.
+  const lastSampleRef = useRef<Uint8ClampedArray | null>(null);
+  // Counter of consecutive "still" frames — we still send 1 every ~3 cycles to keep gesture detection alive.
+  const stillStreakRef = useRef(0);
 
   const [status, setStatus] = useState<FormStatus>('idle');
   const [feedback, setFeedback] = useState<string>('Iniciando análise...');
@@ -48,6 +52,7 @@ export function WorkoutFormCoach({
   const [analyzing, setAnalyzing] = useState(false);
   const [autoFramed, setAutoFramed] = useState(false);
   const [pendingNav, setPendingNav] = useState<null | { dir: 'next' | 'prev'; countdown: number }>(null);
+  const [ecoMode, setEcoMode] = useState(true); // default: economia (8s)
 
   // Start camera (hidden — used only for capture)
   useEffect(() => {
