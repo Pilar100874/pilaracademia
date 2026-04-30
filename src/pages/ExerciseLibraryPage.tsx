@@ -1263,10 +1263,10 @@ export default function ExerciseLibraryPage() {
                     onClick={(e) => {
                       if (selectionMode) return;
                       e.stopPropagation();
-                      if (hasVideo) {
-                        setVideoPreview(exercise);
-                      } else if (exercise.image_urls?.length) {
+                      if (exercise.image_urls?.length) {
                         setZoomImages(exercise.image_urls);
+                      } else if (hasVideo) {
+                        setVideoPreview(exercise);
                       }
                     }}
                   >
