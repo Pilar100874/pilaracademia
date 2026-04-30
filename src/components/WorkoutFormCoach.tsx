@@ -112,15 +112,43 @@ export function WorkoutFormCoach({
       sH = ch * vh;
     }
 
-    // Output target: keep aspect ratio of crop, max 480px wide.
-    const targetW = 480;
-    const targetH = Math.round((sH / sW) * targetW) || 360;
+    // Output target: keep aspect ratio of crop, max 384px wide (era 480 — economia de banda/IA).
+    const targetW = 384;
+    const targetH = Math.round((sH / sW) * targetW) || 288;
     canvas.width = targetW;
     canvas.height = targetH;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
     ctx.drawImage(video, sx, sy, sW, sH, 0, 0, targetW, targetH);
-    return canvas.toDataURL('image/jpeg', 0.7);
+    return canvas.toDataURL('image/jpeg', 0.55); // era 0.7 — JPEG bem mais comprimido
+  }, []);
+
+  // Tira uma amostra pequena em escala de cinza do vídeo, para detectar movimento sem custo.
+  const sampleMotion = useCallback((): number => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || video.readyState < 2) return Infinity;
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    if (!vw || !vh) return Infinity;
+    const tmp = document.createElement('canvas');
+    tmp.width = MOTION_SAMPLE_SIZE;
+    tmp.height = Math.round((vh / vw) * MOTION_SAMPLE_SIZE);
+    const ctx = tmp.getContext('2d');
+    if (!ctx) return Infinity;
+    ctx.drawImage(video, 0, 0, tmp.width, tmp.height);
+    const { data } = ctx.getImageData(0, 0, tmp.width, tmp.height);
+    // Converte para grayscale compacto
+    const gray = new Uint8ClampedArray(tmp.width * tmp.height);
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+      gray[j] = (data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11) | 0;
+    }
+    const prev = lastSampleRef.current;
+    lastSampleRef.current = gray;
+    if (!prev || prev.length !== gray.length) return Infinity;
+    let diff = 0;
+    for (let i = 0; i < gray.length; i++) diff += Math.abs(gray[i] - prev[i]);
+    return diff / gray.length;
   }, []);
 
   const triggerNav = useCallback(
