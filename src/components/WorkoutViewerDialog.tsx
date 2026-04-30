@@ -167,16 +167,8 @@ export function WorkoutViewerDialog({
             </div>
           </div>
         </div>
-        {/* Top-right action stack: Coach IA + toggle media */}
+        {/* Top-right action stack: toggle media */}
         <div className="absolute top-4 right-16 z-40 flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => setCoachOpen(true)}
-            className="gap-1.5 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg"
-          >
-            <Sparkles className="h-4 w-4" />
-            Coach IA
-          </Button>
           {hasVideo && currentImages.length > 0 && (
             <Button
               size="sm"
