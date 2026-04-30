@@ -220,7 +220,13 @@ export function AnalysisOverlay({
         </div>
 
         {/* Body */}
-        <div className="max-h-[55vh] overflow-y-auto px-3 py-2.5 space-y-3 scrollbar-thin">
+        <div
+          className="min-h-0 max-h-[55vh] overflow-y-auto overscroll-contain touch-pan-y px-3 py-2.5 space-y-3 scrollbar-thin [-webkit-overflow-scrolling:touch]"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onPointerMove={(e) => e.stopPropagation()}
+        >
           <Section icon={Dumbbell} title="Áreas trabalhadas" items={bodyItems} tone="body" />
           <Section icon={Activity} title="Mobilidade / flexibilidade" items={mobItems} tone="mob" />
           <Section icon={Flame} title="Análise estética" items={aesthItems} tone="aesth" />
