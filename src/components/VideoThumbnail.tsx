@@ -34,7 +34,6 @@ export function VideoThumbnail({
   const freshVideoUrl = getFreshMediaUrl(videoUrl);
   const [errored, setErrored] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
-  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
 
@@ -43,17 +42,7 @@ export function VideoThumbnail({
   useEffect(() => {
     setErrored(false);
     setVideoReady(false);
-    setShouldLoadVideo(false);
   }, [freshVideoUrl, videoType]);
-
-  // Do not attach library videos to the DOM unless explicitly requested: even
-  // metadata thumbnails start many 206 media requests and starve the player.
-  useEffect(() => {
-    if (videoType !== 'upload' || !freshVideoUrl) return;
-    if (isUploadAutoplay) {
-      setShouldLoadVideo(true);
-    }
-  }, [videoType, freshVideoUrl, isUploadAutoplay]);
 
   // Loop the upload preview between start/end seconds
   useEffect(() => {
