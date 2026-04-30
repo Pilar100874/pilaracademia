@@ -34,11 +34,14 @@ export function WorkoutFormCoach({
   const intervalRef = useRef<number | null>(null);
   const inflightRef = useRef(false);
   const gestureStreakRef = useRef<{ next: number; prev: number }>({ next: 0, prev: 0 });
+  // Smoothed bounding box (normalized 0-1) used for auto-framing the next capture.
+  const bboxRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
 
   const [status, setStatus] = useState<FormStatus>('idle');
   const [feedback, setFeedback] = useState<string>('Iniciando análise...');
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [autoFramed, setAutoFramed] = useState(false);
   const [pendingNav, setPendingNav] = useState<null | { dir: 'next' | 'prev'; countdown: number }>(null);
 
   // Start camera (hidden — used only for capture)
