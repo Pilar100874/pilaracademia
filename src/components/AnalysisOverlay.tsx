@@ -235,4 +235,6 @@ export function AnalysisOverlay({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(panel, document.body) : panel;
 }
