@@ -319,6 +319,9 @@ export function ExerciseVideoPlayer({
         playsInline
         preload="auto"
         poster={freshPoster ?? undefined}
+        onLoadedData={() => setUploadReady(true)}
+        onPlaying={() => setUploadReady(true)}
+        onError={() => setUploadReady(true)}
         onContextMenu={(e) => e.preventDefault()}
         className="w-full h-full object-contain bg-black pointer-events-none"
       />
