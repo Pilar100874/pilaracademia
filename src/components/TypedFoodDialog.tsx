@@ -258,17 +258,23 @@ export function TypedFoodDialog({
                 <div className="flex gap-2 items-start">
                   <div className="flex-1 space-y-2">
                     <Input
+                      ref={(el) => { itemRefs.current[`${item.id}-food`] = el; }}
                       value={item.food}
-                      onChange={(e) => updateItem(item.id, 'food', e.target.value)}
+                      onChange={(e) => { updateItem(item.id, 'food', e.target.value); clearIf(`${item.id}-food`); }}
                       placeholder="Alimento (ex: Fraldinha)"
                       className="h-11 text-base"
+                      aria-invalid={!!errorOf(`${item.id}-food`)}
                     />
+                    <FieldError message={errorOf(`${item.id}-food`)} />
                     <Input
+                      ref={(el) => { itemRefs.current[`${item.id}-qty`] = el; }}
                       value={item.quantity}
-                      onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
+                      onChange={(e) => { updateItem(item.id, 'quantity', e.target.value); clearIf(`${item.id}-qty`); }}
                       placeholder="Quantidade (ex: 150g)"
                       className="h-11 text-base"
+                      aria-invalid={!!errorOf(`${item.id}-qty`)}
                     />
+                    <FieldError message={errorOf(`${item.id}-qty`)} />
                   </div>
                   <Button
                     type="button"
