@@ -184,45 +184,52 @@ export function AnalysisOverlay({
     );
   }
 
-  const panelPosition =
-    variant === 'inline-icon'
-      ? 'fixed right-4 bottom-24 sm:bottom-28'
-      : `absolute ${positionClass}`;
-
+  // Painel expandido sempre centralizado na viewport (evita cortes em qualquer
+  // contexto: zoom da biblioteca, viewer de treino, etc.).
   return (
     <div
-      className={`${panelPosition} w-[min(calc(100vw-1.5rem),340px)] z-50 animate-scale-in`}
-      onClick={(e) => e.stopPropagation()}
-      style={{ transformOrigin: 'bottom right' }}
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-fade-in"
+      onClick={() => setExpanded(false)}
+      role="dialog"
+      aria-modal="true"
     >
-      <div className="rounded-2xl bg-black/70 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-gradient-to-r from-emerald-500/10 via-sky-500/10 to-amber-500/10">
-          <div className="flex items-center gap-2">
-            <div className="relative flex items-center justify-center h-6 w-6">
-              <span className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-400/50 via-sky-400/50 to-amber-400/50 blur-md" />
-              <Sparkles className="relative h-3.5 w-3.5 text-white" strokeWidth={2.5} />
-            </div>
-            <div className="leading-tight">
-              <p className="text-white text-[13px] font-bold tracking-tight">Análise IA</p>
-              <p className="text-white/50 text-[10px] font-medium">{total} classificações</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setExpanded(false)}
-            aria-label="Fechar"
-            className="h-7 w-7 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white inline-flex items-center justify-center transition active:scale-90"
-          >
-            <X className="h-3.5 w-3.5" strokeWidth={2.5} />
-          </button>
-        </div>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-        {/* Body */}
-        <div className="max-h-[55vh] overflow-y-auto px-3 py-2.5 space-y-3 scrollbar-thin">
-          <Section icon={Dumbbell} title="Áreas trabalhadas" items={bodyItems} tone="body" />
-          <Section icon={Activity} title="Mobilidade / flexibilidade" items={mobItems} tone="mob" />
-          <Section icon={Flame} title="Análise estética" items={aesthItems} tone="aesth" />
+      {/* Painel */}
+      <div
+        className="relative w-full max-w-sm max-h-[85vh] flex flex-col animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="rounded-2xl bg-black/85 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] overflow-hidden flex flex-col max-h-[85vh]">
+          {/* Header */}
+          <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-gradient-to-r from-emerald-500/10 via-sky-500/10 to-amber-500/10 shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="relative flex items-center justify-center h-6 w-6">
+                <span className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-400/50 via-sky-400/50 to-amber-400/50 blur-md" />
+                <Sparkles className="relative h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+              </div>
+              <div className="leading-tight">
+                <p className="text-white text-[13px] font-bold tracking-tight">Análise IA</p>
+                <p className="text-white/50 text-[10px] font-medium">{total} classificações</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              aria-label="Fechar"
+              className="h-7 w-7 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white inline-flex items-center justify-center transition active:scale-90"
+            >
+              <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-2.5 space-y-3 scrollbar-thin">
+            <Section icon={Dumbbell} title="Áreas trabalhadas" items={bodyItems} tone="body" />
+            <Section icon={Activity} title="Mobilidade / flexibilidade" items={mobItems} tone="mob" />
+            <Section icon={Flame} title="Análise estética" items={aesthItems} tone="aesth" />
+          </div>
         </div>
       </div>
     </div>
