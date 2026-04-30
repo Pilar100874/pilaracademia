@@ -58,6 +58,8 @@ export function ProductFormDialog({
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [isSearchingBarcode, setIsSearchingBarcode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const { errorOf, setError, clearError, clearIf } = useFieldError();
   
   // Form state
   const [formName, setFormName] = useState('');
