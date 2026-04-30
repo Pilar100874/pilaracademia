@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Sparkles, Activity, Dumbbell, Flame, X } from 'lucide-react';
 import {
   BodyAnalysis,
@@ -184,9 +185,9 @@ export function AnalysisOverlay({
     );
   }
 
-  // Painel expandido sempre centralizado na viewport (evita cortes em qualquer
-  // contexto: zoom da biblioteca, viewer de treino, etc.).
-  return (
+  // Painel expandido sempre centralizado na viewport via Portal (evita ser
+  // "espremido" por containers com `transform` — ex.: DialogContent do Radix).
+  const panel = (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-fade-in"
       onClick={() => setExpanded(false)}
@@ -234,4 +235,6 @@ export function AnalysisOverlay({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(panel, document.body) : panel;
 }
