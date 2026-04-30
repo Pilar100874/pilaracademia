@@ -272,13 +272,14 @@ export function WorkoutFormCoach({
       }
     };
 
+    const intervalMs = ecoMode ? INTERVAL_ECO_MS : INTERVAL_NORMAL_MS;
     const startTimer = window.setTimeout(tick, 1500);
-    intervalRef.current = window.setInterval(tick, ANALYSIS_INTERVAL_MS);
+    intervalRef.current = window.setInterval(tick, intervalMs);
     return () => {
       window.clearTimeout(startTimer);
       if (intervalRef.current) window.clearInterval(intervalRef.current);
     };
-  }, [exerciseName, exerciseInstructions, captureFrame, triggerNav, error]);
+  }, [exerciseName, exerciseInstructions, captureFrame, sampleMotion, triggerNav, error, ecoMode]);
 
   useEffect(() => {
     gestureStreakRef.current = { next: 0, prev: 0 };
