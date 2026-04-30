@@ -113,6 +113,17 @@ export function ExerciseVideoPlayer({
       v.removeEventListener('loadedmetadata', handleLoaded);
       v.removeEventListener('timeupdate', handleTimeUpdate);
       v.removeEventListener('ended', handleEnded);
+      // Free media buffers on unmount/source change to avoid mobile WebView
+      // crashes when navigating quickly between videos. Without this the
+      // browser may keep multiple decoded frames in memory and the PWA can
+      // be killed by the OS.
+      try {
+        v.pause();
+        v.removeAttribute('src');
+        v.load();
+      } catch {
+        // ignore
+      }
     };
   }, [videoType, videoUrl, start, end, autoPlay, loop]);
 
@@ -257,7 +268,7 @@ export function ExerciseVideoPlayer({
         autoPlay={autoPlay}
         muted
         playsInline
-        preload="auto"
+        preload="metadata"
         controls={!autoPlay}
         onLoadedData={() => setRetryKey(0)}
         onError={() => setRetryKey((key) => (key < 2 ? key + 1 : key))}
