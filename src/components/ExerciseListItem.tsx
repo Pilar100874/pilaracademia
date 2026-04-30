@@ -62,7 +62,28 @@ export function ExerciseListItem({
           onClick={handleThumbClick}
           aria-label="Ver mídia"
         >
-          {hasVideo ? (
+          {showImageFirst ? (
+            <>
+              <img
+                src={firstImage!}
+                alt={exercise.name}
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover"
+              />
+              {hasVideo && (
+                <div className="absolute top-0.5 right-0.5 bg-black/60 backdrop-blur-sm rounded-full h-5 w-5 flex items-center justify-center pointer-events-none">
+                  <Play className="h-2.5 w-2.5 text-white fill-white" />
+                </div>
+              )}
+              {imageCount > 1 && (
+                <div className="absolute bottom-0 right-0 bg-black/60 text-white text-[10px] px-1 rounded-tl flex items-center gap-0.5 pointer-events-none">
+                  <ImageIcon className="h-2.5 w-2.5" />
+                  {imageCount}
+                </div>
+              )}
+            </>
+          ) : hasVideo ? (
             <VideoThumbnail
               videoType={exercise.video_type}
               videoUrl={exercise.video_url}
@@ -71,22 +92,6 @@ export function ExerciseListItem({
               iconSize="sm"
               className="w-full h-full"
             />
-          ) : firstImage ? (
-            <>
-              <img
-                src={firstImage}
-                alt={exercise.name}
-                loading="lazy"
-                decoding="async"
-                className="w-full h-full object-cover"
-              />
-              {imageCount > 1 && (
-                <div className="absolute bottom-0 right-0 bg-black/60 text-white text-[10px] px-1 rounded-tl flex items-center gap-0.5 pointer-events-none">
-                  <ImageIcon className="h-2.5 w-2.5" />
-                  {imageCount}
-                </div>
-              )}
-            </>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Dumbbell className="h-5 w-5 text-muted-foreground" />
