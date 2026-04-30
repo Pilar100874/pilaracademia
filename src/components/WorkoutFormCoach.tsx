@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Camera, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Camera, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 
 type FormStatus = 'correct' | 'partial' | 'wrong' | 'unknown' | 'idle';
 
@@ -17,7 +16,7 @@ interface WorkoutFormCoachProps {
 }
 
 const ANALYSIS_INTERVAL_MS = 2800;
-const GESTURE_CONFIRM_FRAMES = 2; // require 2 consecutive frames
+const GESTURE_CONFIRM_FRAMES = 2;
 const COUNTDOWN_SECONDS = 2;
 
 export function WorkoutFormCoach({
@@ -42,7 +41,7 @@ export function WorkoutFormCoach({
   const [analyzing, setAnalyzing] = useState(false);
   const [pendingNav, setPendingNav] = useState<null | { dir: 'next' | 'prev'; countdown: number }>(null);
 
-  // Start camera
+  // Start camera (hidden — used only for capture)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -98,7 +97,6 @@ export function WorkoutFormCoach({
     [pendingNav, canNext, canPrev],
   );
 
-  // Countdown for gesture nav
   useEffect(() => {
     if (!pendingNav) return;
     if (pendingNav.countdown <= 0) {
@@ -115,7 +113,6 @@ export function WorkoutFormCoach({
     return () => window.clearTimeout(t);
   }, [pendingNav, onNext, onPrev]);
 
-  // Analysis loop
   useEffect(() => {
     if (error) return;
 
@@ -128,13 +125,7 @@ export function WorkoutFormCoach({
       try {
         const { data, error: fnErr } = await supabase.functions.invoke(
           'analyze-workout-form',
-          {
-            body: {
-              imageBase64: frame,
-              exerciseName,
-              exerciseInstructions,
-            },
-          },
+          { body: { imageBase64: frame, exerciseName, exerciseInstructions } },
         );
         if (fnErr) throw fnErr;
         if (data?.error) {
@@ -167,7 +158,6 @@ export function WorkoutFormCoach({
       }
     };
 
-    // First tick after a small delay
     const startTimer = window.setTimeout(tick, 1500);
     intervalRef.current = window.setInterval(tick, ANALYSIS_INTERVAL_MS);
     return () => {
@@ -176,7 +166,6 @@ export function WorkoutFormCoach({
     };
   }, [exerciseName, exerciseInstructions, captureFrame, triggerNav, error]);
 
-  // Reset gesture streak when exercise changes
   useEffect(() => {
     gestureStreakRef.current = { next: 0, prev: 0 };
     setPendingNav(null);
@@ -204,116 +193,94 @@ export function WorkoutFormCoach({
             ? 'Aguardando...'
             : 'Analisando...';
 
-  return (
-    <div className="fixed inset-0 z-[60] bg-black flex flex-col">
-      {/* Camera feed */}
-      <div className="relative flex-1 overflow-hidden bg-black">
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
-        />
-        <canvas ref={canvasRef} className="hidden" />
+  const ringColor =
+    status === 'correct'
+      ? 'ring-green-500/80 shadow-[0_0_40px_rgba(34,197,94,0.5)]'
+      : status === 'partial'
+        ? 'ring-yellow-400/80 shadow-[0_0_40px_rgba(250,204,21,0.5)]'
+        : status === 'wrong'
+          ? 'ring-red-500/80 shadow-[0_0_40px_rgba(239,68,68,0.5)]'
+          : 'ring-white/10';
 
-        {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent z-10">
-          <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/10">
-            <Camera className="h-4 w-4 text-white" />
-            <span className="text-white text-xs font-semibold truncate max-w-[180px]">
-              {exerciseName}
-            </span>
-          </div>
+  return (
+    <>
+      {/* Hidden camera capture (no UI takeover — keeps exercise video visible) */}
+      <video
+        ref={videoRef}
+        playsInline
+        muted
+        className="fixed -z-10 opacity-0 pointer-events-none w-1 h-1"
+      />
+      <canvas ref={canvasRef} className="hidden" />
+
+      {/* Status overlay on TOP of the workout video — non-blocking */}
+      <div className="absolute top-20 left-4 z-[55] pointer-events-none flex flex-col gap-2 max-w-[70%]">
+        <div className={`flex items-center gap-2 bg-black/60 backdrop-blur-md rounded-full px-3 py-2 border ring-2 transition-all ${ringColor} pointer-events-auto`}>
+          <div className={`h-3 w-3 rounded-full ${lightColor}`} />
+          <span className="text-white text-xs font-bold">{statusLabel}</span>
+          {analyzing && <Loader2 className="h-3 w-3 text-white/60 animate-spin" />}
           <button
             onClick={onClose}
             aria-label="Fechar coach"
-            className="h-10 w-10 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-black/80 active:scale-95"
+            className="ml-1 h-6 w-6 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
           >
-            <X className="h-5 w-5" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
-
-        {/* Traffic light */}
-        <div className="absolute top-20 right-4 flex flex-col items-center gap-3 bg-black/60 backdrop-blur-md rounded-2xl p-3 border border-white/10 z-10">
-          <div className={`h-5 w-5 rounded-full transition-all ${status === 'wrong' ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.8)]' : 'bg-red-500/20'}`} />
-          <div className={`h-5 w-5 rounded-full transition-all ${status === 'partial' ? 'bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.8)]' : 'bg-yellow-400/20'}`} />
-          <div className={`h-5 w-5 rounded-full transition-all ${status === 'correct' ? 'bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.8)]' : 'bg-green-500/20'}`} />
-        </div>
-
-        {/* Status pill */}
-        <div className="absolute top-20 left-4 z-10 max-w-[60%]">
-          <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md rounded-full px-3 py-2 border border-white/10">
-            <div className={`h-3 w-3 rounded-full ${lightColor}`} />
-            <span className="text-white text-xs font-bold">{statusLabel}</span>
-            {analyzing && <Loader2 className="h-3 w-3 text-white/60 animate-spin" />}
-          </div>
-          {feedback && (
-            <p className="mt-2 text-white text-xs bg-black/50 backdrop-blur-md rounded-lg px-3 py-1.5 border border-white/10 line-clamp-2 drop-shadow">
-              {feedback}
-            </p>
-          )}
-        </div>
-
-        {/* Gesture countdown overlay */}
-        {pendingNav && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="bg-black/80 border border-white/20 rounded-3xl px-8 py-6 text-center">
-              <p className="text-white/70 text-sm mb-2">
-                {pendingNav.dir === 'next' ? 'Próximo exercício' : 'Exercício anterior'} em
-              </p>
-              <p className="text-white text-7xl font-extrabold tabular-nums">
-                {pendingNav.countdown}
-              </p>
-              <Button
-                variant="secondary"
-                className="mt-4"
-                onClick={() => {
-                  setPendingNav(null);
-                  gestureStreakRef.current = { next: 0, prev: 0 };
-                }}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 p-6">
-            <div className="max-w-sm text-center">
-              <p className="text-white text-base mb-4">{error}</p>
-              <Button onClick={onClose}>Fechar</Button>
-            </div>
-          </div>
-        )}
-
-        {/* Gesture hint */}
-        <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-10 bg-black/50 backdrop-blur-md rounded-full px-4 py-1.5 border border-white/10">
-          <p className="text-white/80 text-[11px] tracking-wide">
-            ✋ Mostre a palma da mão parada para mudar de exercício
+        {feedback && (
+          <p className="text-white text-xs bg-black/55 backdrop-blur-md rounded-lg px-3 py-1.5 border border-white/10 line-clamp-2 drop-shadow">
+            {feedback}
           </p>
-        </div>
+        )}
       </div>
 
-      {/* Big bottom controls */}
-      <div className="bg-black border-t border-white/10 p-4 pb-6 flex items-center gap-3 safe-bottom">
-        <button
-          onClick={onPrev}
-          disabled={!canPrev}
-          className="flex-1 h-16 rounded-2xl bg-white/10 border border-white/20 text-white font-bold flex items-center justify-center gap-2 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <ChevronLeft className="h-7 w-7" />
-          <span>Anterior</span>
-        </button>
-        <button
-          onClick={onNext}
-          disabled={!canNext}
-          className="flex-1 h-16 rounded-2xl bg-primary text-primary-foreground font-bold flex items-center justify-center gap-2 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <span>Próximo</span>
-          <ChevronRight className="h-7 w-7" />
-        </button>
+      {/* Traffic light vertical (top-right, below close button) */}
+      <div className="absolute top-20 right-4 z-[55] flex flex-col items-center gap-2 bg-black/60 backdrop-blur-md rounded-2xl p-2 border border-white/10">
+        <div className={`h-4 w-4 rounded-full transition-all ${status === 'wrong' ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.9)]' : 'bg-red-500/20'}`} />
+        <div className={`h-4 w-4 rounded-full transition-all ${status === 'partial' ? 'bg-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.9)]' : 'bg-yellow-400/20'}`} />
+        <div className={`h-4 w-4 rounded-full transition-all ${status === 'correct' ? 'bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.9)]' : 'bg-green-500/20'}`} />
       </div>
-    </div>
+
+      {/* Camera-active hint */}
+      <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-[55] bg-black/55 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/10 flex items-center gap-2">
+        <Camera className="h-3.5 w-3.5 text-white/80" />
+        <p className="text-white/85 text-[11px] tracking-wide">
+          Coach IA ativo · ✋ palma parada para trocar
+        </p>
+      </div>
+
+      {/* Gesture countdown */}
+      {pendingNav && (
+        <div className="absolute inset-0 z-[58] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-black/80 border border-white/20 rounded-3xl px-8 py-6 text-center">
+            <p className="text-white/70 text-sm mb-2">
+              {pendingNav.dir === 'next' ? 'Próximo exercício' : 'Exercício anterior'} em
+            </p>
+            <p className="text-white text-7xl font-extrabold tabular-nums">
+              {pendingNav.countdown}
+            </p>
+            <Button
+              variant="secondary"
+              className="mt-4"
+              onClick={() => {
+                setPendingNav(null);
+                gestureStreakRef.current = { next: 0, prev: 0 };
+              }}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="absolute inset-0 z-[59] flex items-center justify-center bg-black/85 p-6">
+          <div className="max-w-sm text-center">
+            <p className="text-white text-base mb-4">{error}</p>
+            <Button onClick={onClose}>Fechar</Button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

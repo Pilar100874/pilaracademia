@@ -167,16 +167,8 @@ export function WorkoutViewerDialog({
             </div>
           </div>
         </div>
-        {/* Top-right action stack: Coach IA + toggle media */}
+        {/* Top-right action stack: toggle media */}
         <div className="absolute top-4 right-16 z-40 flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => setCoachOpen(true)}
-            className="gap-1.5 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg"
-          >
-            <Sparkles className="h-4 w-4" />
-            Coach IA
-          </Button>
           {hasVideo && currentImages.length > 0 && (
             <Button
               size="sm"
@@ -279,6 +271,20 @@ export function WorkoutViewerDialog({
               variant="inline-icon"
             />
 
+            {/* Coach IA toggle */}
+            <button
+              onClick={() => setCoachOpen((s) => !s)}
+              aria-label="Coach IA"
+              aria-pressed={coachOpen}
+              className={`group h-12 w-12 shrink-0 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+                coachOpen
+                  ? 'bg-gradient-to-br from-primary to-primary/70 text-primary-foreground ring-2 ring-white/40 shadow-lg'
+                  : 'bg-white/10 text-white hover:bg-white/20 border border-white/15'
+              }`}
+            >
+              <Sparkles className="h-6 w-6" strokeWidth={2.3} />
+            </button>
+
             {/* Next */}
             <button
               onClick={handleNextExercise}
@@ -290,18 +296,19 @@ export function WorkoutViewerDialog({
             </button>
           </div>
         </div>
+
+        {coachOpen && currentExercise && (
+          <WorkoutFormCoach
+            exerciseName={currentExercise.name}
+            exerciseInstructions={(currentExercise as any).instructions || (currentExercise as any).description}
+            onClose={() => setCoachOpen(false)}
+            onNext={handleNextExercise}
+            onPrev={handlePreviousExercise}
+            canPrev={!isFirstExercise}
+            canNext={!isLastExercise}
+          />
+        )}
       </DialogContent>
-      {coachOpen && currentExercise && (
-        <WorkoutFormCoach
-          exerciseName={currentExercise.name}
-          exerciseInstructions={(currentExercise as any).instructions || (currentExercise as any).description}
-          onClose={() => setCoachOpen(false)}
-          onNext={handleNextExercise}
-          onPrev={handlePreviousExercise}
-          canPrev={!isFirstExercise}
-          canNext={!isLastExercise}
-        />
-      )}
     </Dialog>
   );
 }
