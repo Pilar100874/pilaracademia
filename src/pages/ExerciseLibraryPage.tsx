@@ -346,6 +346,31 @@ export default function ExerciseLibraryPage() {
     return matchesSearch && matchesCategory && matchesBody;
   });
 
+  const [convertingId, setConvertingId] = useState<string | null>(null);
+
+  const handleConvertInstagram = async (exercise: LibraryExercise) => {
+    if (convertingId) return;
+    setConvertingId(exercise.id);
+    const tId = toast.loading(`Importando "${exercise.name}" para o storage...`);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        'convert-instagram-to-storage',
+        { body: { exercise_id: exercise.id } },
+      );
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success('Vídeo importado! Reprodução agora é fluida.', { id: tId });
+      await queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+    } catch (e) {
+      toast.error(
+        `Falha ao importar: ${e instanceof Error ? e.message : 'erro desconhecido'}`,
+        { id: tId },
+      );
+    } finally {
+      setConvertingId(null);
+    }
+  };
+
   const handleEdit = (exercise: LibraryExercise) => {
     setEditingExercise(exercise);
     setDialogOpen(true);
