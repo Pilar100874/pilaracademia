@@ -185,9 +185,9 @@ export function AnalysisOverlay({
     );
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 animate-fade-in flex flex-col bg-black/95 backdrop-blur-2xl"
+      className="fixed inset-0 z-[100] animate-fade-in flex flex-col bg-black/95 backdrop-blur-2xl"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
@@ -220,6 +220,7 @@ export function AnalysisOverlay({
           <Section icon={Flame} title="Análise estética" items={aesthItems} tone="aesth" />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
