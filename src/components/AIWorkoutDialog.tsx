@@ -36,7 +36,7 @@ const EXAMPLES = [
 ];
 
 export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
-  const { exercises } = useExerciseLibrary();
+  const { allExercises: exercises } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
 
