@@ -1450,7 +1450,6 @@ export default function ExerciseLibraryPage() {
             mobilityAnalysis={
               videoPreview ? exercises.find((e) => e.id === videoPreview.id)?.mobility_analysis ?? null : null
             }
-            posterUrl={videoPreview?.image_urls?.[0] ?? null}
           />
         );
       })()}
