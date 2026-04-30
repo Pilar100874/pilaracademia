@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
+import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
