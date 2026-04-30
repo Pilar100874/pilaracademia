@@ -162,14 +162,6 @@ export function AnalysisOverlay({
     <div
       className={`absolute right-3 left-3 sm:left-auto sm:right-4 sm:w-[340px] ${positionClass} z-40 animate-scale-in`}
       onClick={(e) => e.stopPropagation()}
-      style={{ transformOrigin: 'bottom right' }}
-    >
-      <div className="rounded-2xl bg-black/70 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] overflow-hidden">
-
-  return (
-    <div
-      className={`absolute right-3 left-3 sm:left-auto sm:right-4 sm:w-[340px] ${positionClass} z-40 animate-scale-in`}
-      onClick={(e) => e.stopPropagation()}
       style={{ transformOrigin: 'top right' }}
     >
       <div className="rounded-2xl bg-black/70 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] overflow-hidden">
