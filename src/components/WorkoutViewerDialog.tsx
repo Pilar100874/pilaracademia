@@ -145,7 +145,7 @@ export function WorkoutViewerDialog({
           body={(currentExercise as any).body_analysis}
           aesthetic={(currentExercise as any).aesthetic_analysis}
           mobility={(currentExercise as any).mobility_analysis}
-          positionClass="top-20"
+          positionClass="bottom-24"
         />
 
         {/* Header overlay (on top of media) */}
