@@ -103,7 +103,13 @@ const FALLBACK: HelpSection = {
   ],
 };
 
-export function HelpMenu() {
+type HelpMenuProps = {
+  /** When true, renders only the trigger button inline (no fixed positioning). */
+  inline?: boolean;
+  className?: string;
+};
+
+export function HelpMenu({ inline = false, className }: HelpMenuProps) {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
 
@@ -112,22 +118,27 @@ export function HelpMenu() {
 
   const help = HELP_BY_ROUTE[pathname] ?? FALLBACK;
 
+  const trigger = (
+    <button
+      type="button"
+      aria-label="Como usar esta tela"
+      onClick={() => setOpen(true)}
+      className={cn(
+        'flex flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-2xl transition-all min-w-0 flex-1',
+        'text-muted-foreground hover:text-foreground',
+        className
+      )}
+    >
+      <div className="p-1.5 rounded-xl transition-all">
+        <HelpCircle className="h-5 w-5" />
+      </div>
+      <span className="text-[9px] font-medium">Ajuda</span>
+    </button>
+  );
+
   return (
     <>
-      <button
-        type="button"
-        aria-label="Como usar esta tela"
-        onClick={() => setOpen(true)}
-        className={cn(
-          'fixed z-40 rounded-full border border-border bg-card/90 backdrop-blur-md',
-          'shadow-sm hover:shadow-md transition-all',
-          'h-10 w-10 flex items-center justify-center',
-          'top-[calc(env(safe-area-inset-top)+0.75rem)] right-3',
-          'text-foreground/70 hover:text-foreground'
-        )}
-      >
-        <HelpCircle className="h-5 w-5" />
-      </button>
+      {trigger}
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent

@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Calendar, Dumbbell, Heart, TrendingUp, User, Flame } from 'lucide-react';
+import { Home, Calendar, Dumbbell, Heart, User, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { HelpMenu } from '@/components/HelpMenu';
 
 const navItems = [
   { to: '/', icon: Home, label: 'Hoje' },
@@ -41,6 +42,7 @@ export function BottomNav() {
             )}
           </NavLink>
         ))}
+        <HelpMenu inline />
       </div>
     </nav>
   );
