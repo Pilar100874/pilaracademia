@@ -145,7 +145,7 @@ export function WorkoutViewerDialog({
           body={(currentExercise as any).body_analysis}
           aesthetic={(currentExercise as any).aesthetic_analysis}
           mobility={(currentExercise as any).mobility_analysis}
-          positionClass="right-5 bottom-24"
+          positionClass="right-6 bottom-[84px]"
         />
 
         {/* Header overlay (on top of media) */}
@@ -235,7 +235,7 @@ export function WorkoutViewerDialog({
               onClick={handlePreviousExercise}
               disabled={isFirstExercise}
               aria-label="Anterior"
-              className="group h-12 w-12 shrink-0 rounded-full flex items-center justify-center text-white transition-all hover:bg-white/15 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="group h-12 w-12 shrink-0 rounded-full bg-primary/90 flex items-center justify-center text-primary-foreground transition-all hover:bg-primary active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-primary/90"
             >
               <ChevronLeft className="h-7 w-7 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.5} />
             </button>
