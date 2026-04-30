@@ -16,7 +16,7 @@ interface WorkoutFormCoachProps {
 }
 
 const ANALYSIS_INTERVAL_MS = 2800;
-const GESTURE_CONFIRM_FRAMES = 2;
+const GESTURE_CONFIRM_FRAMES = 1; // 1 frame is enough; 2s countdown provides safety
 const COUNTDOWN_SECONDS = 2;
 
 export function WorkoutFormCoach({
