@@ -33,6 +33,10 @@ export function ExerciseListItem({
   const firstImage = getFreshMediaUrl(images[0]);
   const hasVideo = !!(exercise.video_url && exercise.video_type);
 
+  // Prioriza foto se existir (mais leve e mais informativa que um play vazio).
+  // Se não tiver foto mas tiver vídeo, mostra o thumbnail do vídeo.
+  const showImageFirst = !!firstImage;
+
   const handleThumbClick = () => {
     if (hasVideo) setVideoOpen(true);
     else if (firstImage) setZoomOpen(true);
