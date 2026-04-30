@@ -263,6 +263,48 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
                   </div>
                 </section>
 
+                {sortedCategories.length > 0 && (
+                  <section className="p-3 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        Categorias (opcional)
+                      </p>
+                      {selectedCategoryIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCategoryIds([])}
+                          className="text-[10px] text-primary hover:underline"
+                        >
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground leading-snug">
+                      Restringe a IA aos exercícios dessas categorias (ex.: equipamentos disponíveis).
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+                      {sortedCategories.map((c) => {
+                        const active = selectedCategoryIds.includes(c.id);
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => toggleCategory(c.id)}
+                            className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                              active
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-background border-border/70 hover:bg-accent hover:border-primary/40 text-foreground/80'
+                            } ${c.isChild ? 'ml-3' : ''}`}
+                            title={c.isChild && c.parentName ? `${c.parentName} › ${c.name}` : c.name}
+                          >
+                            {c.isChild ? `↳ ${c.name}` : c.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
+
                 <section className="p-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="ai-count" className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
