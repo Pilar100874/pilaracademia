@@ -56,6 +56,7 @@ export function ExerciseVideoPlayer({
   const ytIntervalRef = useRef<number | null>(null);
   const [igReloadKey, setIgReloadKey] = useState(0);
   const freshVideoUrl = getFreshMediaUrl(videoUrl);
+  const frameClassName = className ?? 'w-full aspect-video min-h-[220px] sm:min-h-[360px]';
 
   const start = startSeconds ?? 0;
   const end = endSeconds ?? 0;
@@ -209,7 +210,7 @@ export function ExerciseVideoPlayer({
     const id = parseYouTubeId(freshVideoUrl);
     if (!id) return null;
     return (
-      <div className={`${className ?? ''} relative bg-black`}>
+      <div className={`${frameClassName} relative bg-black overflow-hidden`}>
         <div ref={ytContainerRef} className="w-full h-full [&>iframe]:!w-full [&>iframe]:!h-full" />
         <div className="absolute inset-0" style={{ pointerEvents: 'auto' }} onClick={(e) => e.preventDefault()} />
       </div>
@@ -220,7 +221,7 @@ export function ExerciseVideoPlayer({
     const shortcode = parseInstagramShortcode(freshVideoUrl);
     if (!shortcode) return null;
     return (
-      <div className={`${className ?? ''} relative flex items-center justify-center bg-black overflow-hidden`}>
+      <div className={`${frameClassName} relative flex items-center justify-center bg-black overflow-hidden`}>
         <iframe
           key={igReloadKey}
           src={buildInstagramEmbedUrl(shortcode, isInstagramReel(freshVideoUrl))}
@@ -244,15 +245,17 @@ export function ExerciseVideoPlayer({
   }
 
   return (
-    <div className={`${className ?? ''} bg-black`}>
+    <div className={`${frameClassName} bg-black overflow-hidden`}>
       <video
         ref={videoRef}
         src={freshVideoUrl}
         autoPlay={autoPlay}
         muted
         playsInline
+        preload="auto"
+        controls={!autoPlay}
         onContextMenu={(e) => e.preventDefault()}
-        className="w-full h-full object-contain bg-black pointer-events-none"
+        className="w-full h-full object-contain bg-black"
       />
     </div>
   );
