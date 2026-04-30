@@ -167,9 +167,17 @@ export function WorkoutViewerDialog({
             </div>
           </div>
         </div>
-        {/* Toggle video/image button - only show if both exist */}
-        {hasVideo && currentImages.length > 0 && (
-          <div className="absolute top-4 right-16 z-40">
+        {/* Top-right action stack: Coach IA + toggle media */}
+        <div className="absolute top-4 right-16 z-40 flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => setCoachOpen(true)}
+            className="gap-1.5 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg"
+          >
+            <Sparkles className="h-4 w-4" />
+            Coach IA
+          </Button>
+          {hasVideo && currentImages.length > 0 && (
             <Button
               size="sm"
               variant="secondary"
@@ -188,8 +196,8 @@ export function WorkoutViewerDialog({
                 </>
               )}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Photo navigation (left/right) - only show if multiple photos */}
         {hasMultiplePhotos && (
