@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { Shuffle, Loader2, Sparkles } from 'lucide-react';
