@@ -146,23 +146,25 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
       }}
     >
       <DialogContent
-        className="max-w-md max-h-[90vh] flex flex-col"
+        className="max-w-md w-[calc(100vw-1rem)] max-h-[92vh] sm:max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
+        <DialogHeader className="px-5 pt-5 pb-3 border-b border-border/60">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Sparkles className="h-4 w-4" />
+            </span>
             Gerar treino com IA
           </DialogTitle>
-          <DialogDescription>
-            Descreva seu objetivo e a IA monta a sequência usando os exercícios da sua biblioteca.
+          <DialogDescription className="text-xs leading-relaxed">
+            Descreva seu objetivo — a IA monta a sequência usando os exercícios da sua biblioteca.
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6">
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="ai-name">Nome do treino</Label>
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+          <div className="space-y-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="ai-name" className="text-xs font-medium">Nome do treino</Label>
               <Input
                 id="ai-name"
                 value={name}
@@ -172,31 +174,39 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ai-prompt">Descreva o objetivo</Label>
+              <Label htmlFor="ai-prompt" className="text-xs font-medium flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                Descreva o objetivo
+              </Label>
               <Textarea
                 id="ai-prompt"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Ex.: Quero uma sequência com foco em glúteos e flexibilidade para chegar no espacate"
                 rows={4}
-                className="resize-none"
+                className="resize-none text-sm leading-relaxed"
               />
-              <div className="flex flex-wrap gap-1.5">
-                {EXAMPLES.map((ex) => (
-                  <button
-                    key={ex}
-                    type="button"
-                    onClick={() => setPrompt(ex)}
-                    className="text-[11px] px-2 py-1 rounded-md border border-border bg-muted/40 hover:bg-muted text-muted-foreground transition-colors"
-                  >
-                    {ex.length > 38 ? ex.slice(0, 38) + '…' : ex}
-                  </button>
-                ))}
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Sugestões
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {EXAMPLES.map((ex) => (
+                    <button
+                      key={ex}
+                      type="button"
+                      onClick={() => setPrompt(ex)}
+                      className="text-[11px] px-2.5 py-1 rounded-full border border-border/70 bg-muted/30 hover:bg-muted hover:border-primary/40 text-foreground/80 transition-colors"
+                    >
+                      {ex.length > 42 ? ex.slice(0, 42) + '…' : ex}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="ai-count">Quantidade de exercícios</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="ai-count" className="text-xs font-medium">Quantidade de exercícios</Label>
               <Input
                 id="ai-count"
                 inputMode="numeric"
@@ -210,14 +220,14 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>Dias da semana (opcional)</Label>
-              <div className="flex flex-wrap gap-2">
+              <Label className="text-xs font-medium">Dias da semana (opcional)</Label>
+              <div className="flex flex-wrap gap-1.5">
                 {DAYS.map((day, idx) => (
                   <button
                     key={day}
                     type="button"
                     onClick={() => toggleDay(idx)}
-                    className={`h-9 w-12 rounded-md border text-sm transition-colors ${
+                    className={`h-9 flex-1 min-w-[40px] rounded-md border text-sm font-medium transition-colors ${
                       selectedDays.includes(idx)
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'bg-background border-input hover:bg-accent'
@@ -229,13 +239,13 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
               </div>
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={generating}>
+        <DialogFooter className="gap-2 sm:gap-2 px-5 py-3 border-t border-border/60 bg-background">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={generating} className="flex-1 sm:flex-none">
             Cancelar
           </Button>
-          <Button onClick={handleGenerate} disabled={generating}>
+          <Button onClick={handleGenerate} disabled={generating} className="flex-1 sm:flex-none">
             {generating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
