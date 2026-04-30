@@ -67,6 +67,7 @@ export function VideoPreviewDialog({
   bodyAnalysis,
   aestheticAnalysis,
   mobilityAnalysis,
+  posterUrl,
 }: VideoPreviewDialogProps) {
   useEffect(() => {
     if (!open) return;
@@ -95,6 +96,7 @@ export function VideoPreviewDialog({
             videoUrl={videoUrl}
             startSeconds={startSeconds}
             endSeconds={endSeconds}
+            posterUrl={posterUrl}
             autoPlay
             loop
             className="w-full h-full"
