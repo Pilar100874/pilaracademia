@@ -296,18 +296,19 @@ export function WorkoutViewerDialog({
             </button>
           </div>
         </div>
+
+        {coachOpen && currentExercise && (
+          <WorkoutFormCoach
+            exerciseName={currentExercise.name}
+            exerciseInstructions={(currentExercise as any).instructions || (currentExercise as any).description}
+            onClose={() => setCoachOpen(false)}
+            onNext={handleNextExercise}
+            onPrev={handlePreviousExercise}
+            canPrev={!isFirstExercise}
+            canNext={!isLastExercise}
+          />
+        )}
       </DialogContent>
-      {coachOpen && currentExercise && (
-        <WorkoutFormCoach
-          exerciseName={currentExercise.name}
-          exerciseInstructions={(currentExercise as any).instructions || (currentExercise as any).description}
-          onClose={() => setCoachOpen(false)}
-          onNext={handleNextExercise}
-          onPrev={handlePreviousExercise}
-          canPrev={!isFirstExercise}
-          canNext={!isLastExercise}
-        />
-      )}
     </Dialog>
   );
 }
