@@ -19,7 +19,7 @@ import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary'
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { LazyVideoPreview } from '@/components/LazyVideoPreview';
-import { Dumbbell, Search, Plus, Check, ImageIcon, Tag } from 'lucide-react';
+import { Dumbbell, Search, Plus, Check, ImageIcon, Tag, Loader2 } from 'lucide-react';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import {
   BodyAnalysisFilter,
