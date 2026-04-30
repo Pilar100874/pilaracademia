@@ -225,6 +225,33 @@ export function WorkoutViewerDialog({
           </div>
         )}
 
+        {/* Mobile-only: exercise name + sets×reps card above the bottom bar */}
+        <div className="sm:hidden absolute bottom-24 left-4 right-4 z-40 pointer-events-none">
+          <div className="pointer-events-auto bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 px-4 py-2.5 shadow-2xl mx-auto max-w-lg flex items-center gap-3">
+            <div className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground h-10 w-10 rounded-xl flex flex-col items-center justify-center font-extrabold shadow-md ring-1 ring-white/20 shrink-0">
+              <span className="text-base leading-none">{currentExerciseIndex + 1}</span>
+              <span className="text-[8px] font-medium opacity-80 leading-none mt-0.5">
+                /{exercises.length}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-bold text-base truncate leading-tight tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                {currentExercise.name}
+              </p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="inline-flex items-baseline gap-1 text-white text-xs font-semibold bg-white/15 px-2 py-0.5 rounded-full backdrop-blur-sm">
+                  <span className="font-bold">{currentExercise.sets}</span>
+                  <span className="text-white/70 text-[10px] uppercase tracking-wider">séries</span>
+                </span>
+                <span className="inline-flex items-baseline gap-1 text-white text-xs font-semibold bg-white/15 px-2 py-0.5 rounded-full backdrop-blur-sm">
+                  <span className="font-bold">{currentExercise.reps}</span>
+                  <span className="text-white/70 text-[10px] uppercase tracking-wider">reps</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Floating bottom bar with prev/info/next */}
         <div className="absolute bottom-4 left-4 right-4 z-40 pointer-events-none">
           <div className="flex items-center gap-2 pointer-events-auto bg-black/40 backdrop-blur-md rounded-full border border-white/10 p-2 shadow-2xl mx-auto max-w-lg">
@@ -238,16 +265,16 @@ export function WorkoutViewerDialog({
               <ChevronLeft className="h-7 w-7 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.5} />
             </button>
 
-            {/* Number badge */}
-            <div className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground h-12 w-12 rounded-2xl flex flex-col items-center justify-center font-extrabold shadow-lg ring-2 ring-white/20 shrink-0">
+            {/* Number badge (desktop only — mobile shows it in the card above) */}
+            <div className="hidden sm:flex bg-gradient-to-br from-primary to-primary/70 text-primary-foreground h-12 w-12 rounded-2xl flex-col items-center justify-center font-extrabold shadow-lg ring-2 ring-white/20 shrink-0">
               <span className="text-lg leading-none">{currentExerciseIndex + 1}</span>
               <span className="text-[9px] font-medium opacity-80 leading-none mt-0.5">
                 /{exercises.length}
               </span>
             </div>
 
-            {/* Name + sets×reps */}
-            <div className="flex-1 min-w-0 text-left px-1">
+            {/* Name + sets×reps (desktop only — mobile shows it in the card above) */}
+            <div className="hidden sm:block flex-1 min-w-0 text-left px-1">
               <p className="text-white font-bold text-base sm:text-lg truncate leading-tight tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {currentExercise.name}
               </p>
@@ -262,6 +289,9 @@ export function WorkoutViewerDialog({
                 </span>
               </div>
             </div>
+
+            {/* Mobile-only spacer to push controls apart */}
+            <div className="sm:hidden flex-1" />
 
             {/* Analysis (icon-only, sits next to Next) */}
             <AnalysisOverlay
