@@ -205,7 +205,7 @@ export function VideoPreviewDialog({
           body={bodyAnalysis}
           aesthetic={aestheticAnalysis}
           mobility={mobilityAnalysis}
-          positionClass="top-20"
+          positionClass={showNav ? 'bottom-24 sm:bottom-28' : 'bottom-6 pb-safe'}
         />
 
         {showNav && (
