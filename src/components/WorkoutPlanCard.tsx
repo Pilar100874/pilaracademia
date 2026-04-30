@@ -154,6 +154,8 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
                           <img
                             src={firstImg}
                             alt={exercise.name}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover"
                           />
                         ) : (

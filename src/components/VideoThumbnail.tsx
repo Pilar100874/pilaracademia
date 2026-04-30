@@ -47,11 +47,12 @@ export function VideoThumbnail({
 
   useEffect(() => {
     if (videoType !== 'upload' || !freshVideoUrl || videoReady || errored) return;
+    if (!isUploadAutoplay) return; // don't retry/poll when we're not actually loading
     const timeout = window.setTimeout(() => {
       setRetryKey((key) => (key < 2 ? key + 1 : key));
     }, 3500);
     return () => window.clearTimeout(timeout);
-  }, [videoType, freshVideoUrl, videoReady, errored]);
+  }, [videoType, freshVideoUrl, videoReady, errored, isUploadAutoplay]);
 
   // Loop the upload preview between start/end seconds
   useEffect(() => {
