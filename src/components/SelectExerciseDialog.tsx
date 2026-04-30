@@ -39,14 +39,17 @@ interface SelectExerciseDialogProps {
 const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
 
+type Tab = 'mine' | 'global';
+
 export function SelectExerciseDialog({
   open,
   onOpenChange,
   onSelect,
   onCreateNew,
 }: SelectExerciseDialogProps) {
-  const { exercises, isLoading } = useExerciseLibrary();
+  const { exercises, globalExercises, isLoading } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
+  const [activeTab, setActiveTab] = useState<Tab>('mine');
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [bodyFilter, setBodyFilter] = useState<BodyAnalysisFilterValue>(EMPTY_BODY_FILTER);
@@ -61,19 +64,26 @@ export function SelectExerciseDialog({
     return m;
   }, [categories]);
 
+  // Selected exercises may live in either tab — keep a global lookup so the
+  // confirm button can resolve them regardless of which tab is active.
   const exerciseMap = useMemo(() => {
     const m = new Map<string, LibraryExercise>();
-    exercises.forEach((ex) => m.set(ex.id, ex));
+    [...exercises, ...globalExercises].forEach((ex) => m.set(ex.id, ex));
     return m;
-  }, [exercises]);
+  }, [exercises, globalExercises]);
 
-  const filteredExercises = exercises.filter((ex) => {
+  const sourceList = activeTab === 'mine' ? exercises : globalExercises;
+
+  const filteredExercises = sourceList.filter((ex) => {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
     let matchesCategory = true;
-    if (filterCategory === NO_CATEGORY) {
-      matchesCategory = !ex.category_id;
-    } else if (filterCategory !== ALL_CATEGORIES) {
-      matchesCategory = ex.category_id === filterCategory;
+    if (activeTab === 'mine') {
+      // Categories only apply to personal items
+      if (filterCategory === NO_CATEGORY) {
+        matchesCategory = !ex.category_id;
+      } else if (filterCategory !== ALL_CATEGORIES) {
+        matchesCategory = ex.category_id === filterCategory;
+      }
     }
     const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, ex.mobility_analysis, bodyFilter);
     return matchesSearch && matchesCategory && matchesBody;
