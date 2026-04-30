@@ -104,7 +104,7 @@ export function ClassificationBadges({
   if (rows.length === 0) return null;
 
   return (
-    <div className={`space-y-1.5 ${className ?? ''}`}>
+    <div className={`space-y-1.5 min-w-0 ${className ?? ''}`}>
       {rows.map(({ tone, items }) => {
         const t = TONES[tone];
         const Icon = t.icon;
