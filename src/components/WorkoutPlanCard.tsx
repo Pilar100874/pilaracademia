@@ -9,6 +9,7 @@ import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { summarizeWorkout } from '@/lib/exerciseAnalysis';
+import { ClassificationBadges } from '@/components/ClassificationBadges';
 
 const DAYS_SHORT = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
