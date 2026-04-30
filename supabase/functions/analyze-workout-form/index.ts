@@ -85,7 +85,7 @@ Forneça também um feedback CURTO em português (máx 60 caracteres) sobre a fo
                 feedback: { type: "string", description: "Feedback curto em PT-BR, máx 60 chars" },
                 gesture: {
                   type: ["string", "null"],
-                  enum: ["next", "prev", null],
+                  enum: ["next", null],
                 },
               },
               required: ["status", "feedback", "gesture"],
