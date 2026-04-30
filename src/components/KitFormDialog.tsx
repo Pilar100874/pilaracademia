@@ -43,6 +43,10 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
   const [isLoadingKit, setIsLoadingKit] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
 
+  const nameRef = useRef<HTMLInputElement>(null);
+  const itemsRef = useRef<HTMLDivElement>(null);
+  const { errorOf, setError, clearError, clearIf } = useFieldError();
+
   // Load existing kit data
   useEffect(() => {
     if (open && editingKit) {
@@ -160,15 +164,15 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
   };
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      toast.error('Nome do kit é obrigatório');
+    const first = validateRequired([
+      { key: 'name', ref: nameRef, valid: !!name.trim(), message: 'Informe o nome do kit' },
+      { key: 'items', ref: itemsRef, valid: items.length > 0, message: 'Adicione pelo menos um produto ao kit' },
+    ]);
+    if (first) {
+      setError(first.key, first.message);
       return;
     }
-
-    if (items.length === 0) {
-      toast.error('Adicione pelo menos um produto ao kit');
-      return;
-    }
+    clearError();
 
     setIsSaving(true);
 
