@@ -933,7 +933,10 @@ export default function ExerciseLibraryPage() {
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold truncate">Biblioteca de Exercícios</h1>
             <p className="text-sm text-muted-foreground">
-              {exercises.length} exercício{exercises.length !== 1 ? 's' : ''}
+              {activeTab === 'global'
+                ? `${globalExercises.length} global${globalExercises.length !== 1 ? 'is' : ''}`
+                : `${exercises.length} exercício${exercises.length !== 1 ? 's' : ''}`}
+              {isMaster && activeTab === 'global' && ' • você é o curador'}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end ml-auto">
