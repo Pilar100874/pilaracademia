@@ -104,12 +104,12 @@ export function ClassificationBadges({
   if (rows.length === 0) return null;
 
   return (
-    <div className={`space-y-1.5 ${className ?? ''}`}>
+    <div className={`space-y-1.5 min-w-0 ${className ?? ''}`}>
       {rows.map(({ tone, items }) => {
         const t = TONES[tone];
         const Icon = t.icon;
         return (
-          <div key={tone} className="flex items-start gap-1.5">
+          <div key={tone} className="flex items-start gap-1.5 min-w-0 w-full">
             {showLabels && (
               <div
                 className={`shrink-0 inline-flex items-center gap-1 ${t.accent}`}
@@ -119,16 +119,16 @@ export function ClassificationBadges({
                 <Icon className="h-3 w-3" strokeWidth={2.5} />
               </div>
             )}
-            <div className="flex flex-wrap gap-1 min-w-0">
+            <div className="flex flex-wrap gap-1 min-w-0 flex-1">
               {items.map((i) => {
                 const pct = Math.min(100, Math.max(0, i.value));
                 return (
                   <span
                     key={`${tone}-${i.label}`}
                     title={`${i.label} • ${i.value}%`}
-                    className={`inline-flex items-center gap-1.5 text-[10px] leading-none pl-1.5 pr-1 py-0.5 rounded-md border ${t.chipBg} ${t.chipBorder} ${t.chipText}`}
+                    className={`inline-flex items-center gap-1.5 text-[10px] leading-none pl-1.5 pr-1 py-0.5 rounded-md border min-w-0 max-w-full ${t.chipBg} ${t.chipBorder} ${t.chipText}`}
                   >
-                    <span className="truncate max-w-[110px] font-medium">{i.label}</span>
+                    <span className="truncate min-w-0 font-medium">{i.label}</span>
                     <span className="relative h-1 w-6 rounded-full bg-foreground/10 overflow-hidden shrink-0">
                       <span
                         className={`absolute inset-y-0 left-0 ${t.bar} rounded-full`}
