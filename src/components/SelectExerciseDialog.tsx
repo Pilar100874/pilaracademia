@@ -15,11 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { LazyVideoPreview } from '@/components/LazyVideoPreview';
-import { Dumbbell, Search, Plus, Check, ImageIcon, Tag, Loader2 } from 'lucide-react';
+import { Dumbbell, Search, Plus, Check, ImageIcon, Tag, Loader2, Globe } from 'lucide-react';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import {
   BodyAnalysisFilter,
