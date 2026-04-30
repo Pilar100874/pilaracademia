@@ -36,8 +36,6 @@ interface VideoPreviewDialogProps {
   bodyAnalysis?: Record<string, number> | null;
   aestheticAnalysis?: Record<string, number> | null;
   mobilityAnalysis?: Record<string, number> | null;
-  /** Optional poster image to display while the video loads. */
-  posterUrl?: string | null;
 }
 
 /**
@@ -67,7 +65,6 @@ export function VideoPreviewDialog({
   bodyAnalysis,
   aestheticAnalysis,
   mobilityAnalysis,
-  posterUrl,
 }: VideoPreviewDialogProps) {
   useEffect(() => {
     if (!open) return;
