@@ -55,16 +55,27 @@ export function useWorkoutPlans() {
         (plans || []).map(async (plan) => {
           const { data: exercises } = await supabase
             .from('workout_exercises')
-            .select('*, exercise_library:exercise_library_id (body_analysis, aesthetic_analysis, mobility_analysis)')
+            .select('*, exercise_library:exercise_library_id (image_urls, video_type, video_url, video_start_seconds, video_end_seconds, body_analysis, aesthetic_analysis, mobility_analysis)')
             .eq('workout_plan_id', plan.id)
             .order('order_index', { ascending: true });
 
-          const merged = (exercises || []).map((ex: any) => ({
-            ...ex,
-            body_analysis: ex.exercise_library?.body_analysis ?? null,
-            aesthetic_analysis: ex.exercise_library?.aesthetic_analysis ?? null,
-            mobility_analysis: ex.exercise_library?.mobility_analysis ?? null,
-          }));
+          const merged = (exercises || []).map((ex: any) => {
+            const lib = ex.exercise_library;
+            // Fallback: se o exercício do treino não tem mídia própria, usar a da biblioteca
+            const hasOwnImages = Array.isArray(ex.image_urls) && ex.image_urls.length > 0;
+            const hasOwnVideo = !!ex.video_url && !!ex.video_type;
+            return {
+              ...ex,
+              image_urls: hasOwnImages ? ex.image_urls : (lib?.image_urls ?? []),
+              video_type: hasOwnVideo ? ex.video_type : (lib?.video_type ?? null),
+              video_url: hasOwnVideo ? ex.video_url : (lib?.video_url ?? null),
+              video_start_seconds: hasOwnVideo ? ex.video_start_seconds : (lib?.video_start_seconds ?? null),
+              video_end_seconds: hasOwnVideo ? ex.video_end_seconds : (lib?.video_end_seconds ?? null),
+              body_analysis: lib?.body_analysis ?? null,
+              aesthetic_analysis: lib?.aesthetic_analysis ?? null,
+              mobility_analysis: lib?.mobility_analysis ?? null,
+            };
+          });
 
           return {
             ...plan,
