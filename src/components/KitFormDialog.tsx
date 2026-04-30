@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,8 @@ import { DefaultProductImage } from '@/components/DefaultProductImage';
 import { KitItemQuantityDialog } from '@/components/KitItemQuantityDialog';
 import { NATURAL_PRODUCTS, naturalToCustomProduct, getCategoryInfo, NATURAL_PRODUCT_CATEGORIES } from '@/data/naturalProducts';
 import { toast } from 'sonner';
+import { FieldError } from '@/components/FieldError';
+import { useFieldError, validateRequired } from '@/lib/formValidation';
 
 interface KitFormDialogProps {
   open: boolean;
