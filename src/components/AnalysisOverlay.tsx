@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronUp, Sparkles } from 'lucide-react';
+import { ChevronDown, Sparkles, Activity, Dumbbell, Flame, X } from 'lucide-react';
 import {
   BodyAnalysis,
   AestheticAnalysis,
@@ -13,8 +13,7 @@ interface AnalysisOverlayProps {
   body?: BodyAnalysis | Record<string, number> | null;
   aesthetic?: AestheticAnalysis | Record<string, number> | null;
   mobility?: MobilityAnalysis | Record<string, number> | null;
-  /** Tailwind classes that fully control positioning of the floating chip + panel.
-   * Default places it just above the bottom nav controls. */
+  /** Tailwind classes that fully control positioning of the floating chip + panel. */
   positionClass?: string;
   /** Hide entirely if no analysis data is available. */
   minPercent?: number;
@@ -37,33 +36,89 @@ function pickItems(
     .sort((a, b) => b.value - a.value);
 }
 
-const Pill = ({ label, value, tone }: { label: string; value: number; tone: 'body' | 'mob' | 'aesth' }) => {
-  const cls =
-    tone === 'body'
-      ? 'bg-white/95 text-black border-white'
-      : tone === 'mob'
-        ? 'bg-blue-500/85 text-white border-blue-300/40'
-        : 'bg-amber-400/85 text-black border-amber-200/50';
+type Tone = 'body' | 'mob' | 'aesth';
+
+const TONE_STYLES: Record<Tone, { bar: string; text: string; dot: string }> = {
+  body: {
+    bar: 'bg-gradient-to-r from-emerald-400 to-emerald-300',
+    text: 'text-emerald-200',
+    dot: 'bg-emerald-400',
+  },
+  mob: {
+    bar: 'bg-gradient-to-r from-sky-400 to-cyan-300',
+    text: 'text-sky-200',
+    dot: 'bg-sky-400',
+  },
+  aesth: {
+    bar: 'bg-gradient-to-r from-amber-400 to-rose-300',
+    text: 'text-amber-200',
+    dot: 'bg-amber-400',
+  },
+};
+
+const Row = ({ label, value, tone }: { label: string; value: number; tone: Tone }) => {
+  const t = TONE_STYLES[tone];
+  const pct = Math.min(100, Math.max(0, value));
   return (
-    <span
-      className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium border backdrop-blur-md ${cls}`}
-    >
-      <span className="whitespace-nowrap">{label}</span>
-      <span className="font-bold tabular-nums">{value}%</span>
-    </span>
+    <div className="flex items-center gap-2 py-0.5">
+      <span className="flex-1 min-w-0 truncate text-[12px] text-white/90 font-medium">
+        {label}
+      </span>
+      <div className="relative h-1.5 w-20 sm:w-28 rounded-full bg-white/10 overflow-hidden shrink-0">
+        <div
+          className={`absolute inset-y-0 left-0 ${t.bar} rounded-full`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className={`tabular-nums text-[11px] font-bold ${t.text} w-9 text-right shrink-0`}>
+        {value}%
+      </span>
+    </div>
+  );
+};
+
+const Section = ({
+  icon: Icon,
+  title,
+  items,
+  tone,
+}: {
+  icon: typeof Sparkles;
+  title: string;
+  items: Item[];
+  tone: Tone;
+}) => {
+  if (items.length === 0) return null;
+  const t = TONE_STYLES[tone];
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 mb-1">
+        <span className={`h-1.5 w-1.5 rounded-full ${t.dot}`} />
+        <Icon className={`h-3 w-3 ${t.text}`} strokeWidth={2.5} />
+        <span className="text-[10px] uppercase tracking-wider text-white/70 font-bold">
+          {title}
+        </span>
+        <span className="text-[10px] text-white/40 font-medium">{items.length}</span>
+      </div>
+      <div className="space-y-0">
+        {items.map((i) => (
+          <Row key={`${tone}-${i.label}`} label={i.label} value={i.value} tone={tone} />
+        ))}
+      </div>
+    </div>
   );
 };
 
 /**
  * Floating overlay that lists ALL classification descriptions (body, mobility,
  * aesthetics) on top of a video. Collapsible to a single chip to avoid
- * obscuring the video; expands on tap to show full lists.
+ * obscuring the video; expands on tap to show full lists with progress bars.
  */
 export function AnalysisOverlay({
   body,
   aesthetic,
   mobility,
-  positionClass = 'bottom-24 sm:bottom-28',
+  positionClass = 'top-20',
   minPercent = 1,
 }: AnalysisOverlayProps) {
   const [expanded, setExpanded] = useState(false);
@@ -91,72 +146,55 @@ export function AnalysisOverlay({
           e.stopPropagation();
           setExpanded(true);
         }}
-        className={`absolute left-1/2 -translate-x-1/2 ${positionClass} z-40 inline-flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-xl border border-white/25 text-white px-3 py-1.5 text-xs font-medium shadow-[0_4px_20px_rgba(0,0,0,0.6)] hover:bg-black/75 active:scale-95 transition`}
+        className={`absolute right-4 ${positionClass} z-40 inline-flex items-center gap-1.5 rounded-full bg-black/55 backdrop-blur-xl border border-white/25 text-white pl-2.5 pr-3 py-1.5 text-xs font-semibold shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:bg-black/75 active:scale-95 transition animate-fade-in`}
         aria-label="Mostrar classificações"
       >
-        <Sparkles className="h-3.5 w-3.5" />
-        Classificações ({total})
+        <span className="relative flex items-center justify-center h-4 w-4">
+          <span className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-400/40 via-sky-400/40 to-amber-400/40 blur-sm" />
+          <Sparkles className="relative h-3.5 w-3.5" strokeWidth={2.5} />
+        </span>
+        <span>Análise</span>
+        <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-white/15 text-[10px] font-bold tabular-nums">
+          {total}
+        </span>
       </button>
     );
   }
 
   return (
     <div
-      className={`absolute left-2 right-2 ${positionClass} z-40 max-w-3xl mx-auto`}
+      className={`absolute right-3 left-3 sm:left-auto sm:right-4 sm:w-[340px] ${positionClass} z-40 animate-scale-in`}
       onClick={(e) => e.stopPropagation()}
+      style={{ transformOrigin: 'top right' }}
     >
-      <div className="rounded-2xl bg-black/60 backdrop-blur-xl border border-white/15 shadow-[0_4px_20px_rgba(0,0,0,0.6)] overflow-hidden">
-        <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/10">
-          <span className="inline-flex items-center gap-1.5 text-white text-xs font-semibold">
-            <Sparkles className="h-3.5 w-3.5" />
-            Classificações
-          </span>
+      <div className="rounded-2xl bg-black/70 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-gradient-to-r from-emerald-500/10 via-sky-500/10 to-amber-500/10">
+          <div className="flex items-center gap-2">
+            <div className="relative flex items-center justify-center h-6 w-6">
+              <span className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-400/50 via-sky-400/50 to-amber-400/50 blur-md" />
+              <Sparkles className="relative h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+            </div>
+            <div className="leading-tight">
+              <p className="text-white text-[13px] font-bold tracking-tight">Análise IA</p>
+              <p className="text-white/50 text-[10px] font-medium">{total} classificações</p>
+            </div>
+          </div>
           <button
             type="button"
             onClick={() => setExpanded(false)}
-            className="text-white/70 hover:text-white inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md hover:bg-white/10"
+            aria-label="Fechar"
+            className="h-7 w-7 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white inline-flex items-center justify-center transition active:scale-90"
           >
-            Recolher
-            <ChevronUp className="h-3.5 w-3.5" />
+            <X className="h-3.5 w-3.5" strokeWidth={2.5} />
           </button>
         </div>
-        <div className="max-h-[40vh] overflow-y-auto px-3 py-2 space-y-2 scrollbar-thin">
-          {bodyItems.length > 0 && (
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/60 font-semibold mb-1">
-                Áreas trabalhadas
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {bodyItems.map((i) => (
-                  <Pill key={`b-${i.label}`} label={i.label} value={i.value} tone="body" />
-                ))}
-              </div>
-            </div>
-          )}
-          {mobItems.length > 0 && (
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/60 font-semibold mb-1">
-                Mobilidade / flexibilidade
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {mobItems.map((i) => (
-                  <Pill key={`m-${i.label}`} label={i.label} value={i.value} tone="mob" />
-                ))}
-              </div>
-            </div>
-          )}
-          {aesthItems.length > 0 && (
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/60 font-semibold mb-1">
-                Análise estética
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {aesthItems.map((i) => (
-                  <Pill key={`a-${i.label}`} label={i.label} value={i.value} tone="aesth" />
-                ))}
-              </div>
-            </div>
-          )}
+
+        {/* Body */}
+        <div className="max-h-[55vh] overflow-y-auto px-3 py-2.5 space-y-3 scrollbar-thin">
+          <Section icon={Dumbbell} title="Áreas trabalhadas" items={bodyItems} tone="body" />
+          <Section icon={Activity} title="Mobilidade / flexibilidade" items={mobItems} tone="mob" />
+          <Section icon={Flame} title="Análise estética" items={aesthItems} tone="aesth" />
         </div>
       </div>
     </div>
