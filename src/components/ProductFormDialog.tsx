@@ -12,6 +12,7 @@ import { WATER_IMAGE_URL } from '@/components/DefaultLiquidImage';
 import { ZxingScanner } from '@/components/ZxingScanner';
 import { fetchProductByBarcode, isLiquidProduct } from '@/lib/openFoodFacts';
 import { toast } from 'sonner';
+import { useFieldError, validateRequired } from '@/lib/formValidation';
 
 interface ProductFormDialogProps {
   open: boolean;
