@@ -271,6 +271,20 @@ export function WorkoutViewerDialog({
               variant="inline-icon"
             />
 
+            {/* Coach IA toggle */}
+            <button
+              onClick={() => setCoachOpen((s) => !s)}
+              aria-label="Coach IA"
+              aria-pressed={coachOpen}
+              className={`group h-12 w-12 shrink-0 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+                coachOpen
+                  ? 'bg-gradient-to-br from-primary to-primary/70 text-primary-foreground ring-2 ring-white/40 shadow-lg'
+                  : 'bg-white/10 text-white hover:bg-white/20 border border-white/15'
+              }`}
+            >
+              <Sparkles className="h-6 w-6" strokeWidth={2.3} />
+            </button>
+
             {/* Next */}
             <button
               onClick={handleNextExercise}
