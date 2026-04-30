@@ -72,7 +72,7 @@ const Row = ({ label, value, tone }: { label: string; value: number; tone: Tone 
       <span className="flex-1 min-w-0 truncate text-[12px] text-white/90 font-medium">
         {label}
       </span>
-      <div className="relative h-1.5 w-20 sm:w-28 rounded-full bg-white/10 overflow-hidden shrink-0">
+      <div className="relative h-1.5 w-16 sm:w-24 rounded-full bg-white/10 overflow-hidden shrink-0">
         <div
           className={`absolute inset-y-0 left-0 ${t.bar} rounded-full`}
           style={{ width: `${pct}%` }}
