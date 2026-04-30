@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useIsMaster } from './useIsMaster';
 import { toast } from 'sonner';
 import type { BodyAnalysis, AestheticAnalysis, MobilityAnalysis } from '@/lib/exerciseAnalysis';
 
@@ -16,6 +17,8 @@ export interface LibraryExercise {
   video_optimized_at: string | null;
   video_start_seconds: number | null;
   video_end_seconds: number | null;
+  /** True when this exercise belongs to the shared global library (managed by master). */
+  is_global: boolean;
   /** @deprecated Use category_ids — mantido por compatibilidade com código antigo */
   category_id: string | null;
   /** Todas as categorias atribuídas ao exercício (multi). */
@@ -28,21 +31,29 @@ export interface LibraryExercise {
   updated_at: string;
 }
 
+/**
+ * Loads the user's personal exercise library + the shared **global** library.
+ * - `exercises` = personal items (own user_id, not global)
+ * - `globalExercises` = global items visible to everyone (managed by master)
+ * - Master users (pilar@pilar.com.br) can create/edit/delete in either,
+ *   regular users can only manage their personal items.
+ */
 export function useExerciseLibrary() {
   const { user } = useAuth();
+  const { isMaster } = useIsMaster();
   const queryClient = useQueryClient();
 
-  const { data: exercises = [], isLoading } = useQuery({
+  const { data: rows = [], isLoading } = useQuery({
     queryKey: ['exercise-library', user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user) return [] as LibraryExercise[];
 
-      // Fetch exercises and their category links in parallel
+      // Bring back personal + global in a single round-trip; junction links separately.
       const [exRes, linkRes] = await Promise.all([
         supabase
           .from('exercise_library')
           .select('*')
-          .eq('user_id', user.id)
+          .or(`user_id.eq.${user.id},is_global.eq.true`)
           .order('name', { ascending: true }),
         supabase
           .from('exercise_library_categories')
@@ -59,15 +70,19 @@ export function useExerciseLibrary() {
         linksByExercise.set(link.exercise_id, arr);
       }
 
-      const rows = (exRes.data ?? []).map((ex: any) => ({
+      return (exRes.data ?? []).map((ex: any) => ({
         ...ex,
         category_ids: linksByExercise.get(ex.id) ?? (ex.category_id ? [ex.category_id] : []),
       })) as LibraryExercise[];
-
-      return rows;
     },
     enabled: !!user,
   });
+
+  // Split for convenience in the UI
+  const exercises = rows.filter((ex) => !ex.is_global || ex.user_id === user?.id);
+  const globalExercises = rows.filter((ex) => ex.is_global);
+  // Personal-only (excluding own global ones authored by master)
+  const personalExercises = rows.filter((ex) => !ex.is_global);
 
   const createExercise = useMutation({
     mutationFn: async (data: {
@@ -81,8 +96,11 @@ export function useExerciseLibrary() {
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;
       category_id?: string | null;
+      /** Master-only: create in the shared global library. */
+      is_global?: boolean;
     }) => {
       if (!user) throw new Error('User not authenticated');
+      const wantsGlobal = !!data.is_global && isMaster;
 
       const insertPayload = {
         user_id: user.id,
@@ -96,6 +114,8 @@ export function useExerciseLibrary() {
         video_start_seconds: data.video_start_seconds ?? null,
         video_end_seconds: data.video_end_seconds ?? null,
         category_id: data.category_id ?? null,
+        is_global: wantsGlobal,
+        clinic_id: null as string | null,
       };
 
       const { data: exercise, error } = await supabase
@@ -169,20 +189,14 @@ export function useExerciseLibrary() {
     mutationFn: async (data: { ids: string[]; category_id: string | null }) => {
       if (!data.ids.length) return;
 
-      // Categorias agora são multi-valoradas via junction `exercise_library_categories`.
-      // "Mover" = substituir todos os vínculos atuais pelo destino escolhido (ou
-      // remover todos, se NO_CATEGORY). Também atualizamos a coluna legada
-      // `category_id` para manter o espelho consistente caso o trigger não
-      // dispare na ordem esperada.
-
-      // 1) Remove todos os vínculos atuais dos exercícios selecionados.
+      // 1) Remove all current links
       const { error: delErr } = await supabase
         .from('exercise_library_categories')
         .delete()
         .in('exercise_id', data.ids);
       if (delErr) throw delErr;
 
-      // 2) Se há destino, cria um vínculo novo para cada exercício.
+      // 2) Add a new link if a destination was chosen
       if (data.category_id) {
         const rows = data.ids.map((id) => ({
           exercise_id: id,
@@ -194,7 +208,7 @@ export function useExerciseLibrary() {
         if (insErr) throw insErr;
       }
 
-      // 3) Atualiza a coluna legada para refletir o destino imediatamente.
+      // 3) Mirror legacy column
       const { error: upErr } = await supabase
         .from('exercise_library')
         .update({ category_id: data.category_id })
@@ -208,11 +222,6 @@ export function useExerciseLibrary() {
     onError: () => toast.error('Erro ao mover exercícios'),
   });
 
-  /**
-   * Toggles a single category for an exercise (multi-category support).
-   * If the link exists, removes it; otherwise creates it. Optimistically
-   * updates the cache so the UI feels instant in the full-screen picker.
-   */
   const toggleExerciseCategory = useMutation({
     mutationFn: async (vars: { exerciseId: string; categoryId: string; checked: boolean }) => {
       if (vars.checked) {
@@ -256,6 +265,45 @@ export function useExerciseLibrary() {
     },
   });
 
+  /**
+   * Copies a global exercise to the user's personal library so they can edit
+   * it freely without affecting the shared global library. Categories are
+   * NOT carried over (categories are scoped per user).
+   */
+  const copyGlobalToPersonal = useMutation({
+    mutationFn: async (globalId: string) => {
+      if (!user) throw new Error('User not authenticated');
+      const src = rows.find((ex) => ex.id === globalId);
+      if (!src) throw new Error('Exercício não encontrado');
+      const { data, error } = await supabase
+        .from('exercise_library')
+        .insert({
+          user_id: user.id,
+          name: src.name,
+          image_urls: src.image_urls ?? [],
+          default_sets: src.default_sets,
+          default_reps: src.default_reps,
+          video_type: src.video_type,
+          video_url: src.video_url,
+          video_optimized_at: src.video_optimized_at,
+          video_start_seconds: src.video_start_seconds,
+          video_end_seconds: src.video_end_seconds,
+          category_id: null,
+          is_global: false,
+          clinic_id: null,
+        } as never)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+      toast.success('Copiado para sua biblioteca');
+    },
+    onError: () => toast.error('Erro ao copiar exercício'),
+  });
+
   const uploadExerciseImage = async (file: File): Promise<string> => {
     if (!user) throw new Error('User not authenticated');
 
@@ -276,13 +324,20 @@ export function useExerciseLibrary() {
   };
 
   return {
-    exercises,
+    /** Personal items only (matches previous behaviour for legacy callers). */
+    exercises: personalExercises,
+    /** All visible items (personal + global) — useful for selection dialogs. */
+    allExercises: rows,
+    /** Read-only: items shared via the global library. */
+    globalExercises,
     isLoading,
+    isMaster,
     createExercise,
     updateExercise,
     deleteExercise,
     moveExercises,
     toggleExerciseCategory,
+    copyGlobalToPersonal,
     uploadExerciseImage,
   };
 }
