@@ -34,9 +34,42 @@ export function VideoThumbnail({
   const freshVideoUrl = getFreshMediaUrl(videoUrl);
   const [errored, setErrored] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
 
   const isUploadAutoplay = autoplayPreview && videoType === 'upload' && !!videoUrl;
+
+  useEffect(() => {
+    setErrored(false);
+    setVideoReady(false);
+    setShouldLoadVideo(false);
+  }, [freshVideoUrl, videoType]);
+
+  // Do not attach every library video to the DOM at once: it starts dozens of
+  // 206 media requests and starves the full-screen player. Load thumbnails only
+  // when they are near the viewport.
+  useEffect(() => {
+    if (videoType !== 'upload' || !freshVideoUrl) return;
+    if (isUploadAutoplay || typeof IntersectionObserver === 'undefined') {
+      setShouldLoadVideo(true);
+      return;
+    }
+
+    const node = containerRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoadVideo(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '220px' }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [videoType, freshVideoUrl, isUploadAutoplay]);
 
   // Loop the upload preview between start/end seconds
   useEffect(() => {
@@ -83,28 +116,30 @@ export function VideoThumbnail({
 
   if (videoType === 'upload') {
     return (
-      <div className={`relative bg-muted ${className ?? ''}`}>
-        <video
-          ref={previewRef}
-          key={freshVideoUrl}
-          src={freshVideoUrl}
-          muted
-          autoPlay={isUploadAutoplay}
-          playsInline
-          loop={isUploadAutoplay}
-          preload="auto"
-          onLoadedMetadata={(e) => {
-            try {
-              e.currentTarget.currentTime = Math.max(0.1, startSeconds ?? 0);
-            } catch {
-              // ignore
-            }
-          }}
-          onLoadedData={() => setVideoReady(true)}
-          onCanPlay={() => setVideoReady(true)}
-          onError={() => setErrored(true)}
-          className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'} ${videoReady && !errored ? 'opacity-100' : 'opacity-0'}`}
-        />
+      <div ref={containerRef} className={`relative bg-muted ${className ?? ''}`}>
+        {shouldLoadVideo && (
+          <video
+            ref={previewRef}
+            key={freshVideoUrl}
+            src={freshVideoUrl}
+            muted
+            autoPlay={isUploadAutoplay}
+            playsInline
+            loop={isUploadAutoplay}
+            preload={isUploadAutoplay ? 'auto' : 'metadata'}
+            onLoadedMetadata={(e) => {
+              try {
+                e.currentTarget.currentTime = Math.max(0.1, startSeconds ?? 0);
+              } catch {
+                // ignore
+              }
+            }}
+            onLoadedData={() => setVideoReady(true)}
+            onCanPlay={() => setVideoReady(true)}
+            onError={() => setErrored(true)}
+            className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'} ${videoReady && !errored ? 'opacity-100' : 'opacity-0'}`}
+          />
+        )}
         {(!videoReady || errored) && <div className="absolute inset-0 bg-muted" />}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className={`${badgeSize} rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center`}>
