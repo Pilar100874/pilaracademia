@@ -32,6 +32,7 @@ import { Settings, ChevronDown } from 'lucide-react';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
+import { LazyVideoPreview } from '@/components/LazyVideoPreview';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
 import { getStorageStatus } from '@/lib/videoCache';
@@ -1287,10 +1288,11 @@ export default function ExerciseLibraryPage() {
                         )}
                       </>
                     ) : hasVideo ? (
-                      <VideoThumbnail
+                      <LazyVideoPreview
                         videoType={exercise.video_type}
                         videoUrl={exercise.video_url}
                         startSeconds={exercise.video_start_seconds}
+                        endSeconds={exercise.video_end_seconds}
                         className="w-full h-full"
                         objectFit="contain"
                       />
