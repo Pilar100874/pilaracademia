@@ -91,6 +91,7 @@ export function ExerciseListItem({
               endSeconds={exercise.video_end_seconds}
               iconSize="sm"
               className="w-full h-full"
+              autoplayPreview={exercise.video_type === 'upload'}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
