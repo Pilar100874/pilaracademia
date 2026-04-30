@@ -224,7 +224,9 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
                   Objetivo do treino
                 </Label>
                 <span className="text-[10px] font-medium text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
-                  {exercises.length} na biblioteca
+                  {selectedCategoryIds.length > 0
+                    ? `${filteredExercises.length}/${exercises.length} filtrados`
+                    : `${exercises.length} na biblioteca`}
                 </span>
               </div>
 
