@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Loader2 } from 'lucide-react';
 import { parseYouTubeId, parseInstagramShortcode, buildInstagramEmbedUrl, isInstagramReel } from '@/lib/youtubeUtils';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
@@ -11,6 +11,8 @@ interface Props {
   className?: string;
   autoPlay?: boolean;
   loop?: boolean;
+  /** Optional poster image shown while the video is still loading. */
+  posterUrl?: string | null;
 }
 
 // Lazy-load the YouTube IFrame API once
@@ -49,16 +51,28 @@ export function ExerciseVideoPlayer({
   className,
   autoPlay = false,
   loop = false,
+  posterUrl,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const ytContainerRef = useRef<HTMLDivElement>(null);
   const ytPlayerRef = useRef<any>(null);
   const ytIntervalRef = useRef<number | null>(null);
   const [igReloadKey, setIgReloadKey] = useState(0);
+  const [igLoaded, setIgLoaded] = useState(false);
+  const [ytReady, setYtReady] = useState(false);
+  const [uploadReady, setUploadReady] = useState(false);
   const freshVideoUrl = getFreshMediaUrl(videoUrl);
+  const freshPoster = getFreshMediaUrl(posterUrl) ?? posterUrl ?? null;
 
   const start = startSeconds ?? 0;
   const end = endSeconds ?? 0;
+
+  // Reset readiness flags whenever the source changes
+  useEffect(() => {
+    setIgLoaded(false);
+    setYtReady(false);
+    setUploadReady(false);
+  }, [videoType, freshVideoUrl]);
 
   // Uploaded video handling
   useEffect(() => {
@@ -71,6 +85,19 @@ export function ExerciseVideoPlayer({
         v.currentTime = start;
       } catch {
         // ignore
+      }
+      setUploadReady(true);
+      if (autoPlay || loop) {
+        // Some browsers do not honor the autoplay attribute reliably even
+        // when muted — kick playback explicitly once metadata is ready.
+        v.play().catch(() => {});
+      }
+    };
+
+    const handleCanPlay = () => {
+      setUploadReady(true);
+      if (autoPlay || loop) {
+        v.play().catch(() => {});
       }
     };
 
@@ -101,10 +128,12 @@ export function ExerciseVideoPlayer({
     };
 
     v.addEventListener('loadedmetadata', handleLoaded);
+    v.addEventListener('canplay', handleCanPlay);
     v.addEventListener('timeupdate', handleTimeUpdate);
     v.addEventListener('ended', handleEnded);
     return () => {
       v.removeEventListener('loadedmetadata', handleLoaded);
+      v.removeEventListener('canplay', handleCanPlay);
       v.removeEventListener('timeupdate', handleTimeUpdate);
       v.removeEventListener('ended', handleEnded);
     };
@@ -150,8 +179,11 @@ export function ExerciseVideoPlayer({
             } catch {
               // ignore
             }
+            setYtReady(true);
           },
           onStateChange: (e: any) => {
+            // 1 = playing -> hide loader
+            if (e.data === YT.PlayerState.PLAYING) setYtReady(true);
             // 0 = ended -> loop back to start
             if (e.data === YT.PlayerState.ENDED && loop) {
               try {
@@ -205,6 +237,27 @@ export function ExerciseVideoPlayer({
 
   if (!freshVideoUrl || !videoType) return null;
 
+  // Shared loading overlay (poster + spinner) shown until the underlying
+  // player signals it's actually showing pixels. This avoids the user staring
+  // at a black square while the iframe / metadata loads.
+  const LoadingOverlay = ({ visible }: { visible: boolean }) =>
+    visible ? (
+      <div className="absolute inset-0 z-10 bg-black flex items-center justify-center pointer-events-none">
+        {freshPoster && (
+          <img
+            src={freshPoster}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-contain opacity-70"
+          />
+        )}
+        <div className="relative flex flex-col items-center gap-2 text-white/90">
+          <Loader2 className="h-8 w-8 animate-spin" strokeWidth={2.5} />
+          <span className="text-xs font-medium tracking-wide">Carregando vídeo…</span>
+        </div>
+      </div>
+    ) : null;
+
   if (videoType === 'youtube') {
     const id = parseYouTubeId(freshVideoUrl);
     if (!id) return null;
@@ -212,6 +265,7 @@ export function ExerciseVideoPlayer({
       <div className={`${className ?? ''} relative bg-black`}>
         <div ref={ytContainerRef} className="w-full h-full [&>iframe]:!w-full [&>iframe]:!h-full" />
         <div className="absolute inset-0" style={{ pointerEvents: 'auto' }} onClick={(e) => e.preventDefault()} />
+        <LoadingOverlay visible={!ytReady} />
       </div>
     );
   }
@@ -229,31 +283,39 @@ export function ExerciseVideoPlayer({
           style={{ width: '100%', maxWidth: 540, height: '100%', minHeight: 640, border: 0 }}
           scrolling="yes"
           allow="encrypted-media"
+          onLoad={() => setIgLoaded(true)}
         />
         <button
           type="button"
-          onClick={() => setIgReloadKey((k) => k + 1)}
+          onClick={() => {
+            setIgLoaded(false);
+            setIgReloadKey((k) => k + 1);
+          }}
           aria-label="Recarregar vídeo"
           className="absolute top-3 right-3 h-10 w-10 rounded-full bg-black/70 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/90 transition-colors shadow-lg"
           style={{ zIndex: 50, pointerEvents: 'auto' }}
         >
           <RotateCcw className="h-5 w-5" />
         </button>
+        <LoadingOverlay visible={!igLoaded} />
       </div>
     );
   }
 
   return (
-    <div className={`${className ?? ''} bg-black`}>
+    <div className={`${className ?? ''} relative bg-black`}>
       <video
         ref={videoRef}
         src={freshVideoUrl}
         autoPlay={autoPlay}
         muted
         playsInline
+        preload="auto"
+        poster={freshPoster ?? undefined}
         onContextMenu={(e) => e.preventDefault()}
         className="w-full h-full object-contain bg-black pointer-events-none"
       />
+      <LoadingOverlay visible={!uploadReady} />
     </div>
   );
 }

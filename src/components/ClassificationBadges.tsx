@@ -17,7 +17,7 @@ interface ClassificationBadgesProps {
   perDimension?: number;
   /** Minimum % to consider. */
   minPercent?: number;
-  /** Render a label header before each row. */
+  /** Render the colored category label/icon before each row. Default true. */
   showLabels?: boolean;
   className?: string;
 }
@@ -45,28 +45,41 @@ const TONES = {
   body: {
     icon: Dumbbell,
     label: 'Foco',
-    chip: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25',
-    dot: 'bg-emerald-500',
+    chipText: 'text-emerald-700 dark:text-emerald-300',
+    chipBg: 'bg-emerald-500/10',
+    chipBorder: 'border-emerald-500/20',
+    bar: 'bg-emerald-500',
+    accent: 'text-emerald-600 dark:text-emerald-400',
   },
   mob: {
     icon: Activity,
-    label: 'Mob.',
-    chip: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/25',
-    dot: 'bg-sky-500',
+    label: 'Mobilidade',
+    chipText: 'text-sky-700 dark:text-sky-300',
+    chipBg: 'bg-sky-500/10',
+    chipBorder: 'border-sky-500/20',
+    bar: 'bg-sky-500',
+    accent: 'text-sky-600 dark:text-sky-400',
   },
   aesth: {
     icon: Flame,
     label: 'Estética',
-    chip: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25',
-    dot: 'bg-amber-500',
+    chipText: 'text-amber-700 dark:text-amber-300',
+    chipBg: 'bg-amber-500/10',
+    chipBorder: 'border-amber-500/20',
+    bar: 'bg-amber-500',
+    accent: 'text-amber-600 dark:text-amber-400',
   },
 } as const;
 
 type ToneKey = keyof typeof TONES;
 
 /**
- * Compact, color-coded classification chips for cards.
- * Renders one row per dimension (body, mobility, aesthetic) when present.
+ * Compact, color-coded classification rows for cards.
+ *
+ * Layout: one row per dimension. Each row has a small colored icon + label
+ * on the left, then chips with the top items. Each chip shows the label and
+ * a tiny percentage bar (instead of dumping numbers as text), making the
+ * layout calm and scannable even with multiple items.
  */
 export function ClassificationBadges({
   body,
@@ -91,28 +104,41 @@ export function ClassificationBadges({
   if (rows.length === 0) return null;
 
   return (
-    <div className={`space-y-1 ${className ?? ''}`}>
+    <div className={`space-y-1.5 ${className ?? ''}`}>
       {rows.map(({ tone, items }) => {
         const t = TONES[tone];
         const Icon = t.icon;
         return (
-          <div key={tone} className="flex items-center gap-1 flex-wrap">
+          <div key={tone} className="flex items-start gap-1.5">
             {showLabels && (
-              <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wide text-muted-foreground font-semibold mr-0.5">
-                <Icon className="h-2.5 w-2.5" strokeWidth={2.5} />
-                {t.label}
-              </span>
-            )}
-            {items.map((i) => (
-              <span
-                key={`${tone}-${i.label}`}
-                title={`${i.label} • ${i.value}%`}
-                className={`inline-flex items-center gap-1 text-[10px] leading-none px-1.5 py-0.5 rounded-full border ${t.chip}`}
+              <div
+                className={`shrink-0 inline-flex items-center gap-1 ${t.accent}`}
+                aria-label={t.label}
+                title={t.label}
               >
-                <span className="truncate max-w-[90px]">{i.label}</span>
-                <span className="font-bold tabular-nums">{i.value}%</span>
-              </span>
-            ))}
+                <Icon className="h-3 w-3" strokeWidth={2.5} />
+              </div>
+            )}
+            <div className="flex flex-wrap gap-1 min-w-0">
+              {items.map((i) => {
+                const pct = Math.min(100, Math.max(0, i.value));
+                return (
+                  <span
+                    key={`${tone}-${i.label}`}
+                    title={`${i.label} • ${i.value}%`}
+                    className={`inline-flex items-center gap-1.5 text-[10px] leading-none pl-1.5 pr-1 py-0.5 rounded-md border ${t.chipBg} ${t.chipBorder} ${t.chipText}`}
+                  >
+                    <span className="truncate max-w-[110px] font-medium">{i.label}</span>
+                    <span className="relative h-1 w-6 rounded-full bg-foreground/10 overflow-hidden shrink-0">
+                      <span
+                        className={`absolute inset-y-0 left-0 ${t.bar} rounded-full`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </span>
+                  </span>
+                );
+              })}
+            </div>
           </div>
         );
       })}
