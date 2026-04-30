@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Camera, X, Loader2 } from 'lucide-react';
+import { Camera, X, Loader2, Crop, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type FormStatus = 'correct' | 'partial' | 'wrong' | 'unknown' | 'idle';
