@@ -33,19 +33,6 @@ export interface WorkoutPlan {
   exercises?: WorkoutExercise[];
 }
 
-interface WorkoutExerciseWithLibrary extends WorkoutExercise {
-  exercise_library?: {
-    image_urls?: string[] | null;
-    video_type?: WorkoutExercise['video_type'];
-    video_url?: string | null;
-    video_start_seconds?: number | null;
-    video_end_seconds?: number | null;
-    body_analysis?: Record<string, number> | null;
-    aesthetic_analysis?: Record<string, number> | null;
-    mobility_analysis?: Record<string, number> | null;
-  } | null;
-}
-
 export function useWorkoutPlans() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -68,18 +55,12 @@ export function useWorkoutPlans() {
         (plans || []).map(async (plan) => {
           const { data: exercises } = await supabase
             .from('workout_exercises')
-            .select('*, exercise_library:exercise_library_id (image_urls, video_type, video_url, video_start_seconds, video_end_seconds, body_analysis, aesthetic_analysis, mobility_analysis)')
+            .select('*, exercise_library:exercise_library_id (body_analysis, aesthetic_analysis, mobility_analysis)')
             .eq('workout_plan_id', plan.id)
             .order('order_index', { ascending: true });
 
-          const merged = ((exercises || []) as WorkoutExerciseWithLibrary[]).map((ex) => ({
+          const merged = (exercises || []).map((ex: any) => ({
             ...ex,
-            image_urls: ex.image_urls?.length ? ex.image_urls : ex.exercise_library?.image_urls ?? [],
-            image_url: ex.image_url ?? ex.exercise_library?.image_urls?.[0] ?? null,
-            video_type: ex.video_type ?? ex.exercise_library?.video_type ?? null,
-            video_url: ex.video_url ?? ex.exercise_library?.video_url ?? null,
-            video_start_seconds: ex.video_start_seconds ?? ex.exercise_library?.video_start_seconds ?? null,
-            video_end_seconds: ex.video_end_seconds ?? ex.exercise_library?.video_end_seconds ?? null,
             body_analysis: ex.exercise_library?.body_analysis ?? null,
             aesthetic_analysis: ex.exercise_library?.aesthetic_analysis ?? null,
             mobility_analysis: ex.exercise_library?.mobility_analysis ?? null,

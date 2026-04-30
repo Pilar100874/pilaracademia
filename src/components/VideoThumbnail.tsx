@@ -34,6 +34,7 @@ export function VideoThumbnail({
   const freshVideoUrl = getFreshMediaUrl(videoUrl);
   const [errored, setErrored] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
 
@@ -42,7 +43,17 @@ export function VideoThumbnail({
   useEffect(() => {
     setErrored(false);
     setVideoReady(false);
+    setShouldLoadVideo(false);
   }, [freshVideoUrl, videoType]);
+
+  // Do not attach library videos to the DOM unless explicitly requested: even
+  // metadata thumbnails start many 206 media requests and starve the player.
+  useEffect(() => {
+    if (videoType !== 'upload' || !freshVideoUrl) return;
+    if (isUploadAutoplay) {
+      setShouldLoadVideo(true);
+    }
+  }, [videoType, freshVideoUrl, isUploadAutoplay]);
 
   // Loop the upload preview between start/end seconds
   useEffect(() => {
@@ -53,29 +64,15 @@ export function VideoThumbnail({
     const end = endSeconds ?? null;
 
     const onLoaded = () => {
-      try {
-        v.currentTime = start;
-        v.play().catch(() => undefined);
-      } catch {
-        // ignore unsupported seek/play states
-      }
+      try { v.currentTime = start; v.play().catch(() => {}); } catch {}
     };
     const onTime = () => {
       if (end !== null && v.currentTime >= end) {
-        try {
-          v.currentTime = start;
-        } catch {
-          // ignore unsupported seek states
-        }
+        try { v.currentTime = start; } catch {}
       }
     };
     const onEnded = () => {
-      try {
-        v.currentTime = start;
-        v.play().catch(() => undefined);
-      } catch {
-        // ignore unsupported seek/play states
-      }
+      try { v.currentTime = start; v.play().catch(() => {}); } catch {}
     };
     v.addEventListener('loadedmetadata', onLoaded);
     v.addEventListener('timeupdate', onTime);
@@ -104,28 +101,29 @@ export function VideoThumbnail({
   if (videoType === 'upload') {
     return (
       <div ref={containerRef} className={`relative bg-muted ${className ?? ''}`}>
-        <video
-          ref={previewRef}
-          key={freshVideoUrl}
-          src={freshVideoUrl}
-          muted
-          autoPlay={isUploadAutoplay}
-          playsInline
-          loop={isUploadAutoplay}
-          preload={isUploadAutoplay ? 'auto' : 'metadata'}
-          onLoadedMetadata={(e) => {
-            try {
-              e.currentTarget.currentTime = Math.max(0.1, startSeconds ?? 0);
-              setVideoReady(true);
-            } catch {
-              // ignore
-            }
-          }}
-          onLoadedData={() => setVideoReady(true)}
-          onCanPlay={() => setVideoReady(true)}
-          onError={() => setErrored(true)}
-          className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'} ${videoReady && !errored ? 'opacity-100' : 'opacity-0'}`}
-        />
+        {shouldLoadVideo && (
+          <video
+            ref={previewRef}
+            key={freshVideoUrl}
+            src={freshVideoUrl}
+            muted
+            autoPlay={isUploadAutoplay}
+            playsInline
+            loop={isUploadAutoplay}
+            preload={isUploadAutoplay ? 'auto' : 'metadata'}
+            onLoadedMetadata={(e) => {
+              try {
+                e.currentTarget.currentTime = Math.max(0.1, startSeconds ?? 0);
+              } catch {
+                // ignore
+              }
+            }}
+            onLoadedData={() => setVideoReady(true)}
+            onCanPlay={() => setVideoReady(true)}
+            onError={() => setErrored(true)}
+            className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'} ${videoReady && !errored ? 'opacity-100' : 'opacity-0'}`}
+          />
+        )}
         {(!videoReady || errored) && <div className="absolute inset-0 bg-muted" />}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className={`${badgeSize} rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center`}>
