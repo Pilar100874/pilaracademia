@@ -131,6 +131,13 @@ export function ExerciseVideoPlayer({
     v.addEventListener('canplay', handleCanPlay);
     v.addEventListener('timeupdate', handleTimeUpdate);
     v.addEventListener('ended', handleEnded);
+
+    // The events above may have already fired before we attached listeners
+    // (race between React render and the browser starting to load the source).
+    // Sync state from the current readyState so the loading overlay clears.
+    if (v.readyState >= 1) handleLoaded();
+    if (v.readyState >= 3) handleCanPlay();
+
     return () => {
       v.removeEventListener('loadedmetadata', handleLoaded);
       v.removeEventListener('canplay', handleCanPlay);
