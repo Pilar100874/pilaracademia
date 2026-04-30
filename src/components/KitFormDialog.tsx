@@ -275,10 +275,13 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
             <div>
               <label className="text-sm font-medium mb-1 block">Nome do Kit *</label>
               <Input
+                ref={nameRef}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); clearIf('name'); }}
                 placeholder="Ex: Café da manhã, Lanche da tarde..."
+                aria-invalid={!!errorOf('name')}
               />
+              <FieldError message={errorOf('name')} />
             </div>
 
             <div>
