@@ -38,7 +38,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
               transition={{ delay: 0.3, duration: 0.5 }}
               className="w-24 h-24 rounded-3xl bg-primary/10 backdrop-blur-sm flex items-center justify-center shadow-2xl"
             >
-              <img src="/pwa-192x192.png" alt="Pilar Calorias" className="w-16 h-16" />
+              <img src="/pwa-192x192.png" alt="Pilar Academia" className="w-16 h-16" />
             </motion.div>
 
             {/* App Name */}
@@ -48,7 +48,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
               transition={{ delay: 0.5, duration: 0.5 }}
               className="text-4xl font-bold text-foreground tracking-tight"
             >
-              Pilar Caloria
+              Pilar Academia
             </motion.h1>
 
             {/* Tagline */}

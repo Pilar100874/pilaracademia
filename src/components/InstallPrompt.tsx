@@ -91,7 +91,7 @@ export function InstallPrompt() {
         </div>
 
         <p className="text-sm text-muted-foreground mb-4">
-          Adicione o PilarCaloria à sua tela inicial para acesso rápido, funcionamento offline e uma experiência melhor!
+          Adicione o Pilar Academia à sua tela inicial para acesso rápido, funcionamento offline e uma experiência melhor!
         </p>
 
         {isIOS ? (
