@@ -127,35 +127,6 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
               ))}
             </div>
 
-            {/* Resumo das classificações da IA */}
-            {summary.analyzedCount > 0 && (() => {
-              // Convert summary arrays back to record shape so ClassificationBadges
-              // can render them with consistent styling.
-              const toRec = (arr: { key: string; value: number }[]) =>
-                arr.reduce<Record<string, number>>((acc, it) => {
-                  acc[it.key] = it.value;
-                  return acc;
-                }, {});
-              const body = toRec(summary.body);
-              const mobility = toRec(summary.mobility);
-              const aesthetic = toRec(summary.aesthetic);
-              if (
-                Object.keys(body).length === 0 &&
-                Object.keys(mobility).length === 0 &&
-                Object.keys(aesthetic).length === 0
-              )
-                return null;
-              return (
-                <ClassificationBadges
-                  body={body}
-                  mobility={mobility}
-                  aesthetic={aesthetic}
-                  perDimension={3}
-                  className="mb-3"
-                />
-              );
-            })()}
-
             {/* Exercise preview with arrows */}
             {plan.exercises && plan.exercises.length > 0 && (
               <div className="relative">
@@ -217,6 +188,33 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
                 )}
               </div>
             )}
+
+            {/* Resumo das classificações da IA — abaixo das imagens */}
+            {summary.analyzedCount > 0 && (() => {
+              const toRec = (arr: { key: string; value: number }[]) =>
+                arr.reduce<Record<string, number>>((acc, it) => {
+                  acc[it.key] = it.value;
+                  return acc;
+                }, {});
+              const body = toRec(summary.body);
+              const mobility = toRec(summary.mobility);
+              const aesthetic = toRec(summary.aesthetic);
+              if (
+                Object.keys(body).length === 0 &&
+                Object.keys(mobility).length === 0 &&
+                Object.keys(aesthetic).length === 0
+              )
+                return null;
+              return (
+                <ClassificationBadges
+                  body={body}
+                  mobility={mobility}
+                  aesthetic={aesthetic}
+                  perDimension={3}
+                  className="mt-3"
+                />
+              );
+            })()}
           </div>
 
           <div className="flex flex-col gap-1">
