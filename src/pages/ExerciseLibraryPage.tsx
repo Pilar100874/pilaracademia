@@ -335,14 +335,17 @@ export default function ExerciseLibraryPage() {
     return { orderedCategories: ordered, descendantsMap: descendants };
   }, [categories]);
 
-  const filteredExercises = exercises.filter((ex) => {
+  const sourceList = activeTab === 'global' ? globalExercises : exercises;
+  const filteredExercises = sourceList.filter((ex) => {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
     let matchesCategory = true;
-    if (filterCategory === NO_CATEGORY) {
-      matchesCategory = (ex.category_ids?.length ?? 0) === 0;
-    } else if (filterCategory !== ALL_CATEGORIES) {
-      const allowed = descendantsMap.get(filterCategory) ?? new Set([filterCategory]);
-      matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
+    if (activeTab === 'mine') {
+      if (filterCategory === NO_CATEGORY) {
+        matchesCategory = (ex.category_ids?.length ?? 0) === 0;
+      } else if (filterCategory !== ALL_CATEGORIES) {
+        const allowed = descendantsMap.get(filterCategory) ?? new Set([filterCategory]);
+        matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
+      }
     }
     const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, ex.mobility_analysis, bodyFilter);
     return matchesSearch && matchesCategory && matchesBody;
