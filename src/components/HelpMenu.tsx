@@ -119,10 +119,10 @@ export function HelpMenu() {
         aria-label="Como usar esta tela"
         onClick={() => setOpen(true)}
         className={cn(
-          'fixed z-40 rounded-full border border-border bg-card/90 backdrop-blur-md',
+          'fixed z-30 rounded-full border border-border bg-card/90 backdrop-blur-md',
           'shadow-sm hover:shadow-md transition-all',
-          'h-10 w-10 flex items-center justify-center',
-          'top-[calc(env(safe-area-inset-top)+0.75rem)] right-3',
+          'h-9 w-9 flex items-center justify-center',
+          'left-3 bottom-[calc(env(safe-area-inset-bottom)+5rem)]',
           'text-foreground/70 hover:text-foreground'
         )}
       >
