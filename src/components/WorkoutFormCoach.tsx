@@ -15,9 +15,14 @@ interface WorkoutFormCoachProps {
   canNext: boolean;
 }
 
-const ANALYSIS_INTERVAL_MS = 2800;
+// Análise é mais lenta para economizar custo de IA. Usuário pode alternar entre eco/normal.
+const INTERVAL_ECO_MS = 8000;
+const INTERVAL_NORMAL_MS = 5000;
 const GESTURE_CONFIRM_FRAMES = 1; // 1 frame is enough; 2s countdown provides safety
 const COUNTDOWN_SECONDS = 2;
+// Detecção de movimento — se o frame mudou pouco em relação ao anterior, pulamos a análise.
+const MOTION_THRESHOLD = 6; // diferença média de pixels (0-255) abaixo da qual consideramos "parado"
+const MOTION_SAMPLE_SIZE = 64; // amostra reduzida para diff rápido
 
 export function WorkoutFormCoach({
   exerciseName,
