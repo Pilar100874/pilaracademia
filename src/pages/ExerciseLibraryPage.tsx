@@ -95,6 +95,7 @@ export default function ExerciseLibraryPage() {
   // Auto-análise corporal em background (Gemini) — um vídeo por vez.
   const analysisProgress = useBodyAnalysisAutorun(exercises);
 
+  const [activeTab, setActiveTab] = useState<'mine' | 'global'>('mine');
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [bodyFilter, setBodyFilter] = useState<BodyAnalysisFilterValue>(EMPTY_BODY_FILTER);
