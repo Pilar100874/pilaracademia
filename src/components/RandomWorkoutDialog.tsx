@@ -73,24 +73,30 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercises, bodyKeys, aestheticKeys, mobilityKeys, min]);
 
-  const toggleBody = (k: BodyAnalysisKey) =>
+  const toggleBody = (k: BodyAnalysisKey) => {
+    clearIf('classif');
     setBodyKeys((prev) => {
       const next = new Set(prev);
       next.has(k) ? next.delete(k) : next.add(k);
       return next;
     });
-  const toggleAesthetic = (k: AestheticAnalysisKey) =>
+  };
+  const toggleAesthetic = (k: AestheticAnalysisKey) => {
+    clearIf('classif');
     setAestheticKeys((prev) => {
       const next = new Set(prev);
       next.has(k) ? next.delete(k) : next.add(k);
       return next;
     });
-  const toggleMobility = (k: MobilityAnalysisKey) =>
+  };
+  const toggleMobility = (k: MobilityAnalysisKey) => {
+    clearIf('classif');
     setMobilityKeys((prev) => {
       const next = new Set(prev);
       next.has(k) ? next.delete(k) : next.add(k);
       return next;
     });
+  };
 
   const toggleDay = (idx: number) => {
     setSelectedDays((prev) =>
