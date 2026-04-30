@@ -204,13 +204,19 @@ export function WorkoutFormCoach({
 
   return (
     <>
-      {/* Hidden camera capture (no UI takeover — keeps exercise video visible) */}
-      <video
-        ref={videoRef}
-        playsInline
-        muted
-        className="fixed -z-10 opacity-0 pointer-events-none w-1 h-1"
-      />
+      {/* Small camera PiP — top-right, below the dialog close button */}
+      <div className="absolute top-20 right-4 z-[56] w-28 sm:w-36 aspect-[3/4] rounded-2xl overflow-hidden border-2 border-white/30 bg-black shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          className="w-full h-full object-cover scale-x-[-1]"
+        />
+        <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-black/60 backdrop-blur-md rounded-full px-1.5 py-0.5 border border-white/15">
+          <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+          <span className="text-white text-[9px] font-bold tracking-wider">AO VIVO</span>
+        </div>
+      </div>
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Status overlay on TOP of the workout video — non-blocking */}
