@@ -36,7 +36,7 @@ const EXAMPLES = [
 ];
 
 export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
-  const { allExercises: exercises } = useExerciseLibrary();
+  const { allExercises: exercises, globalExercises, exercises: personalOnly } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
 
@@ -45,6 +45,7 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
   const [count, setCount] = useState('8');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [source, setSource] = useState<'all' | 'mine' | 'global'>('all');
   const [generating, setGenerating] = useState(false);
 
   const nameRef = useRef<HTMLInputElement>(null);
@@ -58,6 +59,7 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
     setCount('8');
     setSelectedDays([]);
     setSelectedCategoryIds([]);
+    setSource('all');
   };
 
   const toggleCategory = (id: string) => {
