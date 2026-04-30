@@ -1364,6 +1364,25 @@ export default function ExerciseLibraryPage() {
 
                     {!selectionMode && (
                       <div className="flex flex-col -mr-1 -mt-1 shrink-0">
+                        {exercise.video_type === 'instagram' && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-primary hover:text-primary"
+                            title="Importar vídeo do Instagram para o storage (mais rápido)"
+                            disabled={convertingId === exercise.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleConvertInstagram(exercise);
+                            }}
+                          >
+                            {convertingId === exercise.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Upload className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        )}
                         <Button
                           size="icon"
                           variant="ghost"
