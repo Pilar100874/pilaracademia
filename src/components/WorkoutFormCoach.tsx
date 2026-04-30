@@ -80,13 +80,36 @@ export function WorkoutFormCoach({
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || video.readyState < 2) return null;
-    const w = 480;
-    const h = (video.videoHeight / video.videoWidth) * w || 360;
-    canvas.width = w;
-    canvas.height = h;
+
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    if (!vw || !vh) return null;
+
+    // Decide source crop region based on smoothed bbox (auto-framing).
+    // We expand it a bit and clamp inside the frame.
+    let sx = 0, sy = 0, sW = vw, sH = vh;
+    const bb = bboxRef.current;
+    if (bb && bb.w > 0.05 && bb.h > 0.05) {
+      const padX = bb.w * 0.15;
+      const padY = bb.h * 0.10;
+      const cx = Math.max(0, bb.x - padX);
+      const cy = Math.max(0, bb.y - padY);
+      const cw = Math.min(1 - cx, bb.w + padX * 2);
+      const ch = Math.min(1 - cy, bb.h + padY * 2);
+      sx = cx * vw;
+      sy = cy * vh;
+      sW = cw * vw;
+      sH = ch * vh;
+    }
+
+    // Output target: keep aspect ratio of crop, max 480px wide.
+    const targetW = 480;
+    const targetH = Math.round((sH / sW) * targetW) || 360;
+    canvas.width = targetW;
+    canvas.height = targetH;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
-    ctx.drawImage(video, 0, 0, w, h);
+    ctx.drawImage(video, sx, sy, sW, sH, 0, 0, targetW, targetH);
     return canvas.toDataURL('image/jpeg', 0.7);
   }, []);
 
