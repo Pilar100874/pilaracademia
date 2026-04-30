@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { FieldError } from '@/components/FieldError';
+import { useFieldError, validateRequired } from '@/lib/formValidation';
 
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
@@ -37,6 +39,11 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   const [mobilityKeys, setMobilityKeys] = useState<Set<MobilityAnalysisKey>>(new Set());
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [generating, setGenerating] = useState(false);
+
+  const nameRef = useRef<HTMLInputElement>(null);
+  const countRef = useRef<HTMLInputElement>(null);
+  const classifRef = useRef<HTMLDivElement>(null);
+  const { errorOf, setError, clearError, clearIf } = useFieldError();
 
   const min = useMemo(() => {
     const n = parseInt(minPercent, 10);
@@ -103,11 +110,21 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
 
   const handleGenerate = async () => {
     const n = parseInt(count, 10);
-    if (!name.trim()) return toast.error('Dê um nome para o treino');
-    if (!n || n < 1) return toast.error('Quantidade inválida');
-    if (bodyKeys.size === 0 && aestheticKeys.size === 0 && mobilityKeys.size === 0) {
-      return toast.error('Selecione ao menos uma classificação');
+    const first = validateRequired([
+      { key: 'name', ref: nameRef, valid: !!name.trim(), message: 'Dê um nome para o treino' },
+      { key: 'count', ref: countRef, valid: !!n && n >= 1, message: 'Informe uma quantidade válida' },
+      {
+        key: 'classif',
+        ref: classifRef,
+        valid: bodyKeys.size + aestheticKeys.size + mobilityKeys.size > 0,
+        message: 'Selecione ao menos uma classificação',
+      },
+    ]);
+    if (first) {
+      setError(first.key, first.message);
+      return;
     }
+    clearError();
     if (!pool.length) return toast.error('Nenhum exercício corresponde à classificação selecionada. Aguarde a análise dos vídeos terminar ou diminua o % mínimo.');
 
     // Weighted random by score (higher % = mais provável de ser sorteado)
