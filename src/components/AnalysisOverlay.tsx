@@ -184,42 +184,36 @@ export function AnalysisOverlay({
     );
   }
 
-  const panelPosition =
-    variant === 'inline-icon'
-      ? 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2'
-      : `fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2`;
-
   return (
     <div
-      className={`${panelPosition} w-[min(calc(100vw-1.5rem),340px)] max-h-[calc(100vh-2rem)] z-50 animate-scale-in flex flex-col`}
+      className="fixed inset-0 z-50 animate-fade-in flex flex-col bg-black/95 backdrop-blur-2xl"
       onClick={(e) => e.stopPropagation()}
-      style={{ transformOrigin: 'center' }}
     >
-      <div className="rounded-2xl bg-black/70 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] overflow-hidden flex flex-col min-h-0">
-        {/* Header */}
-        <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-gradient-to-r from-emerald-500/10 via-sky-500/10 to-amber-500/10 shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="relative flex items-center justify-center h-6 w-6">
-              <span className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-400/50 via-sky-400/50 to-amber-400/50 blur-md" />
-              <Sparkles className="relative h-3.5 w-3.5 text-white" strokeWidth={2.5} />
-            </div>
-            <div className="leading-tight">
-              <p className="text-white text-[13px] font-bold tracking-tight">Análise IA</p>
-              <p className="text-white/50 text-[10px] font-medium">{total} classificações</p>
-            </div>
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-gradient-to-r from-emerald-500/10 via-sky-500/10 to-amber-500/10 shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <div className="flex items-center gap-2.5">
+          <div className="relative flex items-center justify-center h-8 w-8">
+            <span className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-400/50 via-sky-400/50 to-amber-400/50 blur-md" />
+            <Sparkles className="relative h-4 w-4 text-white" strokeWidth={2.5} />
           </div>
-          <button
-            type="button"
-            onClick={() => setExpanded(false)}
-            aria-label="Fechar"
-            className="h-7 w-7 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white inline-flex items-center justify-center transition active:scale-90"
-          >
-            <X className="h-3.5 w-3.5" strokeWidth={2.5} />
-          </button>
+          <div className="leading-tight">
+            <p className="text-white text-base font-bold tracking-tight">Análise IA</p>
+            <p className="text-white/50 text-[11px] font-medium">{total} classificações</p>
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          aria-label="Fechar"
+          className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white inline-flex items-center justify-center transition active:scale-90"
+        >
+          <X className="h-5 w-5" strokeWidth={2.5} />
+        </button>
+      </div>
 
-        {/* Body */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2.5 space-y-3 scrollbar-thin">
+      {/* Body */}
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-4 space-y-5 scrollbar-thin pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto w-full max-w-2xl space-y-5">
           <Section icon={Dumbbell} title="Áreas trabalhadas" items={bodyItems} tone="body" />
           <Section icon={Activity} title="Mobilidade / flexibilidade" items={mobItems} tone="mob" />
           <Section icon={Flame} title="Análise estética" items={aesthItems} tone="aesth" />
