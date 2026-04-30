@@ -17,6 +17,14 @@ interface AnalysisOverlayProps {
   positionClass?: string;
   /** Hide entirely if no analysis data is available. */
   minPercent?: number;
+  /**
+   * Visual variant for the trigger:
+   *  - 'floating' (default): absolutely-positioned orange pill with text + count.
+   *  - 'inline-icon': compact icon-only round button rendered in normal flow,
+   *    intended to sit inside another toolbar/nav. The expanded panel is still
+   *    positioned via `positionClass`.
+   */
+  variant?: 'floating' | 'inline-icon';
 }
 
 interface Item {
@@ -120,6 +128,7 @@ export function AnalysisOverlay({
   mobility,
   positionClass = 'right-4 bottom-24 sm:bottom-28',
   minPercent = 1,
+  variant = 'floating',
 }: AnalysisOverlayProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -139,6 +148,21 @@ export function AnalysisOverlay({
   if (total === 0) return null;
 
   if (!expanded) {
+    if (variant === 'inline-icon') {
+      return (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(true);
+          }}
+          aria-label={`Mostrar análise (${total})`}
+          className="h-12 w-12 shrink-0 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 border border-orange-300/50 text-white inline-flex items-center justify-center shadow-[0_4px_20px_rgba(234,88,12,0.5)] hover:from-orange-500 hover:to-orange-500 active:scale-95 transition"
+        >
+          <Sparkles className="h-5 w-5" strokeWidth={2.5} />
+        </button>
+      );
+    }
     return (
       <div className={`absolute ${positionClass} z-40 animate-fade-in`}>
         <button
@@ -160,9 +184,14 @@ export function AnalysisOverlay({
     );
   }
 
+  const panelPosition =
+    variant === 'inline-icon'
+      ? 'fixed right-4 bottom-24 sm:bottom-28'
+      : `absolute ${positionClass}`;
+
   return (
     <div
-      className={`absolute ${positionClass} w-[min(calc(100vw-1.5rem),340px)] z-40 animate-scale-in`}
+      className={`${panelPosition} w-[min(calc(100vw-1.5rem),340px)] z-50 animate-scale-in`}
       onClick={(e) => e.stopPropagation()}
       style={{ transformOrigin: 'bottom right' }}
     >

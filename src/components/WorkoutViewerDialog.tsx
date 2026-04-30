@@ -141,12 +141,6 @@ export function WorkoutViewerDialog({
           )}
         </div>
 
-        <AnalysisOverlay
-          body={(currentExercise as any).body_analysis}
-          aesthetic={(currentExercise as any).aesthetic_analysis}
-          mobility={(currentExercise as any).mobility_analysis}
-          positionClass="right-6 bottom-[84px]"
-        />
 
         {/* Header overlay (on top of media) */}
         <div className="absolute top-4 left-4 right-20 z-40 pointer-events-none">
@@ -264,6 +258,14 @@ export function WorkoutViewerDialog({
                 </span>
               </div>
             </div>
+
+            {/* Analysis (icon-only, sits next to Next) */}
+            <AnalysisOverlay
+              body={(currentExercise as any).body_analysis}
+              aesthetic={(currentExercise as any).aesthetic_analysis}
+              mobility={(currentExercise as any).mobility_analysis}
+              variant="inline-icon"
+            />
 
             {/* Next */}
             <button
