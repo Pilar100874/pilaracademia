@@ -240,11 +240,11 @@ export function WorkoutFormCoach({
         )}
       </div>
 
-      {/* Traffic light vertical (top-right, below close button) */}
-      <div className="absolute top-20 right-4 z-[55] flex flex-col items-center gap-2 bg-black/60 backdrop-blur-md rounded-2xl p-2 border border-white/10">
-        <div className={`h-4 w-4 rounded-full transition-all ${status === 'wrong' ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.9)]' : 'bg-red-500/20'}`} />
-        <div className={`h-4 w-4 rounded-full transition-all ${status === 'partial' ? 'bg-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.9)]' : 'bg-yellow-400/20'}`} />
-        <div className={`h-4 w-4 rounded-full transition-all ${status === 'correct' ? 'bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.9)]' : 'bg-green-500/20'}`} />
+      {/* Traffic light horizontal — below the camera PiP */}
+      <div className="absolute right-4 z-[55] flex items-center gap-1.5 bg-black/60 backdrop-blur-md rounded-full px-2 py-1.5 border border-white/10" style={{ top: 'calc(5rem + min(36vw, 9rem) * 4 / 3 + 0.5rem)' }}>
+        <div className={`h-3 w-3 rounded-full transition-all ${status === 'wrong' ? 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.9)]' : 'bg-red-500/20'}`} />
+        <div className={`h-3 w-3 rounded-full transition-all ${status === 'partial' ? 'bg-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.9)]' : 'bg-yellow-400/20'}`} />
+        <div className={`h-3 w-3 rounded-full transition-all ${status === 'correct' ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.9)]' : 'bg-green-500/20'}`} />
       </div>
 
       {/* Camera-active hint */}
