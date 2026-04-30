@@ -33,6 +33,19 @@ export interface WorkoutPlan {
   exercises?: WorkoutExercise[];
 }
 
+interface WorkoutExerciseWithLibrary extends WorkoutExercise {
+  exercise_library?: {
+    image_urls?: string[] | null;
+    video_type?: WorkoutExercise['video_type'];
+    video_url?: string | null;
+    video_start_seconds?: number | null;
+    video_end_seconds?: number | null;
+    body_analysis?: Record<string, number> | null;
+    aesthetic_analysis?: Record<string, number> | null;
+    mobility_analysis?: Record<string, number> | null;
+  } | null;
+}
+
 export function useWorkoutPlans() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -59,7 +72,7 @@ export function useWorkoutPlans() {
             .eq('workout_plan_id', plan.id)
             .order('order_index', { ascending: true });
 
-          const merged = (exercises || []).map((ex: any) => ({
+          const merged = ((exercises || []) as WorkoutExerciseWithLibrary[]).map((ex) => ({
             ...ex,
             image_urls: ex.image_urls?.length ? ex.image_urls : ex.exercise_library?.image_urls ?? [],
             image_url: ex.image_url ?? ex.exercise_library?.image_urls?.[0] ?? null,
