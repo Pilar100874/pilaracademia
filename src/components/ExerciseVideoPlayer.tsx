@@ -67,6 +67,13 @@ export function ExerciseVideoPlayer({
   const start = startSeconds ?? 0;
   const end = endSeconds ?? 0;
 
+  // Reset readiness flags whenever the source changes
+  useEffect(() => {
+    setIgLoaded(false);
+    setYtReady(false);
+    setUploadReady(false);
+  }, [videoType, freshVideoUrl]);
+
   // Uploaded video handling
   useEffect(() => {
     if (videoType !== 'upload') return;
@@ -78,6 +85,19 @@ export function ExerciseVideoPlayer({
         v.currentTime = start;
       } catch {
         // ignore
+      }
+      setUploadReady(true);
+      if (autoPlay || loop) {
+        // Some browsers do not honor the autoplay attribute reliably even
+        // when muted — kick playback explicitly once metadata is ready.
+        v.play().catch(() => {});
+      }
+    };
+
+    const handleCanPlay = () => {
+      setUploadReady(true);
+      if (autoPlay || loop) {
+        v.play().catch(() => {});
       }
     };
 
@@ -108,10 +128,12 @@ export function ExerciseVideoPlayer({
     };
 
     v.addEventListener('loadedmetadata', handleLoaded);
+    v.addEventListener('canplay', handleCanPlay);
     v.addEventListener('timeupdate', handleTimeUpdate);
     v.addEventListener('ended', handleEnded);
     return () => {
       v.removeEventListener('loadedmetadata', handleLoaded);
+      v.removeEventListener('canplay', handleCanPlay);
       v.removeEventListener('timeupdate', handleTimeUpdate);
       v.removeEventListener('ended', handleEnded);
     };
@@ -157,8 +179,11 @@ export function ExerciseVideoPlayer({
             } catch {
               // ignore
             }
+            setYtReady(true);
           },
           onStateChange: (e: any) => {
+            // 1 = playing -> hide loader
+            if (e.data === YT.PlayerState.PLAYING) setYtReady(true);
             // 0 = ended -> loop back to start
             if (e.data === YT.PlayerState.ENDED && loop) {
               try {
