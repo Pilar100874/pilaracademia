@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Loader2 } from 'lucide-react';
 import { parseYouTubeId, parseInstagramShortcode, buildInstagramEmbedUrl, isInstagramReel } from '@/lib/youtubeUtils';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
@@ -11,6 +11,8 @@ interface Props {
   className?: string;
   autoPlay?: boolean;
   loop?: boolean;
+  /** Optional poster image shown while the video is still loading. */
+  posterUrl?: string | null;
 }
 
 // Lazy-load the YouTube IFrame API once
@@ -49,13 +51,18 @@ export function ExerciseVideoPlayer({
   className,
   autoPlay = false,
   loop = false,
+  posterUrl,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const ytContainerRef = useRef<HTMLDivElement>(null);
   const ytPlayerRef = useRef<any>(null);
   const ytIntervalRef = useRef<number | null>(null);
   const [igReloadKey, setIgReloadKey] = useState(0);
+  const [igLoaded, setIgLoaded] = useState(false);
+  const [ytReady, setYtReady] = useState(false);
+  const [uploadReady, setUploadReady] = useState(false);
   const freshVideoUrl = getFreshMediaUrl(videoUrl);
+  const freshPoster = getFreshMediaUrl(posterUrl) ?? posterUrl ?? null;
 
   const start = startSeconds ?? 0;
   const end = endSeconds ?? 0;
