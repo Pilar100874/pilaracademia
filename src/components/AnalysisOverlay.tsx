@@ -187,7 +187,9 @@ export function AnalysisOverlay({
 
   return createPortal(
     <div
+      data-analysis-overlay="true"
       className="fixed inset-0 z-[100] animate-fade-in flex flex-col bg-black/95 backdrop-blur-2xl"
+      onPointerDownCapture={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
@@ -205,10 +207,14 @@ export function AnalysisOverlay({
         <button
           type="button"
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             setExpanded(false);
           }}
-          onPointerDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
           aria-label="Fechar"
           className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white inline-flex items-center justify-center transition active:scale-90"
         >
