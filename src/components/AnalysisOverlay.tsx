@@ -191,13 +191,13 @@ export function AnalysisOverlay({
 
   return (
     <div
-      className={`${panelPosition} w-[min(calc(100vw-1.5rem),340px)] z-50 animate-scale-in`}
+      className={`${panelPosition} w-[min(calc(100vw-1.5rem),340px)] max-h-[calc(100vh-2rem)] z-50 animate-scale-in flex flex-col`}
       onClick={(e) => e.stopPropagation()}
       style={{ transformOrigin: 'center' }}
     >
-      <div className="rounded-2xl bg-black/70 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] overflow-hidden">
+      <div className="rounded-2xl bg-black/70 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] overflow-hidden flex flex-col min-h-0">
         {/* Header */}
-        <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-gradient-to-r from-emerald-500/10 via-sky-500/10 to-amber-500/10">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-gradient-to-r from-emerald-500/10 via-sky-500/10 to-amber-500/10 shrink-0">
           <div className="flex items-center gap-2">
             <div className="relative flex items-center justify-center h-6 w-6">
               <span className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-400/50 via-sky-400/50 to-amber-400/50 blur-md" />
@@ -219,7 +219,7 @@ export function AnalysisOverlay({
         </div>
 
         {/* Body */}
-        <div className="max-h-[55vh] overflow-y-auto px-3 py-2.5 space-y-3 scrollbar-thin">
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2.5 space-y-3 scrollbar-thin">
           <Section icon={Dumbbell} title="Áreas trabalhadas" items={bodyItems} tone="body" />
           <Section icon={Activity} title="Mobilidade / flexibilidade" items={mobItems} tone="mob" />
           <Section icon={Flame} title="Análise estética" items={aesthItems} tone="aesth" />
