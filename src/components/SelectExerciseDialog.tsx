@@ -225,12 +225,16 @@ export function SelectExerciseDialog({
                 <p className="text-muted-foreground">
                   {search || filterCategory !== ALL_CATEGORIES
                     ? 'Nenhum exercício encontrado'
+                    : activeTab === 'global'
+                    ? 'Biblioteca global ainda está vazia'
                     : 'Sua biblioteca está vazia'}
                 </p>
-                <Button variant="outline" onClick={onCreateNew}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Criar Exercício
-                </Button>
+                {activeTab === 'mine' && (
+                  <Button variant="outline" onClick={onCreateNew}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Criar Exercício
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3 pb-2">
