@@ -53,15 +53,29 @@ export function VideoThumbnail({
     const end = endSeconds ?? null;
 
     const onLoaded = () => {
-      try { v.currentTime = start; v.play().catch(() => {}); } catch {}
+      try {
+        v.currentTime = start;
+        v.play().catch(() => undefined);
+      } catch {
+        // ignore unsupported seek/play states
+      }
     };
     const onTime = () => {
       if (end !== null && v.currentTime >= end) {
-        try { v.currentTime = start; } catch {}
+        try {
+          v.currentTime = start;
+        } catch {
+          // ignore unsupported seek states
+        }
       }
     };
     const onEnded = () => {
-      try { v.currentTime = start; v.play().catch(() => {}); } catch {}
+      try {
+        v.currentTime = start;
+        v.play().catch(() => undefined);
+      } catch {
+        // ignore unsupported seek/play states
+      }
     };
     v.addEventListener('loadedmetadata', onLoaded);
     v.addEventListener('timeupdate', onTime);
