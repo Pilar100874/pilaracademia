@@ -164,23 +164,30 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     }
   };
 
+  const totalSelected = bodyKeys.size + aestheticKeys.size + mobilityKeys.size;
+
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
-      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Shuffle className="h-5 w-5 text-primary" />
-            Gerar treino por classificação
+      <DialogContent
+        className="max-w-md w-[calc(100vw-1rem)] max-h-[92vh] sm:max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <DialogHeader className="px-5 pt-5 pb-3 border-b border-border/60">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Shuffle className="h-4 w-4" />
+            </span>
+            Gerar por classificação
           </DialogTitle>
-          <DialogDescription>
-            Escolha o tipo de treino — o sistema sorteia exercícios analisados pela IA cuja % atinja o mínimo.
+          <DialogDescription className="text-xs leading-relaxed">
+            Sorteia exercícios analisados pela IA cuja % atinja o mínimo.
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6">
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="rand-name">Nome do treino</Label>
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+          <div className="space-y-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="rand-name" className="text-xs font-medium">Nome do treino</Label>
               <Input
                 id="rand-name"
                 value={name}
@@ -190,8 +197,8 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="rand-count">Qtd. exercícios</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="rand-count" className="text-xs font-medium">Qtd. exercícios</Label>
                 <Input
                   id="rand-count"
                   inputMode="numeric"
@@ -200,8 +207,8 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                   placeholder="10"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="rand-min">% mínimo</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="rand-min" className="text-xs font-medium">% mínimo</Label>
                 <Input
                   id="rand-min"
                   inputMode="numeric"
@@ -212,79 +219,101 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
               </div>
             </div>
 
-            {(bodyKeys.size > 0 || aestheticKeys.size > 0 || mobilityKeys.size > 0) && (
-              <p className="text-xs text-muted-foreground">
-                {pool.length} exercício(s) compatível(eis) na biblioteca
-              </p>
-            )}
-
             <div className="space-y-2">
-              <Label className="flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5" />
-                Áreas trabalhadas
-              </Label>
-              <div className="border rounded-md p-3 space-y-3 max-h-72 overflow-y-auto">
-                {BODY_GROUPS.map((g) => (
-                  <div key={g.group} className="space-y-1.5">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      {g.group}
-                    </p>
-                    {g.items.map((it) => (
-                      <label key={it.key} className="flex items-center gap-2 cursor-pointer">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="flex items-center gap-1.5 text-xs font-medium">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  Áreas trabalhadas
+                </Label>
+                {totalSelected > 0 && (
+                  <span className="text-[10px] font-medium text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
+                    {totalSelected} selecionada{totalSelected !== 1 ? 's' : ''} · {pool.length} compatíveis
+                  </span>
+                )}
+              </div>
+
+              <div className="rounded-md border border-border/70 divide-y divide-border/60 bg-muted/20">
+                <section className="p-3 space-y-3">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Corpo
+                  </p>
+                  {BODY_GROUPS.map((g) => (
+                    <div key={g.group} className="space-y-1.5">
+                      <p className="text-[11px] font-medium text-muted-foreground/80">{g.group}</p>
+                      <div className="grid grid-cols-1 gap-1">
+                        {g.items.map((it) => (
+                          <label
+                            key={it.key}
+                            className="flex items-center gap-2 cursor-pointer py-1 pl-1 rounded hover:bg-background/60 transition-colors"
+                          >
+                            <Checkbox
+                              checked={bodyKeys.has(it.key)}
+                              onCheckedChange={() => toggleBody(it.key)}
+                            />
+                            <span className="text-sm">{it.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </section>
+
+                <section className="p-3 space-y-1.5">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Estética
+                  </p>
+                  <div className="grid grid-cols-1 gap-1">
+                    {AESTHETIC_ITEMS.map((it) => (
+                      <label
+                        key={it.key}
+                        className="flex items-center gap-2 cursor-pointer py-1 pl-1 rounded hover:bg-background/60 transition-colors"
+                      >
                         <Checkbox
-                          checked={bodyKeys.has(it.key)}
-                          onCheckedChange={() => toggleBody(it.key)}
+                          checked={aestheticKeys.has(it.key)}
+                          onCheckedChange={() => toggleAesthetic(it.key)}
                         />
                         <span className="text-sm">{it.label}</span>
                       </label>
                     ))}
                   </div>
-                ))}
-                <div className="space-y-1.5 pt-2 border-t">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    Análise estética
-                  </p>
-                  {AESTHETIC_ITEMS.map((it) => (
-                    <label key={it.key} className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox
-                        checked={aestheticKeys.has(it.key)}
-                        onCheckedChange={() => toggleAesthetic(it.key)}
-                      />
-                      <span className="text-sm">{it.label}</span>
-                    </label>
-                  ))}
-                </div>
-                <div className="space-y-2 pt-2 border-t">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    Mobilidade e flexibilidade
+                </section>
+
+                <section className="p-3 space-y-3">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Mobilidade & flexibilidade
                   </p>
                   {MOBILITY_GROUPS.map((mg) => (
                     <div key={mg.group} className="space-y-1.5">
                       <p className="text-[11px] font-medium text-muted-foreground/80">{mg.group}</p>
-                      {mg.items.map((it) => (
-                        <label key={it.key} className="flex items-center gap-2 cursor-pointer pl-1">
-                          <Checkbox
-                            checked={mobilityKeys.has(it.key)}
-                            onCheckedChange={() => toggleMobility(it.key)}
-                          />
-                          <span className="text-sm">{it.label}</span>
-                        </label>
-                      ))}
+                      <div className="grid grid-cols-1 gap-1">
+                        {mg.items.map((it) => (
+                          <label
+                            key={it.key}
+                            className="flex items-center gap-2 cursor-pointer py-1 pl-1 rounded hover:bg-background/60 transition-colors"
+                          >
+                            <Checkbox
+                              checked={mobilityKeys.has(it.key)}
+                              onCheckedChange={() => toggleMobility(it.key)}
+                            />
+                            <span className="text-sm">{it.label}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   ))}
-                </div>
+                </section>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Dias da semana (opcional)</Label>
-              <div className="flex flex-wrap gap-2">
+              <Label className="text-xs font-medium">Dias da semana (opcional)</Label>
+              <div className="flex flex-wrap gap-1.5">
                 {DAYS.map((day, idx) => (
                   <button
                     key={day}
                     type="button"
                     onClick={() => toggleDay(idx)}
-                    className={`h-9 w-12 rounded-md border text-sm transition-colors ${
+                    className={`h-9 flex-1 min-w-[40px] rounded-md border text-sm font-medium transition-colors ${
                       selectedDays.includes(idx)
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'bg-background border-input hover:bg-accent'
@@ -296,13 +325,13 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
               </div>
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={generating}>
+        <DialogFooter className="gap-2 sm:gap-2 px-5 py-3 border-t border-border/60 bg-background">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={generating} className="flex-1 sm:flex-none">
             Cancelar
           </Button>
-          <Button onClick={handleGenerate} disabled={generating}>
+          <Button onClick={handleGenerate} disabled={generating} className="flex-1 sm:flex-none">
             {generating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
