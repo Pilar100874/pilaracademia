@@ -80,6 +80,11 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
             },
           });
           if (error) throw error;
+          if (data?.fallback) {
+            // AI gateway indisponível (5xx). Marca como falha "soft" para
+            // não tentar de novo nesta sessão e segue para o próximo.
+            throw new Error(data?.message || 'AI service unavailable');
+          }
           if (!data?.body_analysis || !data?.aesthetic_analysis || !data?.mobility_analysis) {
             throw new Error('resposta inválida');
           }
