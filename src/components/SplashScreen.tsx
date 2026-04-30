@@ -58,7 +58,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
               transition={{ delay: 0.7, duration: 0.5 }}
               className="text-muted-foreground text-lg"
             >
-              Sua saúde em primeiro lugar
+              Treinos e nutrição inteligente
             </motion.p>
           </motion.div>
 
