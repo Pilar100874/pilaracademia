@@ -9,6 +9,7 @@ import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { summarizeWorkout } from '@/lib/exerciseAnalysis';
+import { ClassificationBadges } from '@/components/ClassificationBadges';
 
 const DAYS_SHORT = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
@@ -127,40 +128,33 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
             </div>
 
             {/* Resumo das classificações da IA */}
-            {summary.analyzedCount > 0 && (summary.body.length > 0 || summary.aesthetic.length > 0 || summary.mobility.length > 0) && (
-              <div className="mb-3 space-y-1.5">
-                {summary.body.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1">
-                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-1">Foco</span>
-                    {summary.body.map((t) => (
-                      <span key={t.key} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-foreground">
-                        {t.label} <span className="font-semibold">{t.value}%</span>
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {summary.mobility.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1">
-                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-1">Mob.</span>
-                    {summary.mobility.map((t) => (
-                      <span key={t.key} className="text-[10px] px-1.5 py-0.5 rounded bg-accent/40 text-foreground">
-                        {t.label} <span className="font-semibold">{t.value}%</span>
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {summary.aesthetic.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1">
-                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-1">Estética</span>
-                    {summary.aesthetic.map((t) => (
-                      <span key={t.key} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground">
-                        {t.label} <span className="font-semibold">{t.value}%</span>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            {summary.analyzedCount > 0 && (() => {
+              // Convert summary arrays back to record shape so ClassificationBadges
+              // can render them with consistent styling.
+              const toRec = (arr: { key: string; value: number }[]) =>
+                arr.reduce<Record<string, number>>((acc, it) => {
+                  acc[it.key] = it.value;
+                  return acc;
+                }, {});
+              const body = toRec(summary.body);
+              const mobility = toRec(summary.mobility);
+              const aesthetic = toRec(summary.aesthetic);
+              if (
+                Object.keys(body).length === 0 &&
+                Object.keys(mobility).length === 0 &&
+                Object.keys(aesthetic).length === 0
+              )
+                return null;
+              return (
+                <ClassificationBadges
+                  body={body}
+                  mobility={mobility}
+                  aesthetic={aesthetic}
+                  perDimension={3}
+                  className="mb-3"
+                />
+              );
+            })()}
 
             {/* Exercise preview with arrows */}
             {plan.exercises && plan.exercises.length > 0 && (
