@@ -1278,6 +1278,7 @@ export default function ExerciseLibraryPage() {
                           src={firstImage}
                           alt={exercise.name}
                           loading="lazy"
+                          decoding="async"
                           className="max-h-[16rem] w-full object-contain"
                         />
                         {imageCount > 1 && (
