@@ -99,29 +99,11 @@ export function WorkoutViewerDialog({
 
   if (!currentExercise) return null;
 
-  const currentExerciseAnalysis = currentExercise as typeof currentExercise & {
-    body_analysis?: Record<string, number> | null;
-    aesthetic_analysis?: Record<string, number> | null;
-    mobility_analysis?: Record<string, number> | null;
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black [&>button]:top-5 [&>button]:right-5 [&>button]:z-50 [&>button]:h-12 [&>button]:w-12 [&>button]:p-0 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button]:bg-black/50 [&>button]:backdrop-blur-2xl [&>button]:border [&>button]:border-white/25 [&>button]:text-white [&>button]:opacity-100 [&>button]:shadow-[0_4px_20px_rgba(0,0,0,0.6)] [&>button]:transition-all [&>button]:hover:bg-black/70 [&>button]:hover:scale-110 [&>button]:hover:border-white/40 [&>button]:active:scale-95 [&>button>svg]:h-6 [&>button>svg]:w-6 [&>button>svg]:stroke-[2.5]"
         onKeyDown={handleKeyDown}
-        onPointerDownOutside={(e) => {
-          const target = e.target as HTMLElement | null;
-          if (target?.closest('[data-analysis-overlay="true"]')) {
-            e.preventDefault();
-          }
-        }}
-        onInteractOutside={(e) => {
-          const target = e.target as HTMLElement | null;
-          if (target?.closest('[data-analysis-overlay="true"]')) {
-            e.preventDefault();
-          }
-        }}
       >
         {/* Fullscreen media area */}
         <div className="absolute inset-0 flex items-center justify-center bg-black overflow-hidden">
@@ -279,9 +261,9 @@ export function WorkoutViewerDialog({
 
             {/* Analysis (icon-only, sits next to Next) */}
             <AnalysisOverlay
-              body={currentExerciseAnalysis.body_analysis}
-              aesthetic={currentExerciseAnalysis.aesthetic_analysis}
-              mobility={currentExerciseAnalysis.mobility_analysis}
+              body={(currentExercise as any).body_analysis}
+              aesthetic={(currentExercise as any).aesthetic_analysis}
+              mobility={(currentExercise as any).mobility_analysis}
               variant="inline-icon"
             />
 
