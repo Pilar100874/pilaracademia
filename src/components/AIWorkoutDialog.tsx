@@ -36,7 +36,7 @@ const EXAMPLES = [
 ];
 
 export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
-  const { allExercises: exercises } = useExerciseLibrary();
+  const { allExercises: exercises, globalExercises, exercises: personalOnly } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
 
@@ -45,6 +45,7 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
   const [count, setCount] = useState('8');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [source, setSource] = useState<'all' | 'mine' | 'global'>('all');
   const [generating, setGenerating] = useState(false);
 
   const nameRef = useRef<HTMLInputElement>(null);
@@ -58,6 +59,7 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
     setCount('8');
     setSelectedDays([]);
     setSelectedCategoryIds([]);
+    setSource('all');
   };
 
   const toggleCategory = (id: string) => {
@@ -87,11 +89,19 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
     return result;
   })();
 
+  // Filter by source (mine / global / all)
+  const sourceFiltered =
+    source === 'mine'
+      ? personalOnly
+      : source === 'global'
+        ? globalExercises
+        : exercises;
+
   // Filter exercises by selected categories (any match)
   const filteredExercises =
     selectedCategoryIds.length === 0
-      ? exercises
-      : exercises.filter((ex) =>
+      ? sourceFiltered
+      : sourceFiltered.filter((ex) =>
           (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id))
         );
 
@@ -231,6 +241,39 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
                 aria-invalid={!!errorOf('name')}
               />
               <FieldError message={errorOf('name')} />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Origem dos exercícios</Label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {([
+                  { key: 'all', label: 'Todos', count: exercises.length },
+                  { key: 'mine', label: 'Meus', count: personalOnly.length },
+                  { key: 'global', label: 'Globais', count: globalExercises.length },
+                ] as const).map((opt) => {
+                  const active = source === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setSource(opt.key)}
+                      className={`h-9 rounded-md border text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                        active
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-input hover:bg-accent'
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                      <span className={`text-[10px] ${active ? 'opacity-80' : 'text-muted-foreground'}`}>
+                        ({opt.count})
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-snug">
+                A IA escolherá apenas entre os exercícios da origem selecionada.
+              </p>
             </div>
 
             <div className="space-y-2">
