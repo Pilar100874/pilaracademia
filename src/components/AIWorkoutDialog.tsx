@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
+import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,12 +35,14 @@ const EXAMPLES = [
 
 export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
   const { exercises } = useExerciseLibrary();
+  const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
 
   const [name, setName] = useState('');
   const [prompt, setPrompt] = useState('');
   const [count, setCount] = useState('8');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
 
   const reset = () => {
@@ -47,7 +50,44 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
     setPrompt('');
     setCount('8');
     setSelectedDays([]);
+    setSelectedCategoryIds([]);
   };
+
+  const toggleCategory = (id: string) => {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
+  };
+
+  // Sort: parents first (alpha), then their children indented
+  const sortedCategories = (() => {
+    const parents = categories.filter((c) => !c.parent_id).sort((a, b) => a.name.localeCompare(b.name));
+    const result: { id: string; name: string; isChild: boolean; parentName?: string }[] = [];
+    for (const p of parents) {
+      result.push({ id: p.id, name: p.name, isChild: false });
+      const children = categories
+        .filter((c) => c.parent_id === p.id)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      for (const c of children) {
+        result.push({ id: c.id, name: c.name, isChild: true, parentName: p.name });
+      }
+    }
+    // orphan children (parent deleted)
+    const orphans = categories.filter(
+      (c) => c.parent_id && !parents.find((p) => p.id === c.parent_id)
+    );
+    for (const o of orphans) result.push({ id: o.id, name: o.name, isChild: false });
+    return result;
+  })();
+
+  // Filter exercises by selected categories (any match)
+  const filteredExercises =
+    selectedCategoryIds.length === 0
+      ? exercises
+      : exercises.filter((ex) =>
+          (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id))
+        );
+
 
   const toggleDay = (idx: number) => {
     setSelectedDays((prev) =>
@@ -61,13 +101,17 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
     if (!prompt.trim() || prompt.trim().length < 5)
       return toast.error('Descreva o objetivo do treino');
     if (!n || n < 1) return toast.error('Quantidade inválida');
-    if (!exercises.length)
-      return toast.error('Sua biblioteca está vazia. Adicione exercícios antes.');
+    if (!filteredExercises.length)
+      return toast.error(
+        selectedCategoryIds.length
+          ? 'Nenhum exercício na biblioteca para as categorias selecionadas.'
+          : 'Sua biblioteca está vazia. Adicione exercícios antes.'
+      );
 
     setGenerating(true);
     try {
       // Compacta a biblioteca para enviar à IA.
-      const library = exercises.map((ex) => ({
+      const library = filteredExercises.map((ex) => ({
         id: ex.id,
         name: ex.name,
         body: ex.body_analysis ?? null,
@@ -180,7 +224,9 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
                   Objetivo do treino
                 </Label>
                 <span className="text-[10px] font-medium text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
-                  {exercises.length} na biblioteca
+                  {selectedCategoryIds.length > 0
+                    ? `${filteredExercises.length}/${exercises.length} filtrados`
+                    : `${exercises.length} na biblioteca`}
                 </span>
               </div>
 
@@ -216,6 +262,48 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
                     ))}
                   </div>
                 </section>
+
+                {sortedCategories.length > 0 && (
+                  <section className="p-3 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        Categorias (opcional)
+                      </p>
+                      {selectedCategoryIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCategoryIds([])}
+                          className="text-[10px] text-primary hover:underline"
+                        >
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground leading-snug">
+                      Restringe a IA aos exercícios dessas categorias (ex.: equipamentos disponíveis).
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+                      {sortedCategories.map((c) => {
+                        const active = selectedCategoryIds.includes(c.id);
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => toggleCategory(c.id)}
+                            className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                              active
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-background border-border/70 hover:bg-accent hover:border-primary/40 text-foreground/80'
+                            } ${c.isChild ? 'ml-3' : ''}`}
+                            title={c.isChild && c.parentName ? `${c.parentName} › ${c.name}` : c.name}
+                          >
+                            {c.isChild ? `↳ ${c.name}` : c.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
 
                 <section className="p-3">
                   <div className="space-y-1.5">
