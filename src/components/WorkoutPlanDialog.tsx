@@ -226,7 +226,7 @@ export function WorkoutPlanDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden">
+        <DialogContent className="max-w-lg w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>
               {editingPlan ? 'Editar Treino' : 'Novo Treino'}
