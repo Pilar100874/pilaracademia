@@ -247,10 +247,10 @@ export function WorkoutFormCoach({
         <div className={`h-3 w-3 rounded-full transition-all ${status === 'correct' ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.9)]' : 'bg-green-500/20'}`} />
       </div>
 
-      {/* Camera-active hint */}
-      <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-[55] bg-black/55 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/10 flex items-center gap-2">
-        <Camera className="h-3.5 w-3.5 text-white/80" />
-        <p className="text-white/85 text-[11px] tracking-wide">
+      {/* Camera-active hint — sits just above the exercise name card (mobile) / bottom bar (desktop) */}
+      <div className="absolute bottom-[10.5rem] sm:bottom-24 left-1/2 -translate-x-1/2 z-[55] bg-black/55 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/10 flex items-center gap-2 whitespace-nowrap max-w-[calc(100vw-2rem)]">
+        <Camera className="h-3.5 w-3.5 text-white/80 shrink-0" />
+        <p className="text-white/85 text-[11px] tracking-wide truncate">
           Coach IA ativo · ✋ palma aberta para próximo exercício
         </p>
       </div>
