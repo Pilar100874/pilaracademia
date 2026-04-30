@@ -188,7 +188,7 @@ export function AnalysisOverlay({
   const panelPosition =
     variant === 'inline-icon'
       ? 'fixed left-2 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:left-auto sm:right-4 sm:bottom-28 sm:w-[360px] sm:max-w-[360px]'
-      : `absolute ${positionClass} w-[min(calc(100vw-1.5rem),340px)]`;
+      : 'fixed left-2 bottom-[calc(env(safe-area-inset-bottom)+1.5rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:left-auto sm:right-6 sm:bottom-6 sm:w-[360px] sm:max-w-[360px]';
 
   const panel = (
     <div
@@ -242,6 +242,10 @@ export function AnalysisOverlay({
         {createPortal(panel, document.body)}
       </>
     );
+  }
+
+  if (typeof document !== 'undefined') {
+    return createPortal(panel, document.body);
   }
 
   return panel;
