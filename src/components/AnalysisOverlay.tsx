@@ -118,7 +118,7 @@ export function AnalysisOverlay({
   body,
   aesthetic,
   mobility,
-  positionClass = 'top-20',
+  positionClass = 'bottom-24 sm:bottom-28',
   minPercent = 1,
 }: AnalysisOverlayProps) {
   const [expanded, setExpanded] = useState(false);
@@ -146,20 +146,25 @@ export function AnalysisOverlay({
           e.stopPropagation();
           setExpanded(true);
         }}
-        className={`absolute right-4 ${positionClass} z-40 inline-flex items-center gap-1.5 rounded-full bg-black/55 backdrop-blur-xl border border-white/25 text-white pl-2.5 pr-3 py-1.5 text-xs font-semibold shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:bg-black/75 active:scale-95 transition animate-fade-in`}
+        className={`absolute right-4 ${positionClass} z-40 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 border border-orange-300/50 text-white pl-2.5 pr-3 py-1.5 text-xs font-semibold shadow-[0_4px_20px_rgba(234,88,12,0.5)] hover:from-orange-500 hover:to-orange-500 active:scale-95 transition animate-fade-in`}
         aria-label="Mostrar classificações"
       >
-        <span className="relative flex items-center justify-center h-4 w-4">
-          <span className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-400/40 via-sky-400/40 to-amber-400/40 blur-sm" />
-          <Sparkles className="relative h-3.5 w-3.5" strokeWidth={2.5} />
-        </span>
+        <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
         <span>Análise</span>
-        <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-white/15 text-[10px] font-bold tabular-nums">
+        <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-white/25 text-[10px] font-bold tabular-nums">
           {total}
         </span>
       </button>
     );
   }
+
+  return (
+    <div
+      className={`absolute right-3 left-3 sm:left-auto sm:right-4 sm:w-[340px] ${positionClass} z-40 animate-scale-in`}
+      onClick={(e) => e.stopPropagation()}
+      style={{ transformOrigin: 'bottom right' }}
+    >
+      <div className="rounded-2xl bg-black/70 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] overflow-hidden">
 
   return (
     <div
