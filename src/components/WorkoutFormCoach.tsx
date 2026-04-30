@@ -15,9 +15,14 @@ interface WorkoutFormCoachProps {
   canNext: boolean;
 }
 
-const ANALYSIS_INTERVAL_MS = 2800;
+// Análise é mais lenta para economizar custo de IA. Usuário pode alternar entre eco/normal.
+const INTERVAL_ECO_MS = 8000;
+const INTERVAL_NORMAL_MS = 5000;
 const GESTURE_CONFIRM_FRAMES = 1; // 1 frame is enough; 2s countdown provides safety
 const COUNTDOWN_SECONDS = 2;
+// Detecção de movimento — se o frame mudou pouco em relação ao anterior, pulamos a análise.
+const MOTION_THRESHOLD = 6; // diferença média de pixels (0-255) abaixo da qual consideramos "parado"
+const MOTION_SAMPLE_SIZE = 64; // amostra reduzida para diff rápido
 
 export function WorkoutFormCoach({
   exerciseName,
@@ -36,6 +41,10 @@ export function WorkoutFormCoach({
   const gestureStreakRef = useRef<{ next: number; prev: number }>({ next: 0, prev: 0 });
   // Smoothed bounding box (normalized 0-1) used for auto-framing the next capture.
   const bboxRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  // Last small grayscale sample for motion detection between frames.
+  const lastSampleRef = useRef<Uint8ClampedArray | null>(null);
+  // Counter of consecutive "still" frames — we still send 1 every ~3 cycles to keep gesture detection alive.
+  const stillStreakRef = useRef(0);
 
   const [status, setStatus] = useState<FormStatus>('idle');
   const [feedback, setFeedback] = useState<string>('Iniciando análise...');
@@ -43,6 +52,7 @@ export function WorkoutFormCoach({
   const [analyzing, setAnalyzing] = useState(false);
   const [autoFramed, setAutoFramed] = useState(false);
   const [pendingNav, setPendingNav] = useState<null | { dir: 'next' | 'prev'; countdown: number }>(null);
+  const [ecoMode, setEcoMode] = useState(true); // default: economia (8s)
 
   // Start camera (hidden — used only for capture)
   useEffect(() => {
@@ -102,15 +112,43 @@ export function WorkoutFormCoach({
       sH = ch * vh;
     }
 
-    // Output target: keep aspect ratio of crop, max 480px wide.
-    const targetW = 480;
-    const targetH = Math.round((sH / sW) * targetW) || 360;
+    // Output target: keep aspect ratio of crop, max 384px wide (era 480 — economia de banda/IA).
+    const targetW = 384;
+    const targetH = Math.round((sH / sW) * targetW) || 288;
     canvas.width = targetW;
     canvas.height = targetH;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
     ctx.drawImage(video, sx, sy, sW, sH, 0, 0, targetW, targetH);
-    return canvas.toDataURL('image/jpeg', 0.7);
+    return canvas.toDataURL('image/jpeg', 0.55); // era 0.7 — JPEG bem mais comprimido
+  }, []);
+
+  // Tira uma amostra pequena em escala de cinza do vídeo, para detectar movimento sem custo.
+  const sampleMotion = useCallback((): number => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || video.readyState < 2) return Infinity;
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    if (!vw || !vh) return Infinity;
+    const tmp = document.createElement('canvas');
+    tmp.width = MOTION_SAMPLE_SIZE;
+    tmp.height = Math.round((vh / vw) * MOTION_SAMPLE_SIZE);
+    const ctx = tmp.getContext('2d');
+    if (!ctx) return Infinity;
+    ctx.drawImage(video, 0, 0, tmp.width, tmp.height);
+    const { data } = ctx.getImageData(0, 0, tmp.width, tmp.height);
+    // Converte para grayscale compacto
+    const gray = new Uint8ClampedArray(tmp.width * tmp.height);
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+      gray[j] = (data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11) | 0;
+    }
+    const prev = lastSampleRef.current;
+    lastSampleRef.current = gray;
+    if (!prev || prev.length !== gray.length) return Infinity;
+    let diff = 0;
+    for (let i = 0; i < gray.length; i++) diff += Math.abs(gray[i] - prev[i]);
+    return diff / gray.length;
   }, []);
 
   const triggerNav = useCallback(
@@ -144,6 +182,14 @@ export function WorkoutFormCoach({
 
     const tick = async () => {
       if (inflightRef.current) return;
+      // Pula análise se a pessoa estiver praticamente parada (economia de IA).
+      // Mas a cada 3 ticks "parados" mandamos um frame mesmo assim, para manter detecção de gesto viva.
+      const motion = sampleMotion();
+      if (motion < MOTION_THRESHOLD && stillStreakRef.current < 2) {
+        stillStreakRef.current += 1;
+        return;
+      }
+      stillStreakRef.current = 0;
       const frame = captureFrame();
       if (!frame) return;
       inflightRef.current = true;
@@ -226,13 +272,14 @@ export function WorkoutFormCoach({
       }
     };
 
+    const intervalMs = ecoMode ? INTERVAL_ECO_MS : INTERVAL_NORMAL_MS;
     const startTimer = window.setTimeout(tick, 1500);
-    intervalRef.current = window.setInterval(tick, ANALYSIS_INTERVAL_MS);
+    intervalRef.current = window.setInterval(tick, intervalMs);
     return () => {
       window.clearTimeout(startTimer);
       if (intervalRef.current) window.clearInterval(intervalRef.current);
     };
-  }, [exerciseName, exerciseInstructions, captureFrame, triggerNav, error]);
+  }, [exerciseName, exerciseInstructions, captureFrame, sampleMotion, triggerNav, error, ecoMode]);
 
   useEffect(() => {
     gestureStreakRef.current = { next: 0, prev: 0 };
@@ -299,6 +346,18 @@ export function WorkoutFormCoach({
           <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
           <span className="text-white text-[9px] font-bold tracking-wider">AO VIVO</span>
         </div>
+        <button
+          onClick={() => setEcoMode((v) => !v)}
+          aria-label="Alternar modo de economia"
+          title={ecoMode ? 'Modo eco (8s) — toque para alternar' : 'Modo normal (5s) — toque para alternar'}
+          className={`absolute top-1.5 right-1.5 rounded-full px-1.5 py-0.5 border text-[9px] font-bold tracking-wider backdrop-blur-md transition-colors ${
+            ecoMode
+              ? 'bg-emerald-500/80 border-white/20 text-white'
+              : 'bg-black/60 border-white/15 text-white/90'
+          }`}
+        >
+          {ecoMode ? 'ECO' : 'NORMAL'}
+        </button>
         {autoFramed && (
           <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 bg-primary/80 backdrop-blur-md rounded-full px-1.5 py-0.5 border border-white/20">
             <Crop className="h-2.5 w-2.5 text-primary-foreground" />
