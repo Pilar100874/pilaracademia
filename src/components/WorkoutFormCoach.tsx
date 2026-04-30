@@ -164,6 +164,48 @@ export function WorkoutFormCoach({
         setStatus(newStatus);
         setFeedback(data?.feedback || '');
 
+        // Auto-framing: smoothly converge on the AI-reported person bbox.
+        // The bbox is in the coordinate space of the frame we SENT, which itself
+        // may already be a crop. So we map it back into the FULL video coords.
+        const reported = data?.person_bbox as
+          | { x: number; y: number; w: number; h: number }
+          | null
+          | undefined;
+        if (
+          reported &&
+          typeof reported.x === 'number' &&
+          typeof reported.y === 'number' &&
+          typeof reported.w === 'number' &&
+          typeof reported.h === 'number' &&
+          reported.w > 0.05 &&
+          reported.h > 0.05
+        ) {
+          const prev = bboxRef.current;
+          // Map reported bbox (relative to last sent crop) back to full video coords.
+          const base = prev ?? { x: 0, y: 0, w: 1, h: 1 };
+          const padX = base.w * 0.15;
+          const padY = base.h * 0.10;
+          const cx = Math.max(0, base.x - padX);
+          const cy = Math.max(0, base.y - padY);
+          const cw = Math.min(1 - cx, base.w + padX * 2);
+          const ch = Math.min(1 - cy, base.h + padY * 2);
+          const absolute = {
+            x: cx + reported.x * cw,
+            y: cy + reported.y * ch,
+            w: reported.w * cw,
+            h: reported.h * ch,
+          };
+          // EMA smoothing (alpha=0.4) to avoid jitter.
+          const alpha = prev ? 0.4 : 1;
+          bboxRef.current = {
+            x: prev ? prev.x * (1 - alpha) + absolute.x * alpha : absolute.x,
+            y: prev ? prev.y * (1 - alpha) + absolute.y * alpha : absolute.y,
+            w: prev ? prev.w * (1 - alpha) + absolute.w * alpha : absolute.w,
+            h: prev ? prev.h * (1 - alpha) + absolute.h * alpha : absolute.h,
+          };
+          setAutoFramed(true);
+        }
+
         const gesture = data?.gesture as 'next' | 'prev' | null;
         if (gesture === 'next') {
           gestureStreakRef.current.next += 1;
