@@ -100,7 +100,7 @@ export default function ExerciseLibraryPage() {
   const [editingExercise, setEditingExercise] = useState<LibraryExercise | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState<LibraryExercise | null>(null);
-  const [zoomImages, setZoomImages] = useState<string[]>([]);
+  const [zoomExercise, setZoomExercise] = useState<LibraryExercise | null>(null);
   const [videoPreview, setVideoPreview] = useState<LibraryExercise | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
   const [bulkUploading, setBulkUploading] = useState<{ done: number; total: number } | null>(null);
