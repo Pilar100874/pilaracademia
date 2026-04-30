@@ -204,7 +204,11 @@ export function AnalysisOverlay({
         </div>
         <button
           type="button"
-          onClick={() => setExpanded(false)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(false);
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
           aria-label="Fechar"
           className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white inline-flex items-center justify-center transition active:scale-90"
         >
