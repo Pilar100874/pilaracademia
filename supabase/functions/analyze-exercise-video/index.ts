@@ -190,7 +190,22 @@ Seja conservador: só atribua valores altos (>60) para aspectos que são clarame
     if (!response.ok) {
       const text = await response.text();
       console.error('AI gateway error', response.status, text);
-      throw new Error(`AI gateway error: ${response.status}`);
+      // 5xx from the gateway are transient — surface as a soft failure so the
+      // client can retry/fallback instead of triggering a blank-screen crash.
+      if (response.status >= 500) {
+        return new Response(
+          JSON.stringify({
+            error: 'AI_SERVICE_UNAVAILABLE',
+            message: 'Serviço de IA temporariamente indisponível. Tente novamente em instantes.',
+            fallback: true,
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      return new Response(
+        JSON.stringify({ error: `AI gateway error: ${response.status}` }),
+        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const data = await response.json();
