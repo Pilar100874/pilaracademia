@@ -251,7 +251,7 @@ export function WorkoutFormCoach({
       <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-[55] bg-black/55 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/10 flex items-center gap-2">
         <Camera className="h-3.5 w-3.5 text-white/80" />
         <p className="text-white/85 text-[11px] tracking-wide">
-          Coach IA ativo · ✋ palma parada para trocar
+          Coach IA ativo · ✋ palma aberta para próximo exercício
         </p>
       </div>
 
