@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { FieldError } from '@/components/FieldError';
+import { useFieldError, validateRequired } from '@/lib/formValidation';
 
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
@@ -44,6 +46,11 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
+
+  const nameRef = useRef<HTMLInputElement>(null);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
+  const countRef = useRef<HTMLInputElement>(null);
+  const { errorOf, setError, clearError, clearIf } = useFieldError();
 
   const reset = () => {
     setName('');
@@ -97,10 +104,16 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
 
   const handleGenerate = async () => {
     const n = parseInt(count, 10);
-    if (!name.trim()) return toast.error('Dê um nome para o treino');
-    if (!prompt.trim() || prompt.trim().length < 5)
-      return toast.error('Descreva o objetivo do treino');
-    if (!n || n < 1) return toast.error('Quantidade inválida');
+    const first = validateRequired([
+      { key: 'name', ref: nameRef, valid: !!name.trim(), message: 'Dê um nome para o treino' },
+      { key: 'prompt', ref: promptRef, valid: !!prompt.trim() && prompt.trim().length >= 5, message: 'Descreva o objetivo do treino (mín. 5 caracteres)' },
+      { key: 'count', ref: countRef, valid: !!n && n >= 1, message: 'Informe uma quantidade válida' },
+    ]);
+    if (first) {
+      setError(first.key, first.message);
+      return;
+    }
+    clearError();
     if (!filteredExercises.length)
       return toast.error(
         selectedCategoryIds.length
