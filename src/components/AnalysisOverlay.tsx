@@ -186,12 +186,12 @@ export function AnalysisOverlay({
 
   const panelPosition =
     variant === 'inline-icon'
-      ? 'fixed right-4 bottom-24 sm:bottom-28'
-      : `absolute ${positionClass}`;
+      ? 'fixed left-3 right-3 bottom-24 sm:left-auto sm:right-4 sm:bottom-28 sm:w-[340px]'
+      : `absolute ${positionClass} w-[min(calc(100vw-1.5rem),340px)]`;
 
   return (
     <div
-      className={`${panelPosition} w-[min(calc(100vw-1.5rem),340px)] z-50 animate-scale-in`}
+      className={`${panelPosition} z-50 animate-scale-in`}
       onClick={(e) => e.stopPropagation()}
       style={{ transformOrigin: 'bottom right' }}
     >
