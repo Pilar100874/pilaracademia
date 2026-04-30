@@ -242,7 +242,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2" ref={classifRef}>
               <div className="flex items-center justify-between gap-2">
                 <Label className="flex items-center gap-1.5 text-xs font-medium">
                   <Sparkles className="h-3.5 w-3.5 text-primary" />
@@ -254,8 +254,11 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                   </span>
                 )}
               </div>
+              <FieldError message={errorOf('classif')} />
 
-              <div className="rounded-md border border-border/70 divide-y divide-border/60 bg-muted/20">
+              <div
+                className={`rounded-md border ${errorOf('classif') ? 'border-destructive' : 'border-border/70'} divide-y divide-border/60 bg-muted/20`}
+              >
                 <section className="p-3 space-y-3">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                     Corpo
