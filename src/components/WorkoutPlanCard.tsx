@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { Edit, ChevronRight, ChevronLeft, Dumbbell, Play, Trash2 } from 'lucide-react';
+import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
@@ -86,7 +87,7 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
             </p>
           </div>
         </div>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {exerciseCount > 0 && (
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
               <Play className="h-4 w-4 text-primary-foreground ml-0.5" />
@@ -169,16 +170,21 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
                         key={exercise.id}
                         className="shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-muted overflow-hidden relative [&_.absolute]:hidden"
                       >
-                        {firstImg ? (
+                        {exercise.video_url && exercise.video_type ? (
+                          <VideoThumbnail
+                            videoType={exercise.video_type}
+                            videoUrl={exercise.video_url}
+                            startSeconds={exercise.video_start_seconds}
+                            endSeconds={exercise.video_end_seconds}
+                            iconSize="sm"
+                            className="w-full h-full"
+                          />
+                        ) : firstImg ? (
                           <img
                             src={firstImg}
                             alt={exercise.name}
                             className="w-full h-full object-cover"
                           />
-                        ) : exercise.video_url && exercise.video_type ? (
-                          <div className="w-full h-full flex items-center justify-center bg-muted">
-                            <Play className="h-5 w-5 text-muted-foreground fill-muted-foreground" />
-                          </div>
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Dumbbell className="h-7 w-7 text-muted-foreground" />
