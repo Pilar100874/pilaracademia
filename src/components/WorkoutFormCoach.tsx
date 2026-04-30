@@ -346,6 +346,18 @@ export function WorkoutFormCoach({
           <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
           <span className="text-white text-[9px] font-bold tracking-wider">AO VIVO</span>
         </div>
+        <button
+          onClick={() => setEcoMode((v) => !v)}
+          aria-label="Alternar modo de economia"
+          title={ecoMode ? 'Modo eco (8s) — toque para alternar' : 'Modo normal (5s) — toque para alternar'}
+          className={`absolute top-1.5 right-1.5 rounded-full px-1.5 py-0.5 border text-[9px] font-bold tracking-wider backdrop-blur-md transition-colors ${
+            ecoMode
+              ? 'bg-emerald-500/80 border-white/20 text-white'
+              : 'bg-black/60 border-white/15 text-white/90'
+          }`}
+        >
+          {ecoMode ? 'ECO' : 'NORMAL'}
+        </button>
         {autoFramed && (
           <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 bg-primary/80 backdrop-blur-md rounded-full px-1.5 py-0.5 border border-white/20">
             <Crop className="h-2.5 w-2.5 text-primary-foreground" />
