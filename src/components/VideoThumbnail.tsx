@@ -101,29 +101,28 @@ export function VideoThumbnail({
   if (videoType === 'upload') {
     return (
       <div ref={containerRef} className={`relative bg-muted ${className ?? ''}`}>
-        {shouldLoadVideo && (
-          <video
-            ref={previewRef}
-            key={freshVideoUrl}
-            src={freshVideoUrl}
-            muted
-            autoPlay={isUploadAutoplay}
-            playsInline
-            loop={isUploadAutoplay}
-            preload={isUploadAutoplay ? 'auto' : 'metadata'}
-            onLoadedMetadata={(e) => {
-              try {
-                e.currentTarget.currentTime = Math.max(0.1, startSeconds ?? 0);
-              } catch {
-                // ignore
-              }
-            }}
-            onLoadedData={() => setVideoReady(true)}
-            onCanPlay={() => setVideoReady(true)}
-            onError={() => setErrored(true)}
-            className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'} ${videoReady && !errored ? 'opacity-100' : 'opacity-0'}`}
-          />
-        )}
+        <video
+          ref={previewRef}
+          key={freshVideoUrl}
+          src={freshVideoUrl}
+          muted
+          autoPlay={isUploadAutoplay}
+          playsInline
+          loop={isUploadAutoplay}
+          preload={isUploadAutoplay ? 'auto' : 'metadata'}
+          onLoadedMetadata={(e) => {
+            try {
+              e.currentTarget.currentTime = Math.max(0.1, startSeconds ?? 0);
+              setVideoReady(true);
+            } catch {
+              // ignore
+            }
+          }}
+          onLoadedData={() => setVideoReady(true)}
+          onCanPlay={() => setVideoReady(true)}
+          onError={() => setErrored(true)}
+          className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'} ${videoReady && !errored ? 'opacity-100' : 'opacity-0'}`}
+        />
         {(!videoReady || errored) && <div className="absolute inset-0 bg-muted" />}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className={`${badgeSize} rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center`}>
