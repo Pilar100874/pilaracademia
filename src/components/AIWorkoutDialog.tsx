@@ -224,10 +224,13 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
               <Label htmlFor="ai-name" className="text-xs font-medium">Nome do treino</Label>
               <Input
                 id="ai-name"
+                ref={nameRef}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); clearIf('name'); }}
                 placeholder="Ex.: Treino glúteos e flexibilidade"
+                aria-invalid={!!errorOf('name')}
               />
+              <FieldError message={errorOf('name')} />
             </div>
 
             <div className="space-y-2">
@@ -250,12 +253,15 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
                   </p>
                   <Textarea
                     id="ai-prompt"
+                    ref={promptRef}
                     value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
+                    onChange={(e) => { setPrompt(e.target.value); clearIf('prompt'); }}
                     placeholder="Ex.: Quero uma sequência com foco em glúteos e flexibilidade para chegar no espacate"
                     rows={4}
                     className="resize-none text-sm leading-relaxed bg-background"
+                    aria-invalid={!!errorOf('prompt')}
                   />
+                  <FieldError message={errorOf('prompt')} />
                 </section>
 
                 <section className="p-3 space-y-1.5">
@@ -325,12 +331,15 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
                     </Label>
                     <Input
                       id="ai-count"
+                      ref={countRef}
                       inputMode="numeric"
                       value={count}
-                      onChange={(e) => setCount(e.target.value.replace(/\D/g, ''))}
+                      onChange={(e) => { setCount(e.target.value.replace(/\D/g, '')); clearIf('count'); }}
                       placeholder="8"
                       className="bg-background"
+                      aria-invalid={!!errorOf('count')}
                     />
+                    <FieldError message={errorOf('count')} />
                   </div>
                 </section>
               </div>
