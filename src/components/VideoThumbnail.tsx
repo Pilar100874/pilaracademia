@@ -31,12 +31,27 @@ export function VideoThumbnail({
   objectFit = 'cover',
   autoplayPreview = false,
 }: Props) {
-  const freshVideoUrl = getFreshMediaUrl(videoUrl);
   const [errored, setErrored] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
   const previewRef = useRef<HTMLVideoElement | null>(null);
+  const freshVideoUrl = getFreshMediaUrl(videoUrl, retryKey);
 
   const isUploadAutoplay = autoplayPreview && videoType === 'upload' && !!videoUrl;
+
+  useEffect(() => {
+    setErrored(false);
+    setVideoReady(false);
+    setRetryKey(0);
+  }, [videoUrl, videoType]);
+
+  useEffect(() => {
+    if (videoType !== 'upload' || !freshVideoUrl || videoReady || errored) return;
+    const timeout = window.setTimeout(() => {
+      setRetryKey((key) => (key < 2 ? key + 1 : key));
+    }, 3500);
+    return () => window.clearTimeout(timeout);
+  }, [videoType, freshVideoUrl, videoReady, errored]);
 
   // Loop the upload preview between start/end seconds
   useEffect(() => {
@@ -47,15 +62,15 @@ export function VideoThumbnail({
     const end = endSeconds ?? null;
 
     const onLoaded = () => {
-      try { v.currentTime = start; v.play().catch(() => {}); } catch {}
+      try { v.currentTime = start; v.play().catch(() => { /* autoplay may be blocked */ }); } catch { /* ignore seek errors */ }
     };
     const onTime = () => {
       if (end !== null && v.currentTime >= end) {
-        try { v.currentTime = start; } catch {}
+        try { v.currentTime = start; } catch { /* ignore seek errors */ }
       }
     };
     const onEnded = () => {
-      try { v.currentTime = start; v.play().catch(() => {}); } catch {}
+      try { v.currentTime = start; v.play().catch(() => { /* autoplay may be blocked */ }); } catch { /* ignore seek errors */ }
     };
     v.addEventListener('loadedmetadata', onLoaded);
     v.addEventListener('timeupdate', onTime);
@@ -103,7 +118,10 @@ export function VideoThumbnail({
           }}
           onLoadedData={() => setVideoReady(true)}
           onCanPlay={() => setVideoReady(true)}
-          onError={() => setErrored(true)}
+          onError={() => {
+            if (retryKey < 2) setRetryKey((key) => key + 1);
+            else setErrored(true);
+          }}
           className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'} ${errored ? 'opacity-0' : 'opacity-100'}`}
         />
         {errored && <div className="absolute inset-0 bg-muted" />}

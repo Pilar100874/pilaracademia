@@ -55,11 +55,16 @@ export function ExerciseVideoPlayer({
   const ytPlayerRef = useRef<any>(null);
   const ytIntervalRef = useRef<number | null>(null);
   const [igReloadKey, setIgReloadKey] = useState(0);
-  const freshVideoUrl = getFreshMediaUrl(videoUrl);
+  const [retryKey, setRetryKey] = useState(0);
+  const freshVideoUrl = getFreshMediaUrl(videoUrl, retryKey);
   const frameClassName = className ?? 'w-full aspect-video min-h-[220px] sm:min-h-[360px]';
 
   const start = startSeconds ?? 0;
   const end = endSeconds ?? 0;
+
+  useEffect(() => {
+    setRetryKey(0);
+  }, [videoUrl, videoType]);
 
   // Uploaded video handling
   useEffect(() => {
@@ -254,6 +259,8 @@ export function ExerciseVideoPlayer({
         playsInline
         preload="auto"
         controls={!autoPlay}
+        onLoadedData={() => setRetryKey(0)}
+        onError={() => setRetryKey((key) => (key < 2 ? key + 1 : key))}
         onContextMenu={(e) => e.preventDefault()}
         className="w-full h-full object-contain bg-black"
       />

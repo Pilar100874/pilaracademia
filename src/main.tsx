@@ -26,7 +26,7 @@ if (typeof navigator !== "undefined" && "serviceWorker" in navigator && isPrevie
 
 // One-time purge of stale Workbox/media caches from older service-worker versions.
 // This fixes blank video/image previews caused by outdated cached media responses.
-const CACHE_PURGE_KEY = "cache-purge-v4";
+const CACHE_PURGE_KEY = "cache-purge-v5";
 if (typeof window !== "undefined" && "caches" in window) {
   if (localStorage.getItem(CACHE_PURGE_KEY) !== "done") {
     caches
@@ -37,7 +37,8 @@ if (typeof window !== "undefined" && "caches" in window) {
             .filter((k) =>
               k.includes("supabase") ||
               k.includes("workbox") ||
-              k.includes("exercise-videos")
+              k.includes("exercise-videos") ||
+              k.includes("workout-images")
             )
             .map((k) => caches.delete(k))
         )
