@@ -182,6 +182,14 @@ export function WorkoutFormCoach({
 
     const tick = async () => {
       if (inflightRef.current) return;
+      // Pula análise se a pessoa estiver praticamente parada (economia de IA).
+      // Mas a cada 3 ticks "parados" mandamos um frame mesmo assim, para manter detecção de gesto viva.
+      const motion = sampleMotion();
+      if (motion < MOTION_THRESHOLD && stillStreakRef.current < 2) {
+        stillStreakRef.current += 1;
+        return;
+      }
+      stillStreakRef.current = 0;
       const frame = captureFrame();
       if (!frame) return;
       inflightRef.current = true;
