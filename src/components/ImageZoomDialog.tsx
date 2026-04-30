@@ -20,12 +20,18 @@ export function ImageZoomDialog({
   onOpenChange 
 }: ImageZoomDialogProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (open) {
       setCurrentIndex(initialIndex);
+      setRetryKey(0);
     }
   }, [open, initialIndex]);
+
+  useEffect(() => {
+    setRetryKey(0);
+  }, [currentIndex]);
 
   if (!images.length) return null;
 
@@ -48,7 +54,7 @@ export function ImageZoomDialog({
   };
 
   const showNavigation = images.length > 1;
-  const currentImage = getFreshMediaUrl(images[currentIndex]) ?? images[currentIndex];
+  const currentImage = getFreshMediaUrl(images[currentIndex], retryKey) ?? images[currentIndex];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,6 +79,7 @@ export function ImageZoomDialog({
           <img
             src={currentImage}
             alt={`${alt} ${currentIndex + 1}`}
+            onError={() => setRetryKey((key) => (key < 2 ? key + 1 : key))}
             className="max-w-full max-h-[75vh] object-contain rounded-lg"
           />
 
