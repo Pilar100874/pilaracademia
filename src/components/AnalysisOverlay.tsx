@@ -118,7 +118,7 @@ export function AnalysisOverlay({
   body,
   aesthetic,
   mobility,
-  positionClass = 'bottom-24 sm:bottom-28',
+  positionClass = 'right-4 bottom-24 sm:bottom-28',
   minPercent = 1,
 }: AnalysisOverlayProps) {
   const [expanded, setExpanded] = useState(false);
@@ -140,27 +140,29 @@ export function AnalysisOverlay({
 
   if (!expanded) {
     return (
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setExpanded(true);
-        }}
-        className={`absolute right-4 ${positionClass} z-40 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 border border-orange-300/50 text-white pl-2.5 pr-3 py-1.5 text-xs font-semibold shadow-[0_4px_20px_rgba(234,88,12,0.5)] hover:from-orange-500 hover:to-orange-500 active:scale-95 transition animate-fade-in`}
-        aria-label="Mostrar classificações"
-      >
-        <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
-        <span>Análise</span>
-        <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-white/25 text-[10px] font-bold tabular-nums">
-          {total}
-        </span>
-      </button>
+      <div className={`absolute ${positionClass} z-40 animate-fade-in`}>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(true);
+          }}
+          className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 border border-orange-300/50 text-white pl-2.5 pr-3 py-1.5 text-xs font-semibold shadow-[0_4px_20px_rgba(234,88,12,0.5)] hover:from-orange-500 hover:to-orange-500 active:scale-95 transition"
+          aria-label="Mostrar classificações"
+        >
+          <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
+          <span>Análise</span>
+          <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-white/25 text-[10px] font-bold tabular-nums">
+            {total}
+          </span>
+        </button>
+      </div>
     );
   }
 
   return (
     <div
-      className={`absolute right-3 left-3 sm:left-auto sm:right-4 sm:w-[340px] ${positionClass} z-40 animate-scale-in`}
+      className={`absolute ${positionClass} w-[min(calc(100vw-1.5rem),340px)] z-40 animate-scale-in`}
       onClick={(e) => e.stopPropagation()}
       style={{ transformOrigin: 'bottom right' }}
     >
