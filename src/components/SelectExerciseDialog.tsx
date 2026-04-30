@@ -138,6 +138,19 @@ export function SelectExerciseDialog({
         </DialogHeader>
 
         <div className="flex-1 flex flex-col min-h-0 space-y-4">
+          {/* Tabs: Mine / Global */}
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="mine">
+                Meus ({exercises.length})
+              </TabsTrigger>
+              <TabsTrigger value="global" className="flex items-center gap-1.5">
+                <Globe className="h-3.5 w-3.5" />
+                Global ({globalExercises.length})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -149,23 +162,31 @@ export function SelectExerciseDialog({
             />
           </div>
 
-          {/* Category filter */}
+          {/* Category filter — categories only apply to personal items */}
           <div className="flex items-center gap-2">
-            <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Filtrar por categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_CATEGORIES}>Todas as categorias</SelectItem>
-                <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {activeTab === 'mine' ? (
+              <>
+                <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Filtrar por categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_CATEGORIES}>Todas as categorias</SelectItem>
+                    <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
+            ) : (
+              <p className="flex-1 text-xs text-muted-foreground">
+                Biblioteca compartilhada — disponível para todos os usuários.
+              </p>
+            )}
             <BodyAnalysisFilter value={bodyFilter} onChange={setBodyFilter} compact />
           </div>
 
