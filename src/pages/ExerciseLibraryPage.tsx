@@ -1085,6 +1085,19 @@ export default function ExerciseLibraryPage() {
           </div>
         </div>
 
+        {/* Tabs: Mine / Global */}
+        <div className="px-4 pb-2">
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'mine' | 'global'); setFilterCategory(ALL_CATEGORIES); exitSelectionMode(); }}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="mine">Meus ({exercises.length})</TabsTrigger>
+              <TabsTrigger value="global" className="flex items-center gap-1.5">
+                <Globe className="h-3.5 w-3.5" />
+                Global ({globalExercises.length})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
         {/* Search + Filter */}
         <div className="px-4 pb-4 space-y-2">
           <div className="relative">
