@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
-import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon, Sparkles } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { AnalysisOverlay } from '@/components/AnalysisOverlay';
+import { WorkoutFormCoach } from '@/components/WorkoutFormCoach';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
 interface WorkoutViewerDialogProps {
@@ -21,6 +22,7 @@ export function WorkoutViewerDialog({
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(false);
   const exercises = plan.exercises || [];
 
   const currentExercise = exercises[currentExerciseIndex];
@@ -165,9 +167,17 @@ export function WorkoutViewerDialog({
             </div>
           </div>
         </div>
-        {/* Toggle video/image button - only show if both exist */}
-        {hasVideo && currentImages.length > 0 && (
-          <div className="absolute top-4 right-16 z-40">
+        {/* Top-right action stack: Coach IA + toggle media */}
+        <div className="absolute top-4 right-16 z-40 flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => setCoachOpen(true)}
+            className="gap-1.5 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg"
+          >
+            <Sparkles className="h-4 w-4" />
+            Coach IA
+          </Button>
+          {hasVideo && currentImages.length > 0 && (
             <Button
               size="sm"
               variant="secondary"
@@ -186,8 +196,8 @@ export function WorkoutViewerDialog({
                 </>
               )}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Photo navigation (left/right) - only show if multiple photos */}
         {hasMultiplePhotos && (
@@ -281,6 +291,17 @@ export function WorkoutViewerDialog({
           </div>
         </div>
       </DialogContent>
+      {coachOpen && currentExercise && (
+        <WorkoutFormCoach
+          exerciseName={currentExercise.name}
+          exerciseInstructions={(currentExercise as any).instructions || (currentExercise as any).description}
+          onClose={() => setCoachOpen(false)}
+          onNext={handleNextExercise}
+          onPrev={handlePreviousExercise}
+          canPrev={!isFirstExercise}
+          canNext={!isLastExercise}
+        />
+      )}
     </Dialog>
   );
 }
