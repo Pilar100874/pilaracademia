@@ -201,12 +201,14 @@ export function VideoPreviewDialog({
           );
         })()}
 
-        <AnalysisOverlay
-          body={bodyAnalysis}
-          aesthetic={aestheticAnalysis}
-          mobility={mobilityAnalysis}
-          positionClass={showNav ? 'right-6 bottom-[88px]' : 'right-6 bottom-6 pb-safe'}
-        />
+        {!showNav && (
+          <AnalysisOverlay
+            body={bodyAnalysis}
+            aesthetic={aestheticAnalysis}
+            mobility={mobilityAnalysis}
+            positionClass="right-6 bottom-6 pb-safe"
+          />
+        )}
 
         {showNav && (
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4 pb-safe">
@@ -219,6 +221,12 @@ export function VideoPreviewDialog({
             >
               <ChevronLeft className="h-7 w-7 stroke-[2.5]" />
             </button>
+            <AnalysisOverlay
+              body={bodyAnalysis}
+              aesthetic={aestheticAnalysis}
+              mobility={mobilityAnalysis}
+              variant="inline-icon"
+            />
             <button
               type="button"
               onClick={onNext}
