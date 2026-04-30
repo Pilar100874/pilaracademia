@@ -174,49 +174,65 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ai-prompt" className="text-xs font-medium flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                Descreva o objetivo
-              </Label>
-              <Textarea
-                id="ai-prompt"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Ex.: Quero uma sequência com foco em glúteos e flexibilidade para chegar no espacate"
-                rows={4}
-                className="resize-none text-sm leading-relaxed"
-              />
-              <div className="space-y-1.5">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Sugestões
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {EXAMPLES.map((ex) => (
-                    <button
-                      key={ex}
-                      type="button"
-                      onClick={() => setPrompt(ex)}
-                      className="text-[11px] px-2.5 py-1 rounded-full border border-border/70 bg-muted/30 hover:bg-muted hover:border-primary/40 text-foreground/80 transition-colors"
-                    >
-                      {ex.length > 42 ? ex.slice(0, 42) + '…' : ex}
-                    </button>
-                  ))}
-                </div>
+              <div className="flex items-center justify-between gap-2">
+                <Label className="flex items-center gap-1.5 text-xs font-medium">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  Objetivo do treino
+                </Label>
+                <span className="text-[10px] font-medium text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
+                  {exercises.length} na biblioteca
+                </span>
               </div>
-            </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="ai-count" className="text-xs font-medium">Quantidade de exercícios</Label>
-              <Input
-                id="ai-count"
-                inputMode="numeric"
-                value={count}
-                onChange={(e) => setCount(e.target.value.replace(/\D/g, ''))}
-                placeholder="8"
-              />
-              <p className="text-[11px] text-muted-foreground">
-                {exercises.length} exercício(s) disponíveis na sua biblioteca.
-              </p>
+              <div className="rounded-md border border-border/70 divide-y divide-border/60 bg-muted/20">
+                <section className="p-3 space-y-2">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Descreva
+                  </p>
+                  <Textarea
+                    id="ai-prompt"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="Ex.: Quero uma sequência com foco em glúteos e flexibilidade para chegar no espacate"
+                    rows={4}
+                    className="resize-none text-sm leading-relaxed bg-background"
+                  />
+                </section>
+
+                <section className="p-3 space-y-1.5">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Sugestões
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {EXAMPLES.map((ex) => (
+                      <button
+                        key={ex}
+                        type="button"
+                        onClick={() => setPrompt(ex)}
+                        className="text-[11px] px-2.5 py-1 rounded-full border border-border/70 bg-background hover:bg-accent hover:border-primary/40 text-foreground/80 transition-colors"
+                      >
+                        {ex.length > 42 ? ex.slice(0, 42) + '…' : ex}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="p-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ai-count" className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      Quantidade de exercícios
+                    </Label>
+                    <Input
+                      id="ai-count"
+                      inputMode="numeric"
+                      value={count}
+                      onChange={(e) => setCount(e.target.value.replace(/\D/g, ''))}
+                      placeholder="8"
+                      className="bg-background"
+                    />
+                  </div>
+                </section>
+              </div>
             </div>
 
             <div className="space-y-2">

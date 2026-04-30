@@ -100,7 +100,7 @@ export default function ExerciseLibraryPage() {
   const [editingExercise, setEditingExercise] = useState<LibraryExercise | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState<LibraryExercise | null>(null);
-  const [zoomImages, setZoomImages] = useState<string[]>([]);
+  const [zoomExercise, setZoomExercise] = useState<LibraryExercise | null>(null);
   const [videoPreview, setVideoPreview] = useState<LibraryExercise | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
   const [bulkUploading, setBulkUploading] = useState<{ done: number; total: number } | null>(null);
@@ -1267,7 +1267,7 @@ export default function ExerciseLibraryPage() {
                       if (hasVideo) {
                         setVideoPreview(exercise);
                       } else if (exercise.image_urls?.length) {
-                        setZoomImages(exercise.image_urls);
+                        setZoomExercise(exercise);
                       }
                     }}
                   >
@@ -1387,12 +1387,36 @@ export default function ExerciseLibraryPage() {
         description={`A categoria "${categoryToDelete?.name}" será removida. Os exercícios vinculados continuarão na biblioteca, apenas sem categoria.`}
       />
 
-      <ImageZoomDialog
-        images={zoomImages}
-        open={zoomImages.length > 0}
-        onOpenChange={(open) => !open && setZoomImages([])}
-      />
-
+      {(() => {
+        const imageList = filteredExercises.filter(
+          (ex) => (ex.image_urls?.length ?? 0) > 0
+        );
+        const zoomIndex = zoomExercise
+          ? imageList.findIndex((ex) => ex.id === zoomExercise.id)
+          : -1;
+        const goZoom = (delta: number) => {
+          if (zoomIndex < 0) return;
+          const next = imageList[zoomIndex + delta];
+          if (next) setZoomExercise(next);
+        };
+        return (
+          <ImageZoomDialog
+            images={zoomExercise?.image_urls ?? []}
+            open={!!zoomExercise}
+            onOpenChange={(open) => !open && setZoomExercise(null)}
+            name={zoomExercise?.name}
+            onPrev={() => goZoom(-1)}
+            onNext={() => goZoom(1)}
+            hasPrev={zoomIndex > 0}
+            hasNext={zoomIndex >= 0 && zoomIndex < imageList.length - 1}
+            position={
+              zoomIndex >= 0
+                ? { current: zoomIndex + 1, total: imageList.length }
+                : undefined
+            }
+          />
+        );
+      })()}
       {/* Full-screen video preview popup with prev/next navigation */}
       {(() => {
         const videoList = filteredExercises.filter(
