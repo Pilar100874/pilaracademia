@@ -101,13 +101,17 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
     if (!prompt.trim() || prompt.trim().length < 5)
       return toast.error('Descreva o objetivo do treino');
     if (!n || n < 1) return toast.error('Quantidade inválida');
-    if (!exercises.length)
-      return toast.error('Sua biblioteca está vazia. Adicione exercícios antes.');
+    if (!filteredExercises.length)
+      return toast.error(
+        selectedCategoryIds.length
+          ? 'Nenhum exercício na biblioteca para as categorias selecionadas.'
+          : 'Sua biblioteca está vazia. Adicione exercícios antes.'
+      );
 
     setGenerating(true);
     try {
       // Compacta a biblioteca para enviar à IA.
-      const library = exercises.map((ex) => ({
+      const library = filteredExercises.map((ex) => ({
         id: ex.id,
         name: ex.name,
         body: ex.body_analysis ?? null,
