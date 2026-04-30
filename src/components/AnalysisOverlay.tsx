@@ -140,21 +140,23 @@ export function AnalysisOverlay({
 
   if (!expanded) {
     return (
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setExpanded(true);
-        }}
-        className={`absolute ${positionClass} z-40 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 border border-orange-300/50 text-white pl-2.5 pr-3 py-1.5 text-xs font-semibold shadow-[0_4px_20px_rgba(234,88,12,0.5)] hover:from-orange-500 hover:to-orange-500 active:scale-95 transition animate-fade-in`}
-        aria-label="Mostrar classificações"
-      >
-        <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
-        <span>Análise</span>
-        <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-white/25 text-[10px] font-bold tabular-nums">
-          {total}
-        </span>
-      </button>
+      <div className={`absolute ${positionClass} z-40 animate-fade-in`}>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(true);
+          }}
+          className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 border border-orange-300/50 text-white pl-2.5 pr-3 py-1.5 text-xs font-semibold shadow-[0_4px_20px_rgba(234,88,12,0.5)] hover:from-orange-500 hover:to-orange-500 active:scale-95 transition"
+          aria-label="Mostrar classificações"
+        >
+          <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
+          <span>Análise</span>
+          <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-white/25 text-[10px] font-bold tabular-nums">
+            {total}
+          </span>
+        </button>
+      </div>
     );
   }
 
