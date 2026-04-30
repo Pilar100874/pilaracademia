@@ -127,7 +127,12 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
       if (!cancelled) setProgress(null);
     };
 
-    void run();
+    // Atrasa o início para não competir com o render inicial da tela
+    // (lista, vídeos, scroll). No celular isso evita travamentos e crashes
+    // por OOM enquanto o usuário ainda está interagindo.
+    const startTimer = window.setTimeout(() => {
+      if (!cancelled) void run();
+    }, 4000);
 
     const onVis = () => {
       if (document.hidden) cancelled = true;
@@ -136,6 +141,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(startTimer);
       document.removeEventListener('visibilitychange', onVis);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

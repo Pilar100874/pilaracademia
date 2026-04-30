@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { Edit, ChevronRight, ChevronLeft, Dumbbell, Play, Trash2 } from 'lucide-react';
-import { VideoThumbnail } from '@/components/VideoThumbnail';
+import { LazyVideoPreview } from '@/components/LazyVideoPreview';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
@@ -142,7 +142,7 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
                         className="shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-muted overflow-hidden relative [&_.absolute]:hidden"
                       >
                         {exercise.video_url && exercise.video_type ? (
-                          <VideoThumbnail
+                          <LazyVideoPreview
                             videoType={exercise.video_type}
                             videoUrl={exercise.video_url}
                             startSeconds={exercise.video_start_seconds}
