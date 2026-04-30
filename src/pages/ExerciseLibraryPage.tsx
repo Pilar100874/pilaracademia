@@ -32,7 +32,6 @@ import { Settings, ChevronDown } from 'lucide-react';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
-import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
 import { getStorageStatus } from '@/lib/videoCache';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
@@ -1264,10 +1263,10 @@ export default function ExerciseLibraryPage() {
                     onClick={(e) => {
                       if (selectionMode) return;
                       e.stopPropagation();
-                      if (hasVideo) {
-                        setVideoPreview(exercise);
-                      } else if (exercise.image_urls?.length) {
+                      if (exercise.image_urls?.length) {
                         setZoomImages(exercise.image_urls);
+                      } else if (hasVideo) {
+                        setVideoPreview(exercise);
                       }
                     }}
                   >

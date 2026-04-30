@@ -249,10 +249,13 @@ export function ExerciseVideoPlayer({
         ref={videoRef}
         src={freshVideoUrl}
         autoPlay={autoPlay}
+        loop={!end && loop}
         muted
         playsInline
+        controls
+        preload="metadata"
         onContextMenu={(e) => e.preventDefault()}
-        className="w-full h-full object-contain bg-black pointer-events-none"
+        className="w-full h-full object-contain bg-black"
       />
     </div>
   );
