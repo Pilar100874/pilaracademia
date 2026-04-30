@@ -89,11 +89,19 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
     return result;
   })();
 
+  // Filter by source (mine / global / all)
+  const sourceFiltered =
+    source === 'mine'
+      ? personalOnly
+      : source === 'global'
+        ? globalExercises
+        : exercises;
+
   // Filter exercises by selected categories (any match)
   const filteredExercises =
     selectedCategoryIds.length === 0
-      ? exercises
-      : exercises.filter((ex) =>
+      ? sourceFiltered
+      : sourceFiltered.filter((ex) =>
           (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id))
         );
 
