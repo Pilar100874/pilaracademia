@@ -13,7 +13,7 @@ import {
 import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { useBodyAnalysisAutorun } from '@/hooks/useBodyAnalysisAutorun';
-import { topBodyAreas } from '@/lib/exerciseAnalysis';
+import { ClassificationBadges } from '@/components/ClassificationBadges';
 import {
   BodyAnalysisFilter,
   EMPTY_BODY_FILTER,
@@ -1325,24 +1325,13 @@ export default function ExerciseLibraryPage() {
                           </span>
                         )}
                       </div>
-                      {(() => {
-                        const top = topBodyAreas(exercise.body_analysis, 3);
-                        if (top.length === 0) return null;
-                        return (
-                          <div className="flex flex-wrap gap-1 pt-0.5">
-                            {top.map((t) => (
-                              <span
-                                key={t.key}
-                                title={`${t.label} • ${t.value}%`}
-                                className="inline-flex items-center gap-1 text-[9px] leading-none px-1.5 py-0.5 rounded bg-accent/40 text-foreground/80 border border-border"
-                              >
-                                <span className="truncate max-w-[80px]">{t.label}</span>
-                                <span className="font-semibold tabular-nums">{t.value}%</span>
-                              </span>
-                            ))}
-                          </div>
-                        );
-                      })()}
+                      <ClassificationBadges
+                        body={exercise.body_analysis}
+                        mobility={exercise.mobility_analysis}
+                        aesthetic={exercise.aesthetic_analysis}
+                        perDimension={2}
+                        className="pt-0.5"
+                      />
                     </div>
 
                     {!selectionMode && (
