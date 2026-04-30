@@ -74,6 +74,15 @@ export function ExerciseVideoPlayer({
     setUploadReady(false);
   }, [videoType, freshVideoUrl]);
 
+  // Keep the full-screen player responsive even when the browser is slow to
+  // emit media events. The video remains mounted; only the blocking overlay is
+  // removed so users can see/play whatever has buffered.
+  useEffect(() => {
+    if (videoType !== 'upload' || !freshVideoUrl || uploadReady) return;
+    const timeout = window.setTimeout(() => setUploadReady(true), 2500);
+    return () => window.clearTimeout(timeout);
+  }, [videoType, freshVideoUrl, uploadReady]);
+
   // Uploaded video handling
   useEffect(() => {
     if (videoType !== 'upload') return;
@@ -313,17 +322,20 @@ export function ExerciseVideoPlayer({
     <div className={`${className ?? ''} relative bg-black`}>
       <video
         ref={videoRef}
+        key={freshVideoUrl}
         src={freshVideoUrl}
         autoPlay={autoPlay}
         muted
         playsInline
         preload="auto"
         poster={freshPoster ?? undefined}
+        controls
         onLoadedData={() => setUploadReady(true)}
+        onCanPlay={() => setUploadReady(true)}
         onPlaying={() => setUploadReady(true)}
         onError={() => setUploadReady(true)}
         onContextMenu={(e) => e.preventDefault()}
-        className="w-full h-full object-contain bg-black pointer-events-none"
+        className="w-full h-full object-contain bg-black"
       />
       <LoadingOverlay visible={!uploadReady} />
     </div>
