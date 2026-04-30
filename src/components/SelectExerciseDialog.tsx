@@ -19,7 +19,7 @@ import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary'
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { LazyVideoPreview } from '@/components/LazyVideoPreview';
-import { Dumbbell, Search, Plus, Check, ImageIcon, Tag } from 'lucide-react';
+import { Dumbbell, Search, Plus, Check, ImageIcon, Tag, Loader2 } from 'lucide-react';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import {
   BodyAnalysisFilter,
@@ -167,8 +167,25 @@ export function SelectExerciseDialog({
           {/* Exercise grid */}
           <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
             {isLoading ? (
-              <div className="py-8 text-center text-muted-foreground">
-                Carregando...
+              <div className="py-4">
+                <div className="flex items-center justify-center gap-2 mb-4 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Carregando biblioteca de exercícios...</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 pb-2">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="rounded-xl border border-border overflow-hidden animate-pulse"
+                    >
+                      <div className="w-full min-h-[12rem] sm:min-h-[13rem] bg-muted/60" />
+                      <div className="p-2.5 space-y-2">
+                        <div className="h-3 w-3/4 bg-muted rounded" />
+                        <div className="h-2.5 w-1/3 bg-muted/70 rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : filteredExercises.length === 0 ? (
               <div className="py-8 text-center space-y-3">
