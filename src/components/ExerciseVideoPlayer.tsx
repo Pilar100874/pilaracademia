@@ -131,6 +131,13 @@ export function ExerciseVideoPlayer({
     v.addEventListener('canplay', handleCanPlay);
     v.addEventListener('timeupdate', handleTimeUpdate);
     v.addEventListener('ended', handleEnded);
+
+    // The events above may have already fired before we attached listeners
+    // (race between React render and the browser starting to load the source).
+    // Sync state from the current readyState so the loading overlay clears.
+    if (v.readyState >= 1) handleLoaded();
+    if (v.readyState >= 3) handleCanPlay();
+
     return () => {
       v.removeEventListener('loadedmetadata', handleLoaded);
       v.removeEventListener('canplay', handleCanPlay);
@@ -312,6 +319,9 @@ export function ExerciseVideoPlayer({
         playsInline
         preload="auto"
         poster={freshPoster ?? undefined}
+        onLoadedData={() => setUploadReady(true)}
+        onPlaying={() => setUploadReady(true)}
+        onError={() => setUploadReady(true)}
         onContextMenu={(e) => e.preventDefault()}
         className="w-full h-full object-contain bg-black pointer-events-none"
       />
