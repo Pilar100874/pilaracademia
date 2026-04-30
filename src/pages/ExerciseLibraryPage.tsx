@@ -70,7 +70,7 @@ export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { exercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise, toggleExerciseCategory } = useExerciseLibrary();
+  const { exercises, globalExercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise, toggleExerciseCategory, copyGlobalToPersonal, isMaster } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
 
   // Realtime: sincroniza alterações da biblioteca de exercícios entre dispositivos/abas
