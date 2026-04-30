@@ -147,7 +147,7 @@ Forneça também um feedback CURTO em português (máx 60 caracteres) sobre a fo
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     const args = toolCall?.function?.arguments
       ? JSON.parse(toolCall.function.arguments)
-      : { status: "unknown", feedback: "", gesture: null };
+      : { status: "unknown", feedback: "", gesture: null, person_bbox: null };
 
     return new Response(JSON.stringify(args), {
       status: 200,
