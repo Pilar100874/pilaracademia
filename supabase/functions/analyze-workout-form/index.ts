@@ -44,12 +44,13 @@ Sua tarefa tem 2 partes:
    - "wrong" = erro grave (risco de lesão, postura claramente errada)
    - "unknown" = pessoa não visível, fora do quadro, ou imagem ambígua demais para julgar
 
-2) DETECTAR GESTO de controle hands-free:
-   - "next" = pessoa com a MÃO ABERTA (palma virada para a câmera, 5 dedos visíveis e separados) PARADA na frente do PEITO/ROSTO. NÃO confundir com mãos levantadas como parte do exercício (elevação, desenvolvimento, etc.)
-   - "prev" = mesma mão aberta, mas com o polegar apontando claramente para a ESQUERDA (gesto de "voltar")
-   - null = nenhum gesto claro de controle
+2) DETECTAR GESTO de controle hands-free para AVANÇAR exercício:
+   - "next" = pessoa com UMA MÃO ABERTA visível na frente do PEITO, ROSTO ou na altura da cabeça, com a palma virada para a câmera (dedos visíveis, mão claramente NÃO segurando peso e NÃO em movimento de exercício). Pode ser qualquer das duas mãos. Seja GENEROSO: se a pessoa parece estar mostrando a palma intencionalmente para a câmera (parada, sem peso, dedos abertos ou semi-abertos), retorne "next".
+   - null = pessoa claramente executando o exercício, mãos ocupadas com pesos, mãos abaixadas, ou nenhuma mão claramente visível mostrando palma.
 
-Seja CONSERVADOR no gesto: se houver QUALQUER dúvida (mão fechada, mão se movendo, mão como parte do exercício, várias pessoas), retorne null. É melhor não detectar do que detectar errado.
+NÃO existe gesto "prev" — só detectamos "next" ou null.
+
+Regra: se a pessoa está parada com a palma da mão visível para a câmera (mesmo que não totalmente esticada), retorne "next". Só retorne null se a mão estiver claramente fazendo parte do exercício, segurando equipamento, ou não visível.
 
 Forneça também um feedback CURTO em português (máx 60 caracteres) sobre a forma.`;
 
