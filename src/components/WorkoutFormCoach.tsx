@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Camera, X, Loader2 } from 'lucide-react';
+import { Camera, X, Loader2, Crop, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type FormStatus = 'correct' | 'partial' | 'wrong' | 'unknown' | 'idle';
@@ -34,11 +34,14 @@ export function WorkoutFormCoach({
   const intervalRef = useRef<number | null>(null);
   const inflightRef = useRef(false);
   const gestureStreakRef = useRef<{ next: number; prev: number }>({ next: 0, prev: 0 });
+  // Smoothed bounding box (normalized 0-1) used for auto-framing the next capture.
+  const bboxRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
 
   const [status, setStatus] = useState<FormStatus>('idle');
   const [feedback, setFeedback] = useState<string>('Iniciando análise...');
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [autoFramed, setAutoFramed] = useState(false);
   const [pendingNav, setPendingNav] = useState<null | { dir: 'next' | 'prev'; countdown: number }>(null);
 
   // Start camera (hidden — used only for capture)
@@ -77,13 +80,36 @@ export function WorkoutFormCoach({
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || video.readyState < 2) return null;
-    const w = 480;
-    const h = (video.videoHeight / video.videoWidth) * w || 360;
-    canvas.width = w;
-    canvas.height = h;
+
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    if (!vw || !vh) return null;
+
+    // Decide source crop region based on smoothed bbox (auto-framing).
+    // We expand it a bit and clamp inside the frame.
+    let sx = 0, sy = 0, sW = vw, sH = vh;
+    const bb = bboxRef.current;
+    if (bb && bb.w > 0.05 && bb.h > 0.05) {
+      const padX = bb.w * 0.15;
+      const padY = bb.h * 0.10;
+      const cx = Math.max(0, bb.x - padX);
+      const cy = Math.max(0, bb.y - padY);
+      const cw = Math.min(1 - cx, bb.w + padX * 2);
+      const ch = Math.min(1 - cy, bb.h + padY * 2);
+      sx = cx * vw;
+      sy = cy * vh;
+      sW = cw * vw;
+      sH = ch * vh;
+    }
+
+    // Output target: keep aspect ratio of crop, max 480px wide.
+    const targetW = 480;
+    const targetH = Math.round((sH / sW) * targetW) || 360;
+    canvas.width = targetW;
+    canvas.height = targetH;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
-    ctx.drawImage(video, 0, 0, w, h);
+    ctx.drawImage(video, sx, sy, sW, sH, 0, 0, targetW, targetH);
     return canvas.toDataURL('image/jpeg', 0.7);
   }, []);
 
@@ -138,6 +164,48 @@ export function WorkoutFormCoach({
         setStatus(newStatus);
         setFeedback(data?.feedback || '');
 
+        // Auto-framing: smoothly converge on the AI-reported person bbox.
+        // The bbox is in the coordinate space of the frame we SENT, which itself
+        // may already be a crop. So we map it back into the FULL video coords.
+        const reported = data?.person_bbox as
+          | { x: number; y: number; w: number; h: number }
+          | null
+          | undefined;
+        if (
+          reported &&
+          typeof reported.x === 'number' &&
+          typeof reported.y === 'number' &&
+          typeof reported.w === 'number' &&
+          typeof reported.h === 'number' &&
+          reported.w > 0.05 &&
+          reported.h > 0.05
+        ) {
+          const prev = bboxRef.current;
+          // Map reported bbox (relative to last sent crop) back to full video coords.
+          const base = prev ?? { x: 0, y: 0, w: 1, h: 1 };
+          const padX = base.w * 0.15;
+          const padY = base.h * 0.10;
+          const cx = Math.max(0, base.x - padX);
+          const cy = Math.max(0, base.y - padY);
+          const cw = Math.min(1 - cx, base.w + padX * 2);
+          const ch = Math.min(1 - cy, base.h + padY * 2);
+          const absolute = {
+            x: cx + reported.x * cw,
+            y: cy + reported.y * ch,
+            w: reported.w * cw,
+            h: reported.h * ch,
+          };
+          // EMA smoothing (alpha=0.4) to avoid jitter.
+          const alpha = prev ? 0.4 : 1;
+          bboxRef.current = {
+            x: prev ? prev.x * (1 - alpha) + absolute.x * alpha : absolute.x,
+            y: prev ? prev.y * (1 - alpha) + absolute.y * alpha : absolute.y,
+            w: prev ? prev.w * (1 - alpha) + absolute.w * alpha : absolute.w,
+            h: prev ? prev.h * (1 - alpha) + absolute.h * alpha : absolute.h,
+          };
+          setAutoFramed(true);
+        }
+
         const gesture = data?.gesture as 'next' | 'prev' | null;
         if (gesture === 'next') {
           gestureStreakRef.current.next += 1;
@@ -168,6 +236,8 @@ export function WorkoutFormCoach({
 
   useEffect(() => {
     gestureStreakRef.current = { next: 0, prev: 0 };
+    bboxRef.current = null;
+    setAutoFramed(false);
     setPendingNav(null);
     setStatus('idle');
     setFeedback('Analisando...');
@@ -212,10 +282,41 @@ export function WorkoutFormCoach({
           muted
           className="w-full h-full object-cover scale-x-[-1]"
         />
+        {/* Bbox overlay (mirrored to match the video) — visual feedback of auto-frame */}
+        {bboxRef.current && autoFramed && (
+          <div
+            className="absolute pointer-events-none border-2 border-primary/80 rounded-md transition-all duration-500"
+            style={{
+              // Mirror horizontally because the video is scale-x[-1]
+              left: `${(1 - bboxRef.current.x - bboxRef.current.w) * 100}%`,
+              top: `${bboxRef.current.y * 100}%`,
+              width: `${bboxRef.current.w * 100}%`,
+              height: `${bboxRef.current.h * 100}%`,
+            }}
+          />
+        )}
         <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-black/60 backdrop-blur-md rounded-full px-1.5 py-0.5 border border-white/15">
           <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
           <span className="text-white text-[9px] font-bold tracking-wider">AO VIVO</span>
         </div>
+        {autoFramed && (
+          <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 bg-primary/80 backdrop-blur-md rounded-full px-1.5 py-0.5 border border-white/20">
+            <Crop className="h-2.5 w-2.5 text-primary-foreground" />
+            <span className="text-primary-foreground text-[9px] font-bold tracking-wider">AUTO</span>
+          </div>
+        )}
+        {autoFramed && (
+          <button
+            onClick={() => {
+              bboxRef.current = null;
+              setAutoFramed(false);
+            }}
+            aria-label="Resetar enquadramento"
+            className="absolute bottom-1.5 right-1.5 h-6 w-6 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-black/80"
+          >
+            <Maximize2 className="h-3 w-3" />
+          </button>
+        )}
       </div>
       <canvas ref={canvasRef} className="hidden" />
 

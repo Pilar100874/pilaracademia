@@ -52,6 +52,10 @@ NÃO existe gesto "prev" — só detectamos "next" ou null.
 
 Regra: se a pessoa está parada com a palma da mão visível para a câmera (mesmo que não totalmente esticada), retorne "next". Só retorne null se a mão estiver claramente fazendo parte do exercício, segurando equipamento, ou não visível.
 
+3) DETECTAR ENQUADRAMENTO da pessoa (auto-zoom):
+   - Retorne "person_bbox" como uma caixa que envolve TODO o corpo visível da pessoa (cabeça aos pés, incluindo braços estendidos), com 4 valores normalizados de 0 a 1: { x, y, w, h } onde (x,y) é o canto superior-esquerdo da caixa em proporção ao frame, e (w,h) é a largura/altura também em proporção. Adicione ~5% de margem em volta do corpo.
+   - Se a pessoa NÃO estiver claramente visível ou estiver muito cortada, retorne null em person_bbox.
+
 Forneça também um feedback CURTO em português (máx 60 caracteres) sobre a forma.`;
 
     const body = {
@@ -87,8 +91,20 @@ Forneça também um feedback CURTO em português (máx 60 caracteres) sobre a fo
                   type: ["string", "null"],
                   enum: ["next", null],
                 },
+                person_bbox: {
+                  type: ["object", "null"],
+                  description: "Bounding box normalizada (0-1) da pessoa, com margem ~5%. null se não for possível detectar.",
+                  properties: {
+                    x: { type: "number" },
+                    y: { type: "number" },
+                    w: { type: "number" },
+                    h: { type: "number" },
+                  },
+                  required: ["x", "y", "w", "h"],
+                  additionalProperties: false,
+                },
               },
-              required: ["status", "feedback", "gesture"],
+              required: ["status", "feedback", "gesture", "person_bbox"],
               additionalProperties: false,
             },
           },
@@ -131,7 +147,7 @@ Forneça também um feedback CURTO em português (máx 60 caracteres) sobre a fo
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     const args = toolCall?.function?.arguments
       ? JSON.parse(toolCall.function.arguments)
-      : { status: "unknown", feedback: "", gesture: null };
+      : { status: "unknown", feedback: "", gesture: null, person_bbox: null };
 
     return new Response(JSON.stringify(args), {
       status: 200,
