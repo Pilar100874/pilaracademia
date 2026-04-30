@@ -123,7 +123,7 @@ export function VideoThumbnail({
           autoPlay={isUploadAutoplay}
           playsInline
           loop={isUploadAutoplay}
-          preload="metadata"
+          preload={isUploadAutoplay ? 'metadata' : 'none'}
           onLoadedMetadata={(e) => {
             try {
               e.currentTarget.currentTime = Math.max(0.1, startSeconds ?? 0);
