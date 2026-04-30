@@ -15,11 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { LazyVideoPreview } from '@/components/LazyVideoPreview';
-import { Dumbbell, Search, Plus, Check, ImageIcon, Tag, Loader2 } from 'lucide-react';
+import { Dumbbell, Search, Plus, Check, ImageIcon, Tag, Loader2, Globe } from 'lucide-react';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import {
   BodyAnalysisFilter,
@@ -38,14 +39,17 @@ interface SelectExerciseDialogProps {
 const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
 
+type Tab = 'mine' | 'global';
+
 export function SelectExerciseDialog({
   open,
   onOpenChange,
   onSelect,
   onCreateNew,
 }: SelectExerciseDialogProps) {
-  const { exercises, isLoading } = useExerciseLibrary();
+  const { exercises, globalExercises, isLoading } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
+  const [activeTab, setActiveTab] = useState<Tab>('mine');
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [bodyFilter, setBodyFilter] = useState<BodyAnalysisFilterValue>(EMPTY_BODY_FILTER);
@@ -60,19 +64,26 @@ export function SelectExerciseDialog({
     return m;
   }, [categories]);
 
+  // Selected exercises may live in either tab — keep a global lookup so the
+  // confirm button can resolve them regardless of which tab is active.
   const exerciseMap = useMemo(() => {
     const m = new Map<string, LibraryExercise>();
-    exercises.forEach((ex) => m.set(ex.id, ex));
+    [...exercises, ...globalExercises].forEach((ex) => m.set(ex.id, ex));
     return m;
-  }, [exercises]);
+  }, [exercises, globalExercises]);
 
-  const filteredExercises = exercises.filter((ex) => {
+  const sourceList = activeTab === 'mine' ? exercises : globalExercises;
+
+  const filteredExercises = sourceList.filter((ex) => {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
     let matchesCategory = true;
-    if (filterCategory === NO_CATEGORY) {
-      matchesCategory = !ex.category_id;
-    } else if (filterCategory !== ALL_CATEGORIES) {
-      matchesCategory = ex.category_id === filterCategory;
+    if (activeTab === 'mine') {
+      // Categories only apply to personal items
+      if (filterCategory === NO_CATEGORY) {
+        matchesCategory = !ex.category_id;
+      } else if (filterCategory !== ALL_CATEGORIES) {
+        matchesCategory = ex.category_id === filterCategory;
+      }
     }
     const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, ex.mobility_analysis, bodyFilter);
     return matchesSearch && matchesCategory && matchesBody;
@@ -127,6 +138,19 @@ export function SelectExerciseDialog({
         </DialogHeader>
 
         <div className="flex-1 flex flex-col min-h-0 space-y-4">
+          {/* Tabs: Mine / Global */}
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="mine">
+                Meus ({exercises.length})
+              </TabsTrigger>
+              <TabsTrigger value="global" className="flex items-center gap-1.5">
+                <Globe className="h-3.5 w-3.5" />
+                Global ({globalExercises.length})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -138,23 +162,31 @@ export function SelectExerciseDialog({
             />
           </div>
 
-          {/* Category filter */}
+          {/* Category filter — categories only apply to personal items */}
           <div className="flex items-center gap-2">
-            <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Filtrar por categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_CATEGORIES}>Todas as categorias</SelectItem>
-                <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {activeTab === 'mine' ? (
+              <>
+                <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Filtrar por categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_CATEGORIES}>Todas as categorias</SelectItem>
+                    <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
+            ) : (
+              <p className="flex-1 text-xs text-muted-foreground">
+                Biblioteca compartilhada — disponível para todos os usuários.
+              </p>
+            )}
             <BodyAnalysisFilter value={bodyFilter} onChange={setBodyFilter} compact />
           </div>
 
@@ -193,12 +225,16 @@ export function SelectExerciseDialog({
                 <p className="text-muted-foreground">
                   {search || filterCategory !== ALL_CATEGORIES
                     ? 'Nenhum exercício encontrado'
+                    : activeTab === 'global'
+                    ? 'Biblioteca global ainda está vazia'
                     : 'Sua biblioteca está vazia'}
                 </p>
-                <Button variant="outline" onClick={onCreateNew}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Criar Exercício
-                </Button>
+                {activeTab === 'mine' && (
+                  <Button variant="outline" onClick={onCreateNew}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Criar Exercício
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3 pb-2">

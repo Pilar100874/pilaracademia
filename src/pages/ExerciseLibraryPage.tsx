@@ -28,7 +28,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Settings, ChevronDown } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Settings, ChevronDown, Globe, Copy } from 'lucide-react';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
@@ -70,7 +71,7 @@ export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { exercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise, toggleExerciseCategory } = useExerciseLibrary();
+  const { exercises, globalExercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise, toggleExerciseCategory, copyGlobalToPersonal, isMaster } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
 
   // Realtime: sincroniza alterações da biblioteca de exercícios entre dispositivos/abas
@@ -94,6 +95,7 @@ export default function ExerciseLibraryPage() {
   // Auto-análise corporal em background (Gemini) — um vídeo por vez.
   const analysisProgress = useBodyAnalysisAutorun(exercises);
 
+  const [activeTab, setActiveTab] = useState<'mine' | 'global'>('mine');
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [bodyFilter, setBodyFilter] = useState<BodyAnalysisFilterValue>(EMPTY_BODY_FILTER);
@@ -333,14 +335,17 @@ export default function ExerciseLibraryPage() {
     return { orderedCategories: ordered, descendantsMap: descendants };
   }, [categories]);
 
-  const filteredExercises = exercises.filter((ex) => {
+  const sourceList = activeTab === 'global' ? globalExercises : exercises;
+  const filteredExercises = sourceList.filter((ex) => {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
     let matchesCategory = true;
-    if (filterCategory === NO_CATEGORY) {
-      matchesCategory = (ex.category_ids?.length ?? 0) === 0;
-    } else if (filterCategory !== ALL_CATEGORIES) {
-      const allowed = descendantsMap.get(filterCategory) ?? new Set([filterCategory]);
-      matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
+    if (activeTab === 'mine') {
+      if (filterCategory === NO_CATEGORY) {
+        matchesCategory = (ex.category_ids?.length ?? 0) === 0;
+      } else if (filterCategory !== ALL_CATEGORIES) {
+        const allowed = descendantsMap.get(filterCategory) ?? new Set([filterCategory]);
+        matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
+      }
     }
     const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, ex.mobility_analysis, bodyFilter);
     return matchesSearch && matchesCategory && matchesBody;
@@ -928,7 +933,10 @@ export default function ExerciseLibraryPage() {
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold truncate">Biblioteca de Exercícios</h1>
             <p className="text-sm text-muted-foreground">
-              {exercises.length} exercício{exercises.length !== 1 ? 's' : ''}
+              {activeTab === 'global'
+                ? `${globalExercises.length} global${globalExercises.length !== 1 ? 'is' : ''}`
+                : `${exercises.length} exercício${exercises.length !== 1 ? 's' : ''}`}
+              {isMaster && activeTab === 'global' && ' • você é o curador'}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end ml-auto">
@@ -1075,6 +1083,19 @@ export default function ExerciseLibraryPage() {
             onChange={handleBulkUpload}
           />
           </div>
+        </div>
+
+        {/* Tabs: Mine / Global */}
+        <div className="px-4 pb-2">
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'mine' | 'global'); setFilterCategory(ALL_CATEGORIES); exitSelectionMode(); }}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="mine">Meus ({exercises.length})</TabsTrigger>
+              <TabsTrigger value="global" className="flex items-center gap-1.5">
+                <Globe className="h-3.5 w-3.5" />
+                Global ({globalExercises.length})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         {/* Search + Filter */}
@@ -2014,22 +2035,24 @@ export default function ExerciseLibraryPage() {
                   </div>
                 )}
 
-                {/* Configuração do token Apify dentro do próprio diálogo */}
-                <Collapsible>
-                  <CollapsibleTrigger
-                    className="flex w-full items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
-                    disabled={igImporting}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      Configurar token Apify (avançado)
-                    </span>
-                    <ChevronDown className="h-4 w-4" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-3">
-                    <ApifySettingsCard />
-                  </CollapsibleContent>
-                </Collapsible>
+                {/* Configuração do token Apify — visível apenas para o master (pilar). Demais usuários usam o token compartilhado do servidor automaticamente. */}
+                {isMaster && (
+                  <Collapsible>
+                    <CollapsibleTrigger
+                      className="flex w-full items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
+                      disabled={igImporting}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        Configurar token Apify (avançado)
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-3">
+                      <ApifySettingsCard />
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
               </div>
 
               {/* Barra de progresso durante o import */}

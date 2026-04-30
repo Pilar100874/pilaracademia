@@ -28,7 +28,7 @@ interface RandomWorkoutDialogProps {
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogProps) {
-  const { exercises } = useExerciseLibrary();
+  const { allExercises: exercises } = useExerciseLibrary();
   const { createPlan, addExercise } = useWorkoutPlans();
 
   const [name, setName] = useState('');
