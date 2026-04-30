@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlans';
-import { GripVertical, Edit, Trash2, Dumbbell, ImageIcon } from 'lucide-react';
+import { GripVertical, Edit, Trash2, Dumbbell, ImageIcon, Play } from 'lucide-react';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
@@ -33,6 +33,10 @@ export function ExerciseListItem({
   const firstImage = getFreshMediaUrl(images[0]);
   const hasVideo = !!(exercise.video_url && exercise.video_type);
 
+  // Prioriza foto se existir (mais leve e mais informativa que um play vazio).
+  // Se não tiver foto mas tiver vídeo, mostra o thumbnail do vídeo.
+  const showImageFirst = !!firstImage;
+
   const handleThumbClick = () => {
     if (hasVideo) setVideoOpen(true);
     else if (firstImage) setZoomOpen(true);
@@ -58,24 +62,20 @@ export function ExerciseListItem({
           onClick={handleThumbClick}
           aria-label="Ver mídia"
         >
-          {hasVideo ? (
-            <VideoThumbnail
-              videoType={exercise.video_type}
-              videoUrl={exercise.video_url}
-              startSeconds={exercise.video_start_seconds}
-              endSeconds={exercise.video_end_seconds}
-              iconSize="sm"
-              className="w-full h-full"
-            />
-          ) : firstImage ? (
+          {showImageFirst ? (
             <>
               <img
-                src={firstImage}
+                src={firstImage!}
                 alt={exercise.name}
                 loading="lazy"
                 decoding="async"
                 className="w-full h-full object-cover"
               />
+              {hasVideo && (
+                <div className="absolute top-0.5 right-0.5 bg-black/60 backdrop-blur-sm rounded-full h-5 w-5 flex items-center justify-center pointer-events-none">
+                  <Play className="h-2.5 w-2.5 text-white fill-white" />
+                </div>
+              )}
               {imageCount > 1 && (
                 <div className="absolute bottom-0 right-0 bg-black/60 text-white text-[10px] px-1 rounded-tl flex items-center gap-0.5 pointer-events-none">
                   <ImageIcon className="h-2.5 w-2.5" />
@@ -83,6 +83,16 @@ export function ExerciseListItem({
                 </div>
               )}
             </>
+          ) : hasVideo ? (
+            <VideoThumbnail
+              videoType={exercise.video_type}
+              videoUrl={exercise.video_url}
+              startSeconds={exercise.video_start_seconds}
+              endSeconds={exercise.video_end_seconds}
+              iconSize="sm"
+              className="w-full h-full"
+              autoplayPreview={exercise.video_type === 'upload'}
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Dumbbell className="h-5 w-5 text-muted-foreground" />
