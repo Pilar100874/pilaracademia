@@ -13,7 +13,6 @@ import { WorkoutsPage } from "@/pages/WorkoutsPage";
 import ExerciseLibraryPage from "@/pages/ExerciseLibraryPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
-import { HelpMenu } from "@/components/HelpMenu";
 import { SplashScreen } from "@/components/SplashScreen";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
@@ -147,7 +146,6 @@ const App = () => {
         <BrowserRouter>
           <AuthProvider>
             <AppRoutes />
-            <HelpMenu />
             <InstallPrompt />
           </AuthProvider>
         </BrowserRouter>
