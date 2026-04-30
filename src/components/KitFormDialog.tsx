@@ -294,18 +294,19 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
               />
             </div>
 
-            <div className="border-t pt-4">
+            <div className="border-t pt-4" ref={itemsRef}>
               <div className="flex items-center justify-between mb-3">
                 <label className="text-sm font-medium">Produtos do Kit</label>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowProductSearch(!showProductSearch)}
+                  onClick={() => { setShowProductSearch(!showProductSearch); clearIf('items'); }}
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Adicionar
                 </Button>
               </div>
+              <FieldError message={errorOf('items')} className="mb-2" />
 
               {showProductSearch && (
                 <div className="mb-4 p-3 bg-secondary/50 rounded-lg space-y-3">
