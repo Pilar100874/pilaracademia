@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
-import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon, Sparkles } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { AnalysisOverlay } from '@/components/AnalysisOverlay';
+import { WorkoutFormCoach } from '@/components/WorkoutFormCoach';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 
 interface WorkoutViewerDialogProps {
