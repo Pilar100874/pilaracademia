@@ -243,6 +243,39 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
               <FieldError message={errorOf('name')} />
             </div>
 
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Origem dos exercícios</Label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {([
+                  { key: 'all', label: 'Todos', count: exercises.length },
+                  { key: 'mine', label: 'Meus', count: personalOnly.length },
+                  { key: 'global', label: 'Globais', count: globalExercises.length },
+                ] as const).map((opt) => {
+                  const active = source === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setSource(opt.key)}
+                      className={`h-9 rounded-md border text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                        active
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-input hover:bg-accent'
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                      <span className={`text-[10px] ${active ? 'opacity-80' : 'text-muted-foreground'}`}>
+                        ({opt.count})
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-snug">
+                A IA escolherá apenas entre os exercícios da origem selecionada.
+              </p>
+            </div>
+
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <Label className="flex items-center gap-1.5 text-xs font-medium">
