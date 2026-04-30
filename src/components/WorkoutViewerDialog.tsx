@@ -109,6 +109,7 @@ export function WorkoutViewerDialog({
         <div className="absolute inset-0 flex items-center justify-center bg-black overflow-hidden">
           {showVideo && hasVideo ? (
             <ExerciseVideoPlayer
+              key={`v-${currentExerciseIndex}`}
               videoType={currentExercise.video_type}
               videoUrl={currentExercise.video_url}
               startSeconds={currentExercise.video_start_seconds}
@@ -125,6 +126,7 @@ export function WorkoutViewerDialog({
             />
           ) : hasVideo ? (
             <ExerciseVideoPlayer
+              key={`vf-${currentExerciseIndex}`}
               videoType={currentExercise.video_type}
               videoUrl={currentExercise.video_url}
               startSeconds={currentExercise.video_start_seconds}
