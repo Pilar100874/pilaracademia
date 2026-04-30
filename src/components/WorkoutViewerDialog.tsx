@@ -265,16 +265,16 @@ export function WorkoutViewerDialog({
               <ChevronLeft className="h-7 w-7 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.5} />
             </button>
 
-            {/* Number badge */}
-            <div className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground h-12 w-12 rounded-2xl flex flex-col items-center justify-center font-extrabold shadow-lg ring-2 ring-white/20 shrink-0">
+            {/* Number badge (desktop only — mobile shows it in the card above) */}
+            <div className="hidden sm:flex bg-gradient-to-br from-primary to-primary/70 text-primary-foreground h-12 w-12 rounded-2xl flex-col items-center justify-center font-extrabold shadow-lg ring-2 ring-white/20 shrink-0">
               <span className="text-lg leading-none">{currentExerciseIndex + 1}</span>
               <span className="text-[9px] font-medium opacity-80 leading-none mt-0.5">
                 /{exercises.length}
               </span>
             </div>
 
-            {/* Name + sets×reps */}
-            <div className="flex-1 min-w-0 text-left px-1">
+            {/* Name + sets×reps (desktop only — mobile shows it in the card above) */}
+            <div className="hidden sm:block flex-1 min-w-0 text-left px-1">
               <p className="text-white font-bold text-base sm:text-lg truncate leading-tight tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {currentExercise.name}
               </p>
@@ -289,6 +289,9 @@ export function WorkoutViewerDialog({
                 </span>
               </div>
             </div>
+
+            {/* Mobile-only spacer to push controls apart */}
+            <div className="sm:hidden flex-1" />
 
             {/* Analysis (icon-only, sits next to Next) */}
             <AnalysisOverlay
