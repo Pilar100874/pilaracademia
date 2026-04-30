@@ -46,29 +46,13 @@ export function VideoThumbnail({
     setShouldLoadVideo(false);
   }, [freshVideoUrl, videoType]);
 
-  // Do not attach every library video to the DOM at once: it starts dozens of
-  // 206 media requests and starves the full-screen player. Load thumbnails only
-  // when they are near the viewport.
+  // Do not attach library videos to the DOM unless explicitly requested: even
+  // metadata thumbnails start many 206 media requests and starve the player.
   useEffect(() => {
     if (videoType !== 'upload' || !freshVideoUrl) return;
-    if (isUploadAutoplay || typeof IntersectionObserver === 'undefined') {
+    if (isUploadAutoplay) {
       setShouldLoadVideo(true);
-      return;
     }
-
-    const node = containerRef.current;
-    if (!node) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setShouldLoadVideo(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '220px' }
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
   }, [videoType, freshVideoUrl, isUploadAutoplay]);
 
   // Loop the upload preview between start/end seconds
