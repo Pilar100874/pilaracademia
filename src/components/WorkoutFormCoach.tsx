@@ -236,6 +236,8 @@ export function WorkoutFormCoach({
 
   useEffect(() => {
     gestureStreakRef.current = { next: 0, prev: 0 };
+    bboxRef.current = null;
+    setAutoFramed(false);
     setPendingNav(null);
     setStatus('idle');
     setFeedback('Analisando...');
