@@ -168,11 +168,38 @@ export function useExerciseLibrary() {
   const moveExercises = useMutation({
     mutationFn: async (data: { ids: string[]; category_id: string | null }) => {
       if (!data.ids.length) return;
-      const { error } = await supabase
+
+      // Categorias agora são multi-valoradas via junction `exercise_library_categories`.
+      // "Mover" = substituir todos os vínculos atuais pelo destino escolhido (ou
+      // remover todos, se NO_CATEGORY). Também atualizamos a coluna legada
+      // `category_id` para manter o espelho consistente caso o trigger não
+      // dispare na ordem esperada.
+
+      // 1) Remove todos os vínculos atuais dos exercícios selecionados.
+      const { error: delErr } = await supabase
+        .from('exercise_library_categories')
+        .delete()
+        .in('exercise_id', data.ids);
+      if (delErr) throw delErr;
+
+      // 2) Se há destino, cria um vínculo novo para cada exercício.
+      if (data.category_id) {
+        const rows = data.ids.map((id) => ({
+          exercise_id: id,
+          category_id: data.category_id as string,
+        }));
+        const { error: insErr } = await supabase
+          .from('exercise_library_categories')
+          .insert(rows);
+        if (insErr) throw insErr;
+      }
+
+      // 3) Atualiza a coluna legada para refletir o destino imediatamente.
+      const { error: upErr } = await supabase
         .from('exercise_library')
         .update({ category_id: data.category_id })
         .in('id', data.ids);
-      if (error) throw error;
+      if (upErr) throw upErr;
     },
     onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
