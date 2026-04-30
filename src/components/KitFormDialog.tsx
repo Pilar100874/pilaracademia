@@ -114,6 +114,11 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
       unit: converted.is_liquid ? 'ml' : 'g',
     }]);
     clearIf('items');
+    setShowProductSearch(false);
+    setSearchQuery('');
+  };
+
+  const handleAddProduct = (product: CustomProduct) => {
     const existing = items.find(item => item.product.id === product.id);
     if (existing) {
       toast.info('Produto já está no kit');
@@ -133,6 +138,7 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
       quantity: defaultQuantity,
       unit: product.is_liquid ? 'ml' : 'g',
     }]);
+    clearIf('items');
     setShowProductSearch(false);
     setSearchQuery('');
   };
