@@ -68,6 +68,9 @@ export function WorkoutPlanDialog({
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<WorkoutExercise | null>(null);
 
+  const nameRef = useRef<HTMLInputElement>(null);
+  const { errorOf, setError, clearError, clearIf } = useFieldError();
+
   // Get the current plan from workoutPlans (this updates when query is invalidated)
   const currentPlan = useMemo(() => {
     if (!editingPlan) return null;
@@ -98,7 +101,14 @@ export function WorkoutPlanDialog({
   };
 
   const handleSave = async () => {
-    if (!name.trim()) return;
+    const first = validateRequired([
+      { key: 'name', ref: nameRef, valid: !!name.trim(), message: 'Informe o nome do treino' },
+    ]);
+    if (first) {
+      setError(first.key, first.message);
+      return;
+    }
+    clearError();
 
     if (editingPlan) {
       await updatePlan.mutateAsync({
@@ -228,10 +238,13 @@ export function WorkoutPlanDialog({
               <Label htmlFor="name">Nome do Treino</Label>
               <Input
                 id="name"
+                ref={nameRef}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); clearIf('name'); }}
                 placeholder="Ex: Treino A - Peito e Tríceps"
+                aria-invalid={!!errorOf('name')}
               />
+              <FieldError message={errorOf('name')} />
             </div>
 
             <div className="space-y-2">
@@ -324,7 +337,7 @@ export function WorkoutPlanDialog({
               )}
               <Button
                 onClick={handleSave}
-                disabled={!name.trim() || createPlan.isPending || updatePlan.isPending}
+                disabled={createPlan.isPending || updatePlan.isPending}
                 className="flex-1"
               >
                 <Save className="h-4 w-4 mr-1" />
