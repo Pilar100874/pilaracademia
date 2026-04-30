@@ -32,14 +32,14 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
             className="flex flex-col items-center gap-6"
           >
             {/* Icon */}
-            <motion.div
+            <motion.img
+              src="/pwa-512x512.png"
+              alt="Pilar Academia"
               initial={{ y: 20 }}
               animate={{ y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="w-24 h-24 rounded-3xl bg-primary/10 backdrop-blur-sm flex items-center justify-center shadow-2xl"
-            >
-              <img src="/pwa-192x192.png" alt="Pilar Academia" className="w-16 h-16" />
-            </motion.div>
+              className="h-24 w-24 rounded-3xl shadow-lg"
+            />
 
             {/* App Name */}
             <motion.h1
