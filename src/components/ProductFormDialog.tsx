@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { FieldError } from '@/components/FieldError';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { WATER_IMAGE_URL } from '@/components/DefaultLiquidImage';
 import { ZxingScanner } from '@/components/ZxingScanner';
 import { fetchProductByBarcode, isLiquidProduct } from '@/lib/openFoodFacts';
 import { toast } from 'sonner';
+import { useFieldError, validateRequired } from '@/lib/formValidation';
 
 interface ProductFormDialogProps {
   open: boolean;
@@ -56,6 +58,8 @@ export function ProductFormDialog({
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [isSearchingBarcode, setIsSearchingBarcode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const { errorOf, setError, clearError, clearIf } = useFieldError();
   
   // Form state
   const [formName, setFormName] = useState('');
@@ -219,13 +223,17 @@ export function ProductFormDialog({
   };
 
   const handleSave = async () => {
-    if (!formName.trim()) {
-      toast.error('Nome é obrigatório');
+    const first = validateRequired([
+      { key: 'name', ref: nameInputRef, valid: !!formName.trim(), message: 'Informe o nome do produto' },
+    ]);
+    if (first) {
+      setError(first.key, first.message);
       return;
     }
-    
+    clearError();
+
     const barcode = formBarcode.trim() || `CUSTOM_${Date.now()}`;
-    
+
     setIsSaving(true);
     try {
       const savedProduct = await saveProduct({
@@ -376,7 +384,14 @@ export function ProductFormDialog({
 
           <div>
             <label className="text-sm text-muted-foreground mb-1 block">Nome *</label>
-            <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Nome do produto" />
+            <Input
+              ref={nameInputRef}
+              value={formName}
+              onChange={(e) => { setFormName(e.target.value); clearIf('name'); }}
+              placeholder="Nome do produto"
+              aria-invalid={!!errorOf('name')}
+            />
+            <FieldError message={errorOf('name')} />
           </div>
 
           <div>
@@ -502,7 +517,7 @@ export function ProductFormDialog({
             <Button variant="outline" className="flex-1" onClick={handleClose}>
               Cancelar
             </Button>
-            <Button className="flex-1" onClick={handleSave} disabled={isSaving || !formName.trim()}>
+            <Button className="flex-1" onClick={handleSave} disabled={isSaving}>
               {isSaving ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (

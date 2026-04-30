@@ -1,10 +1,11 @@
-import { useRef } from 'react';
+import { useRef, forwardRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Package, Droplets, Upload, Loader2, ScanLine, UtensilsCrossed } from 'lucide-react';
 import { CustomProduct } from '@/hooks/useCustomProducts';
+import { FieldError } from '@/components/FieldError';
 
 interface ProductFormProps {
   isEdit: boolean;
@@ -52,6 +53,9 @@ interface ProductFormProps {
   onZoomImage: (url: string) => void;
   onCancel: () => void;
   onSave: () => void;
+  nameError?: string | null;
+  nameInputRef?: React.Ref<HTMLInputElement>;
+  onNameInteract?: () => void;
 }
 
 export function ProductForm({
@@ -100,6 +104,9 @@ export function ProductForm({
   onZoomImage,
   onCancel,
   onSave,
+  nameError,
+  nameInputRef,
+  onNameInteract,
 }: ProductFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const displayImageUrl = imagePreview || formImageUrl;
@@ -194,7 +201,14 @@ export function ProductForm({
 
       <div>
         <label className="text-sm text-muted-foreground mb-1 block">Nome *</label>
-        <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Nome do produto" />
+        <Input
+          ref={nameInputRef}
+          value={formName}
+          onChange={(e) => { setFormName(e.target.value); onNameInteract?.(); }}
+          placeholder="Nome do produto"
+          aria-invalid={!!nameError}
+        />
+        <FieldError message={nameError} />
       </div>
 
       <div>

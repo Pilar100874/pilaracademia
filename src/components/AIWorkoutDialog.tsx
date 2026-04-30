@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { FieldError } from '@/components/FieldError';
+import { useFieldError, validateRequired } from '@/lib/formValidation';
 
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
@@ -44,6 +46,11 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
+
+  const nameRef = useRef<HTMLInputElement>(null);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
+  const countRef = useRef<HTMLInputElement>(null);
+  const { errorOf, setError, clearError, clearIf } = useFieldError();
 
   const reset = () => {
     setName('');
@@ -97,10 +104,16 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
 
   const handleGenerate = async () => {
     const n = parseInt(count, 10);
-    if (!name.trim()) return toast.error('Dê um nome para o treino');
-    if (!prompt.trim() || prompt.trim().length < 5)
-      return toast.error('Descreva o objetivo do treino');
-    if (!n || n < 1) return toast.error('Quantidade inválida');
+    const first = validateRequired([
+      { key: 'name', ref: nameRef, valid: !!name.trim(), message: 'Dê um nome para o treino' },
+      { key: 'prompt', ref: promptRef, valid: !!prompt.trim() && prompt.trim().length >= 5, message: 'Descreva o objetivo do treino (mín. 5 caracteres)' },
+      { key: 'count', ref: countRef, valid: !!n && n >= 1, message: 'Informe uma quantidade válida' },
+    ]);
+    if (first) {
+      setError(first.key, first.message);
+      return;
+    }
+    clearError();
     if (!filteredExercises.length)
       return toast.error(
         selectedCategoryIds.length
@@ -211,10 +224,13 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
               <Label htmlFor="ai-name" className="text-xs font-medium">Nome do treino</Label>
               <Input
                 id="ai-name"
+                ref={nameRef}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); clearIf('name'); }}
                 placeholder="Ex.: Treino glúteos e flexibilidade"
+                aria-invalid={!!errorOf('name')}
               />
+              <FieldError message={errorOf('name')} />
             </div>
 
             <div className="space-y-2">
@@ -237,12 +253,15 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
                   </p>
                   <Textarea
                     id="ai-prompt"
+                    ref={promptRef}
                     value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
+                    onChange={(e) => { setPrompt(e.target.value); clearIf('prompt'); }}
                     placeholder="Ex.: Quero uma sequência com foco em glúteos e flexibilidade para chegar no espacate"
                     rows={4}
                     className="resize-none text-sm leading-relaxed bg-background"
+                    aria-invalid={!!errorOf('prompt')}
                   />
+                  <FieldError message={errorOf('prompt')} />
                 </section>
 
                 <section className="p-3 space-y-1.5">
@@ -312,12 +331,15 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
                     </Label>
                     <Input
                       id="ai-count"
+                      ref={countRef}
                       inputMode="numeric"
                       value={count}
-                      onChange={(e) => setCount(e.target.value.replace(/\D/g, ''))}
+                      onChange={(e) => { setCount(e.target.value.replace(/\D/g, '')); clearIf('count'); }}
                       placeholder="8"
                       className="bg-background"
+                      aria-invalid={!!errorOf('count')}
                     />
+                    <FieldError message={errorOf('count')} />
                   </div>
                 </section>
               </div>

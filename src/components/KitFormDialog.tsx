@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,8 @@ import { DefaultProductImage } from '@/components/DefaultProductImage';
 import { KitItemQuantityDialog } from '@/components/KitItemQuantityDialog';
 import { NATURAL_PRODUCTS, naturalToCustomProduct, getCategoryInfo, NATURAL_PRODUCT_CATEGORIES } from '@/data/naturalProducts';
 import { toast } from 'sonner';
+import { FieldError } from '@/components/FieldError';
+import { useFieldError, validateRequired } from '@/lib/formValidation';
 
 interface KitFormDialogProps {
   open: boolean;
@@ -40,6 +42,10 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingKit, setIsLoadingKit] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+
+  const nameRef = useRef<HTMLInputElement>(null);
+  const itemsRef = useRef<HTMLDivElement>(null);
+  const { errorOf, setError, clearError, clearIf } = useFieldError();
 
   // Load existing kit data
   useEffect(() => {
@@ -107,6 +113,7 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
       quantity: 100,
       unit: converted.is_liquid ? 'ml' : 'g',
     }]);
+    clearIf('items');
     setShowProductSearch(false);
     setSearchQuery('');
   };
@@ -131,6 +138,7 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
       quantity: defaultQuantity,
       unit: product.is_liquid ? 'ml' : 'g',
     }]);
+    clearIf('items');
     setShowProductSearch(false);
     setSearchQuery('');
   };
@@ -158,15 +166,15 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
   };
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      toast.error('Nome do kit é obrigatório');
+    const first = validateRequired([
+      { key: 'name', ref: nameRef, valid: !!name.trim(), message: 'Informe o nome do kit' },
+      { key: 'items', ref: itemsRef, valid: items.length > 0, message: 'Adicione pelo menos um produto ao kit' },
+    ]);
+    if (first) {
+      setError(first.key, first.message);
       return;
     }
-
-    if (items.length === 0) {
-      toast.error('Adicione pelo menos um produto ao kit');
-      return;
-    }
+    clearError();
 
     setIsSaving(true);
 
@@ -269,10 +277,13 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
             <div>
               <label className="text-sm font-medium mb-1 block">Nome do Kit *</label>
               <Input
+                ref={nameRef}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); clearIf('name'); }}
                 placeholder="Ex: Café da manhã, Lanche da tarde..."
+                aria-invalid={!!errorOf('name')}
               />
+              <FieldError message={errorOf('name')} />
             </div>
 
             <div>
@@ -285,18 +296,19 @@ export function KitFormDialog({ open, onOpenChange, editingKit, onSaved }: KitFo
               />
             </div>
 
-            <div className="border-t pt-4">
+            <div className="border-t pt-4" ref={itemsRef}>
               <div className="flex items-center justify-between mb-3">
                 <label className="text-sm font-medium">Produtos do Kit</label>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowProductSearch(!showProductSearch)}
+                  onClick={() => { setShowProductSearch(!showProductSearch); clearIf('items'); }}
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Adicionar
                 </Button>
               </div>
+              <FieldError message={errorOf('items')} className="mb-2" />
 
               {showProductSearch && (
                 <div className="mb-4 p-3 bg-secondary/50 rounded-lg space-y-3">

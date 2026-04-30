@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { FieldError } from '@/components/FieldError';
+import { useFieldError, validateRequired } from '@/lib/formValidation';
 
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
@@ -38,6 +40,11 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [generating, setGenerating] = useState(false);
 
+  const nameRef = useRef<HTMLInputElement>(null);
+  const countRef = useRef<HTMLInputElement>(null);
+  const classifRef = useRef<HTMLDivElement>(null);
+  const { errorOf, setError, clearError, clearIf } = useFieldError();
+
   const min = useMemo(() => {
     const n = parseInt(minPercent, 10);
     return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
@@ -66,24 +73,30 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercises, bodyKeys, aestheticKeys, mobilityKeys, min]);
 
-  const toggleBody = (k: BodyAnalysisKey) =>
+  const toggleBody = (k: BodyAnalysisKey) => {
+    clearIf('classif');
     setBodyKeys((prev) => {
       const next = new Set(prev);
       next.has(k) ? next.delete(k) : next.add(k);
       return next;
     });
-  const toggleAesthetic = (k: AestheticAnalysisKey) =>
+  };
+  const toggleAesthetic = (k: AestheticAnalysisKey) => {
+    clearIf('classif');
     setAestheticKeys((prev) => {
       const next = new Set(prev);
       next.has(k) ? next.delete(k) : next.add(k);
       return next;
     });
-  const toggleMobility = (k: MobilityAnalysisKey) =>
+  };
+  const toggleMobility = (k: MobilityAnalysisKey) => {
+    clearIf('classif');
     setMobilityKeys((prev) => {
       const next = new Set(prev);
       next.has(k) ? next.delete(k) : next.add(k);
       return next;
     });
+  };
 
   const toggleDay = (idx: number) => {
     setSelectedDays((prev) =>
@@ -103,11 +116,21 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
 
   const handleGenerate = async () => {
     const n = parseInt(count, 10);
-    if (!name.trim()) return toast.error('Dê um nome para o treino');
-    if (!n || n < 1) return toast.error('Quantidade inválida');
-    if (bodyKeys.size === 0 && aestheticKeys.size === 0 && mobilityKeys.size === 0) {
-      return toast.error('Selecione ao menos uma classificação');
+    const first = validateRequired([
+      { key: 'name', ref: nameRef, valid: !!name.trim(), message: 'Dê um nome para o treino' },
+      { key: 'count', ref: countRef, valid: !!n && n >= 1, message: 'Informe uma quantidade válida' },
+      {
+        key: 'classif',
+        ref: classifRef,
+        valid: bodyKeys.size + aestheticKeys.size + mobilityKeys.size > 0,
+        message: 'Selecione ao menos uma classificação',
+      },
+    ]);
+    if (first) {
+      setError(first.key, first.message);
+      return;
     }
+    clearError();
     if (!pool.length) return toast.error('Nenhum exercício corresponde à classificação selecionada. Aguarde a análise dos vídeos terminar ou diminua o % mínimo.');
 
     // Weighted random by score (higher % = mais provável de ser sorteado)
@@ -190,10 +213,13 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
               <Label htmlFor="rand-name" className="text-xs font-medium">Nome do treino</Label>
               <Input
                 id="rand-name"
+                ref={nameRef}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); clearIf('name'); }}
                 placeholder="Ex.: Treino A"
+                aria-invalid={!!errorOf('name')}
               />
+              <FieldError message={errorOf('name')} />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -201,11 +227,14 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                 <Label htmlFor="rand-count" className="text-xs font-medium">Qtd. exercícios</Label>
                 <Input
                   id="rand-count"
+                  ref={countRef}
                   inputMode="numeric"
                   value={count}
-                  onChange={(e) => setCount(e.target.value.replace(/\D/g, ''))}
+                  onChange={(e) => { setCount(e.target.value.replace(/\D/g, '')); clearIf('count'); }}
                   placeholder="10"
+                  aria-invalid={!!errorOf('count')}
                 />
+                <FieldError message={errorOf('count')} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="rand-min" className="text-xs font-medium">% mínimo</Label>
@@ -219,7 +248,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2" ref={classifRef}>
               <div className="flex items-center justify-between gap-2">
                 <Label className="flex items-center gap-1.5 text-xs font-medium">
                   <Sparkles className="h-3.5 w-3.5 text-primary" />
@@ -231,8 +260,11 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                   </span>
                 )}
               </div>
+              <FieldError message={errorOf('classif')} />
 
-              <div className="rounded-md border border-border/70 divide-y divide-border/60 bg-muted/20">
+              <div
+                className={`rounded-md border ${errorOf('classif') ? 'border-destructive' : 'border-border/70'} divide-y divide-border/60 bg-muted/20`}
+              >
                 <section className="p-3 space-y-3">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                     Corpo

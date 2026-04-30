@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Loader2, Pencil } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { FieldError } from '@/components/FieldError';
+import { useFieldError } from '@/lib/formValidation';
 
 interface FoodItem {
   id: string;
@@ -56,6 +58,9 @@ export function TypedFoodDialog({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [customName, setCustomName] = useState('');
   const [originalItemsState, setOriginalItemsState] = useState<FoodItem[]>([]);
+
+  const itemRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const { errorOf, setError, clearError, clearIf } = useFieldError();
 
   // Atualizar estado quando abrir para edição
   useEffect(() => {
@@ -117,11 +122,23 @@ export function TypedFoodDialog({
 
   const handleAnalyze = async () => {
     const validItems = items.filter(item => item.food.trim() && item.quantity.trim());
-    
+
     if (validItems.length === 0) {
-      toast.error('Adicione pelo menos um alimento com quantidade');
+      // Foca no primeiro item incompleto
+      const target = items.find(it => !it.food.trim()) || items.find(it => !it.quantity.trim()) || items[0];
+      const field = target.food.trim() ? 'qty' : 'food';
+      const el = itemRefs.current[`${target.id}-${field}`];
+      if (el) {
+        try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch { el.scrollIntoView(); }
+        setTimeout(() => { try { el.focus({ preventScroll: true }); } catch { el.focus(); } }, 80);
+      }
+      setError(
+        `${target.id}-${field}`,
+        field === 'food' ? 'Informe o alimento' : 'Informe a quantidade'
+      );
       return;
     }
+    clearError();
 
     // If editing and nothing changed, just close without re-analyzing
     if (isEditing && !hasItemsChanged() && customName.trim() === (initialName || '')) {
@@ -241,17 +258,23 @@ export function TypedFoodDialog({
                 <div className="flex gap-2 items-start">
                   <div className="flex-1 space-y-2">
                     <Input
+                      ref={(el) => { itemRefs.current[`${item.id}-food`] = el; }}
                       value={item.food}
-                      onChange={(e) => updateItem(item.id, 'food', e.target.value)}
+                      onChange={(e) => { updateItem(item.id, 'food', e.target.value); clearIf(`${item.id}-food`); }}
                       placeholder="Alimento (ex: Fraldinha)"
                       className="h-11 text-base"
+                      aria-invalid={!!errorOf(`${item.id}-food`)}
                     />
+                    <FieldError message={errorOf(`${item.id}-food`)} />
                     <Input
+                      ref={(el) => { itemRefs.current[`${item.id}-qty`] = el; }}
                       value={item.quantity}
-                      onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
+                      onChange={(e) => { updateItem(item.id, 'quantity', e.target.value); clearIf(`${item.id}-qty`); }}
                       placeholder="Quantidade (ex: 150g)"
                       className="h-11 text-base"
+                      aria-invalid={!!errorOf(`${item.id}-qty`)}
                     />
+                    <FieldError message={errorOf(`${item.id}-qty`)} />
                   </div>
                   <Button
                     type="button"

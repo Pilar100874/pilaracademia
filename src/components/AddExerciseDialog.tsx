@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlans';
 import { X, Dumbbell, Save, Crop, Camera, ImageIcon } from 'lucide-react';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
+import { FieldError } from '@/components/FieldError';
+import { useFieldError, validateRequired } from '@/lib/formValidation';
 
 interface AddExerciseDialogProps {
   open: boolean;
@@ -40,6 +42,8 @@ export function AddExerciseDialog({
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const { errorOf, setError, clearError, clearIf } = useFieldError();
 
   useEffect(() => {
     if (editingExercise) {
@@ -108,7 +112,16 @@ export function AddExerciseDialog({
   };
 
   const handleSave = async () => {
-    if (!name.trim()) return;
+    const first = validateRequired([
+      { key: 'name', ref: nameRef, valid: !!name.trim(), message: 'Informe o nome do exercício' },
+      { key: 'sets', ref: null, valid: sets >= 1, message: 'Séries inválidas' },
+      { key: 'reps', ref: null, valid: reps >= 1, message: 'Repetições inválidas' },
+    ]);
+    if (first) {
+      setError(first.key, first.message);
+      return;
+    }
+    clearError();
 
     setIsSaving(true);
     try {
@@ -231,10 +244,13 @@ export function AddExerciseDialog({
               <Label htmlFor="exercise-name">Nome do Exercício</Label>
               <Input
                 id="exercise-name"
+                ref={nameRef}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); clearIf('name'); }}
                 placeholder="Ex: Supino Reto"
+                aria-invalid={!!errorOf('name')}
               />
+              <FieldError message={errorOf('name')} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -262,7 +278,7 @@ export function AddExerciseDialog({
 
             <Button
               onClick={handleSave}
-              disabled={!name.trim() || isSaving}
+              disabled={isSaving}
               className="w-full"
             >
               <Save className="h-4 w-4 mr-1" />
