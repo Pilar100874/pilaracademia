@@ -22,6 +22,7 @@ export function WorkoutViewerDialog({
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(false);
   const exercises = plan.exercises || [];
 
   const currentExercise = exercises[currentExerciseIndex];
