@@ -282,10 +282,41 @@ export function WorkoutFormCoach({
           muted
           className="w-full h-full object-cover scale-x-[-1]"
         />
+        {/* Bbox overlay (mirrored to match the video) — visual feedback of auto-frame */}
+        {bboxRef.current && autoFramed && (
+          <div
+            className="absolute pointer-events-none border-2 border-primary/80 rounded-md transition-all duration-500"
+            style={{
+              // Mirror horizontally because the video is scale-x[-1]
+              left: `${(1 - bboxRef.current.x - bboxRef.current.w) * 100}%`,
+              top: `${bboxRef.current.y * 100}%`,
+              width: `${bboxRef.current.w * 100}%`,
+              height: `${bboxRef.current.h * 100}%`,
+            }}
+          />
+        )}
         <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-black/60 backdrop-blur-md rounded-full px-1.5 py-0.5 border border-white/15">
           <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
           <span className="text-white text-[9px] font-bold tracking-wider">AO VIVO</span>
         </div>
+        {autoFramed && (
+          <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 bg-primary/80 backdrop-blur-md rounded-full px-1.5 py-0.5 border border-white/20">
+            <Crop className="h-2.5 w-2.5 text-primary-foreground" />
+            <span className="text-primary-foreground text-[9px] font-bold tracking-wider">AUTO</span>
+          </div>
+        )}
+        {autoFramed && (
+          <button
+            onClick={() => {
+              bboxRef.current = null;
+              setAutoFramed(false);
+            }}
+            aria-label="Resetar enquadramento"
+            className="absolute bottom-1.5 right-1.5 h-6 w-6 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-black/80"
+          >
+            <Maximize2 className="h-3 w-3" />
+          </button>
+        )}
       </div>
       <canvas ref={canvasRef} className="hidden" />
 
