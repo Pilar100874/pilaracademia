@@ -192,7 +192,7 @@ export function AnalysisOverlay({
 
   const panel = (
     <div
-      className={`${panelPosition} z-50 animate-scale-in`}
+      className={`${panelPosition} z-50 pointer-events-auto animate-scale-in`}
       onClick={(e) => e.stopPropagation()}
       style={{ transformOrigin: 'bottom right' }}
     >
