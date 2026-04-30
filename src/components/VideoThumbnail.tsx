@@ -82,6 +82,22 @@ export function VideoThumbnail({
     };
   }, [isUploadAutoplay, startSeconds, endSeconds, videoUrl]);
 
+  // Free decoded media buffers on unmount — prevents mobile WebView OOM
+  // when the user scrolls/navigates through many uploaded video thumbnails.
+  useEffect(() => {
+    return () => {
+      const v = previewRef.current;
+      if (!v) return;
+      try {
+        v.pause();
+        v.removeAttribute('src');
+        v.load();
+      } catch {
+        // ignore
+      }
+    };
+  }, []);
+
   if (!freshVideoUrl || !videoType) return null;
 
   let thumbSrc: string | null = null;
