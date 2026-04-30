@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlans';
-import { GripVertical, Edit, Trash2, Dumbbell, ImageIcon } from 'lucide-react';
+import { GripVertical, Edit, Trash2, Dumbbell, ImageIcon, Play } from 'lucide-react';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
