@@ -99,6 +99,12 @@ export function WorkoutViewerDialog({
 
   if (!currentExercise) return null;
 
+  const currentExerciseAnalysis = currentExercise as typeof currentExercise & {
+    body_analysis?: Record<string, number> | null;
+    aesthetic_analysis?: Record<string, number> | null;
+    mobility_analysis?: Record<string, number> | null;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -273,9 +279,9 @@ export function WorkoutViewerDialog({
 
             {/* Analysis (icon-only, sits next to Next) */}
             <AnalysisOverlay
-              body={(currentExercise as any).body_analysis}
-              aesthetic={(currentExercise as any).aesthetic_analysis}
-              mobility={(currentExercise as any).mobility_analysis}
+              body={currentExerciseAnalysis.body_analysis}
+              aesthetic={currentExerciseAnalysis.aesthetic_analysis}
+              mobility={currentExerciseAnalysis.mobility_analysis}
               variant="inline-icon"
             />
 
