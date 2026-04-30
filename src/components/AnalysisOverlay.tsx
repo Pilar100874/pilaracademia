@@ -186,14 +186,14 @@ export function AnalysisOverlay({
 
   const panelPosition =
     variant === 'inline-icon'
-      ? 'fixed right-4 bottom-24 sm:bottom-28'
-      : `absolute ${positionClass}`;
+      ? 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2'
+      : `fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2`;
 
   return (
     <div
       className={`${panelPosition} w-[min(calc(100vw-1.5rem),340px)] z-50 animate-scale-in`}
       onClick={(e) => e.stopPropagation()}
-      style={{ transformOrigin: 'bottom right' }}
+      style={{ transformOrigin: 'center' }}
     >
       <div className="rounded-2xl bg-black/70 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] overflow-hidden">
         {/* Header */}
