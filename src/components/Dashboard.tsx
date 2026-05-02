@@ -103,6 +103,23 @@ export function Dashboard() {
   const dailyLiquidGoal = goals.liquid_ml || profile?.daily_liquid_ml || 2000;
   const netCalories = consumed.calories - caloriesBurned;
 
+  // Adherence score & smart alerts (Leva 1)
+  const adherence = useAdherenceScore({
+    consumed: { calories: consumed.calories, protein: consumed.protein, carbs: consumed.carbs, fat: consumed.fat },
+    goals: { calories: goals.calories, protein: goals.protein, carbs: goals.carbs, fat: goals.fat, liquid_ml: dailyLiquidGoal },
+    liquidMl: todayLiquid,
+    caloriesBurned,
+    hasWorkout: caloriesBurned > 0,
+  });
+  const smartAlerts = useSmartAlerts({
+    adherence,
+    consumed: { calories: consumed.calories, protein: consumed.protein },
+    goals: { calories: goals.calories, protein: goals.protein },
+    liquidMl: todayLiquid,
+    liquidGoal: dailyLiquidGoal,
+    hasAnyEntry: entries.length > 0 || todayLiquid > 0 || caloriesBurned > 0,
+  });
+
   // Weight data
   const currentWeight = weightEntries.length > 0 ? weightEntries[weightEntries.length - 1]?.weight_kg : (profile?.weight_kg || 0);
   const previousWeight = weightEntries.length >= 2 ? weightEntries[weightEntries.length - 2]?.weight_kg : currentWeight;
