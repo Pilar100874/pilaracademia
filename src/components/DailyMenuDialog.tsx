@@ -6,6 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { useProfile } from '@/hooks/useProfile';
 import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
+import { useBloodExams } from '@/hooks/useBloodExams';
+import { buildBloodExamContext } from '@/lib/bloodExamContext';
 import { toast } from 'sonner';
 
 interface MenuItem {
@@ -37,6 +39,7 @@ interface Props {
 export function DailyMenuDialog({ open, onOpenChange, selectedDate }: Props) {
   const { getGoals } = useProfile();
   const planInfo = useCurrentBodyPlan();
+  const { list: bloodExamsQ } = useBloodExams();
   const { addEntry } = useFoodEntries(selectedDate);
   const [loading, setLoading] = useState(false);
   const [menu, setMenu] = useState<Menu | null>(null);
@@ -63,6 +66,7 @@ export function DailyMenuDialog({ open, onOpenChange, selectedDate }: Props) {
             diet_rules: planInfo?.plan?.diet_rules,
           },
           preferences: { meal_count: 4, style: 'brasileiro' },
+          blood_exam_context: buildBloodExamContext(bloodExamsQ.data) || undefined,
         },
       });
       if (error) throw error;
