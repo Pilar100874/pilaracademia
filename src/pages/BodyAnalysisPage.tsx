@@ -1079,6 +1079,8 @@ export default function BodyAnalysisPage() {
         initialCount={aiCount}
       />
 
+      <ProgressPhotosDialog open={photosOpen} onOpenChange={setPhotosOpen} />
+
       <BottomNav />
     </div>
   );
