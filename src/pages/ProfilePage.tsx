@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
 import { DataExportSection } from '@/components/DataExportSection';
 import { ShareSummaryDialog } from '@/components/ShareSummaryDialog';
+import { RemindersSection } from '@/components/RemindersSection';
 
 
 export function ProfilePage() {
