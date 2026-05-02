@@ -1,9 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { TrendingDown, TrendingUp, Calendar, Target, Scale, Flame, Info } from 'lucide-react';
+import { TrendingDown, TrendingUp, Calendar, Target, Scale, Flame, Info, Sparkles } from 'lucide-react';
 import { WeightEntry } from '@/hooks/useWeightHistory';
 import { differenceInDays, format, addDays, addWeeks, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
 
 interface WeightProjectionDialogProps {
   open: boolean;
