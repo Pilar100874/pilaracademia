@@ -43,6 +43,7 @@ import { NarrativeBlock } from '@/components/NarrativeBlock';
 import { ProgressPhotosDialog } from '@/components/ProgressPhotosDialog';
 import { exportPlanToPdf } from '@/lib/exportPlanPdf';
 import { FileDown, Camera as CameraIcon } from 'lucide-react';
+import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { useNavigate } from 'react-router-dom';
 
