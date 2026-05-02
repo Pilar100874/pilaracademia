@@ -190,6 +190,81 @@ export function WeightProjectionDialog({
   };
 
   const hasWeightData = entries.length >= 2;
+  const bodyPlanInfo = useCurrentBodyPlan();
+  const aiProjection = bodyPlanInfo?.plan?.projection;
+  const hasAiProjection = !!(
+    aiProjection &&
+    (aiProjection.day_30?.weight_kg || aiProjection.day_60?.weight_kg || aiProjection.day_90?.weight_kg)
+  );
+
+  const renderAiProjection = () => {
+    if (!hasAiProjection || !aiProjection) {
+      return (
+        <div className="text-center py-6 text-muted-foreground space-y-2">
+          <p className="text-sm">Sem projeção de IA disponível.</p>
+          <p className="text-xs">Faça uma análise corporal para gerar projeções personalizadas.</p>
+        </div>
+      );
+    }
+    const today = new Date();
+    const items = [
+      { label: '30 dias', date: addDays(today, 30), pt: aiProjection.day_30 },
+      { label: '60 dias', date: addDays(today, 60), pt: aiProjection.day_60 },
+      { label: '90 dias', date: addDays(today, 90), pt: aiProjection.day_90 },
+    ].filter((i) => i.pt);
+
+    return (
+      <div className="space-y-4">
+        <div className="flex gap-2 p-3 rounded-lg bg-primary/10 text-primary">
+          <Sparkles className="h-4 w-4 shrink-0 mt-0.5" />
+          <p className="text-xs">
+            Projeção da sua análise corporal personalizada (calorias, treino e periodização aplicados).
+          </p>
+        </div>
+        <div className="space-y-2">
+          {items.map((it) => {
+            const w = it.pt?.weight_kg;
+            const bf = it.pt?.body_fat_pct;
+            const mm = it.pt?.muscle_mass_kg;
+            const delta = w != null ? w - currentWeight : 0;
+            return (
+              <div key={it.label} className="p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm font-medium">{it.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(it.date, "dd 'de' MMM", { locale: ptBR })}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3 text-xs">
+                  {w != null && (
+                    <span>
+                      <span className="text-muted-foreground">Peso:</span>{' '}
+                      <b>{w.toFixed(1)} kg</b>
+                      <span className={delta < 0 ? 'text-emerald-500 ml-1' : 'text-amber-500 ml-1'}>
+                        ({delta > 0 ? '+' : ''}{delta.toFixed(1)})
+                      </span>
+                    </span>
+                  )}
+                  {bf != null && (
+                    <span>
+                      <span className="text-muted-foreground">Gordura:</span>{' '}
+                      <b>{bf.toFixed(1)}%</b>
+                    </span>
+                  )}
+                  {mm != null && (
+                    <span>
+                      <span className="text-muted-foreground">Músculo:</span>{' '}
+                      <b>{mm.toFixed(1)} kg</b>
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -202,17 +277,29 @@ export function WeightProjectionDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto -mx-1 px-1">
-          <Tabs defaultValue={hasWeightData ? "weight" : "calorie"} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4 h-11">
+          <Tabs defaultValue={hasAiProjection ? "ai" : (hasWeightData ? "weight" : "calorie")} className="w-full">
+            <TabsList className={`grid w-full ${hasAiProjection ? 'grid-cols-3' : 'grid-cols-2'} mb-4 h-11`}>
+              {hasAiProjection && (
+                <TabsTrigger value="ai" className="text-xs gap-1 h-9">
+                  <Sparkles className="h-3 w-3" />
+                  IA
+                </TabsTrigger>
+              )}
               <TabsTrigger value="weight" className="text-xs gap-1 h-9">
                 <Scale className="h-3 w-3" />
-                Peso Registrado
+                Peso
               </TabsTrigger>
               <TabsTrigger value="calorie" className="text-xs gap-1 h-9">
                 <Flame className="h-3 w-3" />
                 Calorias
               </TabsTrigger>
             </TabsList>
+
+            {hasAiProjection && (
+              <TabsContent value="ai" className="mt-0">
+                {renderAiProjection()}
+              </TabsContent>
+            )}
 
             <TabsContent value="weight" className="mt-0">
               {renderProjectionContent(weightProjections, 'weight')}
