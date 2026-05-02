@@ -28,6 +28,7 @@ export interface Profile {
   daily_liquid_ml_override: number | null;
   nutrition_override_source: string | null;
   nutrition_override_set_at: string | null;
+  onboarding_completed: boolean | null;
   created_at: string;
   updated_at: string;
 }

@@ -8,12 +8,16 @@ import {
   ChevronDown,
   ChevronRight,
   FileText,
+  LineChart,
+  List,
   Plus,
   Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBloodExams, type BloodExamRow, type BloodMarker } from '@/hooks/useBloodExams';
 import { BloodExamUploadDialog } from '@/components/BloodExamUploadDialog';
+import { BloodMarkerTrendChart } from '@/components/BloodMarkerTrendChart';
+import { MedicalDisclaimer } from '@/components/MedicalDisclaimer';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { cn } from '@/lib/utils';
 
@@ -206,8 +210,10 @@ export function BloodExamsTab() {
   const { list, remove } = useBloodExams();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [view, setView] = useState<'list' | 'trends'>('list');
 
   const exams = list.data || [];
+  const hasMultiple = exams.length >= 2;
 
   return (
     <div className="space-y-4">
@@ -221,6 +227,8 @@ export function BloodExamsTab() {
           Enviar
         </Button>
       </div>
+
+      <MedicalDisclaimer />
 
       {exams.length === 0 ? (
         <div className="rounded-md border border-dashed border-border bg-card p-8 text-center space-y-3">
@@ -236,11 +244,44 @@ export function BloodExamsTab() {
           </Button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {exams.map((exam) => (
-            <ExamCard key={exam.id} exam={exam} onDelete={() => setConfirmId(exam.id)} />
-          ))}
-        </div>
+        <>
+          {hasMultiple && (
+            <div className="flex gap-1 p-1 bg-muted/40 rounded-md">
+              <button
+                type="button"
+                onClick={() => setView('list')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded transition-colors',
+                  view === 'list' ? 'bg-background shadow-sm' : 'text-muted-foreground',
+                )}
+              >
+                <List className="h-3 w-3" />
+                Lista
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('trends')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded transition-colors',
+                  view === 'trends' ? 'bg-background shadow-sm' : 'text-muted-foreground',
+                )}
+              >
+                <LineChart className="h-3 w-3" />
+                Evolução
+              </button>
+            </div>
+          )}
+
+          {view === 'trends' && hasMultiple ? (
+            <BloodMarkerTrendChart exams={exams} />
+          ) : (
+            <div className="space-y-3">
+              {exams.map((exam) => (
+                <ExamCard key={exam.id} exam={exam} onDelete={() => setConfirmId(exam.id)} />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <BloodExamUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />

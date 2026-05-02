@@ -7,6 +7,7 @@ import { activityLabels, goalLabels, calculateAge, calculateBMR, calculateTDEE, 
 import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
+import { DataExportSection } from '@/components/DataExportSection';
 
 
 export function ProfilePage() {
@@ -271,6 +272,8 @@ export function ProfilePage() {
         >
           {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Salvar Perfil'}
         </Button>
+
+        <DataExportSection />
 
         <Button variant="outline" size="lg" className="w-full h-12 rounded-xl" onClick={handleSignOut}>
           Sair da conta
