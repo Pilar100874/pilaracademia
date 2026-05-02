@@ -130,6 +130,14 @@ function PlanView({
   const e = plan.extracted || {};
   const { allExercises } = useExerciseLibrary();
   const exercisesById = new Map(allExercises.map((ex) => [ex.id, ex] as const));
+  const [previewVideo, setPreviewVideo] = useState<{
+    name: string;
+    videoType: string | null;
+    videoUrl: string | null;
+    startSeconds: number | null;
+    endSeconds: number | null;
+  } | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[] | null>(null);
 
   // Compute current week of the 12-week periodization (only for the active/most-recent plan)
   const startIso = row.measured_at || row.created_at;
