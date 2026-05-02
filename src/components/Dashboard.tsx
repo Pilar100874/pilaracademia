@@ -654,6 +654,11 @@ export function Dashboard() {
         }}
       />
       
+      <DailyMenuDialog
+        open={menuOpen}
+        onOpenChange={setMenuOpen}
+        selectedDate={selectedDate}
+      />
       
       <BottomNav />
     </div>
