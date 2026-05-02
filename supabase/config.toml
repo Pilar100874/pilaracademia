@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.analyze-bioimpedance]
 verify_jwt = false
+
+[functions.extract-blood-exam]
+verify_jwt = false
