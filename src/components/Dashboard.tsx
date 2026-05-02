@@ -23,6 +23,7 @@ import { LiquidTracker } from '@/components/LiquidTracker';
 import { GlycemiaTracker } from '@/components/GlycemiaTracker';
 import { BodyPlanShortcut } from '@/components/BodyPlanShortcut';
 import { AdherenceCard } from '@/components/AdherenceCard';
+import { AdherenceHistoryChart } from '@/components/AdherenceHistoryChart';
 import { SmartAlertsCard } from '@/components/SmartAlertsCard';
 import { DailyMenuDialog } from '@/components/DailyMenuDialog';
 import { WeeklyCheckinCard } from '@/components/WeeklyCheckinCard';
@@ -243,6 +244,9 @@ export function Dashboard() {
 
         {/* Adherence score */}
         {isViewingToday && <AdherenceCard score={adherence} />}
+
+        {/* Adherence trend (last 7 days) */}
+        {isViewingToday && <AdherenceHistoryChart days={7} />}
 
         {/* AI daily menu CTA */}
         {isViewingToday && (

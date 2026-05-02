@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { useCurrentBodyPlan } from './useCurrentBodyPlan';
+import { useWeightHistory } from './useWeightHistory';
+import { differenceInDays, parseISO } from 'date-fns';
 import type { AdherenceBreakdown } from './useAdherenceScore';
 
 export interface SmartAlert {
@@ -25,6 +27,7 @@ interface Args {
  */
 export function useSmartAlerts(a: Args): SmartAlert[] {
   const plan = useCurrentBodyPlan();
+  const { entries: weightEntries } = useWeightHistory();
 
   return useMemo(() => {
     const alerts: SmartAlert[] = [];
@@ -41,6 +44,35 @@ export function useSmartAlerts(a: Args): SmartAlert[] {
           action: { label: 'Ver plano', route: '/body-analysis' },
         }),
       );
+    }
+
+    // Macro adjustment suggestion: weight diverged ≥0.7kg from projection after 14 days
+    if (plan && plan.daysSinceStart >= 14 && weightEntries.length > 0) {
+      const startIso = plan.row.measured_at || plan.row.created_at;
+      const start = parseISO(startIso);
+      const startWeight =
+        weightEntries.find((w) => Math.abs(differenceInDays(parseISO(w.recorded_at), start)) <= 3)?.weight_kg ??
+        (plan.row.extracted as any)?.weight_kg ??
+        null;
+      const latest = weightEntries[weightEntries.length - 1];
+      const currentWeight = latest ? Number(latest.weight_kg) : null;
+      const proj = plan.plan.projection;
+      let expected: number | null = null;
+      if (startWeight && proj?.day_90?.weight_kg) {
+        expected = Number(startWeight) + ((proj.day_90.weight_kg - Number(startWeight)) / 90) * plan.daysSinceStart;
+      } else if (startWeight && proj?.day_30?.weight_kg) {
+        expected = Number(startWeight) + ((proj.day_30.weight_kg - Number(startWeight)) / 30) * plan.daysSinceStart;
+      }
+      if (expected != null && currentWeight != null && Math.abs(currentWeight - expected) >= 0.7) {
+        const diff = currentWeight - expected;
+        alerts.push({
+          id: 'macro-divergence',
+          level: 'warning',
+          title: 'Macros podem precisar ajuste',
+          description: `Seu peso divergiu ${diff > 0 ? '+' : ''}${diff.toFixed(1)} kg do esperado. Recalcule com a IA.`,
+          action: { label: 'Ajustar', route: '/body-analysis' },
+        });
+      }
     }
 
     if (!a.hasAnyEntry) return alerts;
@@ -79,6 +111,7 @@ export function useSmartAlerts(a: Args): SmartAlert[] {
     return alerts.slice(0, 3);
   }, [
     plan,
+    weightEntries,
     a.adherence.total,
     a.consumed.calories,
     a.consumed.protein,
