@@ -12,6 +12,7 @@ import { HealthPage } from "@/pages/HealthPage";
 import { WorkoutsPage } from "@/pages/WorkoutsPage";
 import ExerciseLibraryPage from "@/pages/ExerciseLibraryPage";
 import BodyAnalysisPage from "@/pages/BodyAnalysisPage";
+import BioimpedancePage from "@/pages/BioimpedancePage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -120,6 +121,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <BodyAnalysisPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/bioimpedance"
+        element={
+          <ProtectedRoute>
+            <BioimpedancePage />
           </ProtectedRoute>
         }
       />
