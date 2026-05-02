@@ -17,6 +17,8 @@ import { useFieldError, validateRequired } from '@/lib/formValidation';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
+import { useBloodExams } from '@/hooks/useBloodExams';
+import { buildBloodExamHealthContext } from '@/lib/bloodExamContext';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,6 +44,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const { allExercises: exercises, globalExercises, exercises: personalOnly } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
+  const { list: bloodExamsQ } = useBloodExams();
 
   const [name, setName] = useState(initialName || '');
   const [prompt, setPrompt] = useState(initialPrompt || '');
@@ -159,8 +162,10 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         mobility: ex.mobility_analysis ?? null,
       }));
 
+      const healthContext = buildBloodExamHealthContext(bloodExamsQ.data) || undefined;
+
       const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
-        body: { prompt: prompt.trim(), count: n, library },
+        body: { prompt: prompt.trim(), count: n, library, health_context: healthContext },
       });
 
       if (error) {
