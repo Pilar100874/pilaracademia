@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/EmptyState';
 import { useWorkoutPlans, WorkoutPlan } from '@/hooks/useWorkoutPlans';
+import { ListSkeleton } from '@/components/ListSkeleton';
 import { Plus, Dumbbell, Loader2, Library, Shuffle, Sparkles } from 'lucide-react';
 import { WorkoutPlanDialog } from '@/components/WorkoutPlanDialog';
 import { WorkoutPlanCard } from '@/components/WorkoutPlanCard';
@@ -79,9 +80,7 @@ export function WorkoutsPage() {
 
       <main className="mx-auto max-w-5xl p-3 sm:p-4 space-y-4">
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
+          <ListSkeleton rows={4} />
         ) : workoutPlans.length === 0 ? (
           <EmptyState
             icon={Dumbbell}
