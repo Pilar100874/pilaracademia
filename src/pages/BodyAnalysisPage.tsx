@@ -213,7 +213,7 @@ function PlanView({
       ) : (
         plan.summary && (
           <div className="rounded-md border border-border bg-muted/30 p-4">
-            <p className="text-sm leading-relaxed whitespace-pre-line">{plan.summary}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-line">{sanitizeFitnessText(plan.summary)}</p>
           </div>
         )
       )}
