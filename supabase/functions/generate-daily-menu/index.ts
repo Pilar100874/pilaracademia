@@ -163,12 +163,32 @@ Cada item DEVE ter calorias/proteína/carbs/gordura calculados para a quantidade
     if (!call?.function?.arguments) {
       return new Response(JSON.stringify({ error: 'Resposta da IA sem cardápio' }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
       });
     }
     const parsed = JSON.parse(call.function.arguments);
-    return new Response(JSON.stringify({ menu: parsed }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // Fix mojibake (UTF-8 bytes interpreted as Latin-1) if it appears in any string field
+    const fixMojibake = (s: string): string => {
+      if (typeof s !== 'string' || !/[ÃÂ][\x80-\xBF]/.test(s)) return s;
+      try {
+        const bytes = new Uint8Array(s.length);
+        for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i) & 0xff;
+        return new TextDecoder('utf-8').decode(bytes);
+      } catch { return s; }
+    };
+    const walk = (v: any): any => {
+      if (typeof v === 'string') return fixMojibake(v);
+      if (Array.isArray(v)) return v.map(walk);
+      if (v && typeof v === 'object') {
+        const out: any = {};
+        for (const k of Object.keys(v)) out[k] = walk(v[k]);
+        return out;
+      }
+      return v;
+    };
+    const fixed = walk(parsed);
+    return new Response(JSON.stringify({ menu: fixed }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
     });
   } catch (e) {
     console.error('generate-daily-menu', e);
