@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { BottomNav } from '@/components/BottomNav';
+import { EmptyState } from '@/components/EmptyState';
+import { CalendarDays } from 'lucide-react';
 
 interface DaySummary {
   date: Date;
@@ -263,9 +265,12 @@ export function HistoryPage() {
             )}
 
             {summary.foodEntries.length === 0 && summary.liquidEntries.length === 0 && summary.exerciseEntries.length === 0 && (
-              <div className="card-compact text-center py-8">
-                <p className="text-muted-foreground">Nenhum registro neste dia</p>
-              </div>
+              <EmptyState
+                icon={CalendarDays}
+                title="Nenhum registro neste dia"
+                description="Volte para o Hoje para adicionar refeições, líquidos ou treinos."
+                variant="compact"
+              />
             )}
           </>
         ) : null}

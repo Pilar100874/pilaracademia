@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/EmptyState';
 import { useWorkoutPlans, WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { Plus, Dumbbell, Loader2, Library, Shuffle, Sparkles } from 'lucide-react';
 import { WorkoutPlanDialog } from '@/components/WorkoutPlanDialog';
@@ -82,19 +83,12 @@ export function WorkoutsPage() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : workoutPlans.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <Dumbbell className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="font-semibold mb-2">Nenhum treino cadastrado</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Crie seu primeiro treino com exercícios personalizados
-              </p>
-              <Button onClick={() => setDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-1" />
-                Criar Treino
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Dumbbell}
+            title="Nenhum treino cadastrado"
+            description="Crie seu primeiro treino com exercícios personalizados ou gere um automaticamente com IA."
+            action={{ label: 'Criar Treino', icon: Plus, onClick: () => setDialogOpen(true) }}
+          />
         ) : (
           <>
             {/* Today's workout highlight */}
