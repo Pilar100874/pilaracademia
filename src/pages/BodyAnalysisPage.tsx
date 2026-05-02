@@ -38,6 +38,8 @@ import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AIWorkoutDialog } from '@/components/AIWorkoutDialog';
+import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
+import { useNavigate } from 'react-router-dom';
 
 const goalLabels: Record<string, string> = {
   cutting: 'Cutting (perda de gordura)',
