@@ -59,13 +59,13 @@ export function exportPlanToPdf(plan: BodyPlan, profileName?: string) {
   if (plan.narrative) {
     page();
     line('Resumo', 13, true);
-    line(plan.narrative.situation, 11);
+    line(sanitizeFitnessText(plan.narrative.situation), 11);
     y += 4;
-    line(plan.narrative.plan, 11);
+    line(sanitizeFitnessText(plan.narrative.plan), 11);
     if (plan.narrative.next_steps?.length) {
       y += 4;
       line('Próximos passos:', 11, true);
-      plan.narrative.next_steps.forEach((s) => line(`• ${s}`, 11));
+      plan.narrative.next_steps.forEach((s) => line(`• ${sanitizeFitnessText(s)}`, 11));
     }
   }
 
