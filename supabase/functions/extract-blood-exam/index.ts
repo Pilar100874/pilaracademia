@@ -86,7 +86,31 @@ Deno.serve(async (req) => {
       },
     }];
 
-    const truncated = rawText.length > 60000 ? rawText.slice(0, 60000) : rawText;
+    // Limpa ruído típico de laudos brasileiros (cabeçalhos/rodapés repetidos a cada página)
+    const NOISE_PATTERNS: RegExp[] = [
+      /Atendimento ao (cliente|m[eé]dico)[^\n]*/gi,
+      /\(11\)\s*\d{4}\s*\d{4}/g,
+      /www\.[a-z0-9.-]+\.com\.br/gi,
+      /NAM\s*-\s*N[úu]cleo de Assessoria M[eé]dica:?\s*[\d-]+/gi,
+      /Laborat[óo]rio registrado no CRM\/SP[^\n]*/gi,
+      /Sob a responsabilidade do Dr\.[^\n]*/gi,
+      /Laudo tamb[ée]m dispon[íi]vel ao m[ée]dico prescritor[^\n]*/gi,
+      /Valide seu laudo com o QR Code[^\n]*/gi,
+      /valida\.dasa\.com\.br/gi,
+      /Token:\s*`?[A-Za-z0-9_-]+`?/g,
+      /Hash:\s*[a-f0-9]{20,}/gi,
+      /P[áa]g\.\s*\d+\s*de\s*\d+/gi,
+      /Assinado eletronicamente por:[^\n]*/gi,
+      /Respons[áa]vel:\s*Dr\.[^\n]*/gi,
+      /Data da gera[çc][ãa]o:[^\n]*/gi,
+      /A interpreta[çc][ãa]o dos resultados[^\n]*/gi,
+      /!\[[^\]]*\]\([^)]+\)/g, // imagens markdown
+    ];
+    let cleaned = rawText;
+    for (const re of NOISE_PATTERNS) cleaned = cleaned.replace(re, ' ');
+    cleaned = cleaned.replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
+
+    const truncated = cleaned.length > 90000 ? cleaned.slice(0, 90000) : cleaned;
 
     const aiResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
