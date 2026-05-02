@@ -35,6 +35,7 @@ export function useProfile() {
 
   const fetchProfile = useCallback(async () => {
     if (!user) {
+      _cachedUserId = null;
       setProfile(null);
       setIsLoading(false);
       return;
@@ -49,14 +50,20 @@ export function useProfile() {
     if (error && error.code !== 'PGRST116') {
       console.error('Error fetching profile:', error);
     }
-    
+
+    _cachedUserId = user.id;
     setProfile(data as Profile | null);
     setIsLoading(false);
-  }, [user]);
+  }, [user, setProfile]);
 
   useEffect(() => {
+    // If we already have cached profile for this user, surface it immediately
+    if (user && _cachedUserId === user.id && _cachedProfile) {
+      setProfileState(_cachedProfile);
+      setIsLoading(false);
+    }
     fetchProfile();
-  }, [fetchProfile]);
+  }, [fetchProfile, user]);
 
   const updateProfile = useCallback(async (updates: Partial<Profile>) => {
     if (!user || !profile) return null;
