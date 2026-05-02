@@ -384,11 +384,27 @@ function PlanView({
           </div>
         )}
 
-        <Button size="sm" className="w-full" onClick={() => onGenerateWorkout(plan)}>
-          <Sparkles className="h-4 w-4 mr-1.5" />
-          Gerar treino com IA usando este plano
-          <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <Button size="sm" onClick={() => onGenerateWorkout(plan)}>
+            <Sparkles className="h-4 w-4 mr-1.5" />
+            Gerar treino com IA
+          </Button>
+          {plan.recommended_exercises && plan.recommended_exercises.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onApplyWorkout(plan)}
+              disabled={applyingWorkout}
+            >
+              {applyingWorkout ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Dumbbell className="h-4 w-4 mr-1.5" />
+              )}
+              Salvar como treino
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Cardio */}
