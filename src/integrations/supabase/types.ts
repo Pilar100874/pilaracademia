@@ -2545,11 +2545,17 @@ export type Database = {
           birth_date: string | null
           created_at: string
           daily_calories: number | null
+          daily_calories_override: number | null
           daily_carbs: number | null
+          daily_carbs_override: number | null
           daily_fat: number | null
+          daily_fat_override: number | null
           daily_fiber: number | null
+          daily_fiber_override: number | null
           daily_liquid_ml: number | null
+          daily_liquid_ml_override: number | null
           daily_protein: number | null
+          daily_protein_override: number | null
           daily_saturated_fat: number | null
           daily_sodium: number | null
           daily_trans_fat: number | null
@@ -2559,6 +2565,8 @@ export type Database = {
           height_cm: number | null
           id: string
           name: string
+          nutrition_override_set_at: string | null
+          nutrition_override_source: string | null
           updated_at: string
           user_id: string
           weight_kg: number | null
@@ -2568,11 +2576,17 @@ export type Database = {
           birth_date?: string | null
           created_at?: string
           daily_calories?: number | null
+          daily_calories_override?: number | null
           daily_carbs?: number | null
+          daily_carbs_override?: number | null
           daily_fat?: number | null
+          daily_fat_override?: number | null
           daily_fiber?: number | null
+          daily_fiber_override?: number | null
           daily_liquid_ml?: number | null
+          daily_liquid_ml_override?: number | null
           daily_protein?: number | null
+          daily_protein_override?: number | null
           daily_saturated_fat?: number | null
           daily_sodium?: number | null
           daily_trans_fat?: number | null
@@ -2582,6 +2596,8 @@ export type Database = {
           height_cm?: number | null
           id?: string
           name: string
+          nutrition_override_set_at?: string | null
+          nutrition_override_source?: string | null
           updated_at?: string
           user_id: string
           weight_kg?: number | null
@@ -2591,11 +2607,17 @@ export type Database = {
           birth_date?: string | null
           created_at?: string
           daily_calories?: number | null
+          daily_calories_override?: number | null
           daily_carbs?: number | null
+          daily_carbs_override?: number | null
           daily_fat?: number | null
+          daily_fat_override?: number | null
           daily_fiber?: number | null
+          daily_fiber_override?: number | null
           daily_liquid_ml?: number | null
+          daily_liquid_ml_override?: number | null
           daily_protein?: number | null
+          daily_protein_override?: number | null
           daily_saturated_fat?: number | null
           daily_sodium?: number | null
           daily_trans_fat?: number | null
@@ -2605,6 +2627,8 @@ export type Database = {
           height_cm?: number | null
           id?: string
           name?: string
+          nutrition_override_set_at?: string | null
+          nutrition_override_source?: string | null
           updated_at?: string
           user_id?: string
           weight_kg?: number | null

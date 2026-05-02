@@ -85,17 +85,76 @@ export function useProfile() {
   }, [user, profile]);
 
   const getGoals = useCallback(() => {
+    // Overrides (e.g. from body analysis) take precedence when set.
     return {
-      calories: profile?.daily_calories || 2000,
-      protein: profile?.daily_protein || 150,
-      carbs: profile?.daily_carbs || 250,
-      fat: profile?.daily_fat || 65,
+      calories: profile?.daily_calories_override || profile?.daily_calories || 2000,
+      protein: profile?.daily_protein_override || profile?.daily_protein || 150,
+      carbs: profile?.daily_carbs_override || profile?.daily_carbs || 250,
+      fat: profile?.daily_fat_override || profile?.daily_fat || 65,
       saturatedFat: profile?.daily_saturated_fat || 22,
       transFat: profile?.daily_trans_fat || 2,
-      fiber: profile?.daily_fiber || 25,
+      fiber: profile?.daily_fiber_override || profile?.daily_fiber || 25,
       sodium: profile?.daily_sodium || 2000,
+      liquid_ml: profile?.daily_liquid_ml_override || profile?.daily_liquid_ml || 2000,
+      isOverride: !!profile?.daily_calories_override,
+      overrideSource: profile?.nutrition_override_source || null,
     };
   }, [profile]);
+
+  const applyNutritionOverride = useCallback(
+    async (overrides: {
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+      fiber?: number;
+      liquid_ml?: number;
+      source?: string;
+    }) => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          daily_calories_override: Math.round(overrides.calories),
+          daily_protein_override: Math.round(overrides.protein),
+          daily_carbs_override: Math.round(overrides.carbs),
+          daily_fat_override: Math.round(overrides.fat),
+          daily_fiber_override: overrides.fiber ? Math.round(overrides.fiber) : null,
+          daily_liquid_ml_override: overrides.liquid_ml ? Math.round(overrides.liquid_ml) : null,
+          nutrition_override_source: overrides.source || 'body_analysis',
+          nutrition_override_set_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+      if (error) throw error;
+      setProfile(data as Profile);
+      return data as Profile;
+    },
+    [user],
+  );
+
+  const clearNutritionOverride = useCallback(async () => {
+    if (!user) return null;
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        daily_calories_override: null,
+        daily_protein_override: null,
+        daily_carbs_override: null,
+        daily_fat_override: null,
+        daily_fiber_override: null,
+        daily_liquid_ml_override: null,
+        nutrition_override_source: null,
+        nutrition_override_set_at: null,
+      })
+      .eq('user_id', user.id)
+      .select()
+      .single();
+    if (error) throw error;
+    setProfile(data as Profile);
+    return data as Profile;
+  }, [user]);
 
   const isProfileComplete = useCallback(() => {
     if (!profile) return false;
@@ -115,6 +174,8 @@ export function useProfile() {
     updateProfile,
     getGoals,
     isProfileComplete,
+    applyNutritionOverride,
+    clearNutritionOverride,
     refetch: fetchProfile,
   };
 }

@@ -18,6 +18,16 @@ export interface Profile {
   daily_fiber: number | null;
   daily_sodium: number | null;
   daily_liquid_ml: number | null;
+  // Optional overrides — when set, take precedence over the calculated daily targets.
+  // Currently set by "apply body analysis plan" action.
+  daily_calories_override: number | null;
+  daily_protein_override: number | null;
+  daily_carbs_override: number | null;
+  daily_fat_override: number | null;
+  daily_fiber_override: number | null;
+  daily_liquid_ml_override: number | null;
+  nutrition_override_source: string | null;
+  nutrition_override_set_at: string | null;
   created_at: string;
   updated_at: string;
 }
