@@ -17,3 +17,5 @@ verify_jwt = false
 
 [functions.extract-blood-exam]
 verify_jwt = false
+[functions.share-summary]
+verify_jwt = false
