@@ -104,14 +104,32 @@ function PlanView({
   onApplyMacros,
   onGenerateWorkout,
   macrosApplied,
+  isActive,
 }: {
   row: BodyAnalysisRow;
   onApplyMacros: (plan: BodyPlan) => void;
   onGenerateWorkout: (plan: BodyPlan) => void;
   macrosApplied: boolean;
+  isActive: boolean;
 }) {
   const plan = row.plan as BodyPlan;
   const e = plan.extracted || {};
+
+  // Compute current week of the 12-week periodization (only for the active/most-recent plan)
+  const startIso = row.measured_at || row.created_at;
+  const daysSinceStart = startIso
+    ? Math.max(0, differenceInDays(new Date(), parseISO(startIso)))
+    : 0;
+  const currentWeek = isActive
+    ? Math.min(12, Math.max(1, Math.floor(daysSinceStart / 7) + 1))
+    : 0;
+  const currentPhaseIdx = isActive && plan.periodization?.length
+    ? plan.periodization.findIndex((p) => {
+        const m = (p.weeks || '').match(/(\d+)\s*[-–]\s*(\d+)/);
+        if (!m) return false;
+        return currentWeek >= parseInt(m[1], 10) && currentWeek <= parseInt(m[2], 10);
+      })
+    : -1;
 
   return (
     <div className="space-y-4">
