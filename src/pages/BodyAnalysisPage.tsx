@@ -51,7 +51,7 @@ import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 
 const goalLabels: Record<string, string> = {
-  cutting: 'Cutting (perda de gordura)',
+  cutting: 'Perda de gordura',
   recomposicao: 'Recomposição',
   hipertrofia: 'Hipertrofia',
   manutencao: 'Manutenção',
