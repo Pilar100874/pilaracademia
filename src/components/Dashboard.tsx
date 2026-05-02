@@ -21,6 +21,7 @@ import { WeightTracker } from '@/components/WeightTracker';
 import { ExerciseTracker } from '@/components/ExerciseTracker';
 import { LiquidTracker } from '@/components/LiquidTracker';
 import { GlycemiaTracker } from '@/components/GlycemiaTracker';
+import { BodyPlanShortcut } from '@/components/BodyPlanShortcut';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
 import { useExerciseEntries } from '@/hooks/useExerciseEntries';
@@ -93,7 +94,7 @@ export function Dashboard() {
     .reduce((sum, e) => sum + (e.liquid_ml || 0), 0);
   const todayLiquid = liquidFromEntries + liquidFromFood;
   
-  const dailyLiquidGoal = profile?.daily_liquid_ml || 2000;
+  const dailyLiquidGoal = goals.liquid_ml || profile?.daily_liquid_ml || 2000;
   const netCalories = consumed.calories - caloriesBurned;
 
   // Weight data
@@ -209,6 +210,9 @@ export function Dashboard() {
             <p className="text-sm font-medium text-amber-600">⚠️ Complete seu perfil para metas precisas</p>
           </button>
         )}
+
+        {/* Body analysis plan shortcut */}
+        {isViewingToday && <BodyPlanShortcut />}
 
         {/* Main Calorie Card */}
         <div className="card-feature">
