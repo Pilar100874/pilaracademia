@@ -32,3 +32,51 @@ export function buildBloodExamContext(exams: BloodExamRow[] | undefined): string
   }
   return lines.join('\n');
 }
+
+/**
+ * Constrói um contexto orientado para PRESCRIÇÃO DE EXERCÍCIOS,
+ * destacando marcadores que afetam tipo/intensidade de treino.
+ */
+export function buildBloodExamHealthContext(
+  exams: BloodExamRow[] | undefined,
+): string {
+  if (!exams || exams.length === 0) return '';
+  const latest = exams[0];
+  const lines: string[] = [];
+
+  const RELEVANT_KEYS = [
+    'glicemia', 'glicose', 'hemoglobina_glicada', 'hba1c', 'insulina', 'homa',
+    'colesterol_total', 'ldl', 'hdl', 'triglicerides', 'trigliceridos',
+    'pcr', 'proteina_c_reativa',
+    'hemoglobina', 'hematocrito', 'ferritina', 'ferro',
+    'tsh', 't4', 't3',
+    'vitamina_d', '25oh', 'b12', 'cobalamina',
+    'creatinina', 'ureia', 'tgo', 'tgp', 'ast', 'alt', 'ggt',
+    'testosterona', 'cortisol',
+  ];
+
+  const relevant = (latest.markers || []).filter((m: BloodMarker) => {
+    if (m.status === 'normal' || m.status === 'unknown') return false;
+    const key = (m.key || '').toLowerCase();
+    return RELEVANT_KEYS.some((rk) => key.includes(rk));
+  });
+
+  if (relevant.length === 0 && !latest.alerts?.length) return '';
+
+  lines.push('CONTEXTO DE SAÚDE (exame de sangue mais recente):');
+  for (const m of relevant.slice(0, 10)) {
+    lines.push(
+      `- ${m.label}: ${m.value ?? '—'}${m.unit ? ' ' + m.unit : ''} (${m.status})`,
+    );
+  }
+  if (latest.alerts?.length) {
+    lines.push('Alertas: ' + latest.alerts.slice(0, 6).join('; '));
+  }
+  lines.push(
+    'AJUSTE O TREINO: evite cargas máximas / Valsalva se pressão/colesterol/triglicérides/PCR estiverem altos; ' +
+    'reduza intensidade e priorize mobilidade se houver anemia, vit. D/B12 baixas ou TSH alterado; ' +
+    'inclua aquecimento extra e cuidados articulares quando indicado; nunca substitua orientação médica.',
+  );
+  return lines.join('\n');
+}
+
