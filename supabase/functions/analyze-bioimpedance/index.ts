@@ -13,7 +13,8 @@ Regras:
 - Extraia TODOS os campos visíveis. Se um campo faltar, use null.
 - NÃO faça recomendações médicas; foque em estilo de vida, treino e nutrição.
 - Idioma: português (Brasil).
-- Calorias e macros realistas. Proteína 1.6–2.2 g/kg massa magra; em cutting prefira 2.0–2.4 g/kg.
+- Calorias e macros realistas. Proteína 1.6–2.2 g/kg massa magra; em fase de perda de gordura prefira 2.0–2.4 g/kg.
+- IMPORTANTE: Em qualquer texto livre (summary, narrative, reason, etc.) use SEMPRE termos em português. NUNCA use as palavras "cutting", "bulking", "recomp", "maintenance", "lean bulk". Em vez disso use: "perda de gordura", "hipertrofia", "ganho de massa", "recomposição corporal", "manutenção".
 - TDEE: BMR × fator de atividade (sedentary 1.2, light 1.375, moderate 1.55, active 1.725).
 - Score 0–100 ponderado: gordura (-), músculo (+), visceral (-), equilíbrio (+).
 - Periodização 12 semanas em 3 fases (Adaptação 4sem, Intensificação 4sem, Consolidação 4sem).

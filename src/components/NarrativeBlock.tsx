@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { BodyPlanNarrative } from '@/types/bodyAnalysis';
+import { sanitizeFitnessText } from '@/lib/goalLabels';
 
 export function NarrativeBlock({ narrative }: { narrative: BodyPlanNarrative }) {
   const [simple, setSimple] = useState<BodyPlanNarrative | null>(null);
@@ -41,11 +42,11 @@ export function NarrativeBlock({ narrative }: { narrative: BodyPlanNarrative }) 
       </div>
       <div className="rounded-md border border-border bg-card p-4">
         <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Situação atual</p>
-        <p className="text-sm leading-relaxed">{n.situation}</p>
+        <p className="text-sm leading-relaxed">{sanitizeFitnessText(n.situation)}</p>
       </div>
       <div className="rounded-md border border-border bg-card p-4">
         <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Plano</p>
-        <p className="text-sm leading-relaxed">{n.plan}</p>
+        <p className="text-sm leading-relaxed">{sanitizeFitnessText(n.plan)}</p>
       </div>
       {n.next_steps?.length > 0 && (
         <div className="rounded-md border border-border bg-card p-4">
@@ -56,7 +57,7 @@ export function NarrativeBlock({ narrative }: { narrative: BodyPlanNarrative }) 
             {n.next_steps.map((s, i) => (
               <li key={i} className="text-sm flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>{s}</span>
+                <span>{sanitizeFitnessText(s)}</span>
               </li>
             ))}
           </ul>

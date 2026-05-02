@@ -7,6 +7,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { differenceInDays, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import type { BodyPlan } from '@/types/bodyAnalysis';
+import { sanitizeFitnessText } from '@/lib/goalLabels';
 
 interface Props {
   plan: BodyPlan;
@@ -146,7 +147,7 @@ export function MacroAdjustmentPanel({ plan, startIso, daysSinceStart, analysisI
       {adjustment && (
         <div className="space-y-2">
           <div className="rounded-md border border-border bg-card p-2 text-xs">
-            <p className="font-medium">{adjustment.reasoning}</p>
+            <p className="font-medium">{sanitizeFitnessText(adjustment.reasoning)}</p>
             <div className="mt-2 grid grid-cols-4 gap-1 text-center">
               <Cell label="kcal" v={adjustment.new_calories} delta={adjustment.delta_kcal} />
               <Cell label="P (g)" v={adjustment.new_protein} />

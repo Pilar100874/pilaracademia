@@ -50,12 +50,8 @@ import { LazyVideoPreview } from '@/components/LazyVideoPreview';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 
-const goalLabels: Record<string, string> = {
-  cutting: 'Perda de gordura',
-  recomposicao: 'Recomposição',
-  hipertrofia: 'Hipertrofia',
-  manutencao: 'Manutenção',
-};
+import { GOAL_LABELS as goalLabels, sanitizeFitnessText } from '@/lib/goalLabels';
+
 
 const profileLabels: Record<string, string> = {
   obeso: 'Obeso',
@@ -217,7 +213,7 @@ function PlanView({
       ) : (
         plan.summary && (
           <div className="rounded-md border border-border bg-muted/30 p-4">
-            <p className="text-sm leading-relaxed whitespace-pre-line">{plan.summary}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-line">{sanitizeFitnessText(plan.summary)}</p>
           </div>
         )
       )}
@@ -419,7 +415,7 @@ function PlanView({
                           )}
                         </p>
                         {r.reason && (
-                          <p className="text-[11px] text-muted-foreground line-clamp-2">{r.reason}</p>
+                          <p className="text-[11px] text-muted-foreground line-clamp-2">{sanitizeFitnessText(r.reason)}</p>
                         )}
                       </div>
                     </button>
