@@ -18,7 +18,7 @@ import {
   Minus,
 } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
-import { PageMotion, StaggerList, StaggerItem } from '@/components/PageMotion';
+
 import { Button } from '@/components/ui/button';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
