@@ -161,7 +161,7 @@ export default function OnboardingPage() {
                 <ul className="space-y-2 pt-2">
                   {[
                     'Cardápio diário personalizado',
-                    'Análise corporal e ajuste de macros',
+                    'Análise corporal e ajuste de nutrientes',
                     'Histórico de exames com gráficos de evolução',
                     'Treinos e acompanhamento de progresso',
                   ].map((item) => (

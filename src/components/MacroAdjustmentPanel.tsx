@@ -106,7 +106,7 @@ export function MacroAdjustmentPanel({ plan, startIso, daysSinceStart, analysisI
       if ((data as any)?.error) throw new Error((data as any).error);
       setAdjustment((data as any).adjustment as Adjustment);
     } catch (e: any) {
-      toast.error(e.message || 'Falha ao recalcular macros');
+      toast.error(e.message || 'Falha ao recalcular nutrientes');
     } finally {
       setLoading(false);
     }
@@ -124,7 +124,7 @@ export function MacroAdjustmentPanel({ plan, startIso, daysSinceStart, analysisI
         source: `body_analysis_adjusted:${analysisId}`,
       });
       setApplied(true);
-      toast.success('Macros ajustados aplicados');
+      toast.success('Novos nutrientes aplicados');
     } catch {
       toast.error('Falha ao aplicar ajuste');
     }
@@ -147,7 +147,7 @@ export function MacroAdjustmentPanel({ plan, startIso, daysSinceStart, analysisI
       {!adjustment && (
         <Button size="sm" onClick={askAi} disabled={loading} className="w-full gap-2">
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-          Recalcular macros com IA
+          Recalcular nutrientes com IA
         </Button>
       )}
 

@@ -133,7 +133,7 @@ export function DailyMenuDialog({ open, onOpenChange, selectedDate }: Props) {
             Cardápio do dia pela IA
           </DialogTitle>
           <DialogDescription>
-            Refeições montadas para bater suas metas de macros automaticamente.
+            Refeições montadas para bater suas metas de nutrientes automaticamente.
           </DialogDescription>
         </DialogHeader>
 

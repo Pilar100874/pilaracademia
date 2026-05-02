@@ -133,7 +133,7 @@ export function HealthPage() {
               Análise corporal por IA <Sparkles className="h-3.5 w-3.5 text-primary" />
             </p>
             <p className="text-xs text-muted-foreground">
-              Envie a foto do seu relatório de bioimpedância — gera plano completo, calorias, macros e treino.
+              Envie a foto do seu relatório de bioimpedância — gera plano completo, calorias, nutrientes e treino.
             </p>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />

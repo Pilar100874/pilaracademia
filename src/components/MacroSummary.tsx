@@ -44,7 +44,7 @@ export function MacroSummary({ consumed, goals }: MacroSummaryProps) {
         colorClass="text-orange-500"
       />
       <MacroItem 
-        label="Carbos" 
+        label="Carboidratos" 
         value={consumed.carbs} 
         goal={goals.carbs} 
         colorClass="text-sky-500"
