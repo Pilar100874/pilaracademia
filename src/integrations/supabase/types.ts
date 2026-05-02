@@ -53,6 +53,51 @@ export type Database = {
         }
         Relationships: []
       }
+      body_analyses: {
+        Row: {
+          created_at: string
+          extracted: Json
+          goal: string | null
+          id: string
+          image_url: string | null
+          measured_at: string | null
+          plan: Json
+          profile_label: string | null
+          score: number | null
+          summary: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          extracted?: Json
+          goal?: string | null
+          id?: string
+          image_url?: string | null
+          measured_at?: string | null
+          plan?: Json
+          profile_label?: string | null
+          score?: number | null
+          summary?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          extracted?: Json
+          goal?: string | null
+          id?: string
+          image_url?: string | null
+          measured_at?: string | null
+          plan?: Json
+          profile_label?: string | null
+          score?: number | null
+          summary?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bookable_slot_equipment: {
         Row: {
           bookable_slot_id: string
