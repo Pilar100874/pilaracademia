@@ -7,6 +7,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { differenceInDays, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import type { BodyPlan } from '@/types/bodyAnalysis';
+import { sanitizeFitnessText } from '@/lib/goalLabels';
 
 interface Props {
   plan: BodyPlan;
