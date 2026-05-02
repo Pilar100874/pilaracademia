@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, Activity, Sparkles, ChevronRight } from 'lucide-react';
+import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, Activity, Sparkles, ChevronRight, HeartPulse } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { BottomNav } from '@/components/BottomNav';
 import { differenceInYears, parseISO } from 'date-fns';
@@ -73,6 +73,31 @@ export function HealthPage() {
     }
     return 10 * weight + 6.25 * heightCm - 5 * age - 78;
   }, [weight, heightCm, age, gender]);
+
+  // FC máxima — fórmula de Tanaka (208 - 0.7 × idade), mais precisa que 220 - idade.
+  const hrMax = useMemo(() => {
+    if (!age) return null;
+    return Math.round(208 - 0.7 * age);
+  }, [age]);
+
+  // FC de repouso estimada (média adulto saudável). Usa Karvonen para reserva de FC.
+  const restingHr = 70;
+
+  const hrZones = useMemo(() => {
+    if (!hrMax) return null;
+    const reserve = hrMax - restingHr;
+    const zone = (lo: number, hi: number) => ({
+      min: Math.round(restingHr + reserve * lo),
+      max: Math.round(restingHr + reserve * hi),
+    });
+    return [
+      { label: 'Z1 — Recuperação', desc: 'Aquecimento, recuperação ativa', range: zone(0.50, 0.60), color: 'bg-sky-500', text: 'text-sky-600' },
+      { label: 'Z2 — Aeróbico leve', desc: 'Queima de gordura, base aeróbica', range: zone(0.60, 0.70), color: 'bg-green-500', text: 'text-green-600' },
+      { label: 'Z3 — Aeróbico', desc: 'Resistência cardiovascular', range: zone(0.70, 0.80), color: 'bg-amber-500', text: 'text-amber-600' },
+      { label: 'Z4 — Limiar', desc: 'Performance, limiar anaeróbico', range: zone(0.80, 0.90), color: 'bg-orange-500', text: 'text-orange-600' },
+      { label: 'Z5 — Máximo', desc: 'HIIT, esforço máximo (curto)', range: zone(0.90, 1.00), color: 'bg-red-500', text: 'text-red-600' },
+    ];
+  }, [hrMax]);
 
   const bmiPercentage = useMemo(() => {
     if (!bmi) return 0;
@@ -238,6 +263,38 @@ export function HealthPage() {
             </div>
             <p className="text-xs text-muted-foreground text-center mt-2">
               Baseado na sua altura de {heightCm} cm
+            </p>
+          </div>
+        )}
+
+        {/* Zonas de Frequência Cardíaca */}
+        {hrZones && hrMax && (
+          <div className="card-compact">
+            <div className="flex items-center gap-2 mb-1">
+              <HeartPulse className="h-4 w-4 text-rose-500" />
+              <span className="text-sm font-semibold">Zonas de Frequência Cardíaca</span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              FC máxima estimada: <span className="font-semibold text-foreground">{hrMax} bpm</span> · método Karvonen (FC repouso ~{restingHr} bpm)
+            </p>
+            <div className="space-y-2">
+              {hrZones.map((z) => (
+                <div key={z.label} className="flex items-center justify-between p-2 rounded-xl bg-muted/30">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-3 h-3 rounded-full shrink-0 ${z.color}`} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{z.label}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{z.desc}</p>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-semibold tabular-nums ${z.text} shrink-0 ml-2`}>
+                    {z.range.min}–{z.range.max} bpm
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-3">
+              Use no cardio: Z2 para queima de gordura, Z4–Z5 para HIIT. Ajuste se conhecer sua FC de repouso real.
             </p>
           </div>
         )}
