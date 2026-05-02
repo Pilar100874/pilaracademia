@@ -19,9 +19,12 @@ import InsightsPage from "@/pages/InsightsPage";
 import FoodPreferencesPage from "@/pages/FoodPreferencesPage";
 import SharedSummaryPage from "@/pages/SharedSummaryPage";
 import HelpPage from "@/pages/HelpPage";
+import TermsPage from "@/pages/TermsPage";
+import PrivacyPage from "@/pages/PrivacyPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { SplashScreen } from "@/components/SplashScreen";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -185,6 +188,8 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route path="/termos" element={<TermsPage />} />
+      <Route path="/privacidade" element={<PrivacyPage />} />
       <Route path="/r/:token" element={<SharedSummaryPage />} />
       <Route
         path="/auth"
@@ -204,17 +209,19 @@ const App = () => {
   const handleSplashFinish = useCallback(() => setShowSplash(false), []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
-        <BrowserRouter>
-          <AuthProvider>
-            <AppRoutes />
-            <InstallPrompt />
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+          <BrowserRouter>
+            <AuthProvider>
+              <AppRoutes />
+              <InstallPrompt />
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

@@ -128,6 +128,13 @@ export function AuthPage() {
               )}
             </Button>
           </form>
+
+          <p className="text-[11px] text-muted-foreground text-center mt-6">
+            Ao continuar, você concorda com os{' '}
+            <a href="/termos" className="underline hover:text-foreground">Termos de Uso</a>
+            {' '}e a{' '}
+            <a href="/privacidade" className="underline hover:text-foreground">Política de Privacidade</a>.
+          </p>
         </div>
       </div>
     </div>
