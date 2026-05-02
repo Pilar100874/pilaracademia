@@ -3,13 +3,39 @@ import { supabase } from '@/integrations/supabase/client';
 import { Profile, calculateBMR, calculateTDEE, calculateDailyCalories, calculateAllNutrients, calculateAge } from '@/types/profile';
 import { useAuth } from '@/hooks/useAuth';
 
+// Module-level shared cache so all useProfile() instances stay in sync.
+// Without this, separate consumers (e.g. ProtectedRoute and OnboardingPage)
+// can hold stale copies and cause redirect loops after profile updates.
+let _cachedProfile: Profile | null = null;
+let _cachedUserId: string | null = null;
+const _listeners = new Set<(p: Profile | null) => void>();
+function _broadcastProfile(p: Profile | null) {
+  _cachedProfile = p;
+  _listeners.forEach((l) => l(p));
+}
+
 export function useProfile() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [profile, setProfileState] = useState<Profile | null>(
+    user && _cachedUserId === user.id ? _cachedProfile : null,
+  );
+  const [isLoading, setIsLoading] = useState(
+    !(user && _cachedUserId === user.id && _cachedProfile),
+  );
+  const setProfile = useCallback((p: Profile | null) => {
+    _broadcastProfile(p);
+  }, []);
+
+  // Subscribe to global profile changes
+  useEffect(() => {
+    const listener = (p: Profile | null) => setProfileState(p);
+    _listeners.add(listener);
+    return () => { _listeners.delete(listener); };
+  }, []);
 
   const fetchProfile = useCallback(async () => {
     if (!user) {
+      _cachedUserId = null;
       setProfile(null);
       setIsLoading(false);
       return;
@@ -24,14 +50,20 @@ export function useProfile() {
     if (error && error.code !== 'PGRST116') {
       console.error('Error fetching profile:', error);
     }
-    
+
+    _cachedUserId = user.id;
     setProfile(data as Profile | null);
     setIsLoading(false);
-  }, [user]);
+  }, [user, setProfile]);
 
   useEffect(() => {
+    // If we already have cached profile for this user, surface it immediately
+    if (user && _cachedUserId === user.id && _cachedProfile) {
+      setProfileState(_cachedProfile);
+      setIsLoading(false);
+    }
     fetchProfile();
-  }, [fetchProfile]);
+  }, [fetchProfile, user]);
 
   const updateProfile = useCallback(async (updates: Partial<Profile>) => {
     if (!user || !profile) return null;
