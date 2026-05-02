@@ -38,6 +38,8 @@ import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AIWorkoutDialog } from '@/components/AIWorkoutDialog';
+import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
+import { useNavigate } from 'react-router-dom';
 
 const goalLabels: Record<string, string> = {
   cutting: 'Cutting (perda de gordura)',
@@ -102,14 +104,18 @@ function PlanView({
   row,
   onApplyMacros,
   onGenerateWorkout,
+  onApplyWorkout,
   macrosApplied,
   isActive,
+  applyingWorkout,
 }: {
   row: BodyAnalysisRow;
   onApplyMacros: (plan: BodyPlan) => void;
   onGenerateWorkout: (plan: BodyPlan) => void;
+  onApplyWorkout: (plan: BodyPlan) => void;
   macrosApplied: boolean;
   isActive: boolean;
+  applyingWorkout: boolean;
 }) {
   const plan = row.plan as BodyPlan;
   const e = plan.extracted || {};
@@ -378,11 +384,27 @@ function PlanView({
           </div>
         )}
 
-        <Button size="sm" className="w-full" onClick={() => onGenerateWorkout(plan)}>
-          <Sparkles className="h-4 w-4 mr-1.5" />
-          Gerar treino com IA usando este plano
-          <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <Button size="sm" onClick={() => onGenerateWorkout(plan)}>
+            <Sparkles className="h-4 w-4 mr-1.5" />
+            Gerar treino com IA
+          </Button>
+          {plan.recommended_exercises && plan.recommended_exercises.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onApplyWorkout(plan)}
+              disabled={applyingWorkout}
+            >
+              {applyingWorkout ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Dumbbell className="h-4 w-4 mr-1.5" />
+              )}
+              Salvar como treino
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Cardio */}
@@ -702,6 +724,9 @@ export default function BodyAnalysisPage() {
   const { list, create, remove } = useBodyAnalyses();
   const { profile, applyNutritionOverride, clearNutritionOverride } = useProfile();
   const { allExercises } = useExerciseLibrary();
+  const { createPlan, addExercise } = useWorkoutPlans();
+  const navigate = useNavigate();
+  const [applyingWorkout, setApplyingWorkout] = useState(false);
 
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState<string>('');
@@ -798,6 +823,42 @@ export default function BodyAnalysisPage() {
     }
   }
 
+  async function handleApplyWorkout(plan: BodyPlan) {
+    const recs = plan.recommended_exercises || [];
+    if (recs.length === 0) {
+      toast.error('Nenhum exercício sugerido neste plano');
+      return;
+    }
+    setApplyingWorkout(true);
+    try {
+      const ti = plan.training_intent;
+      const planName = `${plan.profile_label || 'Plano'} – ${ti?.focus || 'IA'}`.slice(0, 60);
+      // Default schedule: distribute frequency across the week starting Monday
+      const freq = Math.max(1, Math.min(7, ti?.frequency_per_week || 3));
+      const days = [1, 2, 3, 4, 5, 6, 0].slice(0, freq);
+      const created = await createPlan.mutateAsync({ name: planName, days_of_week: days });
+      // Persist exercises sequentially keeping order
+      for (let i = 0; i < recs.length; i++) {
+        const r = recs[i];
+        await addExercise.mutateAsync({
+          workout_plan_id: created.id,
+          name: r.name,
+          sets: r.sets ?? 3,
+          reps: r.reps ?? 10,
+          order_index: i,
+          exercise_library_id: r.exercise_id || null,
+        });
+      }
+      toast.success('Treino criado a partir do plano!');
+      navigate('/workouts');
+    } catch (err) {
+      console.error(err);
+      toast.error('Falha ao criar treino');
+    } finally {
+      setApplyingWorkout(false);
+    }
+  }
+
   function handleGenerateWorkout(plan: BodyPlan) {
     const ti = plan.training_intent;
     const muscles = ti?.priority_muscle_groups?.length
@@ -859,7 +920,37 @@ export default function BodyAnalysisPage() {
           </Button>
         </div>
 
-        {/* Banner de override ativo */}
+        {/* Lembrete de re-análise mensal */}
+        {(() => {
+          const latest = (list.data || [])[0];
+          if (!latest) return null;
+          const refIso = latest.measured_at || latest.created_at;
+          const days = differenceInDays(new Date(), parseISO(refIso));
+          if (days < 30) return null;
+          return (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 flex items-start gap-2">
+              <RefreshCw className="h-4 w-4 text-amber-700 mt-0.5 shrink-0" />
+              <div className="flex-1 text-sm">
+                <p className="font-medium text-amber-900 dark:text-amber-100">
+                  Hora de uma nova análise
+                </p>
+                <p className="text-xs text-amber-800/80 dark:text-amber-100/70">
+                  Sua última bioimpedância foi há {days} dias. Reanalise para ajustar o plano à sua evolução.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={analyzing}
+                className="h-8 text-xs shrink-0"
+              >
+                Reanalisar
+              </Button>
+            </div>
+          );
+        })()}
+
         {profile?.nutrition_override_source?.startsWith('body_analysis') && (
           <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 flex items-start gap-2">
             <Utensils className="h-4 w-4 text-emerald-700 mt-0.5 shrink-0" />
@@ -952,8 +1043,10 @@ export default function BodyAnalysisPage() {
               row={selected}
               onApplyMacros={handleApplyMacros}
               onGenerateWorkout={handleGenerateWorkout}
+              onApplyWorkout={handleApplyWorkout}
               macrosApplied={macrosAppliedFromSelected}
               isActive={selected.id === (list.data || [])[0]?.id}
+              applyingWorkout={applyingWorkout}
             />
           </>
         ) : (
