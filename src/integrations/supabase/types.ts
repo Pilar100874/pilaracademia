@@ -1744,6 +1744,39 @@ export type Database = {
         }
         Relationships: []
       }
+      food_preferences: {
+        Row: {
+          created_at: string
+          disliked_foods: string[]
+          favorite_foods: string[]
+          id: string
+          notes: string | null
+          restrictions: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          disliked_foods?: string[]
+          favorite_foods?: string[]
+          id?: string
+          notes?: string | null
+          restrictions?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          disliked_foods?: string[]
+          favorite_foods?: string[]
+          id?: string
+          notes?: string | null
+          restrictions?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       glycemia_entries: {
         Row: {
           created_at: string
@@ -2916,6 +2949,42 @@ export type Database = {
           sequence_id?: string
           student_id?: string | null
           token?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
+      share_summaries: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          last_viewed_at: string | null
+          period_days: number
+          revoked: boolean
+          token: string
+          user_id: string
+          view_count: number
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_viewed_at?: string | null
+          period_days?: number
+          revoked?: boolean
+          token?: string
+          user_id: string
+          view_count?: number
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_viewed_at?: string | null
+          period_days?: number
+          revoked?: boolean
+          token?: string
+          user_id?: string
           view_count?: number
         }
         Relationships: []
