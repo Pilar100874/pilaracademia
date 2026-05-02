@@ -80,6 +80,37 @@ export interface BodyPlanPhase {
   focus: string;
 }
 
+/** Narrative output for end-user (situation → plan → next steps). */
+export interface BodyPlanNarrative {
+  situation: string;
+  plan: string;
+  next_steps: string[];
+}
+
+/** Concrete exercise picked from the user's library to fulfill the training intent. */
+export interface RecommendedExercise {
+  exercise_id: string;
+  name: string;
+  reason?: string;
+  sets?: number;
+  reps?: number;
+}
+
+/** Comparison vs the previous analysis (only present when one exists). */
+export interface BodyPlanDelta {
+  weight_kg?: number;
+  body_fat_pct?: number;
+  muscle_mass_kg?: number;
+  visceral_fat?: number;
+  score?: number;
+  /** Days between previous and current measurement. */
+  days_between?: number;
+  /** AI-generated commentary on progress. */
+  commentary?: string;
+  /** Adjustments suggested for the new periodization. */
+  periodization_adjustment?: string;
+}
+
 export interface BodyPlan {
   extracted: ExtractedBioimpedance;
   profile_label: string;
@@ -104,6 +135,9 @@ export interface BodyPlan {
   alerts?: BodyPlanAlert[];
   score: number;
   summary: string;
+  narrative?: BodyPlanNarrative;
+  recommended_exercises?: RecommendedExercise[];
+  delta?: BodyPlanDelta;
 }
 
 export interface BodyAnalysisRow {
