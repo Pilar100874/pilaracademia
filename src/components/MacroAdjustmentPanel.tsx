@@ -40,6 +40,7 @@ export function MacroAdjustmentPanel({ plan, startIso, daysSinceStart, analysisI
   const [loading, setLoading] = useState(false);
   const [adjustment, setAdjustment] = useState<Adjustment | null>(null);
   const [applied, setApplied] = useState(false);
+  const { list: bloodExamsQ } = useBloodExams();
 
   const analysis = useMemo(() => {
     const start = parseISO(startIso);
