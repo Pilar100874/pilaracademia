@@ -415,7 +415,7 @@ function PlanView({
                           )}
                         </p>
                         {r.reason && (
-                          <p className="text-[11px] text-muted-foreground line-clamp-2">{r.reason}</p>
+                          <p className="text-[11px] text-muted-foreground line-clamp-2">{sanitizeFitnessText(r.reason)}</p>
                         )}
                       </div>
                     </button>
