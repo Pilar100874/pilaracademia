@@ -724,6 +724,9 @@ export default function BodyAnalysisPage() {
   const { list, create, remove } = useBodyAnalyses();
   const { profile, applyNutritionOverride, clearNutritionOverride } = useProfile();
   const { allExercises } = useExerciseLibrary();
+  const { createPlan, addExercise } = useWorkoutPlans();
+  const navigate = useNavigate();
+  const [applyingWorkout, setApplyingWorkout] = useState(false);
 
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState<string>('');
