@@ -111,6 +111,7 @@ export function useSmartAlerts(a: Args): SmartAlert[] {
     return alerts.slice(0, 3);
   }, [
     plan,
+    weightEntries,
     a.adherence.total,
     a.consumed.calories,
     a.consumed.protein,
