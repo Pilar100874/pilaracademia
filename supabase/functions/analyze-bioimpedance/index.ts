@@ -7,18 +7,30 @@ const corsHeaders = {
 };
 
 const SYSTEM_PROMPT = `Você é um motor de inteligência em saúde, nutrição e treinamento físico.
-Recebe um relatório de bioimpedância (imagem) e retorna análise + plano completo.
+Recebe um relatório de bioimpedância (imagem) e retorna análise + plano completo personalizado.
 
 Regras:
-- Extraia TODOS os campos visíveis. Se um campo faltar, use null e marque "estimated:true" quando você inferir.
+- Extraia TODOS os campos visíveis. Se um campo faltar, use null.
 - NÃO faça recomendações médicas; foque em estilo de vida, treino e nutrição.
 - Idioma: português (Brasil).
-- Calorias e macros realistas. Proteína 1.6–2.2 g/kg massa magra; em cutting prefira 2.0–2.4 g/kg de massa magra.
+- Calorias e macros realistas. Proteína 1.6–2.2 g/kg massa magra; em cutting prefira 2.0–2.4 g/kg.
 - TDEE: BMR × fator de atividade (sedentary 1.2, light 1.375, moderate 1.55, active 1.725).
 - Score 0–100 ponderado: gordura (-), músculo (+), visceral (-), equilíbrio (+).
 - Periodização 12 semanas em 3 fases (Adaptação 4sem, Intensificação 4sem, Consolidação 4sem).
 - Projeção 30/60/90 dias coerente com déficit/superávit (~0.5–0.8 kg gordura/sem é o teto saudável).
-- Treino: você NÃO cria exercícios; gera apenas a INTENÇÃO (foco, divisão, frequência, volume, grupos prioritários).
+
+NARRATIVA (obrigatória): preencha narrative.{situation, plan, next_steps}.
+- situation: 2–4 frases simples explicando o quadro atual em linguagem leiga.
+- plan: 2–4 frases sobre a estratégia (déficit/superávit, foco do treino, ritmo).
+- next_steps: 3–5 ações concretas e curtas (ex: "Treinar 4x na semana", "Beber 3L de água").
+
+EXERCÍCIOS RECOMENDADOS:
+- Se for fornecida uma "exercise_library" no input, escolha 6–10 exercícios concretos dela e devolva em recommended_exercises (use exatamente o id e o name fornecidos). Justifique cada escolha em "reason" curtinha alinhada ao objetivo/perfil.
+- Se a biblioteca estiver vazia, devolva recommended_exercises = [].
+
+EVOLUÇÃO (delta):
+- Se for fornecida uma "previous_analysis" no input (medição anterior), preencha delta com a variação (peso, %gordura, massa muscular, visceral, score) entre a anterior e a atual, comentário curto sobre o progresso e UM ajuste sugerido para a periodização.
+- Se não houver anterior, NÃO inclua o campo delta.
 
 Use a tool 'return_body_plan' para devolver o resultado.`;
 
@@ -32,9 +44,8 @@ const TOOL_SCHEMA = {
       properties: {
         extracted: {
           type: "object",
-          description: "Dados extraídos do relatório.",
           properties: {
-            measured_at: { type: "string", description: "ISO date/datetime do teste, ou null." },
+            measured_at: { type: "string" },
             sex: { type: "string", enum: ["male", "female", "unknown"] },
             age: { type: "number" },
             height_cm: { type: "number" },
@@ -52,7 +63,7 @@ const TOOL_SCHEMA = {
             bmr_kcal: { type: "number" },
             whr: { type: "number" },
             body_age: { type: "number" },
-            score: { type: "number", description: "Pontuação corporal do aparelho (0–100+)" },
+            score: { type: "number" },
             segmental_fat: {
               type: "object",
               properties: {
@@ -75,18 +86,11 @@ const TOOL_SCHEMA = {
             },
           },
         },
-        profile_label: {
-          type: "string",
-          description:
-            "Rótulo metabólico curto, ex: 'Sobrepeso com massa muscular alta', 'Falso magro', 'Atlético', 'Perfil em risco metabólico'.",
-        },
+        profile_label: { type: "string" },
         classification: {
           type: "object",
           properties: {
-            body_profile: {
-              type: "string",
-              enum: ["obeso", "sobrepeso_muscular", "falso_magro", "atletico", "baixa_massa_muscular", "saudavel"],
-            },
+            body_profile: { type: "string", enum: ["obeso", "sobrepeso_muscular", "falso_magro", "atletico", "baixa_massa_muscular", "saudavel"] },
             metabolic_state: { type: "string", enum: ["saudavel", "risco_moderado", "risco_elevado"] },
             muscle_level: { type: "string", enum: ["baixo", "medio", "alto"] },
           },
@@ -107,7 +111,7 @@ const TOOL_SCHEMA = {
           properties: {
             tdee: { type: "number" },
             target: { type: "number" },
-            delta: { type: "number", description: "Déficit (negativo) ou superávit (positivo)." },
+            delta: { type: "number" },
             activity_factor: { type: "number" },
           },
           required: ["tdee", "target"],
@@ -126,8 +130,8 @@ const TOOL_SCHEMA = {
         training_intent: {
           type: "object",
           properties: {
-            focus: { type: "string", description: "Ex: 'força + perda de gordura'." },
-            split: { type: "string", description: "Ex: 'full body 3x', 'push/pull/legs', 'upper/lower'." },
+            focus: { type: "string" },
+            split: { type: "string" },
             frequency_per_week: { type: "number" },
             session_minutes: { type: "number" },
             intensity: { type: "string", enum: ["leve", "moderada", "alta"] },
@@ -145,19 +149,14 @@ const TOOL_SCHEMA = {
             daily_steps: { type: "number" },
           },
         },
-        diet_rules: {
-          type: "array",
-          items: { type: "string" },
-          description: "Regras claras para o sistema de visão (ex: 'reduzir frituras', 'priorizar proteína magra').",
-        },
+        diet_rules: { type: "array", items: { type: "string" } },
         periodization: {
           type: "array",
-          description: "Fases do plano (ideal 3 fases × 4 semanas).",
           items: {
             type: "object",
             properties: {
               phase: { type: "string" },
-              weeks: { type: "string", description: "Ex: '1-4'." },
+              weeks: { type: "string" },
               calories: { type: "number" },
               training: { type: "string" },
               cardio: { type: "string" },
@@ -169,60 +168,62 @@ const TOOL_SCHEMA = {
         projection: {
           type: "object",
           properties: {
-            day_30: {
-              type: "object",
-              properties: {
-                weight_kg: { type: "number" },
-                body_fat_pct: { type: "number" },
-                muscle_mass_kg: { type: "number" },
-              },
-            },
-            day_60: {
-              type: "object",
-              properties: {
-                weight_kg: { type: "number" },
-                body_fat_pct: { type: "number" },
-                muscle_mass_kg: { type: "number" },
-              },
-            },
-            day_90: {
-              type: "object",
-              properties: {
-                weight_kg: { type: "number" },
-                body_fat_pct: { type: "number" },
-                muscle_mass_kg: { type: "number" },
-              },
-            },
+            day_30: { type: "object", properties: { weight_kg: { type: "number" }, body_fat_pct: { type: "number" }, muscle_mass_kg: { type: "number" } } },
+            day_60: { type: "object", properties: { weight_kg: { type: "number" }, body_fat_pct: { type: "number" }, muscle_mass_kg: { type: "number" } } },
+            day_90: { type: "object", properties: { weight_kg: { type: "number" }, body_fat_pct: { type: "number" }, muscle_mass_kg: { type: "number" } } },
           },
         },
         alerts: {
           type: "array",
           items: {
             type: "object",
-            properties: {
-              level: { type: "string", enum: ["info", "warning", "critical"] },
-              message: { type: "string" },
-            },
+            properties: { level: { type: "string", enum: ["info", "warning", "critical"] }, message: { type: "string" } },
             required: ["level", "message"],
           },
         },
-        score: { type: "number", description: "Score proprietário 0–100." },
-        summary: {
-          type: "string",
-          description: "Resumo curto para o usuário (3–6 linhas) explicando situação, plano e próximos passos.",
+        score: { type: "number" },
+        summary: { type: "string", description: "Resumo curto (3–6 linhas)." },
+        narrative: {
+          type: "object",
+          description: "Explicação simples ao usuário (Situação → Plano → Próximos passos).",
+          properties: {
+            situation: { type: "string" },
+            plan: { type: "string" },
+            next_steps: { type: "array", items: { type: "string" } },
+          },
+          required: ["situation", "plan", "next_steps"],
+        },
+        recommended_exercises: {
+          type: "array",
+          description: "Exercícios escolhidos da exercise_library fornecida (use os IDs exatos).",
+          items: {
+            type: "object",
+            properties: {
+              exercise_id: { type: "string" },
+              name: { type: "string" },
+              reason: { type: "string" },
+              sets: { type: "number" },
+              reps: { type: "number" },
+            },
+            required: ["exercise_id", "name"],
+          },
+        },
+        delta: {
+          type: "object",
+          description: "Variação vs análise anterior (apenas quando previous_analysis foi fornecida).",
+          properties: {
+            weight_kg: { type: "number" },
+            body_fat_pct: { type: "number" },
+            muscle_mass_kg: { type: "number" },
+            visceral_fat: { type: "number" },
+            score: { type: "number" },
+            days_between: { type: "number" },
+            commentary: { type: "string" },
+            periodization_adjustment: { type: "string" },
+          },
         },
       },
-      required: [
-        "extracted",
-        "profile_label",
-        "classification",
-        "goal",
-        "calories",
-        "macros",
-        "training_intent",
-        "summary",
-        "score",
-      ],
+      required: ["extracted", "profile_label", "classification", "goal", "calories", "macros", "training_intent", "summary", "score", "narrative"],
     },
   },
 };
@@ -231,7 +232,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { imageBase64, notes } = await req.json();
+    const { imageBase64, notes, library, previous } = await req.json();
     if (!imageBase64) {
       return new Response(JSON.stringify({ error: "imageBase64 é obrigatório" }), {
         status: 400,
@@ -259,9 +260,27 @@ serve(async (req) => {
       }
     }
 
-    const userText = `Analise este relatório de bioimpedância e gere o plano completo.${
-      notes ? `\nNotas do usuário: ${notes}` : ""
-    }\nRetorne usando a tool return_body_plan.`;
+    // Trim library — keep only id + name to control token usage. Cap at 200.
+    const compactLibrary = Array.isArray(library)
+      ? library.slice(0, 200).map((ex: { id: string; name: string }) => ({ id: ex.id, name: ex.name }))
+      : [];
+
+    const userParts: string[] = [
+      `Analise este relatório de bioimpedância e gere o plano completo.`,
+    ];
+    if (notes) userParts.push(`Notas do usuário: ${notes}`);
+    if (compactLibrary.length) {
+      userParts.push(
+        `\nexercise_library (${compactLibrary.length} itens — use os ids EXATOS em recommended_exercises):\n` +
+          JSON.stringify(compactLibrary),
+      );
+    } else {
+      userParts.push("\nexercise_library: [] (sem biblioteca disponível, retorne recommended_exercises vazio)");
+    }
+    if (previous) {
+      userParts.push(`\nprevious_analysis (medição anterior do mesmo usuário): ${JSON.stringify(previous)}`);
+    }
+    userParts.push(`\nRetorne usando a tool return_body_plan.`);
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -276,7 +295,7 @@ serve(async (req) => {
           {
             role: "user",
             content: [
-              { type: "text", text: userText },
+              { type: "text", text: userParts.join("\n") },
               { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64Data}` } },
             ],
           },
@@ -326,6 +345,14 @@ serve(async (req) => {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Filter recommended_exercises to ids actually in the library (defensive).
+    if (Array.isArray(parsed.recommended_exercises) && compactLibrary.length) {
+      const validIds = new Set(compactLibrary.map((e) => e.id));
+      parsed.recommended_exercises = parsed.recommended_exercises.filter(
+        (r: { exercise_id?: string }) => r.exercise_id && validIds.has(r.exercise_id),
+      );
     }
 
     return new Response(JSON.stringify({ success: true, data: parsed }), {
