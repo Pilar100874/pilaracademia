@@ -324,6 +324,8 @@ export function ProfilePage() {
           </button>
         </div>
 
+        <RemindersSection />
+
         <DataExportSection />
 
         <ShareSummaryDialog open={shareOpen} onOpenChange={setShareOpen} />
