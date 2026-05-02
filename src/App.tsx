@@ -125,6 +125,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/bioimpedance"
+        element={
+          <ProtectedRoute>
+            <BioimpedancePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/profile"
         element={
           <ProtectedRoute>
