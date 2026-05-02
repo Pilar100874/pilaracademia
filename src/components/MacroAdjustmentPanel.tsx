@@ -10,6 +10,7 @@ import type { BodyPlan } from '@/types/bodyAnalysis';
 import { sanitizeFitnessText } from '@/lib/goalLabels';
 import { useBloodExams } from '@/hooks/useBloodExams';
 import { buildBloodExamContext } from '@/lib/bloodExamContext';
+import { useFoodPreferences, buildFoodPreferencesContext } from '@/hooks/useFoodPreferences';
 
 interface Props {
   plan: BodyPlan;
@@ -41,6 +42,7 @@ export function MacroAdjustmentPanel({ plan, startIso, daysSinceStart, analysisI
   const [adjustment, setAdjustment] = useState<Adjustment | null>(null);
   const [applied, setApplied] = useState(false);
   const { list: bloodExamsQ } = useBloodExams();
+  const { data: foodPrefs } = useFoodPreferences();
 
   const analysis = useMemo(() => {
     const start = parseISO(startIso);
@@ -97,6 +99,7 @@ export function MacroAdjustmentPanel({ plan, startIso, daysSinceStart, analysisI
           expected_weight_kg: Math.round(analysis.expectedAtDay * 10) / 10,
           days_elapsed: daysSinceStart,
           blood_exam_context: buildBloodExamContext(bloodExamsQ.data) || undefined,
+          food_preferences_context: buildFoodPreferencesContext(foodPrefs) || undefined,
         },
       });
       if (error) throw error;
