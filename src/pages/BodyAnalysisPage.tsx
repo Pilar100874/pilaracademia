@@ -858,6 +858,8 @@ export default function BodyAnalysisPage() {
       setApplyingWorkout(false);
     }
   }
+
+  function handleGenerateWorkout(plan: BodyPlan) {
     const ti = plan.training_intent;
     const muscles = ti?.priority_muscle_groups?.length
       ? ` Foco nos grupos: ${ti.priority_muscle_groups.join(', ')}.`
