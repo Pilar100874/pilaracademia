@@ -38,7 +38,7 @@ interface Row {
 
 export function RepeatYesterdayDialog({ open, onOpenChange, selectedDate }: Props) {
   const { user } = useAuth();
-  const { addEntry, fetchEntries } = useFoodEntries(selectedDate);
+  const { addEntry, refetch } = useFoodEntries(selectedDate);
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -106,7 +106,7 @@ export function RepeatYesterdayDialog({ open, onOpenChange, selectedDate }: Prop
         });
       }
       toast.success(`${chosen.length} ${chosen.length === 1 ? 'refeição copiada' : 'refeições copiadas'}`);
-      await fetchEntries();
+      await refetch();
       onOpenChange(false);
     } catch (e: any) {
       toast.error(e.message || 'Erro ao copiar refeições');
