@@ -530,6 +530,7 @@ export default function BodyAnalysisPage() {
   const [aiPrompt, setAiPrompt] = useState<string>('');
   const [aiName, setAiName] = useState<string>('');
   const [aiCount, setAiCount] = useState<number>(8);
+  const [compareOpen, setCompareOpen] = useState(false);
 
   const selected = (list.data || []).find((r) => r.id === selectedId) || (list.data || [])[0];
 
