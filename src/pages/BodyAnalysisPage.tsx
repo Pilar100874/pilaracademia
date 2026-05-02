@@ -50,12 +50,8 @@ import { LazyVideoPreview } from '@/components/LazyVideoPreview';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 
-const goalLabels: Record<string, string> = {
-  cutting: 'Perda de gordura',
-  recomposicao: 'Recomposição',
-  hipertrofia: 'Hipertrofia',
-  manutencao: 'Manutenção',
-};
+import { GOAL_LABELS as goalLabels, sanitizeFitnessText } from '@/lib/goalLabels';
+
 
 const profileLabels: Record<string, string> = {
   obeso: 'Obeso',
