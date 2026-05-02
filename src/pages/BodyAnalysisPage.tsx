@@ -351,11 +351,30 @@ function PlanView({
                 const ex = exercisesById.get(r.exercise_id);
                 const images = ex?.image_urls?.length ? ex.image_urls : [];
                 const thumb = images[0] ? getFreshMediaUrl(images[0]) : null;
+                const videoSrc =
+                  !thumb && ex?.video_type === 'upload' && ex?.video_url
+                    ? getFreshMediaUrl(ex.video_url)
+                    : null;
+                const ytId =
+                  !thumb && !videoSrc && ex?.video_type === 'youtube' && ex?.video_url
+                    ? (ex.video_url.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/)?.[1] ?? null)
+                    : null;
+                const ytThumb = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : null;
                 return (
                   <li key={r.exercise_id} className="flex gap-2 items-start">
                     <div className="w-12 h-12 rounded-md bg-muted overflow-hidden shrink-0 border border-border">
                       {thumb ? (
                         <img src={thumb} alt={r.name} loading="lazy" className="w-full h-full object-cover" />
+                      ) : ytThumb ? (
+                        <img src={ytThumb} alt={r.name} loading="lazy" className="w-full h-full object-cover" />
+                      ) : videoSrc ? (
+                        <video
+                          src={`${videoSrc}#t=0.5`}
+                          muted
+                          playsInline
+                          preload="metadata"
+                          className="w-full h-full object-cover pointer-events-none"
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <Dumbbell className="h-4 w-4 text-muted-foreground" />
