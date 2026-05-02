@@ -732,26 +732,50 @@ export default function BodyAnalysisPage() {
         {/* Plano selecionado */}
         {selected ? (
           <>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <p className="text-xs text-muted-foreground">
                 Análise de {format(parseISO(selected.created_at), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  if (confirm('Excluir esta análise?')) remove.mutate(selected.id);
-                }}
-                className="text-muted-foreground"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-1">
+                {(list.data?.length ?? 0) >= 2 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCompareOpen(true)}
+                    className="h-7 text-xs"
+                  >
+                    <GitCompareArrows className="h-3.5 w-3.5 mr-1" />
+                    Comparar
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-7 text-xs"
+                  disabled={analyzing}
+                >
+                  <RefreshCw className={cn('h-3.5 w-3.5 mr-1', analyzing && 'animate-spin')} />
+                  Re-analisar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (confirm('Excluir esta análise?')) remove.mutate(selected.id);
+                  }}
+                  className="text-muted-foreground h-7"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <PlanView
               row={selected}
               onApplyMacros={handleApplyMacros}
               onGenerateWorkout={handleGenerateWorkout}
               macrosApplied={macrosAppliedFromSelected}
+              isActive={selected.id === (list.data || [])[0]?.id}
             />
           </>
         ) : (
@@ -763,6 +787,13 @@ export default function BodyAnalysisPage() {
           )
         )}
       </div>
+
+      {compareOpen && (list.data?.length ?? 0) >= 2 && (
+        <CompareDialog
+          rows={list.data!}
+          onClose={() => setCompareOpen(false)}
+        />
+      )}
 
       <AIWorkoutDialog
         open={aiDialogOpen}
