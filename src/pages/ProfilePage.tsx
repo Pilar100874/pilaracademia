@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { activityLabels, goalLabels, calculateAge, calculateBMR, calculateTDEE, calculateDailyCalories, calculateAllNutrients } from '@/types/profile';
-import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle, Sparkles, UtensilsCrossed, Share2, ChevronRight } from 'lucide-react';
+import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle, Sparkles, UtensilsCrossed, Share2, ChevronRight, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
 import { DataExportSection } from '@/components/DataExportSection';
@@ -16,6 +16,7 @@ export function ProfilePage() {
   const { signOut } = useAuth();
   const { profile, isLoading, updateProfile } = useProfile();
   const [isSaving, setIsSaving] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('');
@@ -274,7 +275,57 @@ export function ProfilePage() {
           {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Salvar Perfil'}
         </Button>
 
+        {/* Quick links */}
+        <div className="card-compact divide-y divide-border">
+          <button
+            type="button"
+            onClick={() => navigate('/insights')}
+            className="w-full flex items-center gap-3 py-3 text-left"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+              <TrendingUp className="h-5 w-5 text-emerald-500" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-sm">Insights</p>
+              <p className="text-xs text-muted-foreground">Correlações entre peso, exames e adesão</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/food-preferences')}
+            className="w-full flex items-center gap-3 py-3 text-left"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+              <UtensilsCrossed className="h-5 w-5 text-amber-500" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-sm">Preferências alimentares</p>
+              <p className="text-xs text-muted-foreground">Restrições, gostos e observações para a IA</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            className="w-full flex items-center gap-3 py-3 text-left"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10">
+              <Share2 className="h-5 w-5 text-sky-500" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-sm">Compartilhar com profissional</p>
+              <p className="text-xs text-muted-foreground">PDF ou link temporário para médico/nutri</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </button>
+        </div>
+
         <DataExportSection />
+
+        <ShareSummaryDialog open={shareOpen} onOpenChange={setShareOpen} />
 
         <Button variant="outline" size="lg" className="w-full h-12 rounded-xl" onClick={handleSignOut}>
           Sair da conta
