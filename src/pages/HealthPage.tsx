@@ -267,6 +267,38 @@ export function HealthPage() {
           </div>
         )}
 
+        {/* Zonas de Frequência Cardíaca */}
+        {hrZones && hrMax && (
+          <div className="card-compact">
+            <div className="flex items-center gap-2 mb-1">
+              <HeartPulse className="h-4 w-4 text-rose-500" />
+              <span className="text-sm font-semibold">Zonas de Frequência Cardíaca</span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              FC máxima estimada: <span className="font-semibold text-foreground">{hrMax} bpm</span> · método Karvonen (FC repouso ~{restingHr} bpm)
+            </p>
+            <div className="space-y-2">
+              {hrZones.map((z) => (
+                <div key={z.label} className="flex items-center justify-between p-2 rounded-xl bg-muted/30">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-3 h-3 rounded-full shrink-0 ${z.color}`} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{z.label}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{z.desc}</p>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-semibold tabular-nums ${z.text} shrink-0 ml-2`}>
+                    {z.range.min}–{z.range.max} bpm
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-3">
+              Use no cardio: Z2 para queima de gordura, Z4–Z5 para HIIT. Ajuste se conhecer sua FC de repouso real.
+            </p>
+          </div>
+        )}
+
         {/* TMB */}
         {bmr && (
           <div className="card-compact">
