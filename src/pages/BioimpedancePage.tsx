@@ -20,9 +20,11 @@ import {
 import { BottomNav } from '@/components/BottomNav';
 
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 import { cn } from '@/lib/utils';
+import { BloodExamsTab } from '@/components/BloodExamsTab';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                            */
