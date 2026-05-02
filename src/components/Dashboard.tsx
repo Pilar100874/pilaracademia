@@ -22,6 +22,11 @@ import { ExerciseTracker } from '@/components/ExerciseTracker';
 import { LiquidTracker } from '@/components/LiquidTracker';
 import { GlycemiaTracker } from '@/components/GlycemiaTracker';
 import { BodyPlanShortcut } from '@/components/BodyPlanShortcut';
+import { AdherenceCard } from '@/components/AdherenceCard';
+import { SmartAlertsCard } from '@/components/SmartAlertsCard';
+import { DailyMenuDialog } from '@/components/DailyMenuDialog';
+import { useAdherenceScore } from '@/hooks/useAdherenceScore';
+import { useSmartAlerts } from '@/hooks/useSmartAlerts';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
 import { useExerciseEntries } from '@/hooks/useExerciseEntries';
@@ -82,6 +87,7 @@ export function Dashboard() {
   const [editingVoiceEntry, setEditingVoiceEntry] = useState<FoodEntryDB | null>(null);
   const [editingPhotoEntry, setEditingPhotoEntry] = useState<FoodEntryDB | null>(null);
   const [showWeightInput, setShowWeightInput] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const goals = getGoals();
   const { consumed } = getTodaySummary();
