@@ -2989,6 +2989,38 @@ export type Database = {
         }
         Relationships: []
       }
+      share_summary_views: {
+        Row: {
+          id: string
+          ip_hash: string
+          share_id: string
+          user_agent: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          ip_hash: string
+          share_id: string
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          ip_hash?: string
+          share_id?: string
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_summary_views_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "share_summaries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_external_identities: {
         Row: {
           active: boolean
