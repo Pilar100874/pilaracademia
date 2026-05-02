@@ -153,6 +153,74 @@ export default function HelpPage() {
           </p>
         </section>
 
+        {/* Exame de sangue */}
+        <section className="rounded-md border border-border bg-card p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <FlaskConical className="h-4 w-4 text-rose-500" />
+            <h3 className="font-semibold text-sm">Exames de sangue</h3>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Faça upload do PDF ou foto do laudo na aba <strong className="text-foreground">Saúde</strong>.
+            A IA extrai marcadores (colesterol, glicose, vitamina D, ferritina, etc.), mostra a evolução em
+            gráficos e <strong className="text-foreground">ajusta automaticamente o cardápio diário e os treinos
+            sugeridos</strong> com base no que está alterado.
+          </p>
+          <p className="text-xs text-muted-foreground italic">
+            ⚕️ Análises educativas. Não substituem consulta médica.
+          </p>
+        </section>
+
+        {/* Glicemia */}
+        <section className="rounded-md border border-border bg-card p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <Droplet className="h-4 w-4 text-red-500" />
+            <h3 className="font-semibold text-sm">Glicemia e impacto glicêmico</h3>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Registre suas medições de glicose — o tipo (jejum, pré, pós-refeição) é categorizado
+            automaticamente pelo horário. Antes de uma refeição, você pode ver a
+            <strong className="text-foreground"> previsão de impacto glicêmico</strong> baseada nos
+            carboidratos líquidos do prato.
+          </p>
+        </section>
+
+        {/* Bioimpedância */}
+        <section className="rounded-md border border-border bg-card p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <Scale className="h-4 w-4 text-cyan-500" />
+            <h3 className="font-semibold text-sm">Composição corporal</h3>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Tire foto do laudo da sua balança de bioimpedância — a IA extrai % de gordura, massa magra,
+            água corporal e outros valores. Combine com fotos de progresso (frente, lado, costas) para
+            ver evolução visual ao longo das semanas.
+          </p>
+        </section>
+
+        {/* Privacidade */}
+        <section className="rounded-md border border-border bg-muted/30 p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-foreground" />
+            <h3 className="font-semibold text-sm">Privacidade e seus dados (LGPD)</h3>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Em <strong className="text-foreground">Perfil</strong> você pode exportar todos os seus dados
+            em JSON ou PDF a qualquer momento, e também excluir sua conta permanentemente. Consulte os
+            <button
+              type="button"
+              onClick={() => navigate('/termos')}
+              className="underline underline-offset-2 hover:text-foreground mx-1"
+            >Termos de Uso</button>
+            e a
+            <button
+              type="button"
+              onClick={() => navigate('/privacidade')}
+              className="underline underline-offset-2 hover:text-foreground mx-1"
+            >Política de Privacidade</button>
+            para detalhes.
+          </p>
+        </section>
+
         <p className="text-xs text-center text-muted-foreground pt-2">
           Dúvidas sobre alguma tela específica? Toque no ícone <strong>Ajuda</strong> na barra inferior
           para ver instruções da tela atual.
