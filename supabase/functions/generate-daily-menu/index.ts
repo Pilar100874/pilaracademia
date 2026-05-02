@@ -25,6 +25,7 @@ interface Body {
     avoid?: string[];
     meal_count?: number; // default 4
   };
+  blood_exam_context?: string; // resumo dos marcadores fora da faixa + recomendações alimentares
 }
 
 const SYSTEM = `Você é um nutricionista que monta cardápios diários práticos para brasileiros.
@@ -62,6 +63,7 @@ ${body.profile?.body_profile ? `Perfil corporal: ${body.profile.body_profile}` :
 ${body.profile?.diet_rules?.length ? `Regras: ${body.profile.diet_rules.join('; ')}` : ''}
 ${body.preferences?.style ? `Estilo: ${body.preferences.style}` : ''}
 ${body.preferences?.avoid?.length ? `Evitar: ${body.preferences.avoid.join(', ')}` : ''}
+${body.blood_exam_context ? `\nEXAMES DE SANGUE RECENTES (priorizar estas orientações no cardápio):\n${body.blood_exam_context}` : ''}
 
 Use nomes de refeição: Café da manhã, Lanche da manhã, Almoço, Lanche da tarde, Jantar, Ceia (escolha ${mealCount}).
 Cada item DEVE ter calorias/proteína/carbs/gordura calculados para a quantidade indicada.`;
