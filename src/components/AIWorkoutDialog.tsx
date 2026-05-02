@@ -17,6 +17,8 @@ import { useFieldError, validateRequired } from '@/lib/formValidation';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
+import { useBloodExams } from '@/hooks/useBloodExams';
+import { buildBloodExamHealthContext } from '@/lib/bloodExamContext';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,6 +44,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const { allExercises: exercises, globalExercises, exercises: personalOnly } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
+  const { list: bloodExamsQ } = useBloodExams();
 
   const [name, setName] = useState(initialName || '');
   const [prompt, setPrompt] = useState(initialPrompt || '');
@@ -159,8 +162,10 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         mobility: ex.mobility_analysis ?? null,
       }));
 
+      const healthContext = buildBloodExamHealthContext(bloodExamsQ.data) || undefined;
+
       const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
-        body: { prompt: prompt.trim(), count: n, library },
+        body: { prompt: prompt.trim(), count: n, library, health_context: healthContext },
       });
 
       if (error) {
@@ -426,6 +431,19 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
             </div>
           </div>
         </div>
+
+        {(() => {
+          const ctx = buildBloodExamHealthContext(bloodExamsQ.data);
+          if (!ctx) return null;
+          return (
+            <div className="px-5 py-2 border-t border-border/60 bg-muted/30">
+              <p className="text-[10px] leading-snug text-muted-foreground">
+                <span className="font-semibold text-foreground/80">Exame de sangue considerado:</span>{' '}
+                a IA vai ajustar intensidade e segurança com base nos seus marcadores.
+              </p>
+            </div>
+          );
+        })()}
 
         <DialogFooter className="gap-2 sm:gap-2 px-5 py-3 border-t border-border/60 bg-background">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={generating} className="flex-1 sm:flex-none">

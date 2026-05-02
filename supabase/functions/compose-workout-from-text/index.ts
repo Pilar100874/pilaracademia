@@ -20,6 +20,7 @@ interface RequestBody {
   prompt: string;
   count: number;
   library: LibraryItem[];
+  health_context?: string;
 }
 
 Deno.serve(async (req) => {
@@ -72,23 +73,25 @@ Deno.serve(async (req) => {
       return `- ${ex.id} | ${ex.name}${tags ? ` | ${tags}` : ''}`;
     }).join('\n');
 
-    const systemPrompt = `Você é um personal trainer experiente que monta sequências de treino personalizadas.
+    const systemPrompt = `Você é um personal trainer experiente que monta sequências de treino personalizadas e SEGURAS.
 
 Você receberá:
 1) Uma descrição do objetivo do usuário (em português).
 2) Uma biblioteca de exercícios disponível, cada um com ID, nome e tags percentuais (0-100) de áreas trabalhadas (corpo, estética, mobilidade).
+3) Opcionalmente, um CONTEXTO DE SAÚDE (exames de sangue) que pode indicar restrições.
 
 Tarefas:
 - Selecione EXATAMENTE ${count} exercícios da biblioteca que melhor atendam ao objetivo.
-- Ordene-os em uma sequência lógica de execução (aquecimento/mobilidade primeiro quando fizer sentido, exercícios principais no meio, finalização/alongamento no fim).
-- Use APENAS IDs presentes na lista fornecida. Não invente IDs nem repita IDs.
-- Se a biblioteca tiver menos de ${count} exercícios adequados, devolva quantos forem possíveis (sem repetir).
+- Ordene-os em uma sequência lógica (aquecimento/mobilidade primeiro, principais no meio, finalização/alongamento no fim).
+- Use APENAS IDs da lista. Não invente nem repita IDs.
+- Se a biblioteca tiver menos de ${count} exercícios adequados, devolva quantos forem possíveis.
 - Se o usuário citar dor/lesão (ex: "lombar"), evite exercícios de alto impacto na região afetada.
+- Se houver CONTEXTO DE SAÚDE: ajuste cargas/intensidade e priorize segurança. Cite na justificativa se algum marcador influenciou suas escolhas.
 
 Responda CHAMANDO a função build_workout com a lista ordenada de IDs e uma breve justificativa.`;
 
     const userPrompt = `Objetivo: ${prompt}
-
+${body.health_context ? `\n${body.health_context}\n` : ''}
 Biblioteca disponível (${library.length} exercícios):
 ${libSummary}`;
 
