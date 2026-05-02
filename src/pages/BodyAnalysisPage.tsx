@@ -46,6 +46,9 @@ import { FileDown, Camera as CameraIcon } from 'lucide-react';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { useNavigate } from 'react-router-dom';
+import { LazyVideoPreview } from '@/components/LazyVideoPreview';
+import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
+import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 
 const goalLabels: Record<string, string> = {
   cutting: 'Cutting (perda de gordura)',
