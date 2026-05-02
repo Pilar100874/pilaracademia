@@ -1,17 +1,40 @@
 import { useRef, useState } from 'react';
 import { BottomNav } from '@/components/BottomNav';
-import { Activity, Upload, Loader2, Sparkles, Trash2, AlertTriangle, AlertCircle, Info, Flame, Dumbbell, Heart, Apple, Target, TrendingDown, ChevronRight } from 'lucide-react';
+import {
+  Activity,
+  Upload,
+  Loader2,
+  Sparkles,
+  Trash2,
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  Flame,
+  Dumbbell,
+  Heart,
+  Apple,
+  Target,
+  ChevronRight,
+  CheckCircle2,
+  TrendingDown,
+  TrendingUp,
+  ArrowRight,
+  ListChecks,
+  Utensils,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
+import { useProfile } from '@/hooks/useProfile';
+import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { fileToBase64 } from '@/lib/analyzeFood';
 import type { BodyAnalysisRow, BodyPlan } from '@/types/bodyAnalysis';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { AIWorkoutDialog } from '@/components/AIWorkoutDialog';
 
 const goalLabels: Record<string, string> = {
   cutting: 'Cutting (perda de gordura)',
@@ -47,10 +70,44 @@ function Stat({ label, value, unit }: { label: string; value: React.ReactNode; u
   );
 }
 
-function PlanView({ row }: { row: BodyAnalysisRow }) {
+function DeltaPill({ label, value, unit, invert }: { label: string; value: number | undefined; unit?: string; invert?: boolean }) {
+  if (value == null || isNaN(value)) return null;
+  // invert=true -> lower is better (e.g. fat, weight in cutting)
+  const isPositive = invert ? value < 0 : value > 0;
+  const isZero = Math.abs(value) < 0.05;
+  const Icon = isZero ? ArrowRight : value > 0 ? TrendingUp : TrendingDown;
+  const color = isZero
+    ? 'text-muted-foreground'
+    : isPositive
+      ? 'text-emerald-600'
+      : 'text-amber-600';
+  const sign = value > 0 ? '+' : '';
+  return (
+    <div className="rounded-md border border-border bg-card p-2.5">
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={cn('mt-0.5 text-base font-semibold flex items-center gap-1', color)}>
+        <Icon className="h-3.5 w-3.5" />
+        {sign}
+        {value.toFixed(1)}
+        {unit && <span className="text-xs text-muted-foreground ml-0.5">{unit}</span>}
+      </p>
+    </div>
+  );
+}
+
+function PlanView({
+  row,
+  onApplyMacros,
+  onGenerateWorkout,
+  macrosApplied,
+}: {
+  row: BodyAnalysisRow;
+  onApplyMacros: (plan: BodyPlan) => void;
+  onGenerateWorkout: (plan: BodyPlan) => void;
+  macrosApplied: boolean;
+}) {
   const plan = row.plan as BodyPlan;
   const e = plan.extracted || {};
-  const navigate = useNavigate();
 
   return (
     <div className="space-y-4">
@@ -76,11 +133,76 @@ function PlanView({ row }: { row: BodyAnalysisRow }) {
         </div>
       </div>
 
-      {/* Resumo */}
-      {plan.summary && (
-        <div className="rounded-md border border-border bg-muted/30 p-4">
-          <p className="text-sm leading-relaxed whitespace-pre-line">{plan.summary}</p>
+      {/* Evolução vs análise anterior */}
+      {plan.delta && (
+        <div className="rounded-md border border-primary/30 bg-primary/5 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <TrendingDown className="h-4 w-4 text-primary" />
+            <span className="font-semibold">Evolução desde a última análise</span>
+            {plan.delta.days_between != null && (
+              <span className="text-xs text-muted-foreground">
+                · {plan.delta.days_between} dias
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <DeltaPill label="Peso" value={plan.delta.weight_kg} unit="kg" invert />
+            <DeltaPill label="Gordura" value={plan.delta.body_fat_pct} unit="%" invert />
+            <DeltaPill label="Músculo" value={plan.delta.muscle_mass_kg} unit="kg" />
+            <DeltaPill label="Score" value={plan.delta.score} />
+          </div>
+          {plan.delta.commentary && (
+            <p className="text-sm leading-relaxed">{plan.delta.commentary}</p>
+          )}
+          {plan.delta.periodization_adjustment && (
+            <div className="rounded-md border border-border bg-card p-3 text-sm">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                Ajuste sugerido
+              </p>
+              {plan.delta.periodization_adjustment}
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Narrativa estruturada (Situação → Plano → Próximos passos) */}
+      {plan.narrative ? (
+        <div className="space-y-3">
+          <div className="rounded-md border border-border bg-card p-4">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+              Situação atual
+            </p>
+            <p className="text-sm leading-relaxed">{plan.narrative.situation}</p>
+          </div>
+          <div className="rounded-md border border-border bg-card p-4">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+              Plano
+            </p>
+            <p className="text-sm leading-relaxed">{plan.narrative.plan}</p>
+          </div>
+          {plan.narrative.next_steps?.length > 0 && (
+            <div className="rounded-md border border-border bg-card p-4">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                <ListChecks className="h-3 w-3" />
+                Próximos passos
+              </p>
+              <ul className="space-y-1.5">
+                {plan.narrative.next_steps.map((s, i) => (
+                  <li key={i} className="text-sm flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      ) : (
+        plan.summary && (
+          <div className="rounded-md border border-border bg-muted/30 p-4">
+            <p className="text-sm leading-relaxed whitespace-pre-line">{plan.summary}</p>
+          </div>
+        )
       )}
 
       {/* Alertas */}
@@ -128,9 +250,21 @@ function PlanView({ row }: { row: BodyAnalysisRow }) {
         </div>
         <p className="text-base">{goalLabels[plan.goal?.primary] || plan.goal?.primary}</p>
         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-          {plan.goal?.target_weight_kg != null && <span>Meta peso: <b className="text-foreground">{plan.goal.target_weight_kg} kg</b></span>}
-          {plan.goal?.target_body_fat_pct != null && <span>Meta gordura: <b className="text-foreground">{plan.goal.target_body_fat_pct}%</b></span>}
-          {plan.goal?.timeframe_weeks != null && <span>Prazo: <b className="text-foreground">{plan.goal.timeframe_weeks} sem</b></span>}
+          {plan.goal?.target_weight_kg != null && (
+            <span>
+              Meta peso: <b className="text-foreground">{plan.goal.target_weight_kg} kg</b>
+            </span>
+          )}
+          {plan.goal?.target_body_fat_pct != null && (
+            <span>
+              Meta gordura: <b className="text-foreground">{plan.goal.target_body_fat_pct}%</b>
+            </span>
+          )}
+          {plan.goal?.timeframe_weeks != null && (
+            <span>
+              Prazo: <b className="text-foreground">{plan.goal.timeframe_weeks} sem</b>
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
@@ -143,16 +277,43 @@ function PlanView({ row }: { row: BodyAnalysisRow }) {
           <Stat label="Carbo" value={plan.macros?.carbs_g} unit="g" />
           <Stat label="Gordura" value={plan.macros?.fat_g} unit="g" />
         </div>
+
+        <Button
+          size="sm"
+          variant={macrosApplied ? 'outline' : 'default'}
+          className="w-full"
+          onClick={() => onApplyMacros(plan)}
+          disabled={macrosApplied}
+        >
+          {macrosApplied ? (
+            <>
+              <CheckCircle2 className="h-4 w-4 mr-1.5" />
+              Plano nutricional aplicado
+            </>
+          ) : (
+            <>
+              <Utensils className="h-4 w-4 mr-1.5" />
+              Usar como minha meta diária
+            </>
+          )}
+        </Button>
+        <p className="text-[11px] text-muted-foreground">
+          Aplica calorias e macros deste plano como meta oficial no dashboard de alimentação.
+        </p>
       </div>
 
-      {/* Treino */}
+      {/* Treino + exercícios sugeridos */}
       <div className="rounded-md border border-border bg-card p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Dumbbell className="h-4 w-4 text-primary" />
           <span className="font-semibold">Intenção de treino</span>
         </div>
-        <p className="text-sm"><b>Foco:</b> {plan.training_intent?.focus}</p>
-        <p className="text-sm"><b>Divisão:</b> {plan.training_intent?.split}</p>
+        <p className="text-sm">
+          <b>Foco:</b> {plan.training_intent?.focus}
+        </p>
+        <p className="text-sm">
+          <b>Divisão:</b> {plan.training_intent?.split}
+        </p>
         <p className="text-sm">
           <b>Frequência:</b> {plan.training_intent?.frequency_per_week}x/sem
           {plan.training_intent?.session_minutes ? ` · ${plan.training_intent.session_minutes} min` : ''}
@@ -161,20 +322,44 @@ function PlanView({ row }: { row: BodyAnalysisRow }) {
         {plan.training_intent?.priority_muscle_groups && plan.training_intent.priority_muscle_groups.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {plan.training_intent.priority_muscle_groups.map((g) => (
-              <span key={g} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">{g}</span>
+              <span
+                key={g}
+                className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20"
+              >
+                {g}
+              </span>
             ))}
           </div>
         )}
         {plan.training_intent?.volume_note && (
           <p className="text-xs text-muted-foreground">{plan.training_intent.volume_note}</p>
         )}
-        <Button
-          size="sm"
-          variant="outline"
-          className="w-full"
-          onClick={() => navigate('/workouts')}
-        >
-          Gerar treino com base nesse plano
+
+        {plan.recommended_exercises && plan.recommended_exercises.length > 0 && (
+          <div className="pt-3 border-t border-border space-y-2">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              Exercícios sugeridos da sua biblioteca
+            </p>
+            <ul className="space-y-1.5">
+              {plan.recommended_exercises.map((r) => (
+                <li key={r.exercise_id} className="text-sm">
+                  <span className="font-medium">{r.name}</span>
+                  {(r.sets || r.reps) && (
+                    <span className="text-xs text-muted-foreground ml-1.5">
+                      {r.sets ? `${r.sets}×` : ''}
+                      {r.reps || ''}
+                    </span>
+                  )}
+                  {r.reason && <p className="text-xs text-muted-foreground mt-0.5">{r.reason}</p>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <Button size="sm" className="w-full" onClick={() => onGenerateWorkout(plan)}>
+          <Sparkles className="h-4 w-4 mr-1.5" />
+          Gerar treino com IA usando este plano
           <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
@@ -192,7 +377,9 @@ function PlanView({ row }: { row: BodyAnalysisRow }) {
             {plan.cardio.minutes_per_session != null && ` · ${plan.cardio.minutes_per_session} min`}
           </p>
           {plan.cardio.daily_steps != null && (
-            <p className="text-sm">Meta de passos: <b>{plan.cardio.daily_steps.toLocaleString('pt-BR')}/dia</b></p>
+            <p className="text-sm">
+              Meta de passos: <b>{plan.cardio.daily_steps.toLocaleString('pt-BR')}/dia</b>
+            </p>
           )}
         </div>
       )}
@@ -205,7 +392,9 @@ function PlanView({ row }: { row: BodyAnalysisRow }) {
             <span className="font-semibold">Regras alimentares</span>
           </div>
           <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
-            {plan.diet_rules.map((r, i) => <li key={i}>{r}</li>)}
+            {plan.diet_rules.map((r, i) => (
+              <li key={i}>{r}</li>
+            ))}
           </ul>
         </div>
       )}
@@ -241,13 +430,23 @@ function PlanView({ row }: { row: BodyAnalysisRow }) {
             {(['day_30', 'day_60', 'day_90'] as const).map((k, idx) => {
               const d = plan.projection![k];
               const lbl = ['30d', '60d', '90d'][idx];
-              if (!d) return <div key={k} className="rounded-md border border-border bg-muted/30 p-3 text-center text-xs text-muted-foreground">{lbl}</div>;
+              if (!d)
+                return (
+                  <div
+                    key={k}
+                    className="rounded-md border border-border bg-muted/30 p-3 text-center text-xs text-muted-foreground"
+                  >
+                    {lbl}
+                  </div>
+                );
               return (
                 <div key={k} className="rounded-md border border-border bg-card p-3 text-center">
                   <p className="text-[10px] text-muted-foreground">{lbl}</p>
                   {d.weight_kg != null && <p className="text-base font-semibold">{d.weight_kg} kg</p>}
                   {d.body_fat_pct != null && <p className="text-xs text-muted-foreground">{d.body_fat_pct}% gord.</p>}
-                  {d.muscle_mass_kg != null && <p className="text-xs text-muted-foreground">{d.muscle_mass_kg} kg músc.</p>}
+                  {d.muscle_mass_kg != null && (
+                    <p className="text-xs text-muted-foreground">{d.muscle_mass_kg} kg músc.</p>
+                  )}
                 </div>
               );
             })}
@@ -269,8 +468,19 @@ export default function BodyAnalysisPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { list, create, remove } = useBodyAnalyses();
+  const { profile, applyNutritionOverride, clearNutritionOverride } = useProfile();
+  const { allExercises } = useExerciseLibrary();
+
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState<string>('');
+  const [aiName, setAiName] = useState<string>('');
+  const [aiCount, setAiCount] = useState<number>(8);
 
   const selected = (list.data || []).find((r) => r.id === selectedId) || (list.data || [])[0];
+
+  const macrosAppliedFromSelected =
+    !!selected &&
+    profile?.nutrition_override_source === `body_analysis:${selected.id}`;
 
   async function handleFile(file: File) {
     if (!user) {
@@ -281,7 +491,7 @@ export default function BodyAnalysisPage() {
     try {
       const base64 = await fileToBase64(file);
 
-      // Upload
+      // Upload original
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
@@ -291,9 +501,24 @@ export default function BodyAnalysisPage() {
       const { data: pub } = supabase.storage.from('body-analysis-reports').getPublicUrl(path);
       const imageUrl = upErr ? null : pub.publicUrl;
 
-      // Analyze
+      // Build library payload (id + name only)
+      const library = (allExercises || []).map((ex) => ({ id: ex.id, name: ex.name }));
+
+      // Build "previous" for delta
+      const prevRow = (list.data || [])[0]; // most recent existing row
+      const previous = prevRow
+        ? {
+            measured_at: prevRow.measured_at || prevRow.created_at,
+            extracted: prevRow.extracted,
+            score: prevRow.score,
+            days_since: prevRow.created_at
+              ? differenceInDays(new Date(), parseISO(prevRow.created_at))
+              : null,
+          }
+        : null;
+
       const { data, error } = await supabase.functions.invoke('analyze-bioimpedance', {
-        body: { imageBase64: base64 },
+        body: { imageBase64: base64, library, previous },
       });
       if (error) throw error;
       if (!data?.success || !data?.data) {
@@ -309,6 +534,53 @@ export default function BodyAnalysisPage() {
     } finally {
       setAnalyzing(false);
     }
+  }
+
+  async function handleApplyMacros(plan: BodyPlan) {
+    if (!selected) return;
+    try {
+      await applyNutritionOverride({
+        calories: plan.calories?.target ?? plan.calories?.tdee ?? 2000,
+        protein: plan.macros?.protein_g ?? 150,
+        carbs: plan.macros?.carbs_g ?? 250,
+        fat: plan.macros?.fat_g ?? 65,
+        fiber: plan.macros?.fiber_g,
+        liquid_ml: plan.macros?.water_ml,
+        source: `body_analysis:${selected.id}`,
+      });
+      toast.success('Plano nutricional aplicado como meta diária');
+    } catch (err) {
+      console.error(err);
+      toast.error('Falha ao aplicar plano nutricional');
+    }
+  }
+
+  async function handleClearMacros() {
+    try {
+      await clearNutritionOverride();
+      toast.success('Meta nutricional voltou ao cálculo padrão');
+    } catch (err) {
+      console.error(err);
+      toast.error('Falha ao restaurar meta');
+    }
+  }
+
+  function handleGenerateWorkout(plan: BodyPlan) {
+    const ti = plan.training_intent;
+    const muscles = ti?.priority_muscle_groups?.length
+      ? ` Foco nos grupos: ${ti.priority_muscle_groups.join(', ')}.`
+      : '';
+    const intensity = ti?.intensity ? ` Intensidade ${ti.intensity}.` : '';
+    const split = ti?.split ? ` Divisão ${ti.split}.` : '';
+    const recommended = plan.recommended_exercises?.length
+      ? ` Considere priorizar: ${plan.recommended_exercises.map((r) => r.name).slice(0, 8).join(', ')}.`
+      : '';
+    setAiPrompt(
+      `Treino para ${goalLabels[plan.goal?.primary] || plan.goal?.primary} (${plan.profile_label}). Foco: ${ti?.focus || 'geral'}.${split}${intensity}${muscles}${recommended}`,
+    );
+    setAiName(`Plano ${plan.profile_label || 'corporal'} – ${ti?.focus || 'IA'}`.slice(0, 60));
+    setAiCount(plan.recommended_exercises?.length || 8);
+    setAiDialogOpen(true);
   }
 
   return (
@@ -338,20 +610,39 @@ export default function BodyAnalysisPage() {
           <Sparkles className="h-6 w-6 text-primary mx-auto mb-2" />
           <p className="text-sm font-medium">Envie a foto do seu relatório</p>
           <p className="text-xs text-muted-foreground mt-1 mb-3">
-            Fitdays, InBody, Tanita ou similar — a IA extrai os dados e monta seu plano completo.
+            Fitdays, InBody, Tanita ou similar — a IA extrai os dados, monta seu plano e
+            sugere exercícios da sua biblioteca.
           </p>
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={analyzing}
-            className="w-full"
-          >
+          <Button onClick={() => fileInputRef.current?.click()} disabled={analyzing} className="w-full">
             {analyzing ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Analisando relatório…</>
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Analisando relatório…
+              </>
             ) : (
-              <><Upload className="h-4 w-4 mr-2" /> Enviar relatório</>
+              <>
+                <Upload className="h-4 w-4 mr-2" /> Enviar relatório
+              </>
             )}
           </Button>
         </div>
+
+        {/* Banner de override ativo */}
+        {profile?.nutrition_override_source?.startsWith('body_analysis') && (
+          <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 flex items-start gap-2">
+            <Utensils className="h-4 w-4 text-emerald-700 mt-0.5 shrink-0" />
+            <div className="flex-1 text-sm">
+              <p className="font-medium text-emerald-900 dark:text-emerald-100">
+                Plano nutricional ativo
+              </p>
+              <p className="text-xs text-emerald-800/80 dark:text-emerald-100/70">
+                Sua meta diária está vindo de uma análise corporal.
+              </p>
+            </div>
+            <Button size="sm" variant="ghost" onClick={handleClearMacros} className="h-7 text-xs">
+              Restaurar padrão
+            </Button>
+          </div>
+        )}
 
         {/* Histórico */}
         {(list.data?.length ?? 0) > 0 && (
@@ -359,7 +650,7 @@ export default function BodyAnalysisPage() {
             <h2 className="text-xs uppercase tracking-wide text-muted-foreground px-1">Histórico</h2>
             <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-2">
               {list.data!.map((r) => {
-                const isSel = (selected?.id) === r.id;
+                const isSel = selected?.id === r.id;
                 return (
                   <button
                     key={r.id}
@@ -401,7 +692,12 @@ export default function BodyAnalysisPage() {
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
-            <PlanView row={selected} />
+            <PlanView
+              row={selected}
+              onApplyMacros={handleApplyMacros}
+              onGenerateWorkout={handleGenerateWorkout}
+              macrosApplied={macrosAppliedFromSelected}
+            />
           </>
         ) : (
           !analyzing && (
@@ -412,6 +708,14 @@ export default function BodyAnalysisPage() {
           )
         )}
       </div>
+
+      <AIWorkoutDialog
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        initialPrompt={aiPrompt}
+        initialName={aiName}
+        initialCount={aiCount}
+      />
 
       <BottomNav />
     </div>
