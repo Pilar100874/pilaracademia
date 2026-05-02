@@ -15,6 +15,9 @@ import ExerciseLibraryPage from "@/pages/ExerciseLibraryPage";
 import BodyAnalysisPage from "@/pages/BodyAnalysisPage";
 import BioimpedancePage from "@/pages/BioimpedancePage";
 import OnboardingPage from "@/pages/OnboardingPage";
+import InsightsPage from "@/pages/InsightsPage";
+import FoodPreferencesPage from "@/pages/FoodPreferencesPage";
+import SharedSummaryPage from "@/pages/SharedSummaryPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -157,6 +160,23 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/insights"
+        element={
+          <ProtectedRoute>
+            <InsightsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/food-preferences"
+        element={
+          <ProtectedRoute>
+            <FoodPreferencesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/r/:token" element={<SharedSummaryPage />} />
       <Route
         path="/auth"
         element={
