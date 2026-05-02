@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { HelpCircle, X } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { HelpCircle, X, BookOpen, ChevronRight } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -111,6 +111,7 @@ type HelpMenuProps = {
 
 export function HelpMenu({ inline = false, className }: HelpMenuProps) {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const { pathname } = useLocation();
 
   // Hide on auth screen
@@ -203,6 +204,24 @@ export function HelpMenu({ inline = false, className }: HelpMenuProps) {
                 </ul>
               </div>
             )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                navigate('/ajuda');
+              }}
+              className="w-full flex items-center gap-3 rounded-md border border-border bg-card p-4 text-left hover:bg-muted/30 transition-colors"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
+                <BookOpen className="h-4 w-4 text-emerald-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">Guia completo de nutrientes</p>
+                <p className="text-xs text-muted-foreground">Entenda proteína, carboidrato, gordura, calorias e TDEE</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
           </div>
         </SheetContent>
       </Sheet>
