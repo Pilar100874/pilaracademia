@@ -220,13 +220,25 @@ export function BloodExamsTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Envie seus exames de sangue. A IA extrai os marcadores e usa nos cardápios e ajustes de
-          nutrientes.
+          Envie seus exames de sangue. A IA extrai os marcadores e usa nos cardápios, nos ajustes de
+          nutrientes e nas sugestões de treino.
         </p>
         <Button size="sm" onClick={() => setUploadOpen(true)} className="shrink-0">
           <Plus className="h-3.5 w-3.5 mr-1" />
           Enviar
         </Button>
+      </div>
+
+      <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1.5">
+        <p className="text-xs font-semibold text-foreground">Como seus exames são usados</p>
+        <ul className="text-[11px] leading-relaxed text-muted-foreground space-y-0.5 list-disc pl-4">
+          <li>O <strong>cardápio diário</strong> prioriza alimentos alinhados aos marcadores fora da faixa.</li>
+          <li>O <strong>ajuste de nutrientes</strong> considera alertas (ex.: colesterol, glicemia).</li>
+          <li>As <strong>sugestões de treino com IA</strong> ajustam intensidade e segurança conforme seus marcadores (ex.: pressão, anemia, tireoide).</li>
+        </ul>
+        <p className="text-[10px] text-muted-foreground/80 pt-1">
+          Seus dados ficam privados e nunca substituem orientação médica.
+        </p>
       </div>
 
       <MedicalDisclaimer />
@@ -235,7 +247,7 @@ export function BloodExamsTab() {
         <EmptyState
           icon={Activity}
           title="Nenhum exame ainda"
-          description="Envie o PDF do seu exame de sangue para enriquecer as recomendações nutricionais e os ajustes de nutrientes do app."
+          description="Envie o PDF do seu exame para personalizar cardápios, nutrientes e treinos com base nos seus marcadores."
           action={{ label: 'Enviar exame', icon: Plus, onClick: () => setUploadOpen(true) }}
         />
       ) : (
