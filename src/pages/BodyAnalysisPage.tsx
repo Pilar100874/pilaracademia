@@ -424,22 +424,55 @@ function PlanView({
       {/* Periodização */}
       {plan.periodization && plan.periodization.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold mb-2">Periodização 12 semanas</h3>
+          <div className="flex items-baseline justify-between mb-2">
+            <h3 className="text-sm font-semibold">Periodização 12 semanas</h3>
+            {isActive && (
+              <span className="text-[11px] text-muted-foreground">
+                Semana {currentWeek}/12
+              </span>
+            )}
+          </div>
+          {isActive && (
+            <div className="mb-3 h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${(currentWeek / 12) * 100}%` }}
+              />
+            </div>
+          )}
           <div className="space-y-2">
-            {plan.periodization.map((p, i) => (
-              <div key={i} className="rounded-md border border-border bg-card p-3">
-                <div className="flex items-baseline justify-between">
-                  <p className="font-semibold">{p.phase}</p>
-                  <p className="text-xs text-muted-foreground">Semanas {p.weeks}</p>
+            {plan.periodization.map((p, i) => {
+              const isCurrent = i === currentPhaseIdx;
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    'rounded-md border p-3 transition-colors',
+                    isCurrent
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-card',
+                  )}
+                >
+                  <div className="flex items-baseline justify-between">
+                    <p className="font-semibold flex items-center gap-2">
+                      {p.phase}
+                      {isCurrent && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-medium">
+                          ATUAL
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Semanas {p.weeks}</p>
+                  </div>
+                  <p className="text-sm mt-1">{p.focus}</p>
+                  <div className="text-xs text-muted-foreground mt-1 space-x-3">
+                    {p.calories != null && <span>{p.calories} kcal</span>}
+                    {p.training && <span>{p.training}</span>}
+                    {p.cardio && <span>{p.cardio}</span>}
+                  </div>
                 </div>
-                <p className="text-sm mt-1">{p.focus}</p>
-                <div className="text-xs text-muted-foreground mt-1 space-x-3">
-                  {p.calories != null && <span>{p.calories} kcal</span>}
-                  {p.training && <span>{p.training}</span>}
-                  {p.cardio && <span>{p.cardio}</span>}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
