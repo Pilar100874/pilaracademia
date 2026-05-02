@@ -719,6 +719,7 @@ export default function BodyAnalysisPage() {
   const [aiName, setAiName] = useState<string>('');
   const [aiCount, setAiCount] = useState<number>(8);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [photosOpen, setPhotosOpen] = useState(false);
 
   const selected = (list.data || []).find((r) => r.id === selectedId) || (list.data || [])[0];
 
