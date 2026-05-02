@@ -24,7 +24,7 @@ export function exportPlanToPdf(plan: BodyPlan, profileName?: string) {
   sep();
 
   line(`Perfil: ${plan.profile_label || '—'}`, 12, true);
-  line(`Objetivo: ${plan.goal?.primary || '—'}`, 11);
+  line(`Objetivo: ${goalLabel(plan.goal?.primary)}`, 11);
   line(`Score: ${plan.score}/100`, 11);
   sep();
 
