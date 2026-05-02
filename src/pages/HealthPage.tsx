@@ -74,6 +74,31 @@ export function HealthPage() {
     return 10 * weight + 6.25 * heightCm - 5 * age - 78;
   }, [weight, heightCm, age, gender]);
 
+  // FC máxima — fórmula de Tanaka (208 - 0.7 × idade), mais precisa que 220 - idade.
+  const hrMax = useMemo(() => {
+    if (!age) return null;
+    return Math.round(208 - 0.7 * age);
+  }, [age]);
+
+  // FC de repouso estimada (média adulto saudável). Usa Karvonen para reserva de FC.
+  const restingHr = 70;
+
+  const hrZones = useMemo(() => {
+    if (!hrMax) return null;
+    const reserve = hrMax - restingHr;
+    const zone = (lo: number, hi: number) => ({
+      min: Math.round(restingHr + reserve * lo),
+      max: Math.round(restingHr + reserve * hi),
+    });
+    return [
+      { label: 'Z1 — Recuperação', desc: 'Aquecimento, recuperação ativa', range: zone(0.50, 0.60), color: 'bg-sky-500', text: 'text-sky-600' },
+      { label: 'Z2 — Aeróbico leve', desc: 'Queima de gordura, base aeróbica', range: zone(0.60, 0.70), color: 'bg-green-500', text: 'text-green-600' },
+      { label: 'Z3 — Aeróbico', desc: 'Resistência cardiovascular', range: zone(0.70, 0.80), color: 'bg-amber-500', text: 'text-amber-600' },
+      { label: 'Z4 — Limiar', desc: 'Performance, limiar anaeróbico', range: zone(0.80, 0.90), color: 'bg-orange-500', text: 'text-orange-600' },
+      { label: 'Z5 — Máximo', desc: 'HIIT, esforço máximo (curto)', range: zone(0.90, 1.00), color: 'bg-red-500', text: 'text-red-600' },
+    ];
+  }, [hrMax]);
+
   const bmiPercentage = useMemo(() => {
     if (!bmi) return 0;
     const minBmi = 15;
