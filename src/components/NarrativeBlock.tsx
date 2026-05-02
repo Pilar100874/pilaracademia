@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { BodyPlanNarrative } from '@/types/bodyAnalysis';
+import { sanitizeFitnessText } from '@/lib/goalLabels';
 
 export function NarrativeBlock({ narrative }: { narrative: BodyPlanNarrative }) {
   const [simple, setSimple] = useState<BodyPlanNarrative | null>(null);
