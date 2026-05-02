@@ -22,6 +22,11 @@ import { ExerciseTracker } from '@/components/ExerciseTracker';
 import { LiquidTracker } from '@/components/LiquidTracker';
 import { GlycemiaTracker } from '@/components/GlycemiaTracker';
 import { BodyPlanShortcut } from '@/components/BodyPlanShortcut';
+import { AdherenceCard } from '@/components/AdherenceCard';
+import { SmartAlertsCard } from '@/components/SmartAlertsCard';
+import { DailyMenuDialog } from '@/components/DailyMenuDialog';
+import { useAdherenceScore } from '@/hooks/useAdherenceScore';
+import { useSmartAlerts } from '@/hooks/useSmartAlerts';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
 import { useLiquidEntries } from '@/hooks/useLiquidEntries';
 import { useExerciseEntries } from '@/hooks/useExerciseEntries';
@@ -82,6 +87,7 @@ export function Dashboard() {
   const [editingVoiceEntry, setEditingVoiceEntry] = useState<FoodEntryDB | null>(null);
   const [editingPhotoEntry, setEditingPhotoEntry] = useState<FoodEntryDB | null>(null);
   const [showWeightInput, setShowWeightInput] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const goals = getGoals();
   const { consumed } = getTodaySummary();
@@ -96,6 +102,23 @@ export function Dashboard() {
   
   const dailyLiquidGoal = goals.liquid_ml || profile?.daily_liquid_ml || 2000;
   const netCalories = consumed.calories - caloriesBurned;
+
+  // Adherence score & smart alerts (Leva 1)
+  const adherence = useAdherenceScore({
+    consumed: { calories: consumed.calories, protein: consumed.protein, carbs: consumed.carbs, fat: consumed.fat },
+    goals: { calories: goals.calories, protein: goals.protein, carbs: goals.carbs, fat: goals.fat, liquid_ml: dailyLiquidGoal },
+    liquidMl: todayLiquid,
+    caloriesBurned,
+    hasWorkout: caloriesBurned > 0,
+  });
+  const smartAlerts = useSmartAlerts({
+    adherence,
+    consumed: { calories: consumed.calories, protein: consumed.protein },
+    goals: { calories: goals.calories, protein: goals.protein },
+    liquidMl: todayLiquid,
+    liquidGoal: dailyLiquidGoal,
+    hasAnyEntry: entries.length > 0 || todayLiquid > 0 || caloriesBurned > 0,
+  });
 
   // Weight data
   const currentWeight = weightEntries.length > 0 ? weightEntries[weightEntries.length - 1]?.weight_kg : (profile?.weight_kg || 0);
@@ -213,6 +236,31 @@ export function Dashboard() {
 
         {/* Body analysis plan shortcut */}
         {isViewingToday && <BodyPlanShortcut />}
+
+        {/* Smart alerts (derived from active plan + today's data) */}
+        {isViewingToday && <SmartAlertsCard alerts={smartAlerts} />}
+
+        {/* Adherence score */}
+        {isViewingToday && <AdherenceCard score={adherence} />}
+
+        {/* AI daily menu CTA */}
+        {isViewingToday && (
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="w-full rounded-md border border-border bg-card p-3 text-left flex items-center gap-3 hover:bg-muted/30 transition-colors"
+          >
+            <div className="h-9 w-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+              <Flame className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">Cardápio do dia pela IA</p>
+              <p className="text-xs text-muted-foreground">
+                Refeições prontas que batem suas metas
+              </p>
+            </div>
+            <span className="text-xs text-primary font-medium">Gerar</span>
+          </button>
+        )}
 
         {/* Main Calorie Card */}
         <div className="card-feature">
@@ -606,6 +654,11 @@ export function Dashboard() {
         }}
       />
       
+      <DailyMenuDialog
+        open={menuOpen}
+        onOpenChange={setMenuOpen}
+        selectedDate={selectedDate}
+      />
       
       <BottomNav />
     </div>

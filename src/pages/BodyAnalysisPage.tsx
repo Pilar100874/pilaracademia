@@ -38,6 +38,7 @@ import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AIWorkoutDialog } from '@/components/AIWorkoutDialog';
+import { MacroAdjustmentPanel } from '@/components/MacroAdjustmentPanel';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { useNavigate } from 'react-router-dom';
 
@@ -528,6 +529,16 @@ function PlanView({
             })}
           </div>
         </div>
+      )}
+
+      {/* Auto-ajuste de macros — aparece quando peso real diverge da projeção (≥14 dias) */}
+      {isActive && (
+        <MacroAdjustmentPanel
+          plan={plan}
+          startIso={startIso || row.created_at}
+          daysSinceStart={daysSinceStart}
+          analysisId={row.id}
+        />
       )}
 
       <p className="text-[11px] text-muted-foreground italic px-1">

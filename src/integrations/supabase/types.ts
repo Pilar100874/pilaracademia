@@ -2635,6 +2635,39 @@ export type Database = {
         }
         Relationships: []
       }
+      progress_photos: {
+        Row: {
+          angle: string
+          created_at: string
+          id: string
+          image_url: string
+          notes: string | null
+          taken_at: string
+          user_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          angle: string
+          created_at?: string
+          id?: string
+          image_url: string
+          notes?: string | null
+          taken_at?: string
+          user_id: string
+          weight_kg?: number | null
+        }
+        Update: {
+          angle?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          notes?: string | null
+          taken_at?: string
+          user_id?: string
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
       recurring_schedule_weeks: {
         Row: {
           created_at: string
@@ -3069,6 +3102,48 @@ export type Database = {
           updated_at?: string
           user_id?: string
           video_config?: Json
+        }
+        Relationships: []
+      }
+      weekly_checkins: {
+        Row: {
+          adherence_score: number | null
+          created_at: string
+          highlights: Json | null
+          id: string
+          metrics: Json
+          period_end: string
+          period_start: string
+          recommendations: Json | null
+          summary: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          adherence_score?: number | null
+          created_at?: string
+          highlights?: Json | null
+          id?: string
+          metrics?: Json
+          period_end: string
+          period_start: string
+          recommendations?: Json | null
+          summary?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          adherence_score?: number | null
+          created_at?: string
+          highlights?: Json | null
+          id?: string
+          metrics?: Json
+          period_end?: string
+          period_start?: string
+          recommendations?: Json | null
+          summary?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
