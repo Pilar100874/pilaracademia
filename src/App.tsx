@@ -1,8 +1,9 @@
 import { useState, useCallback } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { AuthPage } from "@/pages/AuthPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { HistoryPage } from "@/pages/HistoryPage";
@@ -13,6 +14,7 @@ import { WorkoutsPage } from "@/pages/WorkoutsPage";
 import ExerciseLibraryPage from "@/pages/ExerciseLibraryPage";
 import BodyAnalysisPage from "@/pages/BodyAnalysisPage";
 import BioimpedancePage from "@/pages/BioimpedancePage";
+import OnboardingPage from "@/pages/OnboardingPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -23,8 +25,10 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
+  const { profile, isLoading: profileLoading } = useProfile();
+  const location = useLocation();
 
-  if (isLoading) {
+  if (isLoading || (user && profileLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center gradient-hero">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -34,6 +38,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect to onboarding if not completed yet (and not already there)
+  if (profile && profile.onboarding_completed !== true && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return <>{children}</>;
