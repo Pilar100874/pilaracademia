@@ -46,6 +46,9 @@ import { FileDown, Camera as CameraIcon } from 'lucide-react';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { useNavigate } from 'react-router-dom';
+import { LazyVideoPreview } from '@/components/LazyVideoPreview';
+import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
+import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 
 const goalLabels: Record<string, string> = {
   cutting: 'Cutting (perda de gordura)',
@@ -127,6 +130,14 @@ function PlanView({
   const e = plan.extracted || {};
   const { allExercises } = useExerciseLibrary();
   const exercisesById = new Map(allExercises.map((ex) => [ex.id, ex] as const));
+  const [previewVideo, setPreviewVideo] = useState<{
+    name: string;
+    videoType: string | null;
+    videoUrl: string | null;
+    startSeconds: number | null;
+    endSeconds: number | null;
+  } | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[] | null>(null);
 
   // Compute current week of the 12-week periodization (only for the active/most-recent plan)
   const startIso = row.measured_at || row.created_at;
@@ -346,53 +357,72 @@ function PlanView({
             <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
               Exercícios sugeridos da sua biblioteca
             </p>
-            <ul className="space-y-2">
+            <ul className="grid grid-cols-2 gap-3">
               {plan.recommended_exercises.map((r) => {
                 const ex = exercisesById.get(r.exercise_id);
-                const images = ex?.image_urls?.length ? ex.image_urls : [];
-                const thumb = images[0] ? getFreshMediaUrl(images[0]) : null;
-                const videoSrc =
-                  !thumb && ex?.video_type === 'upload' && ex?.video_url
-                    ? getFreshMediaUrl(ex.video_url)
-                    : null;
-                const ytId =
-                  !thumb && !videoSrc && ex?.video_type === 'youtube' && ex?.video_url
-                    ? (ex.video_url.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/)?.[1] ?? null)
-                    : null;
-                const ytThumb = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : null;
+                const firstImage = ex?.image_urls?.[0] ? getFreshMediaUrl(ex.image_urls[0]) : null;
+                const hasVideo = !!ex?.video_url && !!ex?.video_type;
+                const clickable = !!ex && (hasVideo || (ex.image_urls?.length ?? 0) > 0);
                 return (
-                  <li key={r.exercise_id} className="flex gap-2 items-start">
-                    <div className="w-12 h-12 rounded-md bg-muted overflow-hidden shrink-0 border border-border">
-                      {thumb ? (
-                        <img src={thumb} alt={r.name} loading="lazy" className="w-full h-full object-cover" />
-                      ) : ytThumb ? (
-                        <img src={ytThumb} alt={r.name} loading="lazy" className="w-full h-full object-cover" />
-                      ) : videoSrc ? (
-                        <video
-                          src={`${videoSrc}#t=0.5`}
-                          muted
-                          playsInline
-                          preload="metadata"
-                          className="w-full h-full object-cover pointer-events-none"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Dumbbell className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0 pt-0.5">
-                      <p className="text-sm font-medium leading-tight">
-                        {r.name}
-                        {(r.sets || r.reps) && (
-                          <span className="text-xs text-muted-foreground ml-1.5">
-                            {r.sets ? `${r.sets}×` : ''}
-                            {r.reps || ''}
-                          </span>
+                  <li key={r.exercise_id}>
+                    <button
+                      type="button"
+                      disabled={!clickable}
+                      onClick={() => {
+                        if (!ex) return;
+                        if (hasVideo) {
+                          setPreviewVideo({
+                            name: ex.name,
+                            videoType: ex.video_type ?? null,
+                            videoUrl: ex.video_url ?? null,
+                            startSeconds: ex.video_start_seconds ?? null,
+                            endSeconds: ex.video_end_seconds ?? null,
+                          });
+                        } else if (ex.image_urls?.length) {
+                          setPreviewImages(ex.image_urls);
+                        }
+                      }}
+                      className="w-full text-left rounded-xl border border-border overflow-hidden bg-card hover:border-primary/50 transition-colors disabled:opacity-100 disabled:cursor-default"
+                    >
+                      <div className="relative w-full aspect-video bg-muted/40 flex items-center justify-center">
+                        {firstImage ? (
+                          <img
+                            src={firstImage}
+                            alt={r.name}
+                            loading="lazy"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : hasVideo ? (
+                          <LazyVideoPreview
+                            videoType={ex!.video_type}
+                            videoUrl={ex!.video_url}
+                            startSeconds={ex!.video_start_seconds}
+                            endSeconds={ex!.video_end_seconds}
+                            className="w-full h-full"
+                            iconSize="sm"
+                            objectFit="contain"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Dumbbell className="h-6 w-6 text-muted-foreground" />
+                          </div>
                         )}
-                      </p>
-                      {r.reason && <p className="text-xs text-muted-foreground mt-0.5">{r.reason}</p>}
-                    </div>
+                      </div>
+                      <div className="p-2 space-y-0.5">
+                        <p className="text-sm font-medium leading-tight line-clamp-2">
+                          {r.name}
+                          {(r.sets || r.reps) && (
+                            <span className="text-xs text-muted-foreground ml-1.5">
+                              {r.sets ? `${r.sets}×` : ''}
+                              {r.reps || ''}
+                            </span>
+                          )}
+                        </p>
+                        {r.reason && (
+                          <p className="text-[11px] text-muted-foreground line-clamp-2">{r.reason}</p>
+                        )}
+                      </div>
+                    </button>
                   </li>
                 );
               })}
@@ -560,6 +590,21 @@ function PlanView({
         Este plano é gerado automaticamente a partir do seu relatório e tem caráter informativo.
         Não substitui orientação médica.
       </p>
+
+      <VideoPreviewDialog
+        open={!!previewVideo}
+        onOpenChange={(o) => !o && setPreviewVideo(null)}
+        name={previewVideo?.name}
+        videoType={previewVideo?.videoType}
+        videoUrl={previewVideo?.videoUrl}
+        startSeconds={previewVideo?.startSeconds}
+        endSeconds={previewVideo?.endSeconds}
+      />
+      <ImageZoomDialog
+        open={!!previewImages}
+        onOpenChange={(o) => !o && setPreviewImages(null)}
+        images={previewImages || []}
+      />
     </div>
   );
 }
