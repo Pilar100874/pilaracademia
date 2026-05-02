@@ -20,7 +20,7 @@ const HELP_BY_ROUTE: Record<string, HelpSection> = {
       { label: 'Selecione o dia', desc: 'Use o seletor de dias no topo para navegar entre datas. Os registros são salvos no dia que estiver ativo.' },
       { label: 'Adicione refeições', desc: 'Toque no botão flutuante (+) para registrar comida por foto, código de barras, busca ou texto livre.' },
       { label: 'Registre líquidos', desc: 'Use o atalho de líquidos para água, café, sucos e bebidas alcoólicas.' },
-      { label: 'Acompanhe metas', desc: 'Os cards mostram calorias, macros e hidratação do dia em tempo real.' },
+      { label: 'Acompanhe metas', desc: 'Os cards mostram calorias, nutrientes (proteína/carboidrato/gordura) e hidratação do dia em tempo real.' },
       { label: 'Atalhos rápidos', desc: 'Toque nos cards de métrica para abrir o registro correspondente (peso, glicemia, etc.).' },
     ],
     tips: ['Os totais do dia mudam conforme você troca a data no topo.'],
@@ -56,9 +56,9 @@ const HELP_BY_ROUTE: Record<string, HelpSection> = {
     title: 'Produtos',
     intro: 'Sua biblioteca pessoal de alimentos e produtos para reuso rápido.',
     steps: [
-      { label: 'Crie produtos', desc: 'Cadastre alimentos que você consome com frequência com macros pré-definidos.' },
+      { label: 'Crie produtos', desc: 'Cadastre alimentos que você consome com frequência com nutrientes pré-definidos.' },
       { label: 'Consuma rápido', desc: 'Toque em "Consumir" para adicionar ao dia atual sem digitar novamente.' },
-      { label: 'Edite valores', desc: 'Atualize macros, porção e foto a qualquer momento.' },
+      { label: 'Edite valores', desc: 'Atualize nutrientes, porção e foto a qualquer momento.' },
     ],
   },
   '/workouts': {
