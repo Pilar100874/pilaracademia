@@ -39,6 +39,10 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AIWorkoutDialog } from '@/components/AIWorkoutDialog';
 import { MacroAdjustmentPanel } from '@/components/MacroAdjustmentPanel';
+import { NarrativeBlock } from '@/components/NarrativeBlock';
+import { ProgressPhotosDialog } from '@/components/ProgressPhotosDialog';
+import { exportPlanToPdf } from '@/lib/exportPlanPdf';
+import { FileDown, Camera as CameraIcon } from 'lucide-react';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { useNavigate } from 'react-router-dom';
 
@@ -193,38 +197,9 @@ function PlanView({
         </div>
       )}
 
-      {/* Narrativa estruturada (Situação → Plano → Próximos passos) */}
+      {/* Narrativa estruturada (Situação → Plano → Próximos passos) com toggle "explicar simples" */}
       {plan.narrative ? (
-        <div className="space-y-3">
-          <div className="rounded-md border border-border bg-card p-4">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-              Situação atual
-            </p>
-            <p className="text-sm leading-relaxed">{plan.narrative.situation}</p>
-          </div>
-          <div className="rounded-md border border-border bg-card p-4">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-              Plano
-            </p>
-            <p className="text-sm leading-relaxed">{plan.narrative.plan}</p>
-          </div>
-          {plan.narrative.next_steps?.length > 0 && (
-            <div className="rounded-md border border-border bg-card p-4">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
-                <ListChecks className="h-3 w-3" />
-                Próximos passos
-              </p>
-              <ul className="space-y-1.5">
-                {plan.narrative.next_steps.map((s, i) => (
-                  <li key={i} className="text-sm flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>{s}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
+        <NarrativeBlock narrative={plan.narrative} />
       ) : (
         plan.summary && (
           <div className="rounded-md border border-border bg-muted/30 p-4">
@@ -744,6 +719,7 @@ export default function BodyAnalysisPage() {
   const [aiName, setAiName] = useState<string>('');
   const [aiCount, setAiCount] = useState<number>(8);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [photosOpen, setPhotosOpen] = useState(false);
 
   const selected = (list.data || []).find((r) => r.id === selectedId) || (list.data || [])[0];
 
@@ -1016,7 +992,7 @@ export default function BodyAnalysisPage() {
               <p className="text-xs text-muted-foreground">
                 Análise de {format(parseISO(selected.created_at), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </p>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-wrap">
                 {(list.data?.length ?? 0) >= 2 && (
                   <Button
                     variant="ghost"
@@ -1028,6 +1004,24 @@ export default function BodyAnalysisPage() {
                     Comparar
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPhotosOpen(true)}
+                  className="h-7 text-xs"
+                >
+                  <CameraIcon className="h-3.5 w-3.5 mr-1" />
+                  Fotos
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => exportPlanToPdf(selected.plan as BodyPlan, profile?.name)}
+                  className="h-7 text-xs"
+                >
+                  <FileDown className="h-3.5 w-3.5 mr-1" />
+                  PDF
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1084,6 +1078,8 @@ export default function BodyAnalysisPage() {
         initialName={aiName}
         initialCount={aiCount}
       />
+
+      <ProgressPhotosDialog open={photosOpen} onOpenChange={setPhotosOpen} />
 
       <BottomNav />
     </div>
