@@ -104,14 +104,18 @@ function PlanView({
   row,
   onApplyMacros,
   onGenerateWorkout,
+  onApplyWorkout,
   macrosApplied,
   isActive,
+  applyingWorkout,
 }: {
   row: BodyAnalysisRow;
   onApplyMacros: (plan: BodyPlan) => void;
   onGenerateWorkout: (plan: BodyPlan) => void;
+  onApplyWorkout: (plan: BodyPlan) => void;
   macrosApplied: boolean;
   isActive: boolean;
+  applyingWorkout: boolean;
 }) {
   const plan = row.plan as BodyPlan;
   const e = plan.extracted || {};
