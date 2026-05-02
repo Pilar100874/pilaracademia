@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
-import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown } from 'lucide-react';
+import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, Activity, Sparkles, ChevronRight } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { BottomNav } from '@/components/BottomNav';
 import { differenceInYears, parseISO } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 interface BMICategory {
   min: number;
@@ -119,6 +120,25 @@ export function HealthPage() {
       </header>
 
       <div className="px-4 py-4 space-y-4">
+        {/* Atalho para análise corporal por IA */}
+        <Link
+          to="/body-analysis"
+          className="flex items-center gap-3 rounded-md border border-primary/30 bg-primary/5 p-4 hover:bg-primary/10 transition"
+        >
+          <div className="h-10 w-10 rounded-md bg-primary/15 flex items-center justify-center shrink-0">
+            <Activity className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm flex items-center gap-1.5">
+              Análise corporal por IA <Sparkles className="h-3.5 w-3.5 text-primary" />
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Envie a foto do seu relatório de bioimpedância — gera plano completo, calorias, macros e treino.
+            </p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+        </Link>
+
         {/* Card principal do IMC */}
         <div className="card-feature">
           <div className="flex items-center gap-2 mb-4">
