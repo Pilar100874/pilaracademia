@@ -1,4 +1,4 @@
-import { ArrowLeft, Beef, Wheat, Droplets, Flame, BookOpen, Activity, Target } from 'lucide-react';
+import { ArrowLeft, Beef, Wheat, Droplets, Flame, BookOpen, Activity, Target, FlaskConical, Droplet, Scale, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { BottomNav } from '@/components/BottomNav';
