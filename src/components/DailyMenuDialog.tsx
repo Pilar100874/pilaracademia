@@ -8,6 +8,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
 import { useBloodExams } from '@/hooks/useBloodExams';
 import { buildBloodExamContext } from '@/lib/bloodExamContext';
+import { useFoodPreferences, buildFoodPreferencesContext } from '@/hooks/useFoodPreferences';
 import { toast } from 'sonner';
 
 interface MenuItem {
@@ -40,6 +41,7 @@ export function DailyMenuDialog({ open, onOpenChange, selectedDate }: Props) {
   const { getGoals } = useProfile();
   const planInfo = useCurrentBodyPlan();
   const { list: bloodExamsQ } = useBloodExams();
+  const { data: foodPrefs } = useFoodPreferences();
   const { addEntry } = useFoodEntries(selectedDate);
   const [loading, setLoading] = useState(false);
   const [menu, setMenu] = useState<Menu | null>(null);
@@ -67,6 +69,7 @@ export function DailyMenuDialog({ open, onOpenChange, selectedDate }: Props) {
           },
           preferences: { meal_count: 4, style: 'brasileiro' },
           blood_exam_context: buildBloodExamContext(bloodExamsQ.data) || undefined,
+          food_preferences_context: buildFoodPreferencesContext(foodPrefs) || undefined,
         },
       });
       if (error) throw error;
