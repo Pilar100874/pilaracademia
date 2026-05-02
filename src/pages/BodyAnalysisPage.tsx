@@ -124,6 +124,8 @@ function PlanView({
 }) {
   const plan = row.plan as BodyPlan;
   const e = plan.extracted || {};
+  const { allExercises } = useExerciseLibrary();
+  const exercisesById = new Map(allExercises.map((ex) => [ex.id, ex] as const));
 
   // Compute current week of the 12-week periodization (only for the active/most-recent plan)
   const startIso = row.measured_at || row.created_at;
