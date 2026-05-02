@@ -20,6 +20,7 @@ import { BloodMarkerTrendChart } from '@/components/BloodMarkerTrendChart';
 import { MedicalDisclaimer } from '@/components/MedicalDisclaimer';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/EmptyState';
 
 const STATUS_TONE: Record<BloodMarker['status'], string> = {
   low: 'border-amber-300 bg-amber-50 text-amber-800',
@@ -220,7 +221,7 @@ export function BloodExamsTab() {
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
           Envie seus exames de sangue. A IA extrai os marcadores e usa nos cardápios e ajustes de
-          macros.
+          nutrientes.
         </p>
         <Button size="sm" onClick={() => setUploadOpen(true)} className="shrink-0">
           <Plus className="h-3.5 w-3.5 mr-1" />
@@ -231,18 +232,12 @@ export function BloodExamsTab() {
       <MedicalDisclaimer />
 
       {exams.length === 0 ? (
-        <div className="rounded-md border border-dashed border-border bg-card p-8 text-center space-y-3">
-          <Activity className="h-8 w-8 text-muted-foreground mx-auto" />
-          <h2 className="text-base font-semibold">Nenhum exame ainda</h2>
-          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-            Envie o PDF do seu exame de sangue para enriquecer as recomendações nutricionais e os
-            ajustes de macros do app.
-          </p>
-          <Button onClick={() => setUploadOpen(true)}>
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            Enviar exame
-          </Button>
-        </div>
+        <EmptyState
+          icon={Activity}
+          title="Nenhum exame ainda"
+          description="Envie o PDF do seu exame de sangue para enriquecer as recomendações nutricionais e os ajustes de nutrientes do app."
+          action={{ label: 'Enviar exame', icon: Plus, onClick: () => setUploadOpen(true) }}
+        />
       ) : (
         <>
           {hasMultiple && (

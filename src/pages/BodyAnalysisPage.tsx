@@ -287,7 +287,7 @@ function PlanView({
 
         <div className="grid grid-cols-3 gap-2">
           <Stat label="Proteína" value={plan.macros?.protein_g} unit="g" />
-          <Stat label="Carbo" value={plan.macros?.carbs_g} unit="g" />
+          <Stat label="Carboidratos" value={plan.macros?.carbs_g} unit="g" />
           <Stat label="Gordura" value={plan.macros?.fat_g} unit="g" />
         </div>
 
@@ -311,7 +311,7 @@ function PlanView({
           )}
         </Button>
         <p className="text-[11px] text-muted-foreground">
-          Aplica calorias e macros deste plano como meta oficial no dashboard de alimentação.
+          Aplica calorias e nutrientes deste plano como meta oficial no dashboard de alimentação.
         </p>
       </div>
 

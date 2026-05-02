@@ -6,6 +6,7 @@ import { CalorieRing } from '@/components/CalorieRing';
 import { MacroSummary } from '@/components/MacroSummary';
 import { RecentFoodList } from '@/components/RecentFoodList';
 import { AddFoodMenu } from '@/components/AddFoodMenu';
+import { RepeatYesterdayDialog } from '@/components/RepeatYesterdayDialog';
 import { PhotoCapture } from '@/components/PhotoCapture';
 import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { ProductSearch } from '@/components/ProductSearch';
@@ -41,8 +42,9 @@ import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { StreakBadge } from '@/components/StreakBadge';
 
-type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | 'liquid' | 'typed' | 'voice' | null;
+type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | 'liquid' | 'typed' | 'voice' | 'repeat' | null;
 
 interface LiquidEntryData {
   id: string;
@@ -206,16 +208,19 @@ export function Dashboard() {
               Olá, {profile?.name?.split(' ')[0] || 'Usuário'} 👋
             </h1>
           </div>
-          {!isViewingToday && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-xs h-7"
-              onClick={() => setSelectedDate(new Date())}
-            >
-              Hoje
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <StreakBadge />
+            {!isViewingToday && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs h-7"
+                onClick={() => setSelectedDate(new Date())}
+              >
+                Hoje
+              </Button>
+            )}
+          </div>
         </div>
         
         {/* Day Selector */}
@@ -446,6 +451,13 @@ export function Dashboard() {
         onOpenSearch={() => openModal('search')} 
         onOpenLiquid={() => openModal('liquid')}
         onOpenTyped={() => openModal('typed')}
+        onOpenRepeat={() => openModal('repeat')}
+      />
+
+      <RepeatYesterdayDialog
+        open={activeModal === 'repeat'}
+        onOpenChange={(o) => (o ? openModal('repeat') : closeModal())}
+        selectedDate={selectedDate}
       />
       
       {activeModal === 'photo' && (

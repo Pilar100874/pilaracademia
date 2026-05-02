@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
 import { DataExportSection } from '@/components/DataExportSection';
 import { ShareSummaryDialog } from '@/components/ShareSummaryDialog';
+import { RemindersSection } from '@/components/RemindersSection';
 
 
 export function ProfilePage() {
@@ -322,6 +323,8 @@ export function ProfilePage() {
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
+
+        <RemindersSection />
 
         <DataExportSection />
 

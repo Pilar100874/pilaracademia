@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { BottomNav } from '@/components/BottomNav';
+import { EmptyState } from '@/components/EmptyState';
+import { CalendarDays } from 'lucide-react';
 
 interface DaySummary {
   date: Date;
@@ -163,9 +165,9 @@ export function HistoryPage() {
               )}
             </div>
 
-            {/* Macros */}
+            {/* Nutrientes */}
             <div className="card-compact">
-              <p className="text-sm font-semibold mb-3">Macros</p>
+              <p className="text-sm font-semibold mb-3">Nutrientes</p>
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="p-3 rounded-2xl bg-orange-500/10">
                   <p className="text-xl font-bold text-orange-500">{Math.round(summary.protein)}g</p>
@@ -173,7 +175,7 @@ export function HistoryPage() {
                 </div>
                 <div className="p-3 rounded-2xl bg-sky-500/10">
                   <p className="text-xl font-bold text-sky-500">{Math.round(summary.carbs)}g</p>
-                  <p className="text-xs text-muted-foreground">Carbos</p>
+                  <p className="text-xs text-muted-foreground">Carboidratos</p>
                 </div>
                 <div className="p-3 rounded-2xl bg-violet-500/10">
                   <p className="text-xl font-bold text-violet-500">{Math.round(summary.fat)}g</p>
@@ -263,9 +265,12 @@ export function HistoryPage() {
             )}
 
             {summary.foodEntries.length === 0 && summary.liquidEntries.length === 0 && summary.exerciseEntries.length === 0 && (
-              <div className="card-compact text-center py-8">
-                <p className="text-muted-foreground">Nenhum registro neste dia</p>
-              </div>
+              <EmptyState
+                icon={CalendarDays}
+                title="Nenhum registro neste dia"
+                description="Volte para o Hoje para adicionar refeições, líquidos ou treinos."
+                variant="compact"
+              />
             )}
           </>
         ) : null}

@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { startRemindersLoop } from "@/lib/reminders";
 
 const isPreviewOrIframe = (() => {
   if (typeof window === "undefined") return false;
@@ -51,3 +52,8 @@ if (typeof window !== "undefined" && "caches" in window) {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+// Start local reminders loop (only fires if user opted in & granted permission)
+if (typeof window !== "undefined") {
+  try { startRemindersLoop(); } catch { /* ignore */ }
+}

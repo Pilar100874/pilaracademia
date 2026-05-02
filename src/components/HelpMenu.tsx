@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { HelpCircle, X } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { HelpCircle, X, BookOpen, ChevronRight } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -20,7 +20,7 @@ const HELP_BY_ROUTE: Record<string, HelpSection> = {
       { label: 'Selecione o dia', desc: 'Use o seletor de dias no topo para navegar entre datas. Os registros são salvos no dia que estiver ativo.' },
       { label: 'Adicione refeições', desc: 'Toque no botão flutuante (+) para registrar comida por foto, código de barras, busca ou texto livre.' },
       { label: 'Registre líquidos', desc: 'Use o atalho de líquidos para água, café, sucos e bebidas alcoólicas.' },
-      { label: 'Acompanhe metas', desc: 'Os cards mostram calorias, macros e hidratação do dia em tempo real.' },
+      { label: 'Acompanhe metas', desc: 'Os cards mostram calorias, nutrientes (proteína/carboidrato/gordura) e hidratação do dia em tempo real.' },
       { label: 'Atalhos rápidos', desc: 'Toque nos cards de métrica para abrir o registro correspondente (peso, glicemia, etc.).' },
     ],
     tips: ['Os totais do dia mudam conforme você troca a data no topo.'],
@@ -56,9 +56,9 @@ const HELP_BY_ROUTE: Record<string, HelpSection> = {
     title: 'Produtos',
     intro: 'Sua biblioteca pessoal de alimentos e produtos para reuso rápido.',
     steps: [
-      { label: 'Crie produtos', desc: 'Cadastre alimentos que você consome com frequência com macros pré-definidos.' },
+      { label: 'Crie produtos', desc: 'Cadastre alimentos que você consome com frequência com nutrientes pré-definidos.' },
       { label: 'Consuma rápido', desc: 'Toque em "Consumir" para adicionar ao dia atual sem digitar novamente.' },
-      { label: 'Edite valores', desc: 'Atualize macros, porção e foto a qualquer momento.' },
+      { label: 'Edite valores', desc: 'Atualize nutrientes, porção e foto a qualquer momento.' },
     ],
   },
   '/workouts': {
@@ -111,6 +111,7 @@ type HelpMenuProps = {
 
 export function HelpMenu({ inline = false, className }: HelpMenuProps) {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const { pathname } = useLocation();
 
   // Hide on auth screen
@@ -203,6 +204,24 @@ export function HelpMenu({ inline = false, className }: HelpMenuProps) {
                 </ul>
               </div>
             )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                navigate('/ajuda');
+              }}
+              className="w-full flex items-center gap-3 rounded-md border border-border bg-card p-4 text-left hover:bg-muted/30 transition-colors"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
+                <BookOpen className="h-4 w-4 text-emerald-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">Guia completo de nutrientes</p>
+                <p className="text-xs text-muted-foreground">Entenda proteína, carboidrato, gordura, calorias e TDEE</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
           </div>
         </SheetContent>
       </Sheet>

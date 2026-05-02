@@ -77,7 +77,7 @@ export function WeightReminderPopup() {
         </div>
 
         <p className="text-sm text-muted-foreground mb-4">
-          Manter seu peso atualizado ajuda a calcular suas metas de calorias, macros e hidratação com precisão.
+          Manter seu peso atualizado ajuda a calcular suas metas de calorias, nutrientes e hidratação com precisão.
         </p>
 
         <div className="space-y-2 mb-4">

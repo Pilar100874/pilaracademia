@@ -18,6 +18,7 @@ import OnboardingPage from "@/pages/OnboardingPage";
 import InsightsPage from "@/pages/InsightsPage";
 import FoodPreferencesPage from "@/pages/FoodPreferencesPage";
 import SharedSummaryPage from "@/pages/SharedSummaryPage";
+import HelpPage from "@/pages/HelpPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -173,6 +174,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <FoodPreferencesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ajuda"
+        element={
+          <ProtectedRoute>
+            <HelpPage />
           </ProtectedRoute>
         }
       />
