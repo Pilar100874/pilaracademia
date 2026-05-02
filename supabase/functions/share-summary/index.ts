@@ -1,17 +1,25 @@
 // Edge function pública: retorna o resumo de um link de compartilhamento
-// validando o token e a expiração. Usa SERVICE_ROLE para ler dados do dono
-// do link, mas só retorna o que foi explicitamente compartilhado.
+// validando o token, expiração e aplicando rate limiting por IP.
 //
 // Endpoint: POST /functions/v1/share-summary
 // Body: { token: string }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
+
+// Limites de rate limiting
+const RATE_LIMIT_PER_IP_PER_MIN = 20; // mesmo IP: 20 req/min em qualquer link
+const RATE_LIMIT_PER_LINK_PER_IP_PER_HOUR = 60; // mesmo link + IP: 60/hora
+
+const BodySchema = z.object({
+  token: z.string().trim().min(10).max(64),
+});
 
 interface AggregatedDay {
   date: string;
@@ -24,6 +32,23 @@ interface AggregatedDay {
   hasWorkout: boolean;
 }
 
+async function hashIp(ip: string): Promise<string> {
+  const salt = Deno.env.get("SUPABASE_JWKS") ?? "share-summary-salt";
+  const data = new TextEncoder().encode(`${salt}:${ip}`);
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function getClientIp(req: Request): string {
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0].trim();
+  return req.headers.get("cf-connecting-ip")
+    ?? req.headers.get("x-real-ip")
+    ?? "unknown";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -31,16 +56,23 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const token = String(body?.token || "").trim();
-
-    if (!token || token.length < 10 || token.length > 64) {
-      return jsonResponse({ error: "Token inválido" }, 400);
+    const parsed = BodySchema.safeParse(body);
+    if (!parsed.success) {
+      return jsonResponse(
+        { error: "Token inválido", details: parsed.error.flatten().fieldErrors },
+        400,
+      );
     }
+    const { token } = parsed.data;
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
+
+    const ip = getClientIp(req);
+    const ipHash = await hashIp(ip);
+    const userAgent = (req.headers.get("user-agent") ?? "").slice(0, 500);
 
     // 1. Look up share record
     const { data: share, error: shareErr } = await admin
@@ -59,7 +91,45 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Link expirado" }, 410);
     }
 
-    // 2. Fetch user data (read-only)
+    // 2. Rate limit checks (por IP global e por link+IP)
+    const oneMinAgo = new Date(Date.now() - 60_000).toISOString();
+    const oneHourAgo = new Date(Date.now() - 60 * 60_000).toISOString();
+
+    const [globalCount, perLinkCount] = await Promise.all([
+      admin
+        .from("share_summary_views")
+        .select("id", { count: "exact", head: true })
+        .eq("ip_hash", ipHash)
+        .gte("viewed_at", oneMinAgo),
+      admin
+        .from("share_summary_views")
+        .select("id", { count: "exact", head: true })
+        .eq("ip_hash", ipHash)
+        .eq("share_id", share.id)
+        .gte("viewed_at", oneHourAgo),
+    ]);
+
+    if ((globalCount.count ?? 0) >= RATE_LIMIT_PER_IP_PER_MIN) {
+      return jsonResponse(
+        { error: "Muitas requisições. Aguarde um instante." },
+        429,
+      );
+    }
+    if ((perLinkCount.count ?? 0) >= RATE_LIMIT_PER_LINK_PER_IP_PER_HOUR) {
+      return jsonResponse(
+        { error: "Limite de visualizações deste link atingido." },
+        429,
+      );
+    }
+
+    // Registra a visualização ANTES de processar (proteção contra spam)
+    await admin.from("share_summary_views").insert({
+      share_id: share.id,
+      ip_hash: ipHash,
+      user_agent: userAgent,
+    });
+
+    // 3. Fetch user data (read-only)
     const userId = share.user_id;
     const periodDays = share.period_days || 30;
     const since = new Date();
@@ -111,7 +181,7 @@ Deno.serve(async (req) => {
         .limit(3),
     ]);
 
-    // 3. Aggregate daily totals
+    // 4. Aggregate daily totals
     const days = new Map<string, AggregatedDay>();
     for (let i = 0; i < periodDays; i++) {
       const d = new Date();
@@ -156,7 +226,7 @@ Deno.serve(async (req) => {
       a.date.localeCompare(b.date),
     );
 
-    // 4. Update view count
+    // 5. Update view count (cumulativo no share)
     await admin
       .from("share_summaries")
       .update({
@@ -165,7 +235,7 @@ Deno.serve(async (req) => {
       })
       .eq("id", share.id);
 
-    // 5. Build sanitized payload (do not leak emails, ids, raw text)
+    // 6. Build sanitized payload (do not leak emails, ids, raw text)
     const profile = profileRes.data || {};
     const lastBody = bodyAnalysesRes.data?.[0];
 

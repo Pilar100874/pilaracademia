@@ -1,8 +1,14 @@
 // Edge function: extrai marcadores de exame de sangue a partir do texto extraído do PDF
+import { z } from 'https://esm.sh/zod@3.23.8';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const BodySchema = z.object({
+  rawText: z.string().trim().min(20, 'Texto muito curto').max(200_000, 'Texto muito longo'),
+});
 
 const SYSTEM_PROMPT = `Você é um especialista em interpretar exames laboratoriais brasileiros para uso em um app de nutrição e treino.
 Receberá o texto bruto de um exame de sangue (em português). Extraia os marcadores principais e devolva via tool call.
@@ -22,12 +28,15 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { rawText } = await req.json();
-    if (!rawText || typeof rawText !== 'string') {
-      return new Response(JSON.stringify({ error: 'rawText é obrigatório' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const body = await req.json().catch(() => ({}));
+    const parsed = BodySchema.safeParse(body);
+    if (!parsed.success) {
+      return new Response(
+        JSON.stringify({ error: 'Entrada inválida', details: parsed.error.flatten().fieldErrors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
+    const { rawText } = parsed.data;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY não configurada');
