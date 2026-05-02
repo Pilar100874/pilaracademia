@@ -1013,8 +1013,10 @@ export default function BodyAnalysisPage() {
               row={selected}
               onApplyMacros={handleApplyMacros}
               onGenerateWorkout={handleGenerateWorkout}
+              onApplyWorkout={handleApplyWorkout}
               macrosApplied={macrosAppliedFromSelected}
               isActive={selected.id === (list.data || [])[0]?.id}
+              applyingWorkout={applyingWorkout}
             />
           </>
         ) : (
