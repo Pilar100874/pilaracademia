@@ -992,7 +992,7 @@ export default function BodyAnalysisPage() {
               <p className="text-xs text-muted-foreground">
                 Análise de {format(parseISO(selected.created_at), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </p>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-wrap">
                 {(list.data?.length ?? 0) >= 2 && (
                   <Button
                     variant="ghost"
@@ -1004,6 +1004,24 @@ export default function BodyAnalysisPage() {
                     Comparar
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPhotosOpen(true)}
+                  className="h-7 text-xs"
+                >
+                  <CameraIcon className="h-3.5 w-3.5 mr-1" />
+                  Fotos
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => exportPlanToPdf(selected.plan as BodyPlan, profile?.name)}
+                  className="h-7 text-xs"
+                >
+                  <FileDown className="h-3.5 w-3.5 mr-1" />
+                  PDF
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
