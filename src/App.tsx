@@ -150,6 +150,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/onboarding"
+        element={
+          <ProtectedRoute>
+            <OnboardingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/auth"
         element={
           <AuthRoute>
