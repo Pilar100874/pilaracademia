@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { useCurrentBodyPlan } from './useCurrentBodyPlan';
+import { useWeightHistory } from './useWeightHistory';
+import { differenceInDays, parseISO } from 'date-fns';
 import type { AdherenceBreakdown } from './useAdherenceScore';
 
 export interface SmartAlert {
