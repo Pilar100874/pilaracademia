@@ -174,6 +174,8 @@ export function useProfile() {
     updateProfile,
     getGoals,
     isProfileComplete,
+    applyNutritionOverride,
+    clearNutritionOverride,
     refetch: fetchProfile,
   };
 }
