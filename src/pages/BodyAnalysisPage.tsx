@@ -517,6 +517,184 @@ function PlanView({
   );
 }
 
+/** Side-by-side comparison of the two most recent analyses. */
+function CompareDialog({
+  rows,
+  onClose,
+}: {
+  rows: BodyAnalysisRow[];
+  onClose: () => void;
+}) {
+  const [a, setA] = useState<BodyAnalysisRow>(rows[1]);
+  const [b, setB] = useState<BodyAnalysisRow>(rows[0]);
+
+  const eA = a.extracted || {};
+  const eB = b.extracted || {};
+  const days = differenceInDays(parseISO(b.created_at), parseISO(a.created_at));
+
+  const metrics: Array<{
+    key: string;
+    label: string;
+    unit?: string;
+    invert?: boolean;
+    decimals?: number;
+  }> = [
+    { key: 'weight_kg', label: 'Peso', unit: 'kg', invert: true, decimals: 1 },
+    { key: 'body_fat_pct', label: '% Gordura', unit: '%', invert: true, decimals: 1 },
+    { key: 'fat_mass_kg', label: 'Massa gorda', unit: 'kg', invert: true, decimals: 1 },
+    { key: 'muscle_mass_kg', label: 'Músculo', unit: 'kg', decimals: 1 },
+    { key: 'visceral_fat', label: 'Visceral', invert: true, decimals: 0 },
+    { key: 'body_water_kg', label: 'Água', unit: 'kg', decimals: 1 },
+    { key: 'bmi', label: 'IMC', invert: true, decimals: 1 },
+    { key: 'bmr_kcal', label: 'TMB', unit: 'kcal', decimals: 0 },
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-background border border-border rounded-t-lg sm:rounded-lg w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sticky top-0 z-10 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3 flex items-center justify-between">
+          <div>
+            <h2 className="font-semibold flex items-center gap-2">
+              <GitCompareArrows className="h-4 w-4 text-primary" />
+              Comparar análises
+            </h2>
+            <p className="text-[11px] text-muted-foreground">
+              Diferença de {Math.abs(days)} dias
+            </p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {rows.length > 2 && (
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <label className="text-[10px] uppercase text-muted-foreground">Anterior</label>
+                <select
+                  className="w-full mt-1 rounded-md border border-border bg-card px-2 py-1.5 text-sm"
+                  value={a.id}
+                  onChange={(ev) => {
+                    const r = rows.find((x) => x.id === ev.target.value);
+                    if (r) setA(r);
+                  }}
+                >
+                  {rows.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {format(parseISO(r.created_at), "d MMM yy", { locale: ptBR })} · {r.profile_label || '—'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase text-muted-foreground">Atual</label>
+                <select
+                  className="w-full mt-1 rounded-md border border-border bg-card px-2 py-1.5 text-sm"
+                  value={b.id}
+                  onChange={(ev) => {
+                    const r = rows.find((x) => x.id === ev.target.value);
+                    if (r) setB(r);
+                  }}
+                >
+                  {rows.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {format(parseISO(r.created_at), "d MMM yy", { locale: ptBR })} · {r.profile_label || '—'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            {[a, b].map((r, idx) => (
+              <div key={r.id} className="rounded-md border border-border bg-card p-3 space-y-2">
+                <p className="text-[10px] uppercase text-muted-foreground">
+                  {idx === 0 ? 'Anterior' : 'Atual'}
+                </p>
+                <p className="text-sm font-semibold leading-tight">{r.profile_label || '—'}</p>
+                <p className="text-xs text-muted-foreground">
+                  {format(parseISO(r.created_at), "d 'de' MMM yyyy", { locale: ptBR })}
+                </p>
+                {r.image_url && (
+                  <img
+                    src={r.image_url}
+                    alt="Relatório"
+                    className="w-full aspect-[3/4] object-cover rounded-md border border-border"
+                    loading="lazy"
+                  />
+                )}
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold">{r.score ?? '—'}</span>
+                  <span className="text-[10px] text-muted-foreground">/100</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-md border border-border bg-card overflow-hidden">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 px-3 py-2 text-[10px] uppercase tracking-wide text-muted-foreground border-b border-border">
+              <span>Métrica</span>
+              <span className="text-right">Anterior</span>
+              <span className="text-right">Atual</span>
+              <span className="text-right">Δ</span>
+            </div>
+            {metrics.map((m) => {
+              const va = (eA as Record<string, number | null | undefined>)[m.key];
+              const vb = (eB as Record<string, number | null | undefined>)[m.key];
+              if (va == null && vb == null) return null;
+              const diff = va != null && vb != null ? vb - va : null;
+              const isZero = diff != null && Math.abs(diff) < 0.05;
+              const isPositive = diff != null && (m.invert ? diff < 0 : diff > 0);
+              const color =
+                diff == null || isZero
+                  ? 'text-muted-foreground'
+                  : isPositive
+                    ? 'text-emerald-600'
+                    : 'text-amber-600';
+              const dec = m.decimals ?? 1;
+              return (
+                <div
+                  key={m.key}
+                  className="grid grid-cols-[1fr_auto_auto_auto] gap-2 px-3 py-2 text-sm border-b border-border last:border-0"
+                >
+                  <span className="text-muted-foreground">
+                    {m.label}
+                    {m.unit && <span className="text-[10px] ml-1">({m.unit})</span>}
+                  </span>
+                  <span className="text-right font-mono">{va != null ? va.toFixed(dec) : '—'}</span>
+                  <span className="text-right font-mono font-semibold">
+                    {vb != null ? vb.toFixed(dec) : '—'}
+                  </span>
+                  <span className={cn('text-right font-mono font-semibold', color)}>
+                    {diff != null ? `${diff > 0 ? '+' : ''}${diff.toFixed(dec)}` : '—'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {b.plan?.delta?.commentary && (
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                Comentário da IA
+              </p>
+              {b.plan.delta.commentary}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BodyAnalysisPage() {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
