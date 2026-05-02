@@ -823,7 +823,41 @@ export default function BodyAnalysisPage() {
     }
   }
 
-  function handleGenerateWorkout(plan: BodyPlan) {
+  async function handleApplyWorkout(plan: BodyPlan) {
+    const recs = plan.recommended_exercises || [];
+    if (recs.length === 0) {
+      toast.error('Nenhum exercício sugerido neste plano');
+      return;
+    }
+    setApplyingWorkout(true);
+    try {
+      const ti = plan.training_intent;
+      const planName = `${plan.profile_label || 'Plano'} – ${ti?.focus || 'IA'}`.slice(0, 60);
+      // Default schedule: distribute frequency across the week starting Monday
+      const freq = Math.max(1, Math.min(7, ti?.frequency_per_week || 3));
+      const days = [1, 2, 3, 4, 5, 6, 0].slice(0, freq);
+      const created = await createPlan.mutateAsync({ name: planName, days_of_week: days });
+      // Persist exercises sequentially keeping order
+      for (let i = 0; i < recs.length; i++) {
+        const r = recs[i];
+        await addExercise.mutateAsync({
+          workout_plan_id: created.id,
+          name: r.name,
+          sets: r.sets ?? 3,
+          reps: r.reps ?? 10,
+          order_index: i,
+          exercise_library_id: r.exercise_id || null,
+        });
+      }
+      toast.success('Treino criado a partir do plano!');
+      navigate('/workouts');
+    } catch (err) {
+      console.error(err);
+      toast.error('Falha ao criar treino');
+    } finally {
+      setApplyingWorkout(false);
+    }
+  }
     const ti = plan.training_intent;
     const muscles = ti?.priority_muscle_groups?.length
       ? ` Foco nos grupos: ${ti.priority_muscle_groups.join(', ')}.`
