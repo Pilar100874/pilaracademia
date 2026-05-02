@@ -11,6 +11,7 @@ import { ProductsPage } from "@/pages/ProductsPage";
 import { HealthPage } from "@/pages/HealthPage";
 import { WorkoutsPage } from "@/pages/WorkoutsPage";
 import ExerciseLibraryPage from "@/pages/ExerciseLibraryPage";
+import BodyAnalysisPage from "@/pages/BodyAnalysisPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -111,6 +112,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ExerciseLibraryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/body-analysis"
+        element={
+          <ProtectedRoute>
+            <BodyAnalysisPage />
           </ProtectedRoute>
         }
       />
