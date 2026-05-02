@@ -57,6 +57,17 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/~oauth/],
         runtimeCaching: [
           {
+            // HTML navigations must always try network first so users get the
+            // latest deploy as soon as they reopen the PWA.
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-cache',
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 },
+            },
+          },
+          {
             // Storage assets (images/videos) must come from the network first;
             // stale media cache was causing blank exercise previews on mobile.
             urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
