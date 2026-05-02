@@ -8,6 +8,8 @@ import { differenceInDays, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import type { BodyPlan } from '@/types/bodyAnalysis';
 import { sanitizeFitnessText } from '@/lib/goalLabels';
+import { useBloodExams } from '@/hooks/useBloodExams';
+import { buildBloodExamContext } from '@/lib/bloodExamContext';
 
 interface Props {
   plan: BodyPlan;
@@ -93,6 +95,7 @@ export function MacroAdjustmentPanel({ plan, startIso, daysSinceStart, analysisI
           current_weight_kg: analysis.currentWeight,
           expected_weight_kg: Math.round(analysis.expectedAtDay * 10) / 10,
           days_elapsed: daysSinceStart,
+          blood_exam_context: buildBloodExamContext(bloodExamsQ.data) || undefined,
         },
       });
       if (error) throw error;
