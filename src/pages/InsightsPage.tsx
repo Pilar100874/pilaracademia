@@ -26,6 +26,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { BottomNav } from '@/components/BottomNav';
 import { EmptyState } from '@/components/EmptyState';
+import { BeforeAfterCard } from '@/components/BeforeAfterCard';
 import { useWeightHistory } from '@/hooks/useWeightHistory';
 import { useAdherenceHistory } from '@/hooks/useAdherenceHistory';
 import { useBloodExams } from '@/hooks/useBloodExams';
@@ -276,6 +277,9 @@ export default function InsightsPage() {
             ))}
           </div>
         )}
+
+        {/* Antes vs agora */}
+        <BeforeAfterCard />
 
         {/* Weight chart */}
         {weightSeries.length >= 2 && (
