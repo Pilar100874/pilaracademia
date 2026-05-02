@@ -41,6 +41,7 @@ import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { StreakBadge } from '@/components/StreakBadge';
 
 type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | 'liquid' | 'typed' | 'voice' | null;
 
@@ -206,16 +207,19 @@ export function Dashboard() {
               Olá, {profile?.name?.split(' ')[0] || 'Usuário'} 👋
             </h1>
           </div>
-          {!isViewingToday && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-xs h-7"
-              onClick={() => setSelectedDate(new Date())}
-            >
-              Hoje
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <StreakBadge />
+            {!isViewingToday && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs h-7"
+                onClick={() => setSelectedDate(new Date())}
+              >
+                Hoje
+              </Button>
+            )}
+          </div>
         </div>
         
         {/* Day Selector */}
