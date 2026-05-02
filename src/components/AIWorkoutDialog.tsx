@@ -24,6 +24,9 @@ import { supabase } from '@/integrations/supabase/client';
 interface AIWorkoutDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialPrompt?: string;
+  initialName?: string;
+  initialCount?: number;
 }
 
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -35,14 +38,14 @@ const EXAMPLES = [
   'Foco em abdômen inferior e definição',
 ];
 
-export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
+export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName, initialCount }: AIWorkoutDialogProps) {
   const { allExercises: exercises, globalExercises, exercises: personalOnly } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
 
-  const [name, setName] = useState('');
-  const [prompt, setPrompt] = useState('');
-  const [count, setCount] = useState('8');
+  const [name, setName] = useState(initialName || '');
+  const [prompt, setPrompt] = useState(initialPrompt || '');
+  const [count, setCount] = useState(initialCount ? String(initialCount) : '8');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [source, setSource] = useState<'all' | 'mine' | 'global'>('all');
@@ -52,6 +55,20 @@ export function AIWorkoutDialog({ open, onOpenChange }: AIWorkoutDialogProps) {
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const countRef = useRef<HTMLInputElement>(null);
   const { errorOf, setError, clearError, clearIf } = useFieldError();
+
+  // Re-seed when dialog opens with new initial values (e.g. opened from BodyAnalysisPage)
+  const lastSeed = useRef<string>('');
+  if (open) {
+    const seed = `${initialPrompt || ''}|${initialName || ''}|${initialCount || ''}`;
+    if (lastSeed.current !== seed) {
+      lastSeed.current = seed;
+      if (initialPrompt && prompt !== initialPrompt) setPrompt(initialPrompt);
+      if (initialName && name !== initialName) setName(initialName);
+      if (initialCount && count !== String(initialCount)) setCount(String(initialCount));
+    }
+  } else if (lastSeed.current) {
+    lastSeed.current = '';
+  }
 
   const reset = () => {
     setName('');
