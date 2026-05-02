@@ -25,6 +25,7 @@ import { BodyPlanShortcut } from '@/components/BodyPlanShortcut';
 import { AdherenceCard } from '@/components/AdherenceCard';
 import { SmartAlertsCard } from '@/components/SmartAlertsCard';
 import { DailyMenuDialog } from '@/components/DailyMenuDialog';
+import { WeeklyCheckinCard } from '@/components/WeeklyCheckinCard';
 import { useAdherenceScore } from '@/hooks/useAdherenceScore';
 import { useSmartAlerts } from '@/hooks/useSmartAlerts';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
@@ -261,6 +262,9 @@ export function Dashboard() {
             <span className="text-xs text-primary font-medium">Gerar</span>
           </button>
         )}
+
+        {/* Weekly check-in (Leva 2) */}
+        {isViewingToday && <WeeklyCheckinCard />}
 
         {/* Main Calorie Card */}
         <div className="card-feature">
