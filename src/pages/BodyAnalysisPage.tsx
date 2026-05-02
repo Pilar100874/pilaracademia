@@ -32,7 +32,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
 import { useProfile } from '@/hooks/useProfile';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
-import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
 import { fileToBase64 } from '@/lib/analyzeFood';
 import type { BodyAnalysisRow, BodyPlan } from '@/types/bodyAnalysis';
 import { format, parseISO, differenceInDays } from 'date-fns';
