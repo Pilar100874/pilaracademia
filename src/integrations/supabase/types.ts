@@ -2618,6 +2618,7 @@ export type Database = {
           name: string
           nutrition_override_set_at: string | null
           nutrition_override_source: string | null
+          onboarding_completed: boolean
           updated_at: string
           user_id: string
           weight_kg: number | null
@@ -2649,6 +2650,7 @@ export type Database = {
           name: string
           nutrition_override_set_at?: string | null
           nutrition_override_source?: string | null
+          onboarding_completed?: boolean
           updated_at?: string
           user_id: string
           weight_kg?: number | null
@@ -2680,6 +2682,7 @@ export type Database = {
           name?: string
           nutrition_override_set_at?: string | null
           nutrition_override_source?: string | null
+          onboarding_completed?: boolean
           updated_at?: string
           user_id?: string
           weight_kg?: number | null
