@@ -244,6 +244,9 @@ export function Dashboard() {
         {/* Adherence score */}
         {isViewingToday && <AdherenceCard score={adherence} />}
 
+        {/* Adherence trend (last 7 days) */}
+        {isViewingToday && <AdherenceHistoryChart days={7} />}
+
         {/* AI daily menu CTA */}
         {isViewingToday && (
           <button
