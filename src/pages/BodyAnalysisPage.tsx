@@ -590,6 +590,21 @@ function PlanView({
         Este plano é gerado automaticamente a partir do seu relatório e tem caráter informativo.
         Não substitui orientação médica.
       </p>
+
+      <VideoPreviewDialog
+        open={!!previewVideo}
+        onOpenChange={(o) => !o && setPreviewVideo(null)}
+        name={previewVideo?.name}
+        videoType={previewVideo?.videoType}
+        videoUrl={previewVideo?.videoUrl}
+        startSeconds={previewVideo?.startSeconds}
+        endSeconds={previewVideo?.endSeconds}
+      />
+      <ImageZoomDialog
+        open={!!previewImages}
+        onOpenChange={(o) => !o && setPreviewImages(null)}
+        images={previewImages || []}
+      />
     </div>
   );
 }
