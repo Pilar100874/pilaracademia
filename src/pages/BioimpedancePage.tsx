@@ -190,7 +190,7 @@ export default function BioimpedancePage() {
   }, [latest, e, ePrev]);
 
   return (
-    <PageMotion>
+    <>
       <div className="min-h-screen pb-24 bg-background">
         {/* Header */}
         <header className="px-5 pt-6 pb-4 border-b border-border bg-background">
@@ -229,7 +229,7 @@ export default function BioimpedancePage() {
               </div>
 
               {/* Metric cards */}
-              <StaggerList className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 {METRICS.map((m) => {
                   const value = e[m.key] as number | null | undefined;
                   if (value == null || !Number.isFinite(value as number)) return null;
@@ -243,7 +243,7 @@ export default function BioimpedancePage() {
                       ? v - (prevValue as number)
                       : null;
                   return (
-                    <StaggerItem key={m.key as string}>
+                    <div key={m.key as string}>
                       <div className="rounded-md border border-border bg-card p-4">
                         <div className="flex items-start gap-3">
                           <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -300,10 +300,10 @@ export default function BioimpedancePage() {
                           </div>
                         </div>
                       </div>
-                    </StaggerItem>
+                    </div>
                   );
                 })}
-              </StaggerList>
+              </div>
 
               {/* Footer info */}
               <div className="rounded-md border border-border bg-muted/40 p-4 flex gap-3">
@@ -327,7 +327,7 @@ export default function BioimpedancePage() {
 
         <BottomNav />
       </div>
-    </PageMotion>
+    </>
   );
 }
 
