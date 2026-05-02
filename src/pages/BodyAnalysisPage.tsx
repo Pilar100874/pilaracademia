@@ -43,6 +43,7 @@ import { NarrativeBlock } from '@/components/NarrativeBlock';
 import { ProgressPhotosDialog } from '@/components/ProgressPhotosDialog';
 import { exportPlanToPdf } from '@/lib/exportPlanPdf';
 import { FileDown, Camera as CameraIcon } from 'lucide-react';
+import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { useNavigate } from 'react-router-dom';
 
@@ -124,6 +125,8 @@ function PlanView({
 }) {
   const plan = row.plan as BodyPlan;
   const e = plan.extracted || {};
+  const { allExercises } = useExerciseLibrary();
+  const exercisesById = new Map(allExercises.map((ex) => [ex.id, ex] as const));
 
   // Compute current week of the 12-week periodization (only for the active/most-recent plan)
   const startIso = row.measured_at || row.created_at;
@@ -343,19 +346,37 @@ function PlanView({
             <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
               Exercícios sugeridos da sua biblioteca
             </p>
-            <ul className="space-y-1.5">
-              {plan.recommended_exercises.map((r) => (
-                <li key={r.exercise_id} className="text-sm">
-                  <span className="font-medium">{r.name}</span>
-                  {(r.sets || r.reps) && (
-                    <span className="text-xs text-muted-foreground ml-1.5">
-                      {r.sets ? `${r.sets}×` : ''}
-                      {r.reps || ''}
-                    </span>
-                  )}
-                  {r.reason && <p className="text-xs text-muted-foreground mt-0.5">{r.reason}</p>}
-                </li>
-              ))}
+            <ul className="space-y-2">
+              {plan.recommended_exercises.map((r) => {
+                const ex = exercisesById.get(r.exercise_id);
+                const images = ex?.image_urls?.length ? ex.image_urls : [];
+                const thumb = images[0] ? getFreshMediaUrl(images[0]) : null;
+                return (
+                  <li key={r.exercise_id} className="flex gap-2 items-start">
+                    <div className="w-12 h-12 rounded-md bg-muted overflow-hidden shrink-0 border border-border">
+                      {thumb ? (
+                        <img src={thumb} alt={r.name} loading="lazy" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Dumbbell className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 pt-0.5">
+                      <p className="text-sm font-medium leading-tight">
+                        {r.name}
+                        {(r.sets || r.reps) && (
+                          <span className="text-xs text-muted-foreground ml-1.5">
+                            {r.sets ? `${r.sets}×` : ''}
+                            {r.reps || ''}
+                          </span>
+                        )}
+                      </p>
+                      {r.reason && <p className="text-xs text-muted-foreground mt-0.5">{r.reason}</p>}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
