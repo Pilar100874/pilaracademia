@@ -432,6 +432,19 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           </div>
         </div>
 
+        {(() => {
+          const ctx = buildBloodExamHealthContext(bloodExamsQ.data);
+          if (!ctx) return null;
+          return (
+            <div className="px-5 py-2 border-t border-border/60 bg-muted/30">
+              <p className="text-[10px] leading-snug text-muted-foreground">
+                <span className="font-semibold text-foreground/80">Exame de sangue considerado:</span>{' '}
+                a IA vai ajustar intensidade e segurança com base nos seus marcadores.
+              </p>
+            </div>
+          );
+        })()}
+
         <DialogFooter className="gap-2 sm:gap-2 px-5 py-3 border-t border-border/60 bg-background">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={generating} className="flex-1 sm:flex-none">
             Cancelar
