@@ -20,9 +20,11 @@ import {
 import { BottomNav } from '@/components/BottomNav';
 
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 import { cn } from '@/lib/utils';
+import { BloodExamsTab } from '@/components/BloodExamsTab';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                            */
@@ -195,135 +197,146 @@ export default function BioimpedancePage() {
         {/* Header */}
         <header className="px-5 pt-6 pb-4 border-b border-border bg-background">
           <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            Bioimpedância
+            Corpo
           </p>
           <h1 className="page-title mt-1">Seu corpo em números</h1>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-            Tradução simples dos dados do seu exame, sem jargão técnico.
+            Bioimpedância e exames de sangue traduzidos sem jargão técnico.
           </p>
         </header>
 
-        <div className="px-5 py-5 space-y-5">
-          {!latest ? (
-            <EmptyState />
-          ) : (
-            <>
-              {/* Date + summary */}
-              <div className="rounded-md border border-border bg-card p-4">
-                <p className="text-xs text-muted-foreground">
-                  Última medição{' '}
-                  {measuredAt
-                    ? format(parseISO(measuredAt), "d 'de' MMMM, yyyy", { locale: ptBR })
-                    : '—'}
-                </p>
-                {summary && (
-                  <p className="text-sm leading-relaxed mt-2 text-foreground/90">{summary}</p>
-                )}
-                {previous && (
-                  <p className="text-[11px] text-muted-foreground mt-2">
-                    Comparação com a medição anterior de{' '}
-                    {format(parseISO(previous.measured_at || previous.created_at), 'd MMM', { locale: ptBR })}
-                    .
-                  </p>
-                )}
-              </div>
+        <Tabs defaultValue="bioimpedance" className="px-5 py-5">
+          <TabsList className="w-full grid grid-cols-2 mb-5">
+            <TabsTrigger value="bioimpedance">Bioimpedância</TabsTrigger>
+            <TabsTrigger value="blood">Exames de sangue</TabsTrigger>
+          </TabsList>
 
-              {/* Metric cards */}
-              <div className="grid grid-cols-1 gap-3">
-                {METRICS.map((m) => {
-                  const value = e[m.key] as number | null | undefined;
-                  if (value == null || !Number.isFinite(value as number)) return null;
-                  const v = value as number;
-                  const prevValue = ePrev[m.key] as number | null | undefined;
-                  const status = m.classify ? m.classify(v, e) : null;
-                  const Icon = m.icon;
-                  const formatted = m.format ? m.format(v) : fmtN(v, 1);
-                  const delta =
-                    prevValue != null && Number.isFinite(prevValue as number)
-                      ? v - (prevValue as number)
-                      : null;
-                  return (
-                    <div key={m.key as string}>
-                      <div className="rounded-md border border-border bg-card p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                              <p className="text-sm font-medium">{m.label}</p>
-                              {status && (
-                                <span
-                                  className={cn(
-                                    'text-[10px] px-2 py-0.5 rounded-full border',
-                                    toneClasses[status.tone],
-                                  )}
-                                >
-                                  {status.label}
-                                </span>
-                              )}
+          <TabsContent value="bioimpedance" className="space-y-5 mt-0">
+            {!latest ? (
+              <EmptyState />
+            ) : (
+              <>
+                {/* Date + summary */}
+                <div className="rounded-md border border-border bg-card p-4">
+                  <p className="text-xs text-muted-foreground">
+                    Última medição{' '}
+                    {measuredAt
+                      ? format(parseISO(measuredAt), "d 'de' MMMM, yyyy", { locale: ptBR })
+                      : '—'}
+                  </p>
+                  {summary && (
+                    <p className="text-sm leading-relaxed mt-2 text-foreground/90">{summary}</p>
+                  )}
+                  {previous && (
+                    <p className="text-[11px] text-muted-foreground mt-2">
+                      Comparação com a medição anterior de{' '}
+                      {format(parseISO(previous.measured_at || previous.created_at), 'd MMM', { locale: ptBR })}
+                      .
+                    </p>
+                  )}
+                </div>
+
+                {/* Metric cards */}
+                <div className="grid grid-cols-1 gap-3">
+                  {METRICS.map((m) => {
+                    const value = e[m.key] as number | null | undefined;
+                    if (value == null || !Number.isFinite(value as number)) return null;
+                    const v = value as number;
+                    const prevValue = ePrev[m.key] as number | null | undefined;
+                    const status = m.classify ? m.classify(v, e) : null;
+                    const Icon = m.icon;
+                    const formatted = m.format ? m.format(v) : fmtN(v, 1);
+                    const delta =
+                      prevValue != null && Number.isFinite(prevValue as number)
+                        ? v - (prevValue as number)
+                        : null;
+                    return (
+                      <div key={m.key as string}>
+                        <div className="rounded-md border border-border bg-card p-4">
+                          <div className="flex items-start gap-3">
+                            <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                              <Icon className="h-4 w-4" />
                             </div>
-                            <div className="flex items-baseline gap-2 mt-0.5">
-                              <span className="text-2xl font-semibold leading-none">
-                                {formatted}
-                              </span>
-                              {m.unit && (
-                                <span className="text-xs text-muted-foreground">{m.unit}</span>
-                              )}
-                              {delta != null && Math.abs(delta) >= 0.05 && (
-                                <span
-                                  className={cn(
-                                    'inline-flex items-center text-[11px] ml-1',
-                                    delta > 0 ? 'text-amber-700' : 'text-emerald-700',
-                                  )}
-                                >
-                                  {delta > 0 ? (
-                                    <TrendingUp className="h-3 w-3 mr-0.5" />
-                                  ) : (
-                                    <TrendingDown className="h-3 w-3 mr-0.5" />
-                                  )}
-                                  {delta > 0 ? '+' : ''}
-                                  {fmtN(delta, 1)}
-                                  {m.unit ? ` ${m.unit}` : ''}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                                <p className="text-sm font-medium">{m.label}</p>
+                                {status && (
+                                  <span
+                                    className={cn(
+                                      'text-[10px] px-2 py-0.5 rounded-full border',
+                                      toneClasses[status.tone],
+                                    )}
+                                  >
+                                    {status.label}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-baseline gap-2 mt-0.5">
+                                <span className="text-2xl font-semibold leading-none">
+                                  {formatted}
                                 </span>
-                              )}
-                              {delta != null && Math.abs(delta) < 0.05 && (
-                                <span className="inline-flex items-center text-[11px] ml-1 text-muted-foreground">
-                                  <Minus className="h-3 w-3 mr-0.5" />
-                                  estável
-                                </span>
-                              )}
+                                {m.unit && (
+                                  <span className="text-xs text-muted-foreground">{m.unit}</span>
+                                )}
+                                {delta != null && Math.abs(delta) >= 0.05 && (
+                                  <span
+                                    className={cn(
+                                      'inline-flex items-center text-[11px] ml-1',
+                                      delta > 0 ? 'text-amber-700' : 'text-emerald-700',
+                                    )}
+                                  >
+                                    {delta > 0 ? (
+                                      <TrendingUp className="h-3 w-3 mr-0.5" />
+                                    ) : (
+                                      <TrendingDown className="h-3 w-3 mr-0.5" />
+                                    )}
+                                    {delta > 0 ? '+' : ''}
+                                    {fmtN(delta, 1)}
+                                    {m.unit ? ` ${m.unit}` : ''}
+                                  </span>
+                                )}
+                                {delta != null && Math.abs(delta) < 0.05 && (
+                                  <span className="inline-flex items-center text-[11px] ml-1 text-muted-foreground">
+                                    <Minus className="h-3 w-3 mr-0.5" />
+                                    estável
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
+                                {m.explain}
+                              </p>
                             </div>
-                            <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
-                              {m.explain}
-                            </p>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
 
-              {/* Footer info */}
-              <div className="rounded-md border border-border bg-muted/40 p-4 flex gap-3">
-                <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                <p className="text-[12px] text-muted-foreground leading-relaxed">
-                  As classificações (saudável, atenção, elevado) são referências gerais e podem
-                  variar conforme idade, sexo e nível de atividade. Não substituem orientação
-                  médica.
-                </p>
-              </div>
+                {/* Footer info */}
+                <div className="rounded-md border border-border bg-muted/40 p-4 flex gap-3">
+                  <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                  <p className="text-[12px] text-muted-foreground leading-relaxed">
+                    As classificações (saudável, atenção, elevado) são referências gerais e podem
+                    variar conforme idade, sexo e nível de atividade. Não substituem orientação
+                    médica.
+                  </p>
+                </div>
 
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/body-analysis">
-                  Ver análise completa e plano
-                  <ArrowRight className="h-4 w-4 ml-1.5" />
-                </Link>
-              </Button>
-            </>
-          )}
-        </div>
+                <Button asChild variant="outline" className="w-full">
+                  <Link to="/body-analysis">
+                    Ver análise completa e plano
+                    <ArrowRight className="h-4 w-4 ml-1.5" />
+                  </Link>
+                </Button>
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value="blood" className="mt-0">
+            <BloodExamsTab />
+          </TabsContent>
+        </Tabs>
 
         <BottomNav />
       </div>

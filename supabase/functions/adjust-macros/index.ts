@@ -14,6 +14,7 @@ interface Body {
   current_weight_kg: number;
   expected_weight_kg: number;
   days_elapsed: number;
+  blood_exam_context?: string;
 }
 
 const SYSTEM = `Você é um nutricionista esportivo. Avalie a divergência entre peso esperado e peso real
@@ -47,7 +48,8 @@ Peso inicial: ${body.start_weight_kg} kg
 Peso esperado hoje (projeção): ${body.expected_weight_kg} kg
 Peso real hoje: ${body.current_weight_kg} kg
 Dias desde início do plano: ${body.days_elapsed}
-Divergência: ${(body.current_weight_kg - body.expected_weight_kg).toFixed(2)} kg`;
+Divergência: ${(body.current_weight_kg - body.expected_weight_kg).toFixed(2)} kg
+${body.blood_exam_context ? `\nEXAMES DE SANGUE RECENTES:\n${body.blood_exam_context}\nConsidere ao recomendar (ex.: HOMA-IR alto pede menos carbo simples; lipídios altos pedem menos gordura saturada).` : ''}`;
 
     const tool = {
       type: 'function',

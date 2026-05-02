@@ -53,6 +53,57 @@ export type Database = {
         }
         Relationships: []
       }
+      blood_exams: {
+        Row: {
+          alerts: Json
+          collected_at: string | null
+          created_at: string
+          diet_recommendations: Json
+          file_name: string | null
+          file_url: string | null
+          id: string
+          lab_name: string | null
+          markers: Json
+          raw_text: string | null
+          status: string
+          summary: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alerts?: Json
+          collected_at?: string | null
+          created_at?: string
+          diet_recommendations?: Json
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          lab_name?: string | null
+          markers?: Json
+          raw_text?: string | null
+          status?: string
+          summary?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alerts?: Json
+          collected_at?: string | null
+          created_at?: string
+          diet_recommendations?: Json
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          lab_name?: string | null
+          markers?: Json
+          raw_text?: string | null
+          status?: string
+          summary?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       body_analyses: {
         Row: {
           created_at: string
