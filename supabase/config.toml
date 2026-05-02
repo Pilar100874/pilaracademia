@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.analyze-exercise-video]
 verify_jwt = false
+
+[functions.analyze-bioimpedance]
+verify_jwt = false
