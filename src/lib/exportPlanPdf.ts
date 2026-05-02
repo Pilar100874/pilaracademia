@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import type { BodyPlan } from '@/types/bodyAnalysis';
+import { goalLabel, sanitizeFitnessText } from './goalLabels';
 
 export function exportPlanToPdf(plan: BodyPlan, profileName?: string) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
