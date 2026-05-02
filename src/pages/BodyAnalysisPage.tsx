@@ -920,7 +920,37 @@ export default function BodyAnalysisPage() {
           </Button>
         </div>
 
-        {/* Banner de override ativo */}
+        {/* Lembrete de re-análise mensal */}
+        {(() => {
+          const latest = (list.data || [])[0];
+          if (!latest) return null;
+          const refIso = latest.measured_at || latest.created_at;
+          const days = differenceInDays(new Date(), parseISO(refIso));
+          if (days < 30) return null;
+          return (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 flex items-start gap-2">
+              <RefreshCw className="h-4 w-4 text-amber-700 mt-0.5 shrink-0" />
+              <div className="flex-1 text-sm">
+                <p className="font-medium text-amber-900 dark:text-amber-100">
+                  Hora de uma nova análise
+                </p>
+                <p className="text-xs text-amber-800/80 dark:text-amber-100/70">
+                  Sua última bioimpedância foi há {days} dias. Reanalise para ajustar o plano à sua evolução.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={analyzing}
+                className="h-8 text-xs shrink-0"
+              >
+                Reanalisar
+              </Button>
+            </div>
+          );
+        })()}
+
         {profile?.nutrition_override_source?.startsWith('body_analysis') && (
           <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 flex items-start gap-2">
             <Utensils className="h-4 w-4 text-emerald-700 mt-0.5 shrink-0" />
