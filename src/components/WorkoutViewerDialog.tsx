@@ -55,11 +55,12 @@ export function WorkoutViewerDialog({
     setShowVideo(hasVideo);
   }, [currentExerciseIndex, open, hasVideo]);
 
-  // Reset indices when dialog opens
+  // Reset indices and energy mode when dialog opens
   useEffect(() => {
     if (open) {
       setCurrentExerciseIndex(0);
       setCurrentPhotoIndex(0);
+      setEnergyMode(null);
     }
   }, [open]);
 
