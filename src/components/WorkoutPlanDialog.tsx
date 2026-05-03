@@ -15,10 +15,12 @@ import { ExerciseListItem } from '@/components/ExerciseListItem';
 import { SelectExerciseDialog } from '@/components/SelectExerciseDialog';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { EditWorkoutExerciseDialog } from '@/components/EditWorkoutExerciseDialog';
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2, Save, Mic } from 'lucide-react';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { FieldError } from '@/components/FieldError';
 import { useFieldError, validateRequired } from '@/lib/formValidation';
+import { Switch } from '@/components/ui/switch';
+import { useVoiceCommandsEnabled } from '@/lib/voiceCommands';
 
 const DAYS_OF_WEEK = [
   { label: 'Dom', value: 0 },
