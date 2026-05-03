@@ -21,6 +21,7 @@ interface RequestBody {
   count: number;
   library: LibraryItem[];
   health_context?: string;
+  body_plan_context?: string;
 }
 
 Deno.serve(async (req) => {
