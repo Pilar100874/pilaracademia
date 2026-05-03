@@ -119,7 +119,7 @@ export function WorkoutViewerDialog({
     }
   };
 
-  const [voiceEnabled] = useVoiceCommandsEnabled();
+  const [voiceEnabled, setVoiceEnabled] = useVoiceCommandsEnabled();
   const [voiceActive, setVoiceActive] = useState(false);
 
   // Auto-activate voice when dialog opens (if enabled and past energy mode selector)
@@ -219,6 +219,30 @@ export function WorkoutViewerDialog({
                 </div>
               </button>
             </div>
+
+            {/* Toggle de comandos por voz */}
+            <label
+              htmlFor="voice-toggle"
+              className="flex items-center gap-3 rounded-md border border-border bg-card hover:bg-accent/50 transition-colors p-3 cursor-pointer"
+            >
+              <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                {voiceEnabled ? <Mic className="h-4 w-4" strokeWidth={2.2} /> : <MicOff className="h-4 w-4" strokeWidth={2.2} />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">Comandos por voz</p>
+                <p className="text-xs text-muted-foreground">
+                  Diga "próximo", "voltar" ou "finalizar".
+                </p>
+              </div>
+              <input
+                id="voice-toggle"
+                type="checkbox"
+                role="switch"
+                checked={voiceEnabled}
+                onChange={(e) => setVoiceEnabled(e.target.checked)}
+                className="h-5 w-9 appearance-none rounded-full bg-muted border border-border relative cursor-pointer transition-colors checked:bg-primary before:content-[''] before:absolute before:top-0.5 before:left-0.5 before:h-3.5 before:w-3.5 before:rounded-full before:bg-background before:transition-transform checked:before:translate-x-4"
+              />
+            </label>
           </div>
         </DialogContent>
       </Dialog>
