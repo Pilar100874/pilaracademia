@@ -64,8 +64,17 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
     }
 
     // Gate: only run if the master admin enabled this feature for the user.
-    // permission gate
+    // Master admins bypass the gate.
     const checkPermission = async () => {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'master_admin')
+        .is('clinic_id', null)
+        .limit(1);
+      if (Array.isArray(roleData) && roleData.length > 0) return true;
+
       const { data, error } = await supabase
         .from('profiles')
         .select('movement_analysis_enabled')
