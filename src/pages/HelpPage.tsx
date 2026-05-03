@@ -197,6 +197,39 @@ export default function HelpPage() {
           </p>
         </section>
 
+        {/* Cardápio Semanal */}
+        <section className="rounded-md border border-border bg-card p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <Utensils className="h-4 w-4 text-amber-600" />
+            <h3 className="font-semibold text-sm">Cardápio semanal com IA</h3>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Na aba <strong className="text-foreground">Cardápio</strong>, a IA monta 7 dias de refeições
+            respeitando suas metas, restrições alimentares e exames de sangue recentes — e gera uma
+            <strong className="text-foreground"> lista de compras</strong> automática agrupada por categoria.
+          </p>
+        </section>
+
+        {/* Treinos */}
+        <section className="rounded-md border border-border bg-card p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <Dumbbell className="h-4 w-4 text-foreground" />
+            <h3 className="font-semibold text-sm">Treinos: modo de hoje, alongamento e voz</h3>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Crie treinos manualmente ou com IA. Ao iniciar, escolha o
+            <strong className="text-foreground"> Modo de hoje</strong> (Normal, Cansado, Muito cansado) e o player
+            ajusta séries e cargas. Cada treino pode ter um <strong className="text-foreground">alongamento final</strong> opcional.
+          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed flex items-start gap-1.5">
+            <Mic className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <span>
+              <strong className="text-foreground">Comandos por voz</strong> opt-in: ative o microfone no player para usar
+              "próximo", "voltar" e "finalizar" sem tocar a tela. Desliga sozinho ao sair do treino.
+            </span>
+          </p>
+        </section>
+
         {/* Privacidade */}
         <section className="rounded-md border border-border bg-muted/30 p-4 space-y-2">
           <div className="flex items-center gap-2">
