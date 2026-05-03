@@ -487,11 +487,14 @@ export function WorkoutViewerDialog({
             {/* Next */}
             <button
               onClick={handleNextExercise}
-              disabled={isLastExercise}
-              aria-label="Próximo"
-              className="group h-12 w-12 shrink-0 rounded-full bg-primary/90 flex items-center justify-center text-primary-foreground transition-all hover:bg-primary active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-primary/90"
+              aria-label={isLastExercise ? 'Finalizar' : 'Próximo'}
+              className="group h-12 w-12 shrink-0 rounded-full bg-primary/90 flex items-center justify-center text-primary-foreground transition-all hover:bg-primary active:scale-95"
             >
-              <ChevronRight className="h-7 w-7 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
+              {isLastExercise ? (
+                <CheckCircle2 className="h-7 w-7" strokeWidth={2.5} />
+              ) : (
+                <ChevronRight className="h-7 w-7 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
+              )}
             </button>
           </div>
         </div>
