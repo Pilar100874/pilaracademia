@@ -50,6 +50,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [prompt, setPrompt] = useState(initialPrompt || '');
   const [count, setCount] = useState(initialCount ? String(initialCount) : '8');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [allowRepeat, setAllowRepeat] = useState(true);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [source, setSource] = useState<'all' | 'mine' | 'global'>('all');
   const [generating, setGenerating] = useState(false);
