@@ -9,6 +9,9 @@ import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { EditWorkoutExerciseDialog } from '@/components/EditWorkoutExerciseDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { Plus, Leaf } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useCooldownPromptEnabled } from '@/lib/cooldownPreference';
 
 interface CooldownPlanDialogProps {
   open: boolean;
