@@ -21,6 +21,7 @@ export interface WorkoutExercise {
   body_analysis?: Record<string, number> | null;
   aesthetic_analysis?: Record<string, number> | null;
   mobility_analysis?: Record<string, number> | null;
+  is_cooldown?: boolean;
 }
 
 export interface WorkoutPlan {
@@ -28,6 +29,7 @@ export interface WorkoutPlan {
   user_id: string;
   name: string;
   days_of_week: number[];
+  cooldown_enabled?: boolean;
   created_at: string;
   updated_at: string;
   exercises?: WorkoutExercise[];
