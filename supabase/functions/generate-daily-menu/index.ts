@@ -31,7 +31,8 @@ interface Body {
 
 const SYSTEM = `Você é um nutricionista que monta cardápios diários práticos para brasileiros.
 Sempre devolva JSON via tool call. Use ingredientes simples e baratos. Os totais do dia DEVEM ficar dentro de ±5% das metas.
-Quantidades sempre em gramas (g) ou ml. Nada de "a gosto" — números reais.`;
+Quantidades sempre em gramas (g) ou ml. Nada de "a gosto" — números reais.
+IMPORTANTE: TODOS os textos devem estar em português do Brasil com acentuação correta (ç, ã, õ, á, é, í, ó, ú, â, ê, ô). Nunca remova diacríticos. Exemplos corretos: "Café da manhã", "Almoço", "Pão", "Refeição", "Maçã", "Não", "Após".`;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
