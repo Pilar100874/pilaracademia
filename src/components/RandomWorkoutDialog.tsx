@@ -38,6 +38,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   const [aestheticKeys, setAestheticKeys] = useState<Set<AestheticAnalysisKey>>(new Set());
   const [mobilityKeys, setMobilityKeys] = useState<Set<MobilityAnalysisKey>>(new Set());
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [allowRepeat, setAllowRepeat] = useState(true);
   const [generating, setGenerating] = useState(false);
 
   const nameRef = useRef<HTMLInputElement>(null);
@@ -112,6 +113,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     setAestheticKeys(new Set());
     setMobilityKeys(new Set());
     setSelectedDays([]);
+    setAllowRepeat(true);
   };
 
   const handleGenerate = async () => {
@@ -133,50 +135,78 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     clearError();
     if (!pool.length) return toast.error('Nenhum exercício corresponde à classificação selecionada. Aguarde a análise dos vídeos terminar ou diminua o % mínimo.');
 
-    // Weighted random by score (higher % = mais provável de ser sorteado)
-    const remaining = pool.map((ex) => ({ ex, score: matchScore(ex) }));
-    const picked: typeof exercises = [];
-    const target = Math.min(n, remaining.length);
-    for (let i = 0; i < target; i++) {
-      const total = remaining.reduce((s, r) => s + r.score, 0);
-      if (total <= 0) break;
-      let r = Math.random() * total;
-      let idx = 0;
-      for (let j = 0; j < remaining.length; j++) {
-        r -= remaining[j].score;
-        if (r <= 0) {
-          idx = j;
-          break;
+    const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const dayBuckets: { days: number[]; suffix: string }[] =
+      selectedDays.length > 1
+        ? [...selectedDays].sort().map((d) => ({ days: [d], suffix: ` (${dayLabels[d]})` }))
+        : [{ days: selectedDays, suffix: '' }];
+
+    // Weighted-random sampling helper. excludeIds are skipped from pool.
+    const samplePicks = (excludeIds: Set<string>): typeof exercises => {
+      const remaining = pool
+        .filter((ex) => !excludeIds.has(ex.id))
+        .map((ex) => ({ ex, score: matchScore(ex) }));
+      const out: typeof exercises = [];
+      const target = Math.min(n, remaining.length);
+      for (let i = 0; i < target; i++) {
+        const total = remaining.reduce((s, r) => s + r.score, 0);
+        if (total <= 0) break;
+        let r = Math.random() * total;
+        let idx = 0;
+        for (let j = 0; j < remaining.length; j++) {
+          r -= remaining[j].score;
+          if (r <= 0) { idx = j; break; }
         }
+        out.push(remaining[idx].ex);
+        remaining.splice(idx, 1);
       }
-      picked.push(remaining[idx].ex);
-      remaining.splice(idx, 1);
-    }
+      return out;
+    };
 
     setGenerating(true);
     try {
-      const plan = await createPlan.mutateAsync({
-        name: name.trim(),
-        days_of_week: selectedDays,
-      });
-      await Promise.all(
-        picked.map((ex, idx) =>
-          addExercise.mutateAsync({
-            workout_plan_id: plan.id,
-            name: ex.name,
-            image_urls: ex.image_urls || [],
-            sets: ex.default_sets || 3,
-            reps: ex.default_reps || 12,
-            order_index: idx,
-            video_type: ex.video_type,
-            video_url: ex.video_url,
-            video_start_seconds: ex.video_start_seconds,
-            video_end_seconds: ex.video_end_seconds,
-            exercise_library_id: ex.id,
-          })
-        )
+      const usedIds = new Set<string>();
+      let totalCreated = 0;
+
+      for (const bucket of dayBuckets) {
+        const picked = samplePicks(allowRepeat ? new Set() : usedIds);
+        if (!picked.length) {
+          toast.message(`Sem exercícios restantes para ${bucket.suffix.trim() || 'os dias seguintes'}`, {
+            description: 'Ative "Repetir exercícios entre os dias" ou amplie a classificação.',
+          });
+          break;
+        }
+
+        const plan = await createPlan.mutateAsync({
+          name: (name.trim() + bucket.suffix).slice(0, 80),
+          days_of_week: bucket.days,
+        });
+        await Promise.all(
+          picked.map((ex, idx) =>
+            addExercise.mutateAsync({
+              workout_plan_id: plan.id,
+              name: ex.name,
+              image_urls: ex.image_urls || [],
+              sets: ex.default_sets || 3,
+              reps: ex.default_reps || 12,
+              order_index: idx,
+              video_type: ex.video_type,
+              video_url: ex.video_url,
+              video_start_seconds: ex.video_start_seconds,
+              video_end_seconds: ex.video_end_seconds,
+              exercise_library_id: ex.id,
+            })
+          )
+        );
+        if (!allowRepeat) picked.forEach((ex) => usedIds.add(ex.id));
+        totalCreated++;
+      }
+
+      toast.success(
+        totalCreated > 1
+          ? `${totalCreated} treinos gerados (um por dia)!`
+          : 'Treino gerado!'
       );
-      toast.success(`Treino gerado com ${picked.length} exercício(s)!`);
       reset();
       onOpenChange(false);
     } catch (e) {
@@ -355,6 +385,20 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                   </button>
                 ))}
               </div>
+              {selectedDays.length > 1 && (
+                <div className="space-y-1.5 pt-1">
+                  <p className="text-[10px] text-muted-foreground leading-snug">
+                    Será criado <strong>um treino para cada dia</strong> selecionado.
+                  </p>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={allowRepeat}
+                      onCheckedChange={(v) => setAllowRepeat(v === true)}
+                    />
+                    <span className="text-xs">Permitir repetir exercícios entre os dias</span>
+                  </label>
+                </div>
+              )}
             </div>
           </div>
         </div>

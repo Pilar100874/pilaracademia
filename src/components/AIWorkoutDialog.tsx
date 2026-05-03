@@ -50,6 +50,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [prompt, setPrompt] = useState(initialPrompt || '');
   const [count, setCount] = useState(initialCount ? String(initialCount) : '8');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [allowRepeat, setAllowRepeat] = useState(true);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [source, setSource] = useState<'all' | 'mine' | 'global'>('all');
   const [generating, setGenerating] = useState(false);
@@ -78,6 +79,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setPrompt('');
     setCount('8');
     setSelectedDays([]);
+    setAllowRepeat(true);
     setSelectedCategoryIds([]);
     setSource('all');
   };
@@ -153,68 +155,94 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
     setGenerating(true);
     try {
-      // Compacta a biblioteca para enviar à IA.
-      const library = filteredExercises.map((ex) => ({
-        id: ex.id,
-        name: ex.name,
-        body: ex.body_analysis ?? null,
-        aesthetic: ex.aesthetic_analysis ?? null,
-        mobility: ex.mobility_analysis ?? null,
-      }));
-
       const healthContext = buildBloodExamHealthContext(bloodExamsQ.data) || undefined;
-
-      const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
-        body: { prompt: prompt.trim(), count: n, library, health_context: healthContext },
-      });
-
-      if (error) {
-        const msg = (data as { error?: string } | null)?.error || error.message;
-        toast.error(msg || 'Erro ao gerar treino com IA');
-        return;
-      }
-
-      const ids: string[] = Array.isArray(data?.exercise_ids) ? data.exercise_ids : [];
-      if (!ids.length) {
-        toast.error('A IA não conseguiu sugerir exercícios.');
-        return;
-      }
-
       const byId = new Map(exercises.map((ex) => [ex.id, ex] as const));
-      const picked = ids.map((id) => byId.get(id)).filter(Boolean) as typeof exercises;
 
-      if (!picked.length) {
-        toast.error('Os exercícios sugeridos não foram encontrados na biblioteca.');
+      // If multiple days selected -> one plan per day. Otherwise single plan.
+      const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      const dayBuckets: { days: number[]; suffix: string }[] =
+        selectedDays.length > 1
+          ? [...selectedDays].sort().map((d) => ({ days: [d], suffix: ` (${dayLabels[d]})` }))
+          : [{ days: selectedDays, suffix: '' }];
+
+      const usedIds = new Set<string>();
+      let totalCreated = 0;
+      let lastRationale: string | undefined;
+
+      for (const bucket of dayBuckets) {
+        const available = allowRepeat
+          ? filteredExercises
+          : filteredExercises.filter((ex) => !usedIds.has(ex.id));
+
+        if (!available.length) {
+          toast.message(`Sem exercícios restantes para ${bucket.suffix.trim() || 'os dias seguintes'}`, {
+            description: 'Ative "Repetir exercícios entre os dias" ou adicione mais à biblioteca.',
+          });
+          break;
+        }
+
+        const library = available.map((ex) => ({
+          id: ex.id,
+          name: ex.name,
+          body: ex.body_analysis ?? null,
+          aesthetic: ex.aesthetic_analysis ?? null,
+          mobility: ex.mobility_analysis ?? null,
+        }));
+
+        const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
+          body: { prompt: prompt.trim(), count: n, library, health_context: healthContext },
+        });
+
+        if (error) {
+          const msg = (data as { error?: string } | null)?.error || error.message;
+          toast.error(msg || 'Erro ao gerar treino com IA');
+          continue;
+        }
+
+        const ids: string[] = Array.isArray(data?.exercise_ids) ? data.exercise_ids : [];
+        const picked = ids.map((id) => byId.get(id)).filter(Boolean) as typeof exercises;
+        if (!picked.length) continue;
+
+        const plan = await createPlan.mutateAsync({
+          name: (name.trim() + bucket.suffix).slice(0, 80),
+          days_of_week: bucket.days,
+        });
+
+        await Promise.all(
+          picked.map((ex, idx) =>
+            addExercise.mutateAsync({
+              workout_plan_id: plan.id,
+              name: ex.name,
+              image_urls: ex.image_urls || [],
+              sets: ex.default_sets || 3,
+              reps: ex.default_reps || 12,
+              order_index: idx,
+              video_type: ex.video_type,
+              video_url: ex.video_url,
+              video_start_seconds: ex.video_start_seconds,
+              video_end_seconds: ex.video_end_seconds,
+              exercise_library_id: ex.id,
+            })
+          )
+        );
+
+        if (!allowRepeat) picked.forEach((ex) => usedIds.add(ex.id));
+        totalCreated++;
+        if (data?.rationale) lastRationale = data.rationale;
+      }
+
+      if (totalCreated === 0) {
+        toast.error('Não foi possível gerar nenhum treino.');
         return;
       }
 
-      const plan = await createPlan.mutateAsync({
-        name: name.trim(),
-        days_of_week: selectedDays,
-      });
-
-      await Promise.all(
-        picked.map((ex, idx) =>
-          addExercise.mutateAsync({
-            workout_plan_id: plan.id,
-            name: ex.name,
-            image_urls: ex.image_urls || [],
-            sets: ex.default_sets || 3,
-            reps: ex.default_reps || 12,
-            order_index: idx,
-            video_type: ex.video_type,
-            video_url: ex.video_url,
-            video_start_seconds: ex.video_start_seconds,
-            video_end_seconds: ex.video_end_seconds,
-            exercise_library_id: ex.id,
-          })
-        )
+      toast.success(
+        totalCreated > 1
+          ? `${totalCreated} treinos criados (um por dia)!`
+          : 'Treino criado!'
       );
-
-      toast.success(`Treino criado com ${picked.length} exercício(s)!`);
-      if (data?.rationale) {
-        // Mostra a justificativa rapidamente como feedback adicional.
-        setTimeout(() => toast.message('Sugestão da IA', { description: data.rationale }), 100);
+      if (lastRationale) {
+        setTimeout(() => toast.message('Sugestão da IA', { description: lastRationale }), 100);
       }
       reset();
       onOpenChange(false);
@@ -428,6 +456,22 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                   </button>
                 ))}
               </div>
+              {selectedDays.length > 1 && (
+                <div className="space-y-1.5 pt-1">
+                  <p className="text-[10px] text-muted-foreground leading-snug">
+                    Será criado <strong>um treino para cada dia</strong> selecionado.
+                  </p>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={allowRepeat}
+                      onChange={(e) => setAllowRepeat(e.target.checked)}
+                      className="h-4 w-4 rounded border-input accent-primary"
+                    />
+                    <span className="text-xs">Permitir repetir exercícios entre os dias</span>
+                  </label>
+                </div>
+              )}
             </div>
           </div>
         </div>
