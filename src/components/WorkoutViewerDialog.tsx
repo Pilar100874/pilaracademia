@@ -8,6 +8,7 @@ import { AnalysisOverlay } from '@/components/AnalysisOverlay';
 import { WorkoutFormCoach } from '@/components/WorkoutFormCoach';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { applyEnergyMode, ENERGY_MODE_LABEL, type EnergyMode } from '@/lib/workoutEnergyMode';
+import { useCooldownPromptEnabled } from '@/lib/cooldownPreference';
 
 interface WorkoutViewerDialogProps {
   open: boolean;
