@@ -174,19 +174,35 @@ export default function WeeklyMenuPage() {
                         <CardTitle className="text-base">{d.day}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2">
-                        {d.meals.map((meal, i) => (
-                          <div key={i} className="border-l-2 border-primary/40 pl-3">
-                            <p className="font-medium text-sm">
-                              {meal.name}
-                              {meal.approx_calories ? (
-                                <span className="text-xs text-muted-foreground ml-2">
-                                  ~{meal.approx_calories} kcal
-                                </span>
-                              ) : null}
-                            </p>
-                            <p className="text-sm text-muted-foreground">{meal.description}</p>
-                          </div>
-                        ))}
+                        {d.meals.map((meal, i) => {
+                          const key = `${d.day}-${i}`;
+                          const added = addedKeys.has(key);
+                          return (
+                            <div key={i} className="border-l-2 border-primary/40 pl-3 flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-sm">
+                                  {meal.name}
+                                  {meal.approx_calories ? (
+                                    <span className="text-xs text-muted-foreground ml-2">
+                                      ~{meal.approx_calories} kcal
+                                    </span>
+                                  ) : null}
+                                </p>
+                                <p className="text-sm text-muted-foreground">{meal.description}</p>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant={added ? 'secondary' : 'outline'}
+                                disabled={added}
+                                onClick={() => handleAddMeal(d.day, meal, i)}
+                                className="gap-1.5 h-7 text-xs shrink-0"
+                              >
+                                {added ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                                {added ? 'Adicionado' : 'Registrar hoje'}
+                              </Button>
+                            </div>
+                          );
+                        })}
                       </CardContent>
                     </Card>
                   ))}
