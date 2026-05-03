@@ -35,9 +35,10 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedDate: Date;
+  onAdded?: () => void;
 }
 
-export function DailyMenuDialog({ open, onOpenChange, selectedDate }: Props) {
+export function DailyMenuDialog({ open, onOpenChange, selectedDate, onAdded }: Props) {
   const { getGoals } = useProfile();
   const planInfo = useCurrentBodyPlan();
   const { list: bloodExamsQ } = useBloodExams();
@@ -115,6 +116,7 @@ export function DailyMenuDialog({ open, onOpenChange, selectedDate }: Props) {
         })),
       });
       setAddedMeals((prev) => new Set(prev).add(idx));
+      onAdded?.();
       toast.success(`${meal.name} adicionada ao dia`);
     } catch (e: any) {
       toast.error(e.message || 'Erro ao adicionar refeição');
