@@ -21,6 +21,7 @@ export interface WorkoutExercise {
   body_analysis?: Record<string, number> | null;
   aesthetic_analysis?: Record<string, number> | null;
   mobility_analysis?: Record<string, number> | null;
+  is_cooldown?: boolean;
 }
 
 export interface WorkoutPlan {
@@ -28,6 +29,7 @@ export interface WorkoutPlan {
   user_id: string;
   name: string;
   days_of_week: number[];
+  cooldown_enabled?: boolean;
   created_at: string;
   updated_at: string;
   exercises?: WorkoutExercise[];
@@ -90,7 +92,7 @@ export function useWorkoutPlans() {
   });
 
   const createPlan = useMutation({
-    mutationFn: async (data: { name: string; days_of_week: number[] }) => {
+    mutationFn: async (data: { name: string; days_of_week: number[]; cooldown_enabled?: boolean }) => {
       if (!user) throw new Error('User not authenticated');
 
       const { data: plan, error } = await supabase
@@ -99,6 +101,7 @@ export function useWorkoutPlans() {
           user_id: user.id,
           name: data.name,
           days_of_week: data.days_of_week,
+          ...(data.cooldown_enabled !== undefined ? { cooldown_enabled: data.cooldown_enabled } : {}),
         })
         .select()
         .single();
@@ -116,12 +119,13 @@ export function useWorkoutPlans() {
   });
 
   const updatePlan = useMutation({
-    mutationFn: async (data: { id: string; name: string; days_of_week: number[] }) => {
+    mutationFn: async (data: { id: string; name: string; days_of_week: number[]; cooldown_enabled?: boolean }) => {
       const { error } = await supabase
         .from('workout_plans')
         .update({
           name: data.name,
           days_of_week: data.days_of_week,
+          ...(data.cooldown_enabled !== undefined ? { cooldown_enabled: data.cooldown_enabled } : {}),
         })
         .eq('id', data.id);
 
@@ -167,6 +171,7 @@ export function useWorkoutPlans() {
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;
       exercise_library_id?: string | null;
+      is_cooldown?: boolean;
     }) => {
       const { data: exercise, error } = await supabase
         .from('workout_exercises')

@@ -9,13 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { useWorkoutPlans, WorkoutPlan, WorkoutExercise } from '@/hooks/useWorkoutPlans';
 import { LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { ExerciseListItem } from '@/components/ExerciseListItem';
 import { SelectExerciseDialog } from '@/components/SelectExerciseDialog';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { EditWorkoutExerciseDialog } from '@/components/EditWorkoutExerciseDialog';
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2, Save, Leaf } from 'lucide-react';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { FieldError } from '@/components/FieldError';
 import { useFieldError, validateRequired } from '@/lib/formValidation';
@@ -60,8 +61,10 @@ export function WorkoutPlanDialog({
 
   const [name, setName] = useState('');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [cooldownEnabled, setCooldownEnabled] = useState(true);
   const [localExercises, setLocalExercises] = useState<WorkoutExercise[]>([]);
   const [selectExerciseOpen, setSelectExerciseOpen] = useState(false);
+  const [addingCooldown, setAddingCooldown] = useState(false);
   const [createExerciseOpen, setCreateExerciseOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<WorkoutExercise | null>(null);
@@ -78,15 +81,25 @@ export function WorkoutPlanDialog({
   }, [workoutPlans, editingPlan]);
 
   const exercises = currentPlan?.exercises ?? EMPTY_EXERCISES;
+  const mainExercises = useMemo(
+    () => localExercises.filter((e) => !e.is_cooldown),
+    [localExercises]
+  );
+  const cooldownExercises = useMemo(
+    () => localExercises.filter((e) => e.is_cooldown),
+    [localExercises]
+  );
 
   // Sync name and days only when the dialog opens or editingPlan changes
   useEffect(() => {
     if (open && editingPlan) {
       setName(editingPlan.name);
       setSelectedDays(editingPlan.days_of_week);
+      setCooldownEnabled(editingPlan.cooldown_enabled ?? true);
     } else if (!open) {
       setName('');
       setSelectedDays([]);
+      setCooldownEnabled(true);
     }
   }, [editingPlan?.id, open]);
 
@@ -115,12 +128,14 @@ export function WorkoutPlanDialog({
         id: editingPlan.id,
         name: name.trim(),
         days_of_week: selectedDays,
+        cooldown_enabled: cooldownEnabled,
       });
       onOpenChange(false);
     } else {
       const created = await createPlan.mutateAsync({
         name: name.trim(),
         days_of_week: selectedDays,
+        cooldown_enabled: cooldownEnabled,
       });
       // Keep the dialog open in edit mode and immediately open the
       // exercise selector so the user can start adding exercises.
@@ -160,7 +175,9 @@ export function WorkoutPlanDialog({
       video_start_seconds: libraryExercise.video_start_seconds ?? null,
       video_end_seconds: libraryExercise.video_end_seconds ?? null,
       exercise_library_id: libraryExercise.id,
+      is_cooldown: addingCooldown,
     });
+    setAddingCooldown(false);
   };
 
   const handleDeleteExercise = async (id: string) => {
@@ -277,14 +294,14 @@ export function WorkoutPlanDialog({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setSelectExerciseOpen(true)}
+                    onClick={() => { setAddingCooldown(false); setSelectExerciseOpen(true); }}
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Adicionar
                   </Button>
                 </div>
 
-                {exercises.length === 0 ? (
+                {mainExercises.length === 0 ? (
                   <div className="text-center py-6 border-2 border-dashed rounded-lg">
                     <p className="text-sm text-muted-foreground mb-2">
                       Nenhum exercício adicionado
@@ -292,7 +309,7 @@ export function WorkoutPlanDialog({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setSelectExerciseOpen(true)}
+                      onClick={() => { setAddingCooldown(false); setSelectExerciseOpen(true); }}
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Adicionar da Biblioteca
@@ -300,26 +317,96 @@ export function WorkoutPlanDialog({
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {localExercises.map((exercise, index) => (
-                      <div
-                        key={exercise.id}
-                        draggable
-                        onDragStart={() => handleDragStart(index)}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDragEnd={handleDragEnd}
-                        className={`transition-opacity ${
-                          draggedIndex === index ? 'opacity-50' : ''
-                        }`}
-                      >
-                        <ExerciseListItem
-                          exercise={exercise}
-                          index={index}
-                          onEdit={() => handleEditExercise(exercise)}
-                          onDelete={() => setDeletingExercise(exercise)}
-                        />
-                      </div>
-                    ))}
+                    {localExercises.map((exercise, index) => {
+                      if (exercise.is_cooldown) return null;
+                      return (
+                        <div
+                          key={exercise.id}
+                          draggable
+                          onDragStart={() => handleDragStart(index)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDragEnd={handleDragEnd}
+                          className={`transition-opacity ${
+                            draggedIndex === index ? 'opacity-50' : ''
+                          }`}
+                        >
+                          <ExerciseListItem
+                            exercise={exercise}
+                            index={mainExercises.findIndex((e) => e.id === exercise.id)}
+                            onEdit={() => handleEditExercise(exercise)}
+                            onDelete={() => setDeletingExercise(exercise)}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
+                )}
+              </div>
+            )}
+
+            {editingPlan && (
+              <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Leaf className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <Label className="m-0 cursor-pointer">Final de treino (alongamento)</Label>
+                  </div>
+                  <Switch
+                    checked={cooldownEnabled}
+                    onCheckedChange={async (v) => {
+                      setCooldownEnabled(v);
+                      await updatePlan.mutateAsync({
+                        id: editingPlan.id,
+                        name: name.trim() || editingPlan.name,
+                        days_of_week: selectedDays,
+                        cooldown_enabled: v,
+                      });
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Sequência opcional de alongamentos disparada quando você quiser encerrar o treino.
+                </p>
+
+                {cooldownEnabled && (
+                  <>
+                    {cooldownExercises.length === 0 ? (
+                      <div className="text-center py-4 border-2 border-dashed rounded-md">
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Nenhum alongamento adicionado
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => { setAddingCooldown(true); setSelectExerciseOpen(true); }}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Adicionar alongamento
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {cooldownExercises.map((exercise, idx) => (
+                          <ExerciseListItem
+                            key={exercise.id}
+                            exercise={exercise}
+                            index={idx}
+                            onEdit={() => handleEditExercise(exercise)}
+                            onDelete={() => setDeletingExercise(exercise)}
+                          />
+                        ))}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => { setAddingCooldown(true); setSelectExerciseOpen(true); }}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Adicionar alongamento
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}

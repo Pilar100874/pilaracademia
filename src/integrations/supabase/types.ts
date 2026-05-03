@@ -3336,6 +3336,7 @@ export type Database = {
           id: string
           image_url: string | null
           image_urls: string[] | null
+          is_cooldown: boolean
           name: string
           order_index: number
           reps: number
@@ -3352,6 +3353,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
+          is_cooldown?: boolean
           name: string
           order_index?: number
           reps?: number
@@ -3368,6 +3370,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
+          is_cooldown?: boolean
           name?: string
           order_index?: number
           reps?: number
@@ -3397,6 +3400,7 @@ export type Database = {
       }
       workout_plans: {
         Row: {
+          cooldown_enabled: boolean
           created_at: string
           days_of_week: number[]
           id: string
@@ -3405,6 +3409,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cooldown_enabled?: boolean
           created_at?: string
           days_of_week?: number[]
           id?: string
@@ -3413,6 +3418,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cooldown_enabled?: boolean
           created_at?: string
           days_of_week?: number[]
           id?: string
