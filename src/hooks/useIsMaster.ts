@@ -20,12 +20,12 @@ export function useIsMaster() {
         .eq('user_id', user.id)
         .eq('role', 'master_admin')
         .is('clinic_id', null)
-        .maybeSingle();
+        .limit(1);
       if (error) {
         console.warn('useIsMaster: failed to read role', error);
         return false;
       }
-      return !!data;
+      return Array.isArray(data) && data.length > 0;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
