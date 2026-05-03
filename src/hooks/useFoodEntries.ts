@@ -19,7 +19,6 @@ export function useFoodEntries(selectedDate?: Date) {
     }
 
     setIsLoading(true);
-    setEntries([]);
 
     const targetDate = selectedDate || new Date();
     const dayStart = startOfDay(targetDate);
@@ -100,7 +99,11 @@ export function useFoodEntries(selectedDate?: Date) {
       throw error;
     }
 
-    setEntries(prev => [data as unknown as FoodEntryDB, ...prev]);
+    setEntries(prev => {
+      const next = data as unknown as FoodEntryDB;
+      if (prev.some(e => e.id === next.id)) return prev;
+      return [next, ...prev];
+    });
     return data as unknown as FoodEntryDB;
   }, [user, selectedDate]);
 

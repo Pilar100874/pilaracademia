@@ -84,6 +84,9 @@ export function Dashboard() {
   const closeModal = () => {
     sessionStorage.removeItem('activeModal');
     setActiveModal(null);
+    // Sync Dashboard's food list with anything that may have been added
+    // by sub-dialogs that use their own useFoodEntries() instance.
+    refetchFood();
   };
   const [editingLiquid, setEditingLiquid] = useState<LiquidEntryData | null>(null);
   const [deletingLiquid, setDeletingLiquid] = useState<LiquidEntryData | null>(null);
