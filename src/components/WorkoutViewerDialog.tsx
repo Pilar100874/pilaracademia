@@ -109,6 +109,74 @@ export function WorkoutViewerDialog({
 
   if (!currentExercise) return null;
 
+  // Tela inicial: seletor de "Modo de Hoje" (autorregulação por estado).
+  if (!energyMode) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md p-0 border-none bg-background overflow-hidden">
+          <div className="p-6 space-y-5">
+            <div className="space-y-1.5 text-center">
+              <h2 className="text-2xl font-serif tracking-tight text-foreground">
+                Como você está hoje?
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                A sessão se adapta ao seu nível de energia. O treino salvo não muda.
+              </p>
+            </div>
+
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                onClick={() => setEnergyMode('normal')}
+                className="w-full flex items-center gap-3 rounded-md border border-border bg-card hover:bg-accent transition-colors p-3.5 text-left"
+              >
+                <div className="h-10 w-10 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Flame className="h-5 w-5" strokeWidth={2.2} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground">Normal</p>
+                  <p className="text-xs text-muted-foreground">Treino padrão como prescrito.</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setEnergyMode('tired')}
+                className="w-full flex items-center gap-3 rounded-md border border-border bg-card hover:bg-accent transition-colors p-3.5 text-left"
+              >
+                <div className="h-10 w-10 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <Battery className="h-5 w-5" strokeWidth={2.2} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground">Cansado</p>
+                  <p className="text-xs text-muted-foreground">
+                    −1 série · −25% reps · +30s de descanso.
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setEnergyMode('exhausted')}
+                className="w-full flex items-center gap-3 rounded-md border border-border bg-card hover:bg-accent transition-colors p-3.5 text-left"
+              >
+                <div className="h-10 w-10 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                  <BatteryLow className="h-5 w-5" strokeWidth={2.2} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground">Muito cansado</p>
+                  <p className="text-xs text-muted-foreground">
+                    −2 séries · −40% reps · pula exercícios mais intensos.
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
