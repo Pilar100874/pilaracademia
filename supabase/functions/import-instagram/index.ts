@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
             video_url: pub.publicUrl,
             video_start_seconds: null,
             video_end_seconds: null,
-            category_id: isMaster ? null : (category_id || null),
+            category_id: category_id || null,
             is_global: isMaster,
             clinic_id: null,
           })
@@ -248,11 +248,10 @@ Deno.serve(async (req) => {
         }
 
         // Garante vínculo na tabela de junção (UI lê category_ids dali)
-        const linkCategoryId = isMaster ? null : (category_id || null);
-        if (linkCategoryId) {
+        if (category_id) {
           const { error: linkErr } = await admin
             .from("exercise_library_categories")
-            .insert({ exercise_id: ex.id, category_id: linkCategoryId });
+            .insert({ exercise_id: ex.id, category_id });
           if (linkErr) {
             console.warn(`Falha ao vincular categoria do vídeo ${i + 1}:`, linkErr.message);
           }
