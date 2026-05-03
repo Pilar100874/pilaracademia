@@ -789,7 +789,6 @@ function CompareDialog({
 export default function BodyAnalysisPage() {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [analyzing, setAnalyzing] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { list, create, remove } = useBodyAnalyses();
   const { profile, updateProfile, applyNutritionOverride, clearNutritionOverride } = useProfile();
@@ -797,6 +796,9 @@ export default function BodyAnalysisPage() {
   const { allExercises } = useExerciseLibrary();
   const { createPlan, addExercise } = useWorkoutPlans();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { startBioimpedance, jobs } = useBackgroundAnalysis();
+  const analyzing = jobs.some((j) => j.kind === 'bioimpedance');
   const [applyingWorkout, setApplyingWorkout] = useState(false);
 
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
@@ -806,6 +808,18 @@ export default function BodyAnalysisPage() {
   const [compareOpen, setCompareOpen] = useState(false);
   const [photosOpen, setPhotosOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Auto-select analysis from ?id= URL param (used by background-analysis toast)
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (id && (list.data || []).some((r) => r.id === id)) {
+      setSelectedId(id);
+      // clean up URL after applying
+      const next = new URLSearchParams(searchParams);
+      next.delete('id');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, list.data, setSearchParams]);
 
   const selected = (list.data || []).find((r) => r.id === selectedId) || (list.data || [])[0];
 
