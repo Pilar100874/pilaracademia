@@ -18,7 +18,7 @@ export function ProfilePage() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { isMaster } = useIsMaster();
-  const { profile, isLoading, updateProfile } = useProfile();
+  const { profile, isLoading, updateProfile, getGoals, clearNutritionOverride } = useProfile();
   const [isSaving, setIsSaving] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -238,37 +238,68 @@ export function ProfilePage() {
         </div>
 
         {/* Preview Calculations */}
-        {previewNutrients && (
-          <div className="card-compact space-y-4 animate-scale-in bg-primary/5">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-primary" />
-              <h2 className="font-semibold">Suas Metas Diárias</h2>
-            </div>
+        {previewNutrients && (() => {
+          const goals = getGoals();
+          const isOverride = goals.isOverride;
+          const display = isOverride
+            ? { calories: goals.calories, protein: goals.protein, carbs: goals.carbs, fat: goals.fat }
+            : previewNutrients;
+          return (
+            <div className="card-compact space-y-4 animate-scale-in bg-primary/5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <h2 className="font-semibold">Suas Metas Diárias</h2>
+                </div>
+                {isOverride && (
+                  <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
+                    Bioimpedância
+                  </span>
+                )}
+              </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-primary/10 p-3 text-center">
-                <p className="text-2xl font-bold text-primary">{previewNutrients.calories}</p>
-                <p className="text-xs text-muted-foreground">kcal</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-primary/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-primary">{display.calories}</p>
+                  <p className="text-xs text-muted-foreground">kcal</p>
+                </div>
+                <div className="rounded-xl bg-orange-500/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-orange-500">{display.protein}g</p>
+                  <p className="text-xs text-muted-foreground">proteína</p>
+                </div>
+                <div className="rounded-xl bg-sky-500/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-sky-500">{display.carbs}g</p>
+                  <p className="text-xs text-muted-foreground">carboidratos</p>
+                </div>
+                <div className="rounded-xl bg-violet-500/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-violet-500">{display.fat}g</p>
+                  <p className="text-xs text-muted-foreground">gordura total</p>
+                </div>
               </div>
-              <div className="rounded-xl bg-orange-500/10 p-3 text-center">
-                <p className="text-2xl font-bold text-orange-500">{previewNutrients.protein}g</p>
-                <p className="text-xs text-muted-foreground">proteína</p>
-              </div>
-              <div className="rounded-xl bg-sky-500/10 p-3 text-center">
-                <p className="text-2xl font-bold text-sky-500">{previewNutrients.carbs}g</p>
-                <p className="text-xs text-muted-foreground">carboidratos</p>
-              </div>
-              <div className="rounded-xl bg-violet-500/10 p-3 text-center">
-                <p className="text-2xl font-bold text-violet-500">{previewNutrients.fat}g</p>
-                <p className="text-xs text-muted-foreground">gordura total</p>
-              </div>
-            </div>
 
-            <p className="text-xs text-center text-muted-foreground">
-              Calculado com fórmula Mifflin-St Jeor + recomendações ANVISA/OMS
-            </p>
-          </div>
-        )}
+              {isOverride ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-center text-muted-foreground">
+                    Plano aplicado a partir da sua análise de bioimpedância.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await clearNutritionOverride();
+                    }}
+                    className="w-full text-xs text-primary underline underline-offset-2"
+                  >
+                    Voltar ao cálculo automático (Mifflin-St Jeor)
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-center text-muted-foreground">
+                  Calculado com fórmula Mifflin-St Jeor + recomendações ANVISA/OMS
+                </p>
+              )}
+            </div>
+          );
+        })()}
 
 
         <Button 
