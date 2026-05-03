@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BottomNav } from '@/components/BottomNav';
 import {
   Activity,
@@ -46,7 +46,8 @@ import { exportPlanToPdf } from '@/lib/exportPlanPdf';
 import { FileDown, Camera as CameraIcon } from 'lucide-react';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useBackgroundAnalysis } from '@/contexts/BackgroundAnalysisContext';
 import { LazyVideoPreview } from '@/components/LazyVideoPreview';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
@@ -788,7 +789,6 @@ function CompareDialog({
 export default function BodyAnalysisPage() {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [analyzing, setAnalyzing] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { list, create, remove } = useBodyAnalyses();
   const { profile, updateProfile, applyNutritionOverride, clearNutritionOverride } = useProfile();
@@ -796,6 +796,9 @@ export default function BodyAnalysisPage() {
   const { allExercises } = useExerciseLibrary();
   const { createPlan, addExercise } = useWorkoutPlans();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { startBioimpedance, jobs } = useBackgroundAnalysis();
+  const analyzing = jobs.some((j) => j.kind === 'bioimpedance');
   const [applyingWorkout, setApplyingWorkout] = useState(false);
 
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
@@ -806,103 +809,26 @@ export default function BodyAnalysisPage() {
   const [photosOpen, setPhotosOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
+  // Auto-select analysis from ?id= URL param (used by background-analysis toast)
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (id && (list.data || []).some((r) => r.id === id)) {
+      setSelectedId(id);
+      // clean up URL after applying
+      const next = new URLSearchParams(searchParams);
+      next.delete('id');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, list.data, setSearchParams]);
+
   const selected = (list.data || []).find((r) => r.id === selectedId) || (list.data || [])[0];
 
   const macrosAppliedFromSelected =
     !!selected &&
     profile?.nutrition_override_source === `body_analysis:${selected.id}`;
 
-  async function handleFile(file: File) {
-    if (!user) {
-      toast.error('Faça login para analisar relatórios');
-      return;
-    }
-    setAnalyzing(true);
-    try {
-      const base64 = await fileToBase64(file);
-
-      // Upload original
-      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      const path = `${user.id}/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from('body-analysis-reports')
-        .upload(path, file, { upsert: false, contentType: file.type || 'image/jpeg' });
-      if (upErr) console.warn('upload failed', upErr);
-      const { data: pub } = supabase.storage.from('body-analysis-reports').getPublicUrl(path);
-      const imageUrl = upErr ? null : pub.publicUrl;
-
-      // Build library payload (id + name only)
-      const library = (allExercises || []).map((ex) => ({ id: ex.id, name: ex.name }));
-
-      // Build "previous" for delta
-      const prevRow = (list.data || [])[0]; // most recent existing row
-      const previous = prevRow
-        ? {
-            measured_at: prevRow.measured_at || prevRow.created_at,
-            extracted: prevRow.extracted,
-            score: prevRow.score,
-            days_since: prevRow.created_at
-              ? differenceInDays(new Date(), parseISO(prevRow.created_at))
-              : null,
-          }
-        : null;
-
-      const { data, error } = await supabase.functions.invoke('analyze-bioimpedance', {
-        body: { imageBase64: base64, library, previous },
-      });
-      if (error) throw error;
-      if (!data?.success || !data?.data) {
-        throw new Error(data?.error || 'Falha ao analisar relatório');
-      }
-
-      const created = await create.mutateAsync({ plan: data.data as BodyPlan, imageUrl });
-      setSelectedId(created.id);
-
-      // Auto-sync extracted measurements to profile + weight history
-      const plan = data.data as BodyPlan;
-      const extractedWeight = Number(plan.extracted?.weight_kg);
-      const extractedHeight = Number(plan.extracted?.height_cm);
-      const extractedSex = plan.extracted?.sex;
-      const syncedFields: string[] = [];
-      try {
-        const profileUpdate: Record<string, unknown> = {};
-        if (Number.isFinite(extractedWeight) && extractedWeight >= 30 && extractedWeight <= 300) {
-          profileUpdate.weight_kg = extractedWeight;
-          syncedFields.push(`peso ${extractedWeight} kg`);
-        }
-        if (Number.isFinite(extractedHeight) && extractedHeight >= 100 && extractedHeight <= 250) {
-          profileUpdate.height_cm = extractedHeight;
-          syncedFields.push(`altura ${extractedHeight} cm`);
-        }
-        if (extractedSex === 'male' || extractedSex === 'female') {
-          profileUpdate.gender = extractedSex;
-          syncedFields.push(`gênero ${extractedSex === 'male' ? 'masculino' : 'feminino'}`);
-        }
-        if (Object.keys(profileUpdate).length > 0) {
-          await updateProfile(profileUpdate);
-        }
-        if (Number.isFinite(extractedWeight) && extractedWeight >= 30 && extractedWeight <= 300) {
-          await addWeightEntry(extractedWeight);
-          await refetchWeights();
-        }
-      } catch (syncErr) {
-        console.warn('Falha ao sincronizar perfil com bioimpedância', syncErr);
-      }
-
-      if (syncedFields.length > 0) {
-        toast.success('Análise pronta!', {
-          description: `Perfil atualizado automaticamente: ${syncedFields.join(', ')}.`,
-          duration: 6000,
-        });
-      } else {
-        toast.success('Análise pronta!');
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error(err instanceof Error ? err.message : 'Erro ao analisar relatório');
-    } finally {
-      setAnalyzing(false);
-    }
+  function handleFile(file: File) {
+    startBioimpedance(file);
   }
 
   async function handleApplyMacros(plan: BodyPlan) {

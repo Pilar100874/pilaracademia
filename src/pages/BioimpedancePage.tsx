@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -177,6 +177,8 @@ const toneClasses: Record<string, string> = {
 export default function BioimpedancePage() {
   const { list } = useBodyAnalyses();
   const rows = list.data ?? [];
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab') === 'blood' ? 'blood' : 'bioimpedance';
 
   const latest = rows[0] as BodyAnalysisRow | undefined;
   const previous = rows[1] as BodyAnalysisRow | undefined;
@@ -205,7 +207,16 @@ export default function BioimpedancePage() {
           </p>
         </header>
 
-        <Tabs defaultValue="bioimpedance" className="px-5 py-5">
+        <Tabs
+          value={tabFromUrl}
+          onValueChange={(v) => {
+            const next = new URLSearchParams(searchParams);
+            if (v === 'blood') next.set('tab', 'blood');
+            else next.delete('tab');
+            setSearchParams(next, { replace: true });
+          }}
+          className="px-5 py-5"
+        >
           <TabsList className="w-full grid grid-cols-2 mb-5">
             <TabsTrigger value="bioimpedance">Bioimpedância</TabsTrigger>
             <TabsTrigger value="blood">Exames de sangue</TabsTrigger>
