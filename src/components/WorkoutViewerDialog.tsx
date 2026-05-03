@@ -477,6 +477,17 @@ export function WorkoutViewerDialog({
               <Sparkles className="h-6 w-6" strokeWidth={2.3} />
             </button>
 
+            {/* Finalizar (sempre visível, ao lado de avançar) */}
+            {!inCooldown && (
+              <button
+                onClick={() => setShowFinishPrompt(true)}
+                aria-label="Finalizar treino"
+                className="group h-12 w-12 shrink-0 rounded-full bg-emerald-500/90 flex items-center justify-center text-white transition-all hover:bg-emerald-500 active:scale-95"
+              >
+                <CheckCircle2 className="h-7 w-7" strokeWidth={2.5} />
+              </button>
+            )}
+
             {/* Next */}
             <button
               onClick={handleNextExercise}
