@@ -74,6 +74,59 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
 
+    // ---- Permission gate ----------------------------------------------------
+    // Movement analysis is costly. Each user must be explicitly enabled by the
+    // master admin via profiles.movement_analysis_enabled. We trust the JWT
+    // (verify_jwt = true) and read the flag with a service role client.
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+    const SERVICE_KEY =
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SERVICE_ROLE_KEY') ?? '';
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Não autenticado.' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: SERVICE_KEY },
+    });
+    if (!userRes.ok) {
+      return new Response(JSON.stringify({ error: 'Sessão inválida.' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const userJson = await userRes.json();
+    const userId: string | undefined = userJson?.id;
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'Sessão inválida.' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const profRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?user_id=eq.${userId}&select=movement_analysis_enabled`,
+      {
+        headers: {
+          apikey: SERVICE_KEY,
+          Authorization: `Bearer ${SERVICE_KEY}`,
+        },
+      }
+    );
+    const profRows = profRes.ok ? await profRes.json() : [];
+    const enabled = Array.isArray(profRows) && profRows[0]?.movement_analysis_enabled === true;
+    if (!enabled) {
+      return new Response(
+        JSON.stringify({
+          error: 'MOVEMENT_ANALYSIS_DISABLED',
+          message: 'A análise de movimento por IA está desativada para este usuário. Solicite acesso ao administrador.',
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { videoUrl, exerciseName, categories } = await req.json();
     if (!videoUrl || typeof videoUrl !== 'string') {
       return new Response(JSON.stringify({ error: 'videoUrl is required' }), {

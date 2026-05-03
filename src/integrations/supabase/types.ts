@@ -2648,6 +2648,7 @@ export type Database = {
           goal: string | null
           height_cm: number | null
           id: string
+          movement_analysis_enabled: boolean
           name: string
           nutrition_override_set_at: string | null
           nutrition_override_source: string | null
@@ -2680,6 +2681,7 @@ export type Database = {
           goal?: string | null
           height_cm?: number | null
           id?: string
+          movement_analysis_enabled?: boolean
           name: string
           nutrition_override_set_at?: string | null
           nutrition_override_source?: string | null
@@ -2712,6 +2714,7 @@ export type Database = {
           goal?: string | null
           height_cm?: number | null
           id?: string
+          movement_analysis_enabled?: boolean
           name?: string
           nutrition_override_set_at?: string | null
           nutrition_override_source?: string | null

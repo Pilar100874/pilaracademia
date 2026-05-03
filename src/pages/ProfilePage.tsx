@@ -4,18 +4,20 @@ import { Input } from '@/components/ui/input';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { activityLabels, goalLabels, calculateAge, calculateBMR, calculateTDEE, calculateDailyCalories, calculateAllNutrients } from '@/types/profile';
-import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle, Sparkles, UtensilsCrossed, Share2, ChevronRight, TrendingUp, FileText, Shield, Trash2 } from 'lucide-react';
+import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle, Sparkles, UtensilsCrossed, Share2, ChevronRight, TrendingUp, FileText, Shield, Trash2, KeyRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
 import { DataExportSection } from '@/components/DataExportSection';
 import { ShareSummaryDialog } from '@/components/ShareSummaryDialog';
 import { RemindersSection } from '@/components/RemindersSection';
 import { DeleteAccountDialog } from '@/components/DeleteAccountDialog';
+import { useIsMaster } from '@/hooks/useIsMaster';
 
 
 export function ProfilePage() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { isMaster } = useIsMaster();
   const { profile, isLoading, updateProfile } = useProfile();
   const [isSaving, setIsSaving] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -363,6 +365,22 @@ export function ProfilePage() {
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
+
+        {isMaster && (
+          <button
+            onClick={() => navigate('/admin/movement-analysis')}
+            className="w-full flex items-center gap-3 p-3 rounded-md border border-border bg-card hover:bg-accent transition-colors"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <KeyRound className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-medium text-sm">Análise de movimento (IA)</p>
+              <p className="text-xs text-muted-foreground">Definir quais usuários podem usar</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </button>
+        )}
 
         <Button variant="outline" size="lg" className="w-full h-12 rounded-xl" onClick={handleSignOut}>
           Sair da conta

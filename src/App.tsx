@@ -22,6 +22,7 @@ import SharedSummaryPage from "@/pages/SharedSummaryPage";
 import HelpPage from "@/pages/HelpPage";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
+import MovementAnalysisAccessPage from "@/pages/MovementAnalysisAccessPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { UpdatePrompt } from "@/components/UpdatePrompt";
@@ -192,6 +193,14 @@ function AppRoutes() {
       />
       <Route path="/termos" element={<TermsPage />} />
       <Route path="/privacidade" element={<PrivacyPage />} />
+      <Route
+        path="/admin/movement-analysis"
+        element={
+          <ProtectedRoute>
+            <MovementAnalysisAccessPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/r/:token" element={<SharedSummaryPage />} />
       <Route
         path="/auth"
