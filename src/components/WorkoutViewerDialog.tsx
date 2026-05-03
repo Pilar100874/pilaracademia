@@ -275,7 +275,7 @@ export function WorkoutViewerDialog({
             </div>
           </div>
         </div>
-        {/* Top-right action stack: toggle media */}
+        {/* Top-right action stack: toggle media + finish */}
         <div className="absolute top-4 right-16 z-40 flex items-center gap-2">
           {hasVideo && currentImages.length > 0 && (
             <Button
@@ -297,7 +297,64 @@ export function WorkoutViewerDialog({
               )}
             </Button>
           )}
+          {!inCooldown ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setShowFinishPrompt(true)}
+              className="gap-1.5"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Finalizar
+            </Button>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-white text-xs font-semibold bg-emerald-500/30 px-2.5 py-1 rounded-full backdrop-blur-sm border border-emerald-300/40">
+              <Leaf className="h-3.5 w-3.5" />
+              Alongamento
+            </span>
+          )}
         </div>
+
+        {/* Finish workout prompt */}
+        {showFinishPrompt && (
+          <div
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={() => setShowFinishPrompt(false)}
+          >
+            <div
+              className="w-full max-w-sm rounded-md border border-border bg-background p-5 space-y-4 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-1">
+                <h3 className="text-xl font-serif text-foreground">Encerrar treino?</h3>
+                <p className="text-sm text-muted-foreground">
+                  {hasCooldown
+                    ? 'Quer terminar com a sequência de alongamento final?'
+                    : 'Tem certeza que deseja finalizar o treino agora?'}
+                </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                {hasCooldown && (
+                  <Button onClick={startCooldown} className="w-full gap-1.5">
+                    <Leaf className="h-4 w-4" />
+                    Fazer alongamento final
+                  </Button>
+                )}
+                <Button
+                  onClick={finishWorkout}
+                  variant={hasCooldown ? 'outline' : 'default'}
+                  className="w-full gap-1.5"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  Encerrar agora
+                </Button>
+                <Button onClick={() => setShowFinishPrompt(false)} variant="ghost" className="w-full">
+                  Continuar treinando
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Photo navigation (left/right) - only show if multiple photos */}
         {hasMultiplePhotos && (
