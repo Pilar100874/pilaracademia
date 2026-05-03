@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/EmptyState';
 import { ListSkeleton } from '@/components/ListSkeleton';
-import { useWeeklyMenus, WeeklyMenuRow } from '@/hooks/useWeeklyMenus';
-import { CalendarDays, Sparkles, Loader2, Trash2, ShoppingBasket, Utensils } from 'lucide-react';
+import { useWeeklyMenus, WeeklyMenuRow, WeeklyMenuMeal } from '@/hooks/useWeeklyMenus';
+import { CalendarDays, Sparkles, Loader2, Trash2, ShoppingBasket, Utensils, Plus, Check } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { useFoodEntries } from '@/hooks/useFoodEntries';
+import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
