@@ -17,8 +17,9 @@ import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { useBloodExams } from '@/hooks/useBloodExams';
+import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
 import { buildBloodExamHealthContext } from '@/lib/bloodExamContext';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
