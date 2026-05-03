@@ -179,6 +179,23 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setGenerating(true);
     try {
       const healthContext = buildBloodExamHealthContext(bloodExamsQ.data) || undefined;
+      let bodyPlanContext: string | undefined;
+      if (useBodyPlan && planInfo?.plan) {
+        const p = planInfo.plan;
+        const ti = p.training_intent;
+        const lines: string[] = ['INTENÇÃO DE TREINO (da análise corporal):'];
+        if (p.goal?.primary) lines.push(`- Objetivo principal: ${p.goal.primary}`);
+        if (p.classification?.body_profile) lines.push(`- Perfil corporal: ${p.classification.body_profile}`);
+        if (ti?.focus) lines.push(`- Foco: ${ti.focus}`);
+        if (ti?.split) lines.push(`- Divisão: ${ti.split}`);
+        if (ti?.frequency_per_week) lines.push(`- Frequência sugerida: ${ti.frequency_per_week}x/semana`);
+        if (ti?.session_minutes) lines.push(`- Duração por sessão: ~${ti.session_minutes}min`);
+        if (ti?.intensity) lines.push(`- Intensidade: ${ti.intensity}`);
+        if (ti?.priority_muscle_groups?.length) lines.push(`- Grupos prioritários: ${ti.priority_muscle_groups.join(', ')}`);
+        if (ti?.volume_note) lines.push(`- Volume: ${ti.volume_note}`);
+        if (planInfo.currentPhase?.training) lines.push(`- Fase atual (semana ${planInfo.currentWeek}): ${planInfo.currentPhase.training}`);
+        bodyPlanContext = lines.join('\n');
+      }
       const byId = new Map(exercises.map((ex) => [ex.id, ex] as const));
 
       const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
