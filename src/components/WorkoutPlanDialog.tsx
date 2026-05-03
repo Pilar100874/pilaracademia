@@ -61,8 +61,10 @@ export function WorkoutPlanDialog({
 
   const [name, setName] = useState('');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [cooldownEnabled, setCooldownEnabled] = useState(true);
   const [localExercises, setLocalExercises] = useState<WorkoutExercise[]>([]);
   const [selectExerciseOpen, setSelectExerciseOpen] = useState(false);
+  const [addingCooldown, setAddingCooldown] = useState(false);
   const [createExerciseOpen, setCreateExerciseOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<WorkoutExercise | null>(null);
@@ -79,15 +81,25 @@ export function WorkoutPlanDialog({
   }, [workoutPlans, editingPlan]);
 
   const exercises = currentPlan?.exercises ?? EMPTY_EXERCISES;
+  const mainExercises = useMemo(
+    () => localExercises.filter((e) => !e.is_cooldown),
+    [localExercises]
+  );
+  const cooldownExercises = useMemo(
+    () => localExercises.filter((e) => e.is_cooldown),
+    [localExercises]
+  );
 
   // Sync name and days only when the dialog opens or editingPlan changes
   useEffect(() => {
     if (open && editingPlan) {
       setName(editingPlan.name);
       setSelectedDays(editingPlan.days_of_week);
+      setCooldownEnabled(editingPlan.cooldown_enabled ?? true);
     } else if (!open) {
       setName('');
       setSelectedDays([]);
+      setCooldownEnabled(true);
     }
   }, [editingPlan?.id, open]);
 
