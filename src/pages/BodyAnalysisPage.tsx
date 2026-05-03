@@ -1216,6 +1216,24 @@ export default function BodyAnalysisPage() {
 
       <ProgressPhotosDialog open={photosOpen} onOpenChange={setPhotosOpen} />
 
+      <ConfirmDeleteDialog
+        open={!!confirmDeleteId}
+        onOpenChange={(v) => !v && setConfirmDeleteId(null)}
+        title="Excluir análise"
+        description="Tem certeza que deseja excluir esta análise de bioimpedância? Esta ação não pode ser desfeita."
+        isDeleting={remove.isPending}
+        onConfirm={() => {
+          if (confirmDeleteId) {
+            remove.mutate(confirmDeleteId, {
+              onSuccess: () => {
+                if (selectedId === confirmDeleteId) setSelectedId(null);
+                setConfirmDeleteId(null);
+              },
+            });
+          }
+        }}
+      />
+
       <BottomNav />
     </div>
   );
