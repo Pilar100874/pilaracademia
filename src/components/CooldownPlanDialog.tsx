@@ -9,6 +9,9 @@ import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { EditWorkoutExerciseDialog } from '@/components/EditWorkoutExerciseDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { Plus, Leaf } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useCooldownPromptEnabled } from '@/lib/cooldownPreference';
 
 interface CooldownPlanDialogProps {
   open: boolean;
@@ -135,6 +138,8 @@ export function CooldownPlanDialog({ open, onOpenChange }: CooldownPlanDialogPro
               Esta sequência é compartilhada por todos os treinos. Ao finalizar qualquer treino, você poderá rodá-la para terminar com um alongamento.
             </p>
 
+            <CooldownPromptToggle />
+
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">
                 {localExercises.length} {localExercises.length === 1 ? 'exercício' : 'exercícios'}
@@ -221,3 +226,19 @@ export function CooldownPlanDialog({ open, onOpenChange }: CooldownPlanDialogPro
     </>
   );
 }
+
+function CooldownPromptToggle() {
+  const [enabled, setEnabled] = useCooldownPromptEnabled();
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-md border border-border bg-muted/30 p-3">
+      <div className="min-w-0">
+        <Label className="cursor-pointer">Perguntar ao finalizar treino</Label>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Quando desativado, o app não pergunta se quer rodar o alongamento ao encerrar um treino.
+        </p>
+      </div>
+      <Switch checked={enabled} onCheckedChange={setEnabled} />
+    </div>
+  );
+}
+

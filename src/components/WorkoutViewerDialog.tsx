@@ -8,6 +8,7 @@ import { AnalysisOverlay } from '@/components/AnalysisOverlay';
 import { WorkoutFormCoach } from '@/components/WorkoutFormCoach';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { applyEnergyMode, ENERGY_MODE_LABEL, type EnergyMode } from '@/lib/workoutEnergyMode';
+import { useCooldownPromptEnabled } from '@/lib/cooldownPreference';
 
 interface WorkoutViewerDialogProps {
   open: boolean;
@@ -29,10 +30,11 @@ export function WorkoutViewerDialog({
   const [showFinishPrompt, setShowFinishPrompt] = useState(false);
 
   const { cooldownPlan } = useWorkoutPlans();
+  const [cooldownPromptEnabled] = useCooldownPromptEnabled();
   const allExercises = plan.exercises || [];
   const mainBase = useMemo(() => allExercises.filter((e: any) => !e.is_cooldown), [allExercises]);
   const cooldownBase = useMemo(() => cooldownPlan?.exercises ?? [], [cooldownPlan]);
-  const hasCooldown = cooldownBase.length > 0;
+  const hasCooldown = cooldownPromptEnabled && cooldownBase.length > 0;
 
   const baseExercises = inCooldown ? cooldownBase : mainBase;
   const { exercises, removedCount } = useMemo(() => {
