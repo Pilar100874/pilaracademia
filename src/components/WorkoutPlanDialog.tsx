@@ -123,9 +123,9 @@ export function WorkoutPlanDialog({
     }
     clearError();
 
-    if (editingPlan) {
+    if (currentPlan) {
       await updatePlan.mutateAsync({
-        id: editingPlan.id,
+        id: currentPlan.id,
         name: name.trim(),
         days_of_week: selectedDays,
         cooldown_enabled: cooldownEnabled,
@@ -137,14 +137,8 @@ export function WorkoutPlanDialog({
         days_of_week: selectedDays,
         cooldown_enabled: cooldownEnabled,
       });
-      // Keep the dialog open in edit mode and immediately open the
-      // exercise selector so the user can start adding exercises.
-      if (created && onCreated) {
-        onCreated(created as WorkoutPlan);
-        setSelectExerciseOpen(true);
-      } else {
-        onOpenChange(false);
-      }
+      if (created && onCreated) onCreated(created as WorkoutPlan);
+      onOpenChange(false);
     }
   };
 
