@@ -325,6 +325,21 @@ export function WorkoutViewerDialog({
               )}
             </Button>
           )}
+          {voiceEnabled && voiceSupported && (
+            <button
+              type="button"
+              onClick={() => setVoiceActive((s) => !s)}
+              className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm border transition-colors ${
+                voiceActive && listening
+                  ? 'text-white bg-red-500/40 border-red-300/50 animate-pulse'
+                  : 'text-white/80 bg-white/10 border-white/20 hover:bg-white/20'
+              }`}
+              title={voiceActive ? 'Desativar comandos por voz' : 'Ativar comandos por voz'}
+            >
+              {voiceActive && listening ? <Mic className="h-3.5 w-3.5" /> : <MicOff className="h-3.5 w-3.5" />}
+              <span>Voz</span>
+            </button>
+          )}
           {inCooldown && (
             <span className="inline-flex items-center gap-1.5 text-white text-xs font-semibold bg-emerald-500/30 px-2.5 py-1 rounded-full backdrop-blur-sm border border-emerald-300/40">
               <Leaf className="h-3.5 w-3.5" />
