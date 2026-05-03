@@ -156,6 +156,8 @@ export function WorkoutsPage() {
         onOpenChange={setAiOpen}
       />
 
+      <CooldownPlanDialog open={cooldownOpen} onOpenChange={setCooldownOpen} />
+
       {viewingPlan && (
         <WorkoutViewerDialog
           open={viewerOpen}
