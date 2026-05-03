@@ -5,10 +5,11 @@ import { startRemindersLoop } from "@/lib/reminders";
 
 const isPreviewOrIframe = (() => {
   if (typeof window === "undefined") return false;
+  // Only the Lovable editor preview host should disable the SW; published
+  // domains (custom domain or *.lovable.app) need the update flow active.
   const isPreviewHost =
     window.location.hostname.includes("id-preview--") ||
-    window.location.hostname.includes("lovableproject.com") ||
-    window.location.hostname.includes("lovable.app");
+    window.location.hostname.includes("lovableproject.com");
   try {
     return isPreviewHost || window.self !== window.top;
   } catch {

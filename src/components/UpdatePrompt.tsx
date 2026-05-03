@@ -6,8 +6,7 @@ const isPreviewOrIframe = (() => {
   if (typeof window === "undefined") return false;
   const isPreviewHost =
     window.location.hostname.includes("id-preview--") ||
-    window.location.hostname.includes("lovableproject.com") ||
-    window.location.hostname.includes("lovable.app");
+    window.location.hostname.includes("lovableproject.com");
   try {
     return isPreviewHost || window.self !== window.top;
   } catch {
