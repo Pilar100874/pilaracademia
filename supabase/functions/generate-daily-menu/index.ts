@@ -31,7 +31,8 @@ interface Body {
 
 const SYSTEM = `Você é um nutricionista que monta cardápios diários práticos para brasileiros.
 Sempre devolva JSON via tool call. Use ingredientes simples e baratos. Os totais do dia DEVEM ficar dentro de ±5% das metas.
-Quantidades sempre em gramas (g) ou ml. Nada de "a gosto" — números reais.`;
+Quantidades sempre em gramas (g) ou ml. Nada de "a gosto" — números reais.
+IMPORTANTE: TODOS os textos devem estar em português do Brasil com acentuação correta (ç, ã, õ, á, é, í, ó, ú, â, ê, ô). Nunca remova diacríticos. Exemplos corretos: "Café da manhã", "Almoço", "Pão", "Refeição", "Maçã", "Não", "Após".`;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
@@ -173,12 +174,18 @@ Cada item DEVE ter calorias/proteína/carbs/gordura calculados para a quantidade
     const parsed = JSON.parse(call.function.arguments);
     // Fix mojibake (UTF-8 bytes interpreted as Latin-1) if it appears in any string field
     const fixMojibake = (s: string): string => {
-      if (typeof s !== 'string' || !/[ÃÂ][\x80-\xBF]/.test(s)) return s;
-      try {
-        const bytes = new Uint8Array(s.length);
-        for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i) & 0xff;
-        return new TextDecoder('utf-8').decode(bytes);
-      } catch { return s; }
+      if (typeof s !== 'string') return s;
+      let out = s;
+      if (/[ÃÂ][\x80-\xBF]/.test(out)) {
+        try {
+          const bytes = new Uint8Array(out.length);
+          for (let i = 0; i < out.length; i++) bytes[i] = out.charCodeAt(i) & 0xff;
+          out = new TextDecoder('utf-8').decode(bytes);
+        } catch { /* keep */ }
+      }
+      // Normalize to NFC so combining marks render correctly
+      try { out = out.normalize('NFC'); } catch { /* keep */ }
+      return out;
     };
     const walk = (v: any): any => {
       if (typeof v === 'string') return fixMojibake(v);
