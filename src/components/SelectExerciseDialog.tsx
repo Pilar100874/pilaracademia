@@ -64,6 +64,30 @@ export function SelectExerciseDialog({
     return m;
   }, [categories]);
 
+  // Map each category to itself + all descendants, so filtering by a parent
+  // category includes exercises tagged with sub-categories.
+  const descendantsMap = useMemo(() => {
+    const childrenOf = new Map<string | null, typeof categories>();
+    categories.forEach((c) => {
+      const key = c.parent_id ?? null;
+      const arr = childrenOf.get(key) ?? [];
+      arr.push(c);
+      childrenOf.set(key, arr);
+    });
+    const map = new Map<string, Set<string>>();
+    const collect = (id: string): Set<string> => {
+      if (map.has(id)) return map.get(id)!;
+      const set = new Set<string>([id]);
+      (childrenOf.get(id) ?? []).forEach((child) => {
+        collect(child.id).forEach((d) => set.add(d));
+      });
+      map.set(id, set);
+      return set;
+    };
+    categories.forEach((c) => collect(c.id));
+    return map;
+  }, [categories]);
+
   // Selected exercises may live in either tab — keep a global lookup so the
   // confirm button can resolve them regardless of which tab is active.
   const exerciseMap = useMemo(() => {
@@ -77,13 +101,11 @@ export function SelectExerciseDialog({
   const filteredExercises = sourceList.filter((ex) => {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
     let matchesCategory = true;
-    if (activeTab === 'mine') {
-      // Categories only apply to personal items
-      if (filterCategory === NO_CATEGORY) {
-        matchesCategory = !ex.category_id;
-      } else if (filterCategory !== ALL_CATEGORIES) {
-        matchesCategory = ex.category_id === filterCategory;
-      }
+    if (filterCategory === NO_CATEGORY) {
+      matchesCategory = (ex.category_ids?.length ?? 0) === 0;
+    } else if (filterCategory !== ALL_CATEGORIES) {
+      const allowed = descendantsMap.get(filterCategory) ?? new Set([filterCategory]);
+      matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
     }
     const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, ex.mobility_analysis, bodyFilter);
     return matchesSearch && matchesCategory && matchesBody;
@@ -139,7 +161,7 @@ export function SelectExerciseDialog({
 
         <div className="flex-1 flex flex-col min-h-0 space-y-4">
           {/* Tabs: Mine / Global */}
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as Tab); setFilterCategory(ALL_CATEGORIES); }}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="mine">
                 Meus ({exercises.length})
