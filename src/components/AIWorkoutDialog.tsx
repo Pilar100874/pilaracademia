@@ -93,6 +93,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setVaryCategories(false);
     setSelectedCategoryIds([]);
     setSource('all');
+    setUseBodyPlan(false);
   };
 
   const toggleCategory = (id: string) => {
