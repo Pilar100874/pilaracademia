@@ -93,7 +93,7 @@ export function useWorkoutPlans() {
   });
 
   const createPlan = useMutation({
-    mutationFn: async (data: { name: string; days_of_week: number[]; cooldown_enabled?: boolean }) => {
+    mutationFn: async (data: { name: string; days_of_week: number[]; cooldown_enabled?: boolean; is_cooldown_plan?: boolean }) => {
       if (!user) throw new Error('User not authenticated');
 
       const { data: plan, error } = await supabase
@@ -103,16 +103,17 @@ export function useWorkoutPlans() {
           name: data.name,
           days_of_week: data.days_of_week,
           ...(data.cooldown_enabled !== undefined ? { cooldown_enabled: data.cooldown_enabled } : {}),
-        })
+          ...(data.is_cooldown_plan !== undefined ? { is_cooldown_plan: data.is_cooldown_plan } : {}),
+        } as any)
         .select()
         .single();
 
       if (error) throw error;
       return plan;
     },
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['workout-plans'] });
-      toast.success('Treino criado!');
+      if (!vars.is_cooldown_plan) toast.success('Treino criado!');
     },
     onError: () => {
       toast.error('Erro ao criar treino');
