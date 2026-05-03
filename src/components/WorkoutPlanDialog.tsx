@@ -175,7 +175,9 @@ export function WorkoutPlanDialog({
       video_start_seconds: libraryExercise.video_start_seconds ?? null,
       video_end_seconds: libraryExercise.video_end_seconds ?? null,
       exercise_library_id: libraryExercise.id,
+      is_cooldown: addingCooldown,
     });
+    setAddingCooldown(false);
   };
 
   const handleDeleteExercise = async (id: string) => {
