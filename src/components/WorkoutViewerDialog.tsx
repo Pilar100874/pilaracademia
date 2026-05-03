@@ -304,17 +304,7 @@ export function WorkoutViewerDialog({
               )}
             </Button>
           )}
-          {!inCooldown ? (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setShowFinishPrompt(true)}
-              className="gap-1.5"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Finalizar
-            </Button>
-          ) : (
+          {inCooldown && (
             <span className="inline-flex items-center gap-1.5 text-white text-xs font-semibold bg-emerald-500/30 px-2.5 py-1 rounded-full backdrop-blur-sm border border-emerald-300/40">
               <Leaf className="h-3.5 w-3.5" />
               Alongamento
@@ -486,6 +476,17 @@ export function WorkoutViewerDialog({
             >
               <Sparkles className="h-6 w-6" strokeWidth={2.3} />
             </button>
+
+            {/* Finalizar (sempre visível, ao lado de avançar) */}
+            {!inCooldown && (
+              <button
+                onClick={() => setShowFinishPrompt(true)}
+                aria-label="Finalizar treino"
+                className="group h-12 w-12 shrink-0 rounded-full bg-emerald-500/90 flex items-center justify-center text-white transition-all hover:bg-emerald-500 active:scale-95"
+              >
+                <CheckCircle2 className="h-7 w-7" strokeWidth={2.5} />
+              </button>
+            )}
 
             {/* Next */}
             <button
