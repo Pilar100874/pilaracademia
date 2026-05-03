@@ -420,7 +420,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 <FieldError message={errorOf('count')} />
               </div>
 
-              {planInfo?.plan && (
+              {planInfo?.plan?.training_intent?.focus && (
                 <div className="rounded-md border border-border bg-muted/20 p-3 space-y-2">
                   <label className="flex items-start gap-2 cursor-pointer">
                     <input
