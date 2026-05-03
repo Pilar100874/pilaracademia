@@ -6,7 +6,7 @@ import { Navigate } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Loader2, Sparkles, Search, ShieldAlert } from 'lucide-react';
-import { PageMotion } from '@/components/PageMotion';
+// Page motion not used here
 import { toast } from 'sonner';
 
 interface ProfileRow {
@@ -78,7 +78,7 @@ export default function MovementAnalysisAccessPage() {
   const enabledCount = profiles.filter((p) => p.movement_analysis_enabled).length;
 
   return (
-    <PageMotion>
+    <>
       <div className="min-h-screen bg-background pb-24">
         <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl border-b border-border/50 px-4 py-4">
           <h1 className="text-lg font-bold flex items-center gap-2">
@@ -139,6 +139,6 @@ export default function MovementAnalysisAccessPage() {
           )}
         </div>
       </div>
-    </PageMotion>
+    </>
   );
 }
