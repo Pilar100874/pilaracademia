@@ -1,7 +1,8 @@
-import { ArrowLeft, Beef, Wheat, Droplets, Flame, BookOpen, Activity, Target, FlaskConical, Droplet, Scale, Shield, Utensils, Dumbbell, Mic } from 'lucide-react';
+import { ArrowLeft, Beef, Wheat, Droplets, Flame, BookOpen, Activity, Target, FlaskConical, Droplet, Scale, Shield, Utensils, Dumbbell, Mic, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { BottomNav } from '@/components/BottomNav';
+import { CheckUpdateButton } from '@/components/CheckUpdateButton';
 
 interface NutrientCardProps {
   icon: typeof Beef;
