@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorkoutPlan, useWorkoutPlans } from '@/hooks/useWorkoutPlans';
-import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon, Sparkles, Flame, Battery, BatteryLow, Zap, Leaf, CheckCircle2, Mic, MicOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon, Sparkles, Flame, Battery, BatteryLow, Zap, Leaf, CheckCircle2, Mic, MicOff, AudioLines, Headphones } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { AnalysisOverlay } from '@/components/AnalysisOverlay';
 import { WorkoutFormCoach } from '@/components/WorkoutFormCoach';
@@ -349,21 +349,6 @@ export function WorkoutViewerDialog({
               )}
             </Button>
           )}
-          {voiceEnabled && voiceSupported && (
-            <button
-              type="button"
-              onClick={() => setVoiceActive((s) => !s)}
-              className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm border transition-colors ${
-                voiceActive && listening
-                  ? 'text-white bg-red-500/40 border-red-300/50 animate-pulse'
-                  : 'text-white/80 bg-white/10 border-white/20 hover:bg-white/20'
-              }`}
-              title={voiceActive ? 'Desativar comandos por voz' : 'Ativar comandos por voz'}
-            >
-              {voiceActive && listening ? <Mic className="h-3.5 w-3.5" /> : <MicOff className="h-3.5 w-3.5" />}
-              <span>Voz</span>
-            </button>
-          )}
           {inCooldown && (
             <span className="inline-flex items-center gap-1.5 text-white text-xs font-semibold bg-emerald-500/30 px-2.5 py-1 rounded-full backdrop-blur-sm border border-emerald-300/40">
               <Leaf className="h-3.5 w-3.5" />
@@ -538,6 +523,28 @@ export function WorkoutViewerDialog({
             >
               <Sparkles className="h-6 w-6" strokeWidth={2.3} />
             </button>
+
+            {/* Voice toggle (somente se habilitado nas configurações e suportado) */}
+            {voiceEnabled && voiceSupported && (
+              <button
+                type="button"
+                onClick={() => setVoiceActive((s) => !s)}
+                aria-label={voiceActive ? 'Desativar comandos por voz' : 'Ativar comandos por voz'}
+                aria-pressed={voiceActive}
+                title={voiceActive ? 'Desativar comandos por voz' : 'Ativar comandos por voz'}
+                className={`group h-12 w-12 shrink-0 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+                  voiceActive && listening
+                    ? 'bg-gradient-to-br from-rose-500 to-rose-600 text-white ring-2 ring-white/40 shadow-lg animate-pulse'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/15'
+                }`}
+              >
+                {voiceActive ? (
+                  <AudioLines className="h-6 w-6" strokeWidth={2.3} />
+                ) : (
+                  <Headphones className="h-6 w-6" strokeWidth={2.3} />
+                )}
+              </button>
+            )}
 
             {/* Finalizar (sempre visível, ao lado de avançar) */}
             {!inCooldown && (
