@@ -414,3 +414,21 @@ export function WorkoutPlanDialog({
     </>
   );
 }
+
+function VoiceCommandsToggle() {
+  const [enabled, setEnabled] = useVoiceCommandsEnabled();
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-md border border-border bg-muted/30 p-3">
+      <div className="min-w-0 flex items-start gap-2">
+        <Mic className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+        <div className="min-w-0">
+          <Label className="cursor-pointer">Comandos por voz</Label>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Diga <strong>"próximo"</strong>, <strong>"voltar"</strong> ou <strong>"finalizar"</strong> durante o treino. Útil quando estiver sozinho na sala.
+          </p>
+        </div>
+      </div>
+      <Switch checked={enabled} onCheckedChange={setEnabled} />
+    </div>
+  );
+}
