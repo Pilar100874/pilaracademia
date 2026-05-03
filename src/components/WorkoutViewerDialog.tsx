@@ -28,10 +28,11 @@ export function WorkoutViewerDialog({
   const [inCooldown, setInCooldown] = useState(false);
   const [showFinishPrompt, setShowFinishPrompt] = useState(false);
 
+  const { cooldownPlan } = useWorkoutPlans();
   const allExercises = plan.exercises || [];
   const mainBase = useMemo(() => allExercises.filter((e: any) => !e.is_cooldown), [allExercises]);
-  const cooldownBase = useMemo(() => allExercises.filter((e: any) => e.is_cooldown), [allExercises]);
-  const hasCooldown = (plan.cooldown_enabled ?? true) && cooldownBase.length > 0;
+  const cooldownBase = useMemo(() => cooldownPlan?.exercises ?? [], [cooldownPlan]);
+  const hasCooldown = cooldownBase.length > 0;
 
   const baseExercises = inCooldown ? cooldownBase : mainBase;
   const { exercises, removedCount } = useMemo(() => {
