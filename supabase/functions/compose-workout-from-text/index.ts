@@ -92,7 +92,7 @@ Tarefas:
 Responda CHAMANDO a função build_workout com a lista ordenada de IDs e uma breve justificativa.`;
 
     const userPrompt = `Objetivo: ${prompt}
-${body.health_context ? `\n${body.health_context}\n` : ''}
+${body.body_plan_context ? `\n${body.body_plan_context}\n` : ''}${body.health_context ? `\n${body.health_context}\n` : ''}
 Biblioteca disponível (${library.length} exercícios):
 ${libSummary}`;
 
