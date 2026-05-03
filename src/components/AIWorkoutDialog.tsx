@@ -17,8 +17,9 @@ import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { useBloodExams } from '@/hooks/useBloodExams';
+import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
 import { buildBloodExamHealthContext } from '@/lib/bloodExamContext';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -50,6 +51,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
   const { list: bloodExamsQ } = useBloodExams();
+  const planInfo = useCurrentBodyPlan();
 
   const [step, setStep] = useState(0);
   const [name, setName] = useState(initialName || '');
@@ -60,6 +62,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [varyCategories, setVaryCategories] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [source, setSource] = useState<'all' | 'mine' | 'global'>('all');
+  const [useBodyPlan, setUseBodyPlan] = useState(false);
   const [generating, setGenerating] = useState(false);
 
   const nameRef = useRef<HTMLInputElement>(null);
@@ -90,6 +93,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setVaryCategories(false);
     setSelectedCategoryIds([]);
     setSource('all');
+    setUseBodyPlan(false);
   };
 
   const toggleCategory = (id: string) => {
@@ -175,6 +179,23 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setGenerating(true);
     try {
       const healthContext = buildBloodExamHealthContext(bloodExamsQ.data) || undefined;
+      let bodyPlanContext: string | undefined;
+      if (useBodyPlan && planInfo?.plan) {
+        const p = planInfo.plan;
+        const ti = p.training_intent;
+        const lines: string[] = ['INTENÇÃO DE TREINO (da análise corporal):'];
+        if (p.goal?.primary) lines.push(`- Objetivo principal: ${p.goal.primary}`);
+        if (p.classification?.body_profile) lines.push(`- Perfil corporal: ${p.classification.body_profile}`);
+        if (ti?.focus) lines.push(`- Foco: ${ti.focus}`);
+        if (ti?.split) lines.push(`- Divisão: ${ti.split}`);
+        if (ti?.frequency_per_week) lines.push(`- Frequência sugerida: ${ti.frequency_per_week}x/semana`);
+        if (ti?.session_minutes) lines.push(`- Duração por sessão: ~${ti.session_minutes}min`);
+        if (ti?.intensity) lines.push(`- Intensidade: ${ti.intensity}`);
+        if (ti?.priority_muscle_groups?.length) lines.push(`- Grupos prioritários: ${ti.priority_muscle_groups.join(', ')}`);
+        if (ti?.volume_note) lines.push(`- Volume: ${ti.volume_note}`);
+        if (planInfo.currentPhase?.training) lines.push(`- Fase atual (semana ${planInfo.currentWeek}): ${planInfo.currentPhase.training}`);
+        bodyPlanContext = lines.join('\n');
+      }
       const byId = new Map(exercises.map((ex) => [ex.id, ex] as const));
 
       const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -219,7 +240,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         }));
 
         const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
-          body: { prompt: prompt.trim(), count: n, library, health_context: healthContext },
+          body: { prompt: prompt.trim(), count: n, library, health_context: healthContext, body_plan_context: bodyPlanContext },
         });
 
         if (error) {
@@ -398,6 +419,30 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 />
                 <FieldError message={errorOf('count')} />
               </div>
+
+              {planInfo?.plan && (
+                <div className="rounded-md border border-border bg-muted/20 p-3 space-y-2">
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useBodyPlan}
+                      onChange={(e) => setUseBodyPlan(e.target.checked)}
+                      className="h-4 w-4 mt-0.5 rounded border-input accent-primary"
+                    />
+                    <span className="text-xs leading-snug flex-1">
+                      <span className="inline-flex items-center gap-1.5 font-medium">
+                        <Target className="h-3.5 w-3.5 text-primary" />
+                        Usar intenção da Análise Corporal
+                      </span>
+                      <span className="block text-[10px] text-muted-foreground mt-0.5">
+                        {planInfo.plan.training_intent?.focus
+                          ? `Foco: ${planInfo.plan.training_intent.focus}${planInfo.plan.training_intent.frequency_per_week ? ` · ${planInfo.plan.training_intent.frequency_per_week}x/sem` : ''}${planInfo.plan.training_intent.intensity ? ` · ${planInfo.plan.training_intent.intensity}` : ''}`
+                          : 'A IA seguirá a periodização e foco do seu plano atual.'}
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              )}
             </div>
           )}
 
