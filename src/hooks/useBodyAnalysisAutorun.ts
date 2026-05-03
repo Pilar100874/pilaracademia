@@ -54,7 +54,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
         (!ex.body_analyzed_at || !ex.mobility_analysis) &&
         !!ex.video_url &&
         !!ex.video_type &&
-        ex.video_type !== 'instagram' && // Instagram embed: sem URL pública direta
+        ex.video_type !== 'instagram' &&
         !failed.has(ex.id)
     );
 
@@ -63,9 +63,27 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
       return;
     }
 
+    // Gate: only run if the master admin enabled this feature for the user.
+    let permissionDenied = false;
+    const checkPermission = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('movement_analysis_enabled')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (error) return false;
+      return (data as { movement_analysis_enabled?: boolean } | null)?.movement_analysis_enabled === true;
+    };
+
     setProgress({ done: 0, total: queue.length });
 
     const run = async () => {
+      const allowed = await checkPermission();
+      if (!allowed) {
+        permissionDenied = true;
+        if (!cancelled) setProgress(null);
+        return;
+      }
       let done = 0;
       for (const ex of queue) {
         if (cancelled) return;
