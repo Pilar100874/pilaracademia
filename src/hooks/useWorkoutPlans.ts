@@ -284,8 +284,13 @@ export function useWorkoutPlans() {
     return data.publicUrl;
   };
 
+  const cooldownPlan = (workoutPlans as WorkoutPlan[]).find((p) => p.is_cooldown_plan) || null;
+  const regularPlans = (workoutPlans as WorkoutPlan[]).filter((p) => !p.is_cooldown_plan);
+
   return {
-    workoutPlans,
+    workoutPlans: regularPlans,
+    allPlans: workoutPlans as WorkoutPlan[],
+    cooldownPlan,
     isLoading,
     createPlan,
     updatePlan,
