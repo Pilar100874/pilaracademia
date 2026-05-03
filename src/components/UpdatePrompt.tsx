@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const isPreviewOrIframe = (() => {
   if (typeof window === "undefined") return false;
@@ -42,15 +43,18 @@ export function UpdatePrompt() {
 
     let activeReg: ServiceWorkerRegistration | null = null;
 
+    const recheck = () => activeReg?.update().catch(() => {});
+
     const startPolling = (reg: ServiceWorkerRegistration) => {
       activeReg = reg;
+      // Immediate check so the banner can surface on the auth/login screen.
+      reg.update().catch(() => {});
       // Check every 5 min while the tab is open (browser & PWA).
       setInterval(() => {
         reg.update().catch(() => {});
       }, 5 * 60 * 1000);
       // Also re-check whenever the tab becomes visible / focused —
       // covers reopening the PWA and switching back to the browser tab.
-      const recheck = () => reg.update().catch(() => {});
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") recheck();
       });
@@ -74,7 +78,6 @@ export function UpdatePrompt() {
         });
       })
       .catch(() => {
-        // fallback: just attach to existing registration
         navigator.serviceWorker.getRegistration().then((reg) => {
           if (!cancelled && reg) {
             setupWaiting(reg);
@@ -82,6 +85,15 @@ export function UpdatePrompt() {
           }
         });
       });
+
+    // Re-check for new versions on auth state changes (login, token refresh).
+    // This makes the update banner appear right after a successful login,
+    // even if the user kept the auth screen open for a while.
+    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+        recheck();
+      }
+    });
 
     let reloading = false;
     const onControllerChange = () => {
@@ -93,6 +105,7 @@ export function UpdatePrompt() {
 
     return () => {
       cancelled = true;
+      authSub.subscription.unsubscribe();
       navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
     };
   }, []);
