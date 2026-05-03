@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BottomNav } from '@/components/BottomNav';
 import {
   Activity,
@@ -46,7 +46,8 @@ import { exportPlanToPdf } from '@/lib/exportPlanPdf';
 import { FileDown, Camera as CameraIcon } from 'lucide-react';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useBackgroundAnalysis } from '@/contexts/BackgroundAnalysisContext';
 import { LazyVideoPreview } from '@/components/LazyVideoPreview';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
