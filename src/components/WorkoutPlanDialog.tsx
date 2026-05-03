@@ -289,6 +289,8 @@ export function WorkoutPlanDialog({
               </div>
             </div>
 
+            <VoiceCommandsToggle />
+
             <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Exercícios (arraste para reordenar)</Label>
