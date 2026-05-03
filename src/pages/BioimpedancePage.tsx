@@ -205,7 +205,16 @@ export default function BioimpedancePage() {
           </p>
         </header>
 
-        <Tabs defaultValue="bioimpedance" className="px-5 py-5">
+        <Tabs
+          value={tabFromUrl}
+          onValueChange={(v) => {
+            const next = new URLSearchParams(searchParams);
+            if (v === 'blood') next.set('tab', 'blood');
+            else next.delete('tab');
+            setSearchParams(next, { replace: true });
+          }}
+          className="px-5 py-5"
+        >
           <TabsList className="w-full grid grid-cols-2 mb-5">
             <TabsTrigger value="bioimpedance">Bioimpedância</TabsTrigger>
             <TabsTrigger value="blood">Exames de sangue</TabsTrigger>
