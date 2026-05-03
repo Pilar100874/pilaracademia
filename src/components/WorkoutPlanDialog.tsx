@@ -116,14 +116,12 @@ export function WorkoutPlanDialog({
         id: currentPlan.id,
         name: name.trim(),
         days_of_week: selectedDays,
-        cooldown_enabled: cooldownEnabled,
       });
       onOpenChange(false);
     } else {
       const created = await createPlan.mutateAsync({
         name: name.trim(),
         days_of_week: selectedDays,
-        cooldown_enabled: cooldownEnabled,
       });
       if (created && onCreated) onCreated(created as WorkoutPlan);
       onOpenChange(false);
@@ -149,16 +147,14 @@ export function WorkoutPlanDialog({
     const created = await createPlan.mutateAsync({
       name: name.trim(),
       days_of_week: selectedDays,
-      cooldown_enabled: cooldownEnabled,
     });
     if (created && onCreated) onCreated(created as WorkoutPlan);
     return (created as WorkoutPlan) || null;
   };
 
-  const openAddExercise = async (cooldown: boolean) => {
+  const openAddExercise = async () => {
     const plan = await ensurePlan();
     if (!plan) return;
-    setAddingCooldown(cooldown);
     setSelectExerciseOpen(true);
   };
 
