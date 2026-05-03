@@ -121,14 +121,18 @@ export default function WeeklyMenuPage() {
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              A IA usa seu perfil (metas, peso, objetivo, preferências) para montar o cardápio.
-              Você pode adicionar instruções extras abaixo.
+              A IA usa seu perfil (metas, peso, objetivo) e já considera automaticamente suas{' '}
+              <strong>preferências e restrições alimentares</strong> cadastradas — não precisa repeti-las aqui.
             </p>
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              ✓ Restrições, alimentos a evitar e favoritos já entram no prompt. Use o campo abaixo só para
+              instruções extras (ex.: "semana com mais peixe", "sem repetir refeições").
+            </div>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ex: prefiro sem lactose, gosto de frango e batata-doce, sem frituras..."
-              rows={4}
+              placeholder="Opcional: instruções extras para esta semana..."
+              rows={3}
             />
             <Button
               onClick={handleGenerate}
