@@ -48,6 +48,8 @@ export default function WeeklyMenuPage() {
       toast.error(e.message || 'Erro ao adicionar refeição');
     }
   };
+
+  const handleGenerate = async () => {
     await generate.mutateAsync(notes.trim() || undefined);
     setNotes('');
     setGenerateOpen(false);
