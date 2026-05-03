@@ -861,16 +861,20 @@ export default function BodyAnalysisPage() {
       const extractedWeight = Number(plan.extracted?.weight_kg);
       const extractedHeight = Number(plan.extracted?.height_cm);
       const extractedSex = plan.extracted?.sex;
+      const syncedFields: string[] = [];
       try {
         const profileUpdate: Record<string, unknown> = {};
         if (Number.isFinite(extractedWeight) && extractedWeight >= 30 && extractedWeight <= 300) {
           profileUpdate.weight_kg = extractedWeight;
+          syncedFields.push(`peso ${extractedWeight} kg`);
         }
         if (Number.isFinite(extractedHeight) && extractedHeight >= 100 && extractedHeight <= 250) {
           profileUpdate.height_cm = extractedHeight;
+          syncedFields.push(`altura ${extractedHeight} cm`);
         }
         if (extractedSex === 'male' || extractedSex === 'female') {
           profileUpdate.gender = extractedSex;
+          syncedFields.push(`gênero ${extractedSex === 'male' ? 'masculino' : 'feminino'}`);
         }
         if (Object.keys(profileUpdate).length > 0) {
           await updateProfile(profileUpdate);
@@ -883,7 +887,14 @@ export default function BodyAnalysisPage() {
         console.warn('Falha ao sincronizar perfil com bioimpedância', syncErr);
       }
 
-      toast.success('Análise pronta! Perfil atualizado.');
+      if (syncedFields.length > 0) {
+        toast.success('Análise pronta!', {
+          description: `Perfil atualizado automaticamente: ${syncedFields.join(', ')}.`,
+          duration: 6000,
+        });
+      } else {
+        toast.success('Análise pronta!');
+      }
     } catch (err) {
       console.error(err);
       toast.error(err instanceof Error ? err.message : 'Erro ao analisar relatório');
