@@ -500,11 +500,15 @@ export function WorkoutViewerDialog({
               <Sparkles className="h-6 w-6" strokeWidth={2.3} />
             </button>
 
-            {/* Voice toggle (somente se habilitado nas configurações e suportado) */}
-            {voiceEnabled && voiceSupported && (
+            {/* Voice toggle — sempre visível quando suportado pelo navegador */}
+            {voiceSupported && (
               <button
                 type="button"
-                onClick={() => setVoiceActive((s) => !s)}
+                onClick={() => {
+                  const next = !voiceActive;
+                  setVoiceActive(next);
+                  setVoiceEnabled(next);
+                }}
                 aria-label={voiceActive ? 'Desativar comandos por voz' : 'Ativar comandos por voz'}
                 aria-pressed={voiceActive}
                 title={voiceActive ? 'Desativar comandos por voz' : 'Ativar comandos por voz'}
