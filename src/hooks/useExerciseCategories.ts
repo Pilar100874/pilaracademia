@@ -21,10 +21,11 @@ export function useExerciseCategories() {
     queryKey,
     queryFn: async () => {
       if (!user) return [];
+      // Inclui categorias do usuário + categorias globais (visíveis a todos)
       const { data, error } = await supabase
         .from('exercise_categories')
         .select('*')
-        .eq('user_id', user.id)
+        .or(`user_id.eq.${user.id},is_global.eq.true`)
         .order('name', { ascending: true });
       if (error) throw error;
       return data as ExerciseCategory[];
