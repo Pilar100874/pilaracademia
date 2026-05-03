@@ -134,16 +134,28 @@ export default function TourPage() {
                   key={s.id}
                   type="button"
                   onClick={() => setActive(s.id)}
-                  className="group rounded-md border border-border bg-card p-4 flex items-center gap-4 text-left hover:bg-muted/30 transition-colors"
+                  className="group rounded-md border border-border bg-card overflow-hidden text-left hover:bg-muted/30 transition-colors"
                 >
-                  <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl shrink-0', s.bg)}>
-                    <s.icon className={cn('h-6 w-6', s.accent)} />
+                  <div className="aspect-[16/10] w-full overflow-hidden bg-muted/30">
+                    <img
+                      src={s.image}
+                      alt={s.title}
+                      loading="lazy"
+                      width={1024}
+                      height={640}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold">{s.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">{s.subtitle}</p>
+                  <div className="p-4 flex items-center gap-4">
+                    <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl shrink-0', s.bg)}>
+                      <s.icon className={cn('h-6 w-6', s.accent)} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold">{s.title}</p>
+                      <p className="text-xs text-muted-foreground truncate">{s.subtitle}</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                 </button>
               ))}
             </div>
@@ -159,13 +171,25 @@ export default function TourPage() {
 
         {current && (
           <>
-            <section className="rounded-md border border-border bg-card p-4 flex items-center gap-3">
-              <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl shrink-0', current.bg)}>
-                <current.icon className={cn('h-6 w-6', current.accent)} />
+            <section className="rounded-md border border-border bg-card overflow-hidden">
+              <div className="aspect-[16/10] w-full overflow-hidden bg-muted/30">
+                <img
+                  src={current.image}
+                  alt={current.title}
+                  loading="lazy"
+                  width={1024}
+                  height={640}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <div className="flex-1">
-                <p className="font-semibold">{current.title}</p>
-                <p className="text-xs text-muted-foreground">{current.subtitle}</p>
+              <div className="p-4 flex items-center gap-3">
+                <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl shrink-0', current.bg)}>
+                  <current.icon className={cn('h-6 w-6', current.accent)} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold">{current.title}</p>
+                  <p className="text-xs text-muted-foreground">{current.subtitle}</p>
+                </div>
               </div>
             </section>
 
