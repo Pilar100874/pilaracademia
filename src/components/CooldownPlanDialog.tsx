@@ -138,6 +138,8 @@ export function CooldownPlanDialog({ open, onOpenChange }: CooldownPlanDialogPro
               Esta sequência é compartilhada por todos os treinos. Ao finalizar qualquer treino, você poderá rodá-la para terminar com um alongamento.
             </p>
 
+            <CooldownPromptToggle />
+
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">
                 {localExercises.length} {localExercises.length === 1 ? 'exercício' : 'exercícios'}
