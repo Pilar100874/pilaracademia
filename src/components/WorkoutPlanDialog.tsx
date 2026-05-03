@@ -294,14 +294,14 @@ export function WorkoutPlanDialog({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => openAddExercise(false)}
+                    onClick={() => openAddExercise()}
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Adicionar
                   </Button>
                 </div>
 
-                {mainExercises.length === 0 ? (
+                {localExercises.length === 0 ? (
                   <div className="text-center py-6 border-2 border-dashed rounded-lg">
                     <p className="text-sm text-muted-foreground mb-2">
                       Nenhum exercício adicionado
@@ -309,7 +309,7 @@ export function WorkoutPlanDialog({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => openAddExercise(false)}
+                      onClick={() => openAddExercise()}
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Adicionar da Biblioteca
@@ -317,96 +317,26 @@ export function WorkoutPlanDialog({
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {localExercises.map((exercise, index) => {
-                      if (exercise.is_cooldown) return null;
-                      return (
-                        <div
-                          key={exercise.id}
-                          draggable
-                          onDragStart={() => handleDragStart(index)}
-                          onDragOver={(e) => handleDragOver(e, index)}
-                          onDragEnd={handleDragEnd}
-                          className={`transition-opacity ${
-                            draggedIndex === index ? 'opacity-50' : ''
-                          }`}
-                        >
-                          <ExerciseListItem
-                            exercise={exercise}
-                            index={mainExercises.findIndex((e) => e.id === exercise.id)}
-                            onEdit={() => handleEditExercise(exercise)}
-                            onDelete={() => setDeletingExercise(exercise)}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-            <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Leaf className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <Label className="m-0 cursor-pointer">Final de treino (alongamento)</Label>
-                  </div>
-                  <Switch
-                    checked={cooldownEnabled}
-                    onCheckedChange={async (v) => {
-                      setCooldownEnabled(v);
-                      if (currentPlan) {
-                        await updatePlan.mutateAsync({
-                          id: currentPlan.id,
-                          name: name.trim() || currentPlan.name,
-                          days_of_week: selectedDays,
-                          cooldown_enabled: v,
-                        });
-                      }
-                    }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Sequência opcional de alongamentos disparada quando você quiser encerrar o treino.
-                </p>
-
-                {cooldownEnabled && (
-                  <>
-                    {cooldownExercises.length === 0 ? (
-                      <div className="text-center py-4 border-2 border-dashed rounded-md">
-                        <p className="text-xs text-muted-foreground mb-2">
-                          Nenhum alongamento adicionado
-                        </p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openAddExercise(true)}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Adicionar alongamento
-                        </Button>
+                    {localExercises.map((exercise, index) => (
+                      <div
+                        key={exercise.id}
+                        draggable
+                        onDragStart={() => handleDragStart(index)}
+                        onDragOver={(e) => handleDragOver(e, index)}
+                        onDragEnd={handleDragEnd}
+                        className={`transition-opacity ${
+                          draggedIndex === index ? 'opacity-50' : ''
+                        }`}
+                      >
+                        <ExerciseListItem
+                          exercise={exercise}
+                          index={index}
+                          onEdit={() => handleEditExercise(exercise)}
+                          onDelete={() => setDeletingExercise(exercise)}
+                        />
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {cooldownExercises.map((exercise, idx) => (
-                          <ExerciseListItem
-                            key={exercise.id}
-                            exercise={exercise}
-                            index={idx}
-                            onEdit={() => handleEditExercise(exercise)}
-                            onDelete={() => setDeletingExercise(exercise)}
-                          />
-                        ))}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => openAddExercise(true)}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Adicionar alongamento
-                        </Button>
-                      </div>
-                    )}
-                  </>
+                    ))}
+                  </div>
                 )}
               </div>
 
