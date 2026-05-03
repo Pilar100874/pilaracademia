@@ -48,6 +48,7 @@ import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { useNavigate } from 'react-router-dom';
 import { LazyVideoPreview } from '@/components/LazyVideoPreview';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 
@@ -803,6 +804,7 @@ export default function BodyAnalysisPage() {
   const [aiCount, setAiCount] = useState<number>(8);
   const [compareOpen, setCompareOpen] = useState(false);
   const [photosOpen, setPhotosOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const selected = (list.data || []).find((r) => r.id === selectedId) || (list.data || [])[0];
 
@@ -1170,9 +1172,7 @@ export default function BodyAnalysisPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    if (confirm('Excluir esta análise?')) remove.mutate(selected.id);
-                  }}
+                  onClick={() => setConfirmDeleteId(selected.id)}
                   className="text-muted-foreground h-7"
                 >
                   <Trash2 className="h-4 w-4" />
