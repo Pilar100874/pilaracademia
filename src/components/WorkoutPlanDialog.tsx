@@ -128,12 +128,14 @@ export function WorkoutPlanDialog({
         id: editingPlan.id,
         name: name.trim(),
         days_of_week: selectedDays,
+        cooldown_enabled: cooldownEnabled,
       });
       onOpenChange(false);
     } else {
       const created = await createPlan.mutateAsync({
         name: name.trim(),
         days_of_week: selectedDays,
+        cooldown_enabled: cooldownEnabled,
       });
       // Keep the dialog open in edit mode and immediately open the
       // exercise selector so the user can start adding exercises.
