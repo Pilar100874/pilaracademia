@@ -93,6 +93,10 @@ export function WorkoutViewerDialog({
   const handleNextExercise = () => {
     if (!isLastExercise) {
       setCurrentExerciseIndex((prev) => prev + 1);
+    } else if (!inCooldown) {
+      setShowFinishPrompt(true);
+    } else {
+      finishWorkout();
     }
   };
 
