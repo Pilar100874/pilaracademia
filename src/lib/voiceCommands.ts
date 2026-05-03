@@ -50,12 +50,20 @@ export function useVoiceWorkoutCommands(active: boolean, handlers: VoiceHandlers
   const recognitionRef = useRef<any>(null);
   const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
+  const activeRef = useRef(active);
+  activeRef.current = active;
 
   useEffect(() => {
     if (!active) {
-      try {
-        recognitionRef.current?.stop();
-      } catch {}
+      const r = recognitionRef.current;
+      if (r) {
+        try { r.onend = null; } catch {}
+        try { r.onresult = null; } catch {}
+        try { r.onerror = null; } catch {}
+        try { r.abort?.(); } catch {}
+        try { r.stop?.(); } catch {}
+        recognitionRef.current = null;
+      }
       setListening(false);
       return;
     }
@@ -74,6 +82,7 @@ export function useVoiceWorkoutCommands(active: boolean, handlers: VoiceHandlers
     recognitionRef.current = recognition;
 
     recognition.onresult = (event: any) => {
+      if (!activeRef.current) return;
       const last = event.results[event.results.length - 1];
       if (!last.isFinal) return;
       const transcript = (last[0].transcript as string).toLowerCase().trim();
@@ -89,8 +98,8 @@ export function useVoiceWorkoutCommands(active: boolean, handlers: VoiceHandlers
     };
 
     recognition.onend = () => {
-      // restart automatically while active
-      if (active) {
+      // Reinicia somente se ainda estiver ativo (use ref, não closure stale)
+      if (activeRef.current && recognitionRef.current === recognition) {
         try {
           recognition.start();
         } catch {}
@@ -114,13 +123,30 @@ export function useVoiceWorkoutCommands(active: boolean, handlers: VoiceHandlers
     }
 
     return () => {
-      try {
-        recognition.onend = null;
-        recognition.stop();
-      } catch {}
+      try { recognition.onend = null; } catch {}
+      try { recognition.onresult = null; } catch {}
+      try { recognition.onerror = null; } catch {}
+      try { recognition.abort?.(); } catch {}
+      try { recognition.stop?.(); } catch {}
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
       setListening(false);
     };
   }, [active]);
 
+  // Garante parada quando o componente desmonta (ex.: usuário fecha o treino)
+  useEffect(() => {
+    return () => {
+      activeRef.current = false;
+      const r = recognitionRef.current;
+      if (r) {
+        try { r.onend = null; } catch {}
+        try { r.abort?.(); } catch {}
+        try { r.stop?.(); } catch {}
+        recognitionRef.current = null;
+      }
+    };
+  }, []);
+
   return { listening, supported, lastHeard };
 }
+
