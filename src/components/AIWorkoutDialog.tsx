@@ -62,6 +62,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [varyCategories, setVaryCategories] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [source, setSource] = useState<'all' | 'mine' | 'global'>('all');
+  const [useBodyPlan, setUseBodyPlan] = useState(false);
   const [generating, setGenerating] = useState(false);
 
   const nameRef = useRef<HTMLInputElement>(null);
