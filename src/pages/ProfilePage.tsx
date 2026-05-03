@@ -364,23 +364,23 @@ export function ProfilePage() {
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </button>
-        </div>
 
-        {isMaster && (
-          <button
-            onClick={() => navigate('/admin/movement-analysis')}
-            className="w-full flex items-center gap-3 p-3 rounded-md border border-border bg-card hover:bg-accent transition-colors"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-              <KeyRound className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 text-left">
-              <p className="font-medium text-sm">Análise de movimento (IA)</p>
-              <p className="text-xs text-muted-foreground">Definir quais usuários podem usar</p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </button>
-        )}
+          {isMaster && (
+            <button
+              onClick={() => navigate('/admin/movement-analysis')}
+              className="w-full flex items-center gap-3 py-3 text-left"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+                <KeyRound className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-sm">Análise de movimento (IA)</p>
+                <p className="text-xs text-muted-foreground">Definir quais usuários podem usar</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </button>
+          )}
+        </div>
 
         <Button variant="outline" size="lg" className="w-full h-12 rounded-xl" onClick={handleSignOut}>
           Sair da conta
