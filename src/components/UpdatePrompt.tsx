@@ -49,12 +49,6 @@ export function UpdatePrompt() {
       activeReg = reg;
       // Immediate check so the banner can surface on the auth/login screen.
       reg.update().catch(() => {});
-      // Burst of early checks — handles the auto-login case where the user
-      // never types credentials: the session is restored instantly and we
-      // still want the banner to surface within a few seconds.
-      [1500, 5000, 15000, 30000, 60000].forEach((ms) => {
-        setTimeout(() => reg.update().catch(() => {}), ms);
-      });
       // Check every 5 min while the tab is open (browser & PWA).
       setInterval(() => {
         reg.update().catch(() => {});
@@ -65,21 +59,6 @@ export function UpdatePrompt() {
         if (document.visibilityState === "visible") recheck();
       });
       window.addEventListener("focus", recheck);
-      // Re-check on client-side navigations (SPA route changes) so users
-      // logged-in via stored session also trigger checks while browsing.
-      window.addEventListener("popstate", recheck);
-      const origPush = history.pushState;
-      const origReplace = history.replaceState;
-      history.pushState = function (...args) {
-        const r = origPush.apply(this, args as Parameters<typeof origPush>);
-        recheck();
-        return r;
-      };
-      history.replaceState = function (...args) {
-        const r = origReplace.apply(this, args as Parameters<typeof origReplace>);
-        recheck();
-        return r;
-      };
     };
 
     // Dynamically import the virtual register module from vite-plugin-pwa
