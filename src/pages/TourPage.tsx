@@ -4,6 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { BottomNav } from '@/components/BottomNav';
 import { cn } from '@/lib/utils';
+import tourDashboard from '@/assets/tour-dashboard.jpg';
+import tourMenu from '@/assets/tour-menu.jpg';
+import tourWorkouts from '@/assets/tour-workouts.jpg';
+import tourHealth from '@/assets/tour-health.jpg';
 
 type Step = {
   icon: typeof Home;
@@ -19,6 +23,7 @@ type Section = {
   accent: string;
   bg: string;
   route: string;
+  image: string;
   steps: Step[];
 };
 
