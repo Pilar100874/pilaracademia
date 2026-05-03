@@ -232,13 +232,25 @@ export function WorkoutViewerDialog({
               <h2 className="text-white font-extrabold text-base sm:text-lg leading-tight tracking-tight truncate drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {plan.name}
               </h2>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 <span className="inline-flex items-baseline gap-1 text-white text-[11px] font-semibold bg-white/15 px-2 py-0.5 rounded-full backdrop-blur-sm">
                   <span className="font-bold">{exercises.length}</span>
                   <span className="text-white/70 text-[9px] uppercase tracking-wider">
                     exercícios
                   </span>
                 </span>
+                {energyMode && energyMode !== 'normal' && (
+                  <button
+                    type="button"
+                    onClick={() => setEnergyMode(null)}
+                    className="inline-flex items-center gap-1 text-white text-[10px] font-semibold bg-amber-500/30 hover:bg-amber-500/40 px-2 py-0.5 rounded-full backdrop-blur-sm border border-amber-300/30 transition-colors"
+                    title="Trocar modo"
+                  >
+                    {energyMode === 'tired' ? <Battery className="h-3 w-3" /> : <BatteryLow className="h-3 w-3" />}
+                    <span className="uppercase tracking-wider">{ENERGY_MODE_LABEL[energyMode]}</span>
+                    {removedCount > 0 && <span className="opacity-80">· −{removedCount}</span>}
+                  </button>
+                )}
               </div>
             </div>
           </div>
