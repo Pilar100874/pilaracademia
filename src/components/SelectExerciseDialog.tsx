@@ -161,7 +161,7 @@ export function SelectExerciseDialog({
 
         <div className="flex-1 flex flex-col min-h-0 space-y-4">
           {/* Tabs: Mine / Global */}
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as Tab); setFilterCategory(ALL_CATEGORIES); }}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="mine">
                 Meus ({exercises.length})
