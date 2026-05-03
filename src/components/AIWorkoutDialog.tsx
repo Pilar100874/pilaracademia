@@ -79,6 +79,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setPrompt('');
     setCount('8');
     setSelectedDays([]);
+    setAllowRepeat(true);
     setSelectedCategoryIds([]);
     setSource('all');
   };
