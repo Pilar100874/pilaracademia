@@ -64,7 +64,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
     }
 
     // Gate: only run if the master admin enabled this feature for the user.
-    let permissionDenied = false;
+    // permission gate
     const checkPermission = async () => {
       const { data, error } = await supabase
         .from('profiles')
@@ -80,7 +80,6 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
     const run = async () => {
       const allowed = await checkPermission();
       if (!allowed) {
-        permissionDenied = true;
         if (!cancelled) setProgress(null);
         return;
       }
