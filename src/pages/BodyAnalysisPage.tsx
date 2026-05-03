@@ -31,6 +31,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
 import { useProfile } from '@/hooks/useProfile';
+import { useWeightHistory } from '@/hooks/useWeightHistory';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { fileToBase64 } from '@/lib/analyzeFood';
 import type { BodyAnalysisRow, BodyPlan } from '@/types/bodyAnalysis';
@@ -789,7 +790,8 @@ export default function BodyAnalysisPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { list, create, remove } = useBodyAnalyses();
-  const { profile, applyNutritionOverride, clearNutritionOverride } = useProfile();
+  const { profile, updateProfile, applyNutritionOverride, clearNutritionOverride } = useProfile();
+  const { addWeightEntry, refetch: refetchWeights } = useWeightHistory();
   const { allExercises } = useExerciseLibrary();
   const { createPlan, addExercise } = useWorkoutPlans();
   const navigate = useNavigate();
@@ -874,6 +876,19 @@ export default function BodyAnalysisPage() {
         liquid_ml: plan.macros?.water_ml,
         source: `body_analysis:${selected.id}`,
       });
+
+      // Sync extracted bioimpedance weight to profile + weight history
+      const extractedWeight = Number(plan.extracted?.weight_kg);
+      if (Number.isFinite(extractedWeight) && extractedWeight >= 30 && extractedWeight <= 300) {
+        try {
+          await updateProfile({ weight_kg: extractedWeight });
+          await addWeightEntry(extractedWeight);
+          await refetchWeights();
+        } catch (wErr) {
+          console.warn('Falha ao sincronizar peso da bioimpedância', wErr);
+        }
+      }
+
       toast.success('Plano nutricional aplicado como meta diária');
     } catch (err) {
       console.error(err);
