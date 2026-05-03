@@ -740,7 +740,7 @@ export default function ExerciseLibraryPage() {
             .from('exercise_library')
             .update({ video_optimized_at: checkedAt } as never)
             .eq('id', ex.id);
-          setRecompressing((p) => (p ? { ...p, done: p.done + 1 } : p));
+          // `done` será incrementado pelo bloco `finally` abaixo.
           continue;
         }
 
