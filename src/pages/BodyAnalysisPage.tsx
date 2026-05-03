@@ -31,6 +31,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
 import { useProfile } from '@/hooks/useProfile';
+import { useWeightHistory } from '@/hooks/useWeightHistory';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { fileToBase64 } from '@/lib/analyzeFood';
 import type { BodyAnalysisRow, BodyPlan } from '@/types/bodyAnalysis';
