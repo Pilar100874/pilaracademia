@@ -456,6 +456,22 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                   </button>
                 ))}
               </div>
+              {selectedDays.length > 1 && (
+                <div className="space-y-1.5 pt-1">
+                  <p className="text-[10px] text-muted-foreground leading-snug">
+                    Será criado <strong>um treino para cada dia</strong> selecionado.
+                  </p>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={allowRepeat}
+                      onChange={(e) => setAllowRepeat(e.target.checked)}
+                      className="h-4 w-4 rounded border-input accent-primary"
+                    />
+                    <span className="text-xs">Permitir repetir exercícios entre os dias</span>
+                  </label>
+                </div>
+              )}
             </div>
           </div>
         </div>
