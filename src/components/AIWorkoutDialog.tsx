@@ -138,7 +138,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       const n = parseInt(count, 10);
       const first = validateRequired([
         { key: 'name', ref: nameRef, valid: !!name.trim(), message: 'Dê um nome para o treino' },
-        { key: 'prompt', ref: promptRef, valid: !!prompt.trim() && prompt.trim().length >= 5, message: 'Descreva o objetivo (mín. 5 caracteres)' },
+        ...(useBodyPlan ? [] : [{ key: 'prompt', ref: promptRef, valid: !!prompt.trim() && prompt.trim().length >= 5, message: 'Descreva o objetivo (mín. 5 caracteres)' }]),
         { key: 'count', ref: countRef, valid: !!n && n >= 1, message: 'Quantidade inválida' },
       ]);
       if (first) { setError(first.key, first.message); return false; }
@@ -374,35 +374,37 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="ai-prompt" className="text-xs font-medium flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  Objetivo do treino
-                </Label>
-                <Textarea
-                  id="ai-prompt"
-                  ref={promptRef}
-                  value={prompt}
-                  onChange={(e) => { setPrompt(e.target.value); clearIf('prompt'); }}
-                  placeholder="Ex.: Quero uma sequência com foco em glúteos e flexibilidade"
-                  rows={4}
-                  className="resize-none text-sm leading-relaxed"
-                  aria-invalid={!!errorOf('prompt')}
-                />
-                <FieldError message={errorOf('prompt')} />
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {EXAMPLES.map((ex) => (
-                    <button
-                      key={ex}
-                      type="button"
-                      onClick={() => setPrompt(ex)}
-                      className="text-[11px] px-2.5 py-1 rounded-full border border-border/70 bg-background hover:bg-accent hover:border-primary/40 text-foreground/80 transition-colors"
-                    >
-                      {ex.length > 42 ? ex.slice(0, 42) + '…' : ex}
-                    </button>
-                  ))}
+              {!useBodyPlan && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="ai-prompt" className="text-xs font-medium flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    Objetivo do treino
+                  </Label>
+                  <Textarea
+                    id="ai-prompt"
+                    ref={promptRef}
+                    value={prompt}
+                    onChange={(e) => { setPrompt(e.target.value); clearIf('prompt'); }}
+                    placeholder="Ex.: Quero uma sequência com foco em glúteos e flexibilidade"
+                    rows={4}
+                    className="resize-none text-sm leading-relaxed"
+                    aria-invalid={!!errorOf('prompt')}
+                  />
+                  <FieldError message={errorOf('prompt')} />
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {EXAMPLES.map((ex) => (
+                      <button
+                        key={ex}
+                        type="button"
+                        onClick={() => setPrompt(ex)}
+                        className="text-[11px] px-2.5 py-1 rounded-full border border-border/70 bg-background hover:bg-accent hover:border-primary/40 text-foreground/80 transition-colors"
+                      >
+                        {ex.length > 42 ? ex.slice(0, 42) + '…' : ex}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label htmlFor="ai-count" className="text-xs font-medium">
