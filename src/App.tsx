@@ -200,6 +200,7 @@ function AppRoutes() {
           </AuthRoute>
         }
       />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
