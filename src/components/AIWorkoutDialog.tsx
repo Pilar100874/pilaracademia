@@ -240,7 +240,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         }));
 
         const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
-          body: { prompt: prompt.trim(), count: n, library, health_context: healthContext },
+          body: { prompt: prompt.trim(), count: n, library, health_context: healthContext, body_plan_context: bodyPlanContext },
         });
 
         if (error) {
