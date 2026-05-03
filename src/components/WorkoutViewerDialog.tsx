@@ -131,6 +131,16 @@ export function WorkoutViewerDialog({
     }
   }, [open, voiceEnabled, energyMode]);
 
+  // Quando o usuário sai do treino, desliga o toggle persistido para que ele
+  // não volte ativo automaticamente no próximo treino — precisa ser ligado
+  // novamente de propósito pelo botão da barra inferior.
+  useEffect(() => {
+    if (!open && voiceEnabled) {
+      setVoiceEnabled(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   const { listening, supported: voiceSupported } = useVoiceWorkoutCommands(voiceActive, {
     onNext: () => handleNextExercise(),
     onPrevious: () => handlePreviousExercise(),
