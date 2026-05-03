@@ -312,14 +312,13 @@ export function WorkoutPlanDialog({
               </div>
             </div>
 
-            {editingPlan && (
-              <div className="space-y-2">
+            <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Exercícios (arraste para reordenar)</Label>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => { setAddingCooldown(false); setSelectExerciseOpen(true); }}
+                    onClick={() => openAddExercise(false)}
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Adicionar
@@ -334,7 +333,7 @@ export function WorkoutPlanDialog({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => { setAddingCooldown(false); setSelectExerciseOpen(true); }}
+                      onClick={() => openAddExercise(false)}
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Adicionar da Biblioteca
@@ -367,7 +366,6 @@ export function WorkoutPlanDialog({
                   </div>
                 )}
               </div>
-            )}
 
             <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
                 <div className="flex items-center justify-between gap-2">
