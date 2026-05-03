@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
-import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon, Sparkles, Flame, Battery, BatteryLow, Zap } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { AnalysisOverlay } from '@/components/AnalysisOverlay';
 import { WorkoutFormCoach } from '@/components/WorkoutFormCoach';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
+import { applyEnergyMode, ENERGY_MODE_LABEL, type EnergyMode } from '@/lib/workoutEnergyMode';
 
 interface WorkoutViewerDialogProps {
   open: boolean;
@@ -23,7 +24,13 @@ export function WorkoutViewerDialog({
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
-  const exercises = plan.exercises || [];
+  const [energyMode, setEnergyMode] = useState<EnergyMode | null>(null);
+
+  const baseExercises = plan.exercises || [];
+  const { exercises, removedCount } = useMemo(() => {
+    if (!energyMode) return { exercises: baseExercises, removedCount: 0 };
+    return applyEnergyMode(baseExercises as any[], energyMode);
+  }, [baseExercises, energyMode]);
 
   const currentExercise = exercises[currentExerciseIndex];
 
@@ -48,11 +55,12 @@ export function WorkoutViewerDialog({
     setShowVideo(hasVideo);
   }, [currentExerciseIndex, open, hasVideo]);
 
-  // Reset indices when dialog opens
+  // Reset indices and energy mode when dialog opens
   useEffect(() => {
     if (open) {
       setCurrentExerciseIndex(0);
       setCurrentPhotoIndex(0);
+      setEnergyMode(null);
     }
   }, [open]);
 
@@ -100,6 +108,74 @@ export function WorkoutViewerDialog({
   };
 
   if (!currentExercise) return null;
+
+  // Tela inicial: seletor de "Modo de Hoje" (autorregulação por estado).
+  if (!energyMode) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md p-0 border-none bg-background overflow-hidden">
+          <div className="p-6 space-y-5">
+            <div className="space-y-1.5 text-center">
+              <h2 className="text-2xl font-serif tracking-tight text-foreground">
+                Como você está hoje?
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                A sessão se adapta ao seu nível de energia. O treino salvo não muda.
+              </p>
+            </div>
+
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                onClick={() => setEnergyMode('normal')}
+                className="w-full flex items-center gap-3 rounded-md border border-border bg-card hover:bg-accent transition-colors p-3.5 text-left"
+              >
+                <div className="h-10 w-10 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Flame className="h-5 w-5" strokeWidth={2.2} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground">Normal</p>
+                  <p className="text-xs text-muted-foreground">Treino padrão como prescrito.</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setEnergyMode('tired')}
+                className="w-full flex items-center gap-3 rounded-md border border-border bg-card hover:bg-accent transition-colors p-3.5 text-left"
+              >
+                <div className="h-10 w-10 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <Battery className="h-5 w-5" strokeWidth={2.2} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground">Cansado</p>
+                  <p className="text-xs text-muted-foreground">
+                    −1 série · −25% reps · +30s de descanso.
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setEnergyMode('exhausted')}
+                className="w-full flex items-center gap-3 rounded-md border border-border bg-card hover:bg-accent transition-colors p-3.5 text-left"
+              >
+                <div className="h-10 w-10 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                  <BatteryLow className="h-5 w-5" strokeWidth={2.2} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground">Muito cansado</p>
+                  <p className="text-xs text-muted-foreground">
+                    −2 séries · −40% reps · pula exercícios mais intensos.
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,13 +232,25 @@ export function WorkoutViewerDialog({
               <h2 className="text-white font-extrabold text-base sm:text-lg leading-tight tracking-tight truncate drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {plan.name}
               </h2>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 <span className="inline-flex items-baseline gap-1 text-white text-[11px] font-semibold bg-white/15 px-2 py-0.5 rounded-full backdrop-blur-sm">
                   <span className="font-bold">{exercises.length}</span>
                   <span className="text-white/70 text-[9px] uppercase tracking-wider">
                     exercícios
                   </span>
                 </span>
+                {energyMode && energyMode !== 'normal' && (
+                  <button
+                    type="button"
+                    onClick={() => setEnergyMode(null)}
+                    className="inline-flex items-center gap-1 text-white text-[10px] font-semibold bg-amber-500/30 hover:bg-amber-500/40 px-2 py-0.5 rounded-full backdrop-blur-sm border border-amber-300/30 transition-colors"
+                    title="Trocar modo"
+                  >
+                    {energyMode === 'tired' ? <Battery className="h-3 w-3" /> : <BatteryLow className="h-3 w-3" />}
+                    <span className="uppercase tracking-wider">{ENERGY_MODE_LABEL[energyMode]}</span>
+                    {removedCount > 0 && <span className="opacity-80">· −{removedCount}</span>}
+                  </button>
+                )}
               </div>
             </div>
           </div>
