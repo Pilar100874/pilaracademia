@@ -163,6 +163,18 @@ export function AuthPage() {
               />
             </div>
 
+            {isLogin && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => { setForgotEmail(email); setForgotOpen(true); }}
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                >
+                  Esqueceu a senha?
+                </button>
+              </div>
+            )}
+
             <Button
               type="submit"
               size="lg"
@@ -178,6 +190,45 @@ export function AuthPage() {
               )}
             </Button>
           </form>
+
+          {forgotOpen && (
+            <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-6" onClick={() => setForgotOpen(false)}>
+              <div className="bg-card rounded-3xl p-6 w-full max-w-sm shadow-card" onClick={(e) => e.stopPropagation()}>
+                <h2 className="text-lg font-bold mb-1">Recuperar senha</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Digite seu e-mail e enviaremos um link para redefinir a senha.
+                </p>
+                <form onSubmit={handleForgotPassword} className="space-y-3">
+                  <Input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="seu@email.com"
+                    required
+                    className="h-12 rounded-xl"
+                  />
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1 h-11 rounded-xl"
+                      onClick={() => setForgotOpen(false)}
+                      disabled={forgotLoading}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 h-11 rounded-xl"
+                      disabled={forgotLoading}
+                    >
+                      {forgotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enviar link'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           <p className="text-[11px] text-muted-foreground text-center mt-6">
             Ao continuar, você concorda com os{' '}
