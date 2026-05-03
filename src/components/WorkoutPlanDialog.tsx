@@ -123,9 +123,9 @@ export function WorkoutPlanDialog({
     }
     clearError();
 
-    if (editingPlan) {
+    if (currentPlan) {
       await updatePlan.mutateAsync({
-        id: editingPlan.id,
+        id: currentPlan.id,
         name: name.trim(),
         days_of_week: selectedDays,
         cooldown_enabled: cooldownEnabled,
@@ -137,14 +137,8 @@ export function WorkoutPlanDialog({
         days_of_week: selectedDays,
         cooldown_enabled: cooldownEnabled,
       });
-      // Keep the dialog open in edit mode and immediately open the
-      // exercise selector so the user can start adding exercises.
-      if (created && onCreated) {
-        onCreated(created as WorkoutPlan);
-        setSelectExerciseOpen(true);
-      } else {
-        onOpenChange(false);
-      }
+      if (created && onCreated) onCreated(created as WorkoutPlan);
+      onOpenChange(false);
     }
   };
 
@@ -156,15 +150,40 @@ export function WorkoutPlanDialog({
     }
   };
 
+  // Ensure a plan exists (auto-creates on first action when creating a new plan).
+  const ensurePlan = async (): Promise<WorkoutPlan | null> => {
+    if (currentPlan) return currentPlan;
+    if (!name.trim()) {
+      setError('name', 'Informe o nome do treino antes de adicionar exercícios');
+      nameRef.current?.focus();
+      return null;
+    }
+    const created = await createPlan.mutateAsync({
+      name: name.trim(),
+      days_of_week: selectedDays,
+      cooldown_enabled: cooldownEnabled,
+    });
+    if (created && onCreated) onCreated(created as WorkoutPlan);
+    return (created as WorkoutPlan) || null;
+  };
+
+  const openAddExercise = async (cooldown: boolean) => {
+    const plan = await ensurePlan();
+    if (!plan) return;
+    setAddingCooldown(cooldown);
+    setSelectExerciseOpen(true);
+  };
+
   const handleSelectFromLibrary = async (
     libraryExercise: LibraryExercise,
     sets: number,
     reps: number
   ) => {
-    if (!editingPlan) return;
+    const plan = currentPlan ?? (await ensurePlan());
+    if (!plan) return;
 
     await addExercise.mutateAsync({
-      workout_plan_id: editingPlan.id,
+      workout_plan_id: plan.id,
       name: libraryExercise.name,
       sets,
       reps,
@@ -287,14 +306,13 @@ export function WorkoutPlanDialog({
               </div>
             </div>
 
-            {editingPlan && (
-              <div className="space-y-2">
+            <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Exercícios (arraste para reordenar)</Label>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => { setAddingCooldown(false); setSelectExerciseOpen(true); }}
+                    onClick={() => openAddExercise(false)}
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Adicionar
@@ -309,7 +327,7 @@ export function WorkoutPlanDialog({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => { setAddingCooldown(false); setSelectExerciseOpen(true); }}
+                      onClick={() => openAddExercise(false)}
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Adicionar da Biblioteca
@@ -342,7 +360,6 @@ export function WorkoutPlanDialog({
                   </div>
                 )}
               </div>
-            )}
 
             <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
                 <div className="flex items-center justify-between gap-2">
@@ -354,10 +371,10 @@ export function WorkoutPlanDialog({
                     checked={cooldownEnabled}
                     onCheckedChange={async (v) => {
                       setCooldownEnabled(v);
-                      if (editingPlan) {
+                      if (currentPlan) {
                         await updatePlan.mutateAsync({
-                          id: editingPlan.id,
-                          name: name.trim() || editingPlan.name,
+                          id: currentPlan.id,
+                          name: name.trim() || currentPlan.name,
                           days_of_week: selectedDays,
                           cooldown_enabled: v,
                         });
@@ -379,7 +396,7 @@ export function WorkoutPlanDialog({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => { setAddingCooldown(true); setSelectExerciseOpen(true); }}
+                          onClick={() => openAddExercise(true)}
                         >
                           <Plus className="h-4 w-4 mr-1" />
                           Adicionar alongamento
@@ -400,7 +417,7 @@ export function WorkoutPlanDialog({
                           size="sm"
                           variant="outline"
                           className="w-full"
-                          onClick={() => { setAddingCooldown(true); setSelectExerciseOpen(true); }}
+                          onClick={() => openAddExercise(true)}
                         >
                           <Plus className="h-4 w-4 mr-1" />
                           Adicionar alongamento
