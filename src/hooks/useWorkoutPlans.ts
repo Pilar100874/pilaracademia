@@ -171,6 +171,7 @@ export function useWorkoutPlans() {
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;
       exercise_library_id?: string | null;
+      is_cooldown?: boolean;
     }) => {
       const { data: exercise, error } = await supabase
         .from('workout_exercises')
