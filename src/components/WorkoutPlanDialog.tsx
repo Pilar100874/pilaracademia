@@ -377,10 +377,10 @@ export function WorkoutPlanDialog({
                     checked={cooldownEnabled}
                     onCheckedChange={async (v) => {
                       setCooldownEnabled(v);
-                      if (editingPlan) {
+                      if (currentPlan) {
                         await updatePlan.mutateAsync({
-                          id: editingPlan.id,
-                          name: name.trim() || editingPlan.name,
+                          id: currentPlan.id,
+                          name: name.trim() || currentPlan.name,
                           days_of_week: selectedDays,
                           cooldown_enabled: v,
                         });
