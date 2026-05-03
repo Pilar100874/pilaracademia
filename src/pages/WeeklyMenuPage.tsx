@@ -21,8 +21,33 @@ export default function WeeklyMenuPage() {
   const [notes, setNotes] = useState('');
   const [viewing, setViewing] = useState<WeeklyMenuRow | null>(null);
   const [deleting, setDeleting] = useState<WeeklyMenuRow | null>(null);
+  const [addedKeys, setAddedKeys] = useState<Set<string>>(new Set());
+  const { addEntry } = useFoodEntries(new Date());
 
-  const handleGenerate = async () => {
+  const handleAddMeal = async (dayName: string, meal: WeeklyMenuMeal, mealIdx: number) => {
+    const key = `${dayName}-${mealIdx}`;
+    if (addedKeys.has(key)) return;
+    try {
+      const kcal = Math.round(meal.approx_calories || 0);
+      await addEntry({
+        name: meal.name,
+        nutrition: {
+          calories: kcal,
+          // Estimativa simples de macros se IA não retornar (P 25% / C 50% / G 25%)
+          protein: Math.round((kcal * 0.25) / 4),
+          carbs: Math.round((kcal * 0.5) / 4),
+          fat: Math.round((kcal * 0.25) / 9),
+        },
+        quantity: 1,
+        unit: 'porção',
+        source: 'manual',
+      });
+      setAddedKeys((p) => new Set(p).add(key));
+      toast.success(`${meal.name} adicionado ao dia`);
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao adicionar refeição');
+    }
+  };
     await generate.mutateAsync(notes.trim() || undefined);
     setNotes('');
     setGenerateOpen(false);
