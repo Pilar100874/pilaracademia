@@ -681,6 +681,7 @@ export function Dashboard() {
         open={menuOpen}
         onOpenChange={setMenuOpen}
         selectedDate={selectedDate}
+        onAdded={refetchFood}
       />
       
       <BottomNav />
