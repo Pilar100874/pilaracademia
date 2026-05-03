@@ -79,13 +79,26 @@ const HELP_BY_ROUTE: Record<string, HelpSection> = {
       { label: 'Edite valores', desc: 'Atualize nutrientes, porção e foto a qualquer momento.' },
     ],
   },
+  '/menu': {
+    title: 'Cardápio Semanal',
+    intro: 'Cardápio gerado por IA com refeições da semana e lista de compras automática, considerando suas preferências e exames.',
+    steps: [
+      { label: 'Gerar cardápio', desc: 'A IA monta 7 dias de refeições respeitando suas metas calóricas, restrições alimentares e exames de sangue recentes.' },
+      { label: 'Ver receitas', desc: 'Toque em uma refeição para ver ingredientes, modo de preparo e macros.' },
+      { label: 'Lista de compras', desc: 'A aba de compras agrupa todos os ingredientes da semana — marque o que já tem em casa.' },
+      { label: 'Regenerar', desc: 'Não gostou? Gere um novo cardápio quantas vezes quiser.' },
+    ],
+    tips: ['Atualize suas preferências alimentares em Perfil para resultados mais precisos.'],
+  },
   '/workouts': {
     title: 'Treinos',
     intro: 'Monte, agende e execute treinos personalizados.',
     steps: [
-      { label: 'Criar treino', desc: 'Combine exercícios da biblioteca em uma sessão com séries, repetições e descanso.' },
+      { label: 'Criar treino', desc: 'Combine exercícios da biblioteca em uma sessão com séries, repetições e descanso. Inclui opção de alongamento final por treino.' },
       { label: 'Gerar com IA', desc: 'IA cria treinos a partir do seu objetivo e equipamentos disponíveis — também considera seu exame de sangue.' },
       { label: 'Play do treino', desc: 'Inicie a execução para ver demonstrações, cronômetro de descanso e análise técnica de vídeo.' },
+      { label: 'Modo de hoje', desc: 'No início do treino escolha Normal, Cansado ou Muito cansado — séries e cargas se ajustam automaticamente.' },
+      { label: 'Comandos por voz', desc: 'Ative o microfone na barra inferior do player para usar "próximo", "voltar" e "finalizar" sem tocar a tela. Desliga sozinho ao sair do treino.' },
       { label: 'Agendar', desc: 'Atribua treinos a dias da semana fixos ou datas avulsas.' },
     ],
   },
