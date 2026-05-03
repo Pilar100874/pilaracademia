@@ -30,6 +30,7 @@ export interface WorkoutPlan {
   name: string;
   days_of_week: number[];
   cooldown_enabled?: boolean;
+  is_cooldown_plan?: boolean;
   created_at: string;
   updated_at: string;
   exercises?: WorkoutExercise[];
