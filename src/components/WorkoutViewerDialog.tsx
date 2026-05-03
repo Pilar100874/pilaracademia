@@ -336,9 +336,8 @@ export function WorkoutViewerDialog({
             </Button>
           )}
           {inCooldown && (
-            <span className="inline-flex items-center gap-1.5 text-white text-xs font-semibold bg-emerald-500/30 px-2.5 py-1 rounded-full backdrop-blur-sm border border-emerald-300/40">
+            <span className="inline-flex items-center text-white text-xs font-semibold bg-emerald-500/30 px-2 py-1 rounded-full backdrop-blur-sm border border-emerald-300/40">
               <Leaf className="h-3.5 w-3.5" />
-              Alongamento
             </span>
           )}
         </div>
