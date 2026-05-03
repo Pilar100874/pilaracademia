@@ -855,7 +855,35 @@ export default function BodyAnalysisPage() {
 
       const created = await create.mutateAsync({ plan: data.data as BodyPlan, imageUrl });
       setSelectedId(created.id);
-      toast.success('Análise pronta!');
+
+      // Auto-sync extracted measurements to profile + weight history
+      const plan = data.data as BodyPlan;
+      const extractedWeight = Number(plan.extracted?.weight_kg);
+      const extractedHeight = Number(plan.extracted?.height_cm);
+      const extractedSex = plan.extracted?.sex;
+      try {
+        const profileUpdate: Record<string, unknown> = {};
+        if (Number.isFinite(extractedWeight) && extractedWeight >= 30 && extractedWeight <= 300) {
+          profileUpdate.weight_kg = extractedWeight;
+        }
+        if (Number.isFinite(extractedHeight) && extractedHeight >= 100 && extractedHeight <= 250) {
+          profileUpdate.height_cm = extractedHeight;
+        }
+        if (extractedSex === 'male' || extractedSex === 'female') {
+          profileUpdate.gender = extractedSex;
+        }
+        if (Object.keys(profileUpdate).length > 0) {
+          await updateProfile(profileUpdate);
+        }
+        if (Number.isFinite(extractedWeight) && extractedWeight >= 30 && extractedWeight <= 300) {
+          await addWeightEntry(extractedWeight);
+          await refetchWeights();
+        }
+      } catch (syncErr) {
+        console.warn('Falha ao sincronizar perfil com bioimpedância', syncErr);
+      }
+
+      toast.success('Análise pronta! Perfil atualizado.');
     } catch (err) {
       console.error(err);
       toast.error(err instanceof Error ? err.message : 'Erro ao analisar relatório');
