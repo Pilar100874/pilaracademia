@@ -876,6 +876,19 @@ export default function BodyAnalysisPage() {
         liquid_ml: plan.macros?.water_ml,
         source: `body_analysis:${selected.id}`,
       });
+
+      // Sync extracted bioimpedance weight to profile + weight history
+      const extractedWeight = Number(plan.extracted?.weight_kg);
+      if (Number.isFinite(extractedWeight) && extractedWeight >= 30 && extractedWeight <= 300) {
+        try {
+          await updateProfile({ weight_kg: extractedWeight });
+          await addWeightEntry(extractedWeight);
+          await refetchWeights();
+        } catch (wErr) {
+          console.warn('Falha ao sincronizar peso da bioimpedância', wErr);
+        }
+      }
+
       toast.success('Plano nutricional aplicado como meta diária');
     } catch (err) {
       console.error(err);
