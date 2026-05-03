@@ -64,6 +64,10 @@ export function WorkoutsPage() {
               <Library className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Biblioteca</span>
             </Button>
+            <Button size="sm" variant="outline" onClick={() => setCooldownOpen(true)}>
+              <Leaf className="h-4 w-4 sm:mr-1 text-emerald-600" />
+              <span className="hidden sm:inline">Alongamento</span>
+            </Button>
             <Button size="sm" variant="outline" onClick={() => setAiOpen(true)}>
               <Sparkles className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">IA</span>
