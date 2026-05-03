@@ -119,6 +119,23 @@ export function WorkoutViewerDialog({
     }
   };
 
+  const [voiceEnabled] = useVoiceCommandsEnabled();
+  const [voiceActive, setVoiceActive] = useState(false);
+
+  // Auto-activate voice when dialog opens (if enabled and past energy mode selector)
+  useEffect(() => {
+    if (open && voiceEnabled && energyMode) {
+      setVoiceActive(true);
+    } else {
+      setVoiceActive(false);
+    }
+  }, [open, voiceEnabled, energyMode]);
+
+  const { listening, supported: voiceSupported } = useVoiceWorkoutCommands(voiceActive, {
+    onNext: () => handleNextExercise(),
+    onPrevious: () => handlePreviousExercise(),
+    onFinish: () => setShowFinishPrompt(true),
+  });
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowLeft') {
       if (hasMultiplePhotos && currentPhotoIndex > 0) {
