@@ -3305,6 +3305,39 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_menus: {
+        Row: {
+          created_at: string
+          id: string
+          menu: Json
+          notes: string | null
+          shopping_list: Json
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          menu: Json
+          notes?: string | null
+          shopping_list?: Json
+          updated_at?: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          menu?: Json
+          notes?: string | null
+          shopping_list?: Json
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       weight_history: {
         Row: {
           created_at: string

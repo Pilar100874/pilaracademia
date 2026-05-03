@@ -15,10 +15,12 @@ import { ExerciseListItem } from '@/components/ExerciseListItem';
 import { SelectExerciseDialog } from '@/components/SelectExerciseDialog';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { EditWorkoutExerciseDialog } from '@/components/EditWorkoutExerciseDialog';
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2, Save, Mic } from 'lucide-react';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { FieldError } from '@/components/FieldError';
 import { useFieldError, validateRequired } from '@/lib/formValidation';
+import { Switch } from '@/components/ui/switch';
+import { useVoiceCommandsEnabled } from '@/lib/voiceCommands';
 
 const DAYS_OF_WEEK = [
   { label: 'Dom', value: 0 },
@@ -287,6 +289,8 @@ export function WorkoutPlanDialog({
               </div>
             </div>
 
+            <VoiceCommandsToggle />
+
             <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Exercícios (arraste para reordenar)</Label>
@@ -408,5 +412,23 @@ export function WorkoutPlanDialog({
         onConfirm={() => deletingExercise && handleDeleteExercise(deletingExercise.id)}
       />
     </>
+  );
+}
+
+function VoiceCommandsToggle() {
+  const [enabled, setEnabled] = useVoiceCommandsEnabled();
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-md border border-border bg-muted/30 p-3">
+      <div className="min-w-0 flex items-start gap-2">
+        <Mic className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+        <div className="min-w-0">
+          <Label className="cursor-pointer">Comandos por voz</Label>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Diga <strong>"próximo"</strong>, <strong>"voltar"</strong> ou <strong>"finalizar"</strong> durante o treino. Útil quando estiver sozinho na sala.
+          </p>
+        </div>
+      </div>
+      <Switch checked={enabled} onCheckedChange={setEnabled} />
+    </div>
   );
 }

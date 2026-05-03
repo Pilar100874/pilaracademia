@@ -23,6 +23,7 @@ import HelpPage from "@/pages/HelpPage";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import MovementAnalysisAccessPage from "@/pages/MovementAnalysisAccessPage";
+import WeeklyMenuPage from "@/pages/WeeklyMenuPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { UpdatePrompt } from "@/components/UpdatePrompt";
@@ -116,6 +117,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProductsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/menu"
+        element={
+          <ProtectedRoute>
+            <WeeklyMenuPage />
           </ProtectedRoute>
         }
       />
