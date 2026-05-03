@@ -790,7 +790,8 @@ export default function BodyAnalysisPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { list, create, remove } = useBodyAnalyses();
-  const { profile, applyNutritionOverride, clearNutritionOverride } = useProfile();
+  const { profile, updateProfile, applyNutritionOverride, clearNutritionOverride } = useProfile();
+  const { addWeightEntry, refetch: refetchWeights } = useWeightHistory();
   const { allExercises } = useExerciseLibrary();
   const { createPlan, addExercise } = useWorkoutPlans();
   const navigate = useNavigate();
