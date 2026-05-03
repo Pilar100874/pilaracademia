@@ -1,7 +1,8 @@
-import { ArrowLeft, Beef, Wheat, Droplets, Flame, BookOpen, Activity, Target, FlaskConical, Droplet, Scale, Shield, Utensils, Dumbbell, Mic } from 'lucide-react';
+import { ArrowLeft, Beef, Wheat, Droplets, Flame, BookOpen, Activity, Target, FlaskConical, Droplet, Scale, Shield, Utensils, Dumbbell, Mic, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { BottomNav } from '@/components/BottomNav';
+import { CheckUpdateButton } from '@/components/CheckUpdateButton';
 
 interface NutrientCardProps {
   icon: typeof Beef;
@@ -48,6 +49,20 @@ export default function HelpPage() {
       </header>
 
       <div className="px-4 py-4 space-y-6">
+        {/* Atualizar app */}
+        <section className="rounded-md border border-border bg-card p-4 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 text-foreground" />
+              <h3 className="font-semibold text-sm">Atualizar o app</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Busca a versão mais recente sem precisar reinstalar nem limpar o cache.
+            </p>
+          </div>
+          <CheckUpdateButton />
+        </section>
+
         {/* Intro */}
         <section className="space-y-2">
           <h2 className="font-serif text-2xl">O que são nutrientes?</h2>
