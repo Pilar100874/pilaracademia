@@ -100,7 +100,10 @@ export function useExerciseLibrary() {
       is_global?: boolean;
     }) => {
       if (!user) throw new Error('User not authenticated');
-      const wantsGlobal = !!data.is_global && isMaster;
+      // Para o usuário master, todas as criações vão para a biblioteca
+      // global por padrão — exceto se `is_global: false` for passado
+      // explicitamente (ex.: criando um item pessoal de teste).
+      const wantsGlobal = isMaster && data.is_global !== false;
 
       const insertPayload = {
         user_id: user.id,

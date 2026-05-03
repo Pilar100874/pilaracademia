@@ -121,6 +121,14 @@ Deno.serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
 
+    // Master admin? Itens importados por ele vão direto para a biblioteca global.
+    const { data: roleRows } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    const isMaster = Array.isArray(roleRows) &&
+      roleRows.some((r: any) => r.role === "master_admin");
+
     // Token do usuário tem prioridade sobre o global
     const { data: settings } = await admin
       .from("user_settings")
@@ -227,7 +235,9 @@ Deno.serve(async (req) => {
             video_url: pub.publicUrl,
             video_start_seconds: null,
             video_end_seconds: null,
-            category_id: category_id || null,
+            category_id: isMaster ? null : (category_id || null),
+            is_global: isMaster,
+            clinic_id: null,
           })
           .select()
           .single();
