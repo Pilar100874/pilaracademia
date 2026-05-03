@@ -99,10 +99,10 @@ export function WorkoutViewerDialog({
   const handleNextExercise = () => {
     if (!isLastExercise) {
       setCurrentExerciseIndex((prev) => prev + 1);
-    } else if (!inCooldown) {
-      setShowFinishPrompt(true);
     } else {
-      finishWorkout();
+      // No último exercício (treino normal ou alongamento), abre o prompt
+      // para o usuário decidir quando encerrar — nunca fecha automaticamente.
+      setShowFinishPrompt(true);
     }
   };
 
