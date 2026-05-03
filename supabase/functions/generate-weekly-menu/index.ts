@@ -25,26 +25,28 @@ serve(async (req) => {
   }
 
   try {
-    const { profile, notes } = (await req.json()) as {
+    const { profile, notes, food_preferences_context } = (await req.json()) as {
       profile: Profile;
       notes?: string;
+      food_preferences_context?: string;
     };
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const systemPrompt = `Você é um nutricionista brasileiro. Crie um cardápio semanal de 7 dias (segunda a domingo) em português, com 4 refeições por dia (Café da manhã, Almoço, Lanche, Jantar). Use comidas brasileiras simples e acessíveis. Considere as metas e preferências do usuário. Inclua também uma lista de compras consolidada agrupada por categoria (Proteínas, Carboidratos, Frutas, Vegetais, Laticínios, Outros).`;
+    const systemPrompt = `Você é um nutricionista brasileiro. Crie um cardápio semanal de 7 dias (segunda a domingo) em português, com 4 refeições por dia (Café da manhã, Almoço, Lanche, Jantar). Use comidas brasileiras simples e acessíveis. Considere as metas e preferências do usuário. RESPEITE RIGOROSAMENTE as restrições alimentares e a lista de alimentos a evitar — NUNCA inclua itens proibidos. Inclua também uma lista de compras consolidada agrupada por categoria (Proteínas, Carboidratos, Frutas, Vegetais, Laticínios, Outros).`;
 
     const userPrompt = `Perfil do usuário:
 - Meta calórica diária: ${profile.daily_calories ?? "n/a"} kcal
 - Proteína: ${profile.daily_protein ?? "n/a"} g | Carbs: ${profile.daily_carbs ?? "n/a"} g | Gordura: ${profile.daily_fat ?? "n/a"} g
 - Objetivo: ${profile.goal ?? "n/a"}
 - Peso: ${profile.weight_kg ?? "n/a"} kg
-- Preferências: ${profile.food_preferences ?? "nenhuma específica"}
-- Restrições: ${profile.food_restrictions ?? "nenhuma"}
+- Preferências (legado): ${profile.food_preferences ?? "nenhuma específica"}
+- Restrições (legado): ${profile.food_restrictions ?? "nenhuma"}
+${food_preferences_context ? `\n${food_preferences_context}` : ""}
 ${notes ? `\nObservações adicionais do usuário: ${notes}` : ""}
 
-Gere o cardápio semanal completo.`;
+Gere o cardápio semanal completo respeitando todas as restrições.`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",

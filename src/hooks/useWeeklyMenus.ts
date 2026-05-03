@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { buildFoodPreferencesContext, FoodPreferences } from './useFoodPreferences';
 
 export interface WeeklyMenuMeal {
   name: string;
@@ -64,8 +65,18 @@ export function useWeeklyMenus() {
         .eq('user_id', user.id)
         .single();
 
+      const { data: prefsRow } = await supabase
+        .from('food_preferences' as any)
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const food_preferences_context = buildFoodPreferencesContext(
+        prefsRow as unknown as FoodPreferences | null,
+      ) || undefined;
+
       const { data, error } = await supabase.functions.invoke('generate-weekly-menu', {
-        body: { profile: profileRow, notes },
+        body: { profile: profileRow, notes, food_preferences_context },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
