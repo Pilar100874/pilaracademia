@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { HelpCircle, X, BookOpen, ChevronRight } from 'lucide-react';
+import { HelpCircle, X, BookOpen, ChevronRight, Compass } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -274,6 +274,24 @@ export function HelpMenu({ inline = false, className }: HelpMenuProps) {
                 </ul>
               </div>
             )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                navigate('/tour');
+              }}
+              className="w-full flex items-center gap-3 rounded-md border border-border bg-card p-4 text-left hover:bg-muted/30 transition-colors"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10 shrink-0">
+                <Compass className="h-4 w-4 text-rose-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">Tour: como usar o Pilar</p>
+                <p className="text-xs text-muted-foreground">Passo a passo ilustrado das 4 áreas principais</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
 
             <button
               type="button"
