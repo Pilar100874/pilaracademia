@@ -247,6 +247,17 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Garante vínculo na tabela de junção (UI lê category_ids dali)
+        const linkCategoryId = isMaster ? null : (category_id || null);
+        if (linkCategoryId) {
+          const { error: linkErr } = await admin
+            .from("exercise_library_categories")
+            .insert({ exercise_id: ex.id, category_id: linkCategoryId });
+          if (linkErr) {
+            console.warn(`Falha ao vincular categoria do vídeo ${i + 1}:`, linkErr.message);
+          }
+        }
+
         created.push({
           id: ex.id,
           name: ex.name,
