@@ -65,16 +65,19 @@ export function WorkoutViewerDialog({
     setShowVideo(hasVideo);
   }, [currentExerciseIndex, open, hasVideo]);
 
+  const isCooldownOnlyPlan = !!(plan as any).is_cooldown_plan;
+
   // Reset indices and energy mode when dialog opens
   useEffect(() => {
     if (open) {
       setCurrentExerciseIndex(0);
       setCurrentPhotoIndex(0);
-      setEnergyMode(null);
+      // Cooldown (alongamento) plan does not use energy modes
+      setEnergyMode(isCooldownOnlyPlan ? 'normal' : null);
       setInCooldown(false);
       setShowFinishPrompt(false);
     }
-  }, [open]);
+  }, [open, isCooldownOnlyPlan]);
 
   const startCooldown = () => {
     setInCooldown(true);
