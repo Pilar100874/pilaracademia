@@ -1,18 +1,17 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FieldError } from '@/components/FieldError';
 import { useFieldError, validateRequired } from '@/lib/formValidation';
+import { WizardStepper, WizardFooter } from '@/components/WizardShell';
 
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
@@ -40,17 +39,25 @@ const EXAMPLES = [
   'Foco em abdômen inferior e definição',
 ];
 
+const STEPS = [
+  { key: 'objective', label: 'Objetivo' },
+  { key: 'categories', label: 'Categorias' },
+  { key: 'schedule', label: 'Agenda' },
+];
+
 export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName, initialCount }: AIWorkoutDialogProps) {
   const { allExercises: exercises, globalExercises, exercises: personalOnly } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
   const { list: bloodExamsQ } = useBloodExams();
 
+  const [step, setStep] = useState(0);
   const [name, setName] = useState(initialName || '');
   const [prompt, setPrompt] = useState(initialPrompt || '');
   const [count, setCount] = useState(initialCount ? String(initialCount) : '8');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [allowRepeat, setAllowRepeat] = useState(true);
+  const [varyCategories, setVaryCategories] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [source, setSource] = useState<'all' | 'mine' | 'global'>('all');
   const [generating, setGenerating] = useState(false);
@@ -60,7 +67,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const countRef = useRef<HTMLInputElement>(null);
   const { errorOf, setError, clearError, clearIf } = useFieldError();
 
-  // Re-seed when dialog opens with new initial values (e.g. opened from BodyAnalysisPage)
   const lastSeed = useRef<string>('');
   if (open) {
     const seed = `${initialPrompt || ''}|${initialName || ''}|${initialCount || ''}`;
@@ -75,11 +81,13 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   }
 
   const reset = () => {
+    setStep(0);
     setName('');
     setPrompt('');
     setCount('8');
     setSelectedDays([]);
     setAllowRepeat(true);
+    setVaryCategories(false);
     setSelectedCategoryIds([]);
     setSource('all');
   };
@@ -90,8 +98,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     );
   };
 
-  // Sort: parents first (alpha), then their children indented
-  const sortedCategories = (() => {
+  const sortedCategories = useMemo(() => {
     const parents = categories.filter((c) => !c.parent_id).sort((a, b) => a.name.localeCompare(b.name));
     const result: { id: string; name: string; isChild: boolean; parentName?: string }[] = [];
     for (const p of parents) {
@@ -103,23 +110,12 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         result.push({ id: c.id, name: c.name, isChild: true, parentName: p.name });
       }
     }
-    // orphan children (parent deleted)
-    const orphans = categories.filter(
-      (c) => c.parent_id && !parents.find((p) => p.id === c.parent_id)
-    );
-    for (const o of orphans) result.push({ id: o.id, name: o.name, isChild: false });
     return result;
-  })();
+  }, [categories]);
 
-  // Filter by source (mine / global / all)
   const sourceFiltered =
-    source === 'mine'
-      ? personalOnly
-      : source === 'global'
-        ? globalExercises
-        : exercises;
+    source === 'mine' ? personalOnly : source === 'global' ? globalExercises : exercises;
 
-  // Filter exercises by selected categories (any match)
   const filteredExercises =
     selectedCategoryIds.length === 0
       ? sourceFiltered
@@ -127,42 +123,71 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id))
         );
 
-
   const toggleDay = (idx: number) => {
     setSelectedDays((prev) =>
       prev.includes(idx) ? prev.filter((d) => d !== idx) : [...prev, idx]
     );
   };
 
+  const validateStep = (s: number): boolean => {
+    if (s === 0) {
+      const n = parseInt(count, 10);
+      const first = validateRequired([
+        { key: 'name', ref: nameRef, valid: !!name.trim(), message: 'Dê um nome para o treino' },
+        { key: 'prompt', ref: promptRef, valid: !!prompt.trim() && prompt.trim().length >= 5, message: 'Descreva o objetivo (mín. 5 caracteres)' },
+        { key: 'count', ref: countRef, valid: !!n && n >= 1, message: 'Quantidade inválida' },
+      ]);
+      if (first) { setError(first.key, first.message); return false; }
+      clearError();
+      return true;
+    }
+    if (s === 1) {
+      if (varyCategories && selectedCategoryIds.length < 2) {
+        toast.error('Selecione pelo menos 2 categorias para variar entre os dias.');
+        return false;
+      }
+      if (!filteredExercises.length) {
+        toast.error(selectedCategoryIds.length
+          ? 'Nenhum exercício na biblioteca para as categorias selecionadas.'
+          : 'Sua biblioteca está vazia.');
+        return false;
+      }
+      return true;
+    }
+    return true;
+  };
+
+  const goNext = () => {
+    if (!validateStep(step)) return;
+    setStep((s) => Math.min(STEPS.length - 1, s + 1));
+  };
+  const goBack = () => setStep((s) => Math.max(0, s - 1));
+
   const handleGenerate = async () => {
+    if (!validateStep(0) || !validateStep(1)) { setStep(0); return; }
     const n = parseInt(count, 10);
-    const first = validateRequired([
-      { key: 'name', ref: nameRef, valid: !!name.trim(), message: 'Dê um nome para o treino' },
-      { key: 'prompt', ref: promptRef, valid: !!prompt.trim() && prompt.trim().length >= 5, message: 'Descreva o objetivo do treino (mín. 5 caracteres)' },
-      { key: 'count', ref: countRef, valid: !!n && n >= 1, message: 'Informe uma quantidade válida' },
-    ]);
-    if (first) {
-      setError(first.key, first.message);
+
+    if (varyCategories && selectedDays.length > 1 && selectedCategoryIds.length < 2) {
+      toast.error('Variar categorias entre dias exige pelo menos 2 categorias.');
       return;
     }
-    clearError();
-    if (!filteredExercises.length)
-      return toast.error(
-        selectedCategoryIds.length
-          ? 'Nenhum exercício na biblioteca para as categorias selecionadas.'
-          : 'Sua biblioteca está vazia. Adicione exercícios antes.'
-      );
 
     setGenerating(true);
     try {
       const healthContext = buildBloodExamHealthContext(bloodExamsQ.data) || undefined;
       const byId = new Map(exercises.map((ex) => [ex.id, ex] as const));
 
-      // If multiple days selected -> one plan per day. Otherwise single plan.
       const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-      const dayBuckets: { days: number[]; suffix: string }[] =
-        selectedDays.length > 1
-          ? [...selectedDays].sort().map((d) => ({ days: [d], suffix: ` (${dayLabels[d]})` }))
+      const sortedDays = [...selectedDays].sort();
+      const dayBuckets: { days: number[]; suffix: string; categoryId?: string }[] =
+        sortedDays.length > 1
+          ? sortedDays.map((d, i) => ({
+              days: [d],
+              suffix: ` (${dayLabels[d]})`,
+              categoryId: varyCategories
+                ? selectedCategoryIds[i % selectedCategoryIds.length]
+                : undefined,
+            }))
           : [{ days: selectedDays, suffix: '' }];
 
       const usedIds = new Set<string>();
@@ -170,15 +195,19 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       let lastRationale: string | undefined;
 
       for (const bucket of dayBuckets) {
-        const available = allowRepeat
-          ? filteredExercises
-          : filteredExercises.filter((ex) => !usedIds.has(ex.id));
+        let pool = filteredExercises;
+        if (bucket.categoryId) {
+          pool = pool.filter((ex) => (ex.category_ids || []).includes(bucket.categoryId!));
+        }
+        const available = allowRepeat ? pool : pool.filter((ex) => !usedIds.has(ex.id));
 
         if (!available.length) {
-          toast.message(`Sem exercícios restantes para ${bucket.suffix.trim() || 'os dias seguintes'}`, {
-            description: 'Ative "Repetir exercícios entre os dias" ou adicione mais à biblioteca.',
+          toast.message(`Sem exercícios para ${bucket.suffix.trim() || 'os dias seguintes'}`, {
+            description: varyCategories
+              ? 'Adicione mais exercícios à categoria selecionada.'
+              : 'Ative "Repetir" ou amplie as categorias.',
           });
-          break;
+          continue;
         }
 
         const library = available.map((ex) => ({
@@ -236,11 +265,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         return;
       }
 
-      toast.success(
-        totalCreated > 1
-          ? `${totalCreated} treinos criados (um por dia)!`
-          : 'Treino criado!'
-      );
+      toast.success(totalCreated > 1 ? `${totalCreated} treinos criados!` : 'Treino criado!');
       if (lastRationale) {
         setTimeout(() => toast.message('Sugestão da IA', { description: lastRationale }), 100);
       }
@@ -253,6 +278,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       setGenerating(false);
     }
   };
+
+  const totalDays = selectedDays.length;
 
   return (
     <Dialog
@@ -274,172 +301,164 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
             Gerar treino com IA
           </DialogTitle>
           <DialogDescription className="text-xs leading-relaxed">
-            Descreva seu objetivo — a IA monta a sequência usando os exercícios da sua biblioteca.
+            Em 3 passos a IA monta a sequência usando os exercícios da sua biblioteca.
           </DialogDescription>
         </DialogHeader>
 
+        <WizardStepper steps={STEPS} current={step} onJump={(i) => i < step && setStep(i)} />
+
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">
-          <div className="space-y-5">
-            <div className="space-y-1.5">
-              <Label htmlFor="ai-name" className="text-xs font-medium">Nome do treino</Label>
-              <Input
-                id="ai-name"
-                ref={nameRef}
-                value={name}
-                onChange={(e) => { setName(e.target.value); clearIf('name'); }}
-                placeholder="Ex.: Treino glúteos e flexibilidade"
-                aria-invalid={!!errorOf('name')}
-              />
-              <FieldError message={errorOf('name')} />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Origem dos exercícios</Label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {([
-                  { key: 'all', label: 'Todos', count: exercises.length },
-                  { key: 'mine', label: 'Meus', count: personalOnly.length },
-                  { key: 'global', label: 'Globais', count: globalExercises.length },
-                ] as const).map((opt) => {
-                  const active = source === opt.key;
-                  return (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      onClick={() => setSource(opt.key)}
-                      className={`h-9 rounded-md border text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
-                        active
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-background border-input hover:bg-accent'
-                      }`}
-                    >
-                      <span>{opt.label}</span>
-                      <span className={`text-[10px] ${active ? 'opacity-80' : 'text-muted-foreground'}`}>
-                        ({opt.count})
-                      </span>
-                    </button>
-                  );
-                })}
+          {step === 0 && (
+            <div className="space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="ai-name" className="text-xs font-medium">Nome do treino</Label>
+                <Input
+                  id="ai-name"
+                  ref={nameRef}
+                  value={name}
+                  onChange={(e) => { setName(e.target.value); clearIf('name'); }}
+                  placeholder="Ex.: Treino glúteos e flexibilidade"
+                  aria-invalid={!!errorOf('name')}
+                />
+                <FieldError message={errorOf('name')} />
               </div>
-              <p className="text-[10px] text-muted-foreground leading-snug">
-                A IA escolherá apenas entre os exercícios da origem selecionada.
-              </p>
-            </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <Label className="flex items-center gap-1.5 text-xs font-medium">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Origem dos exercícios</Label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {([
+                    { key: 'all', label: 'Todos', count: exercises.length },
+                    { key: 'mine', label: 'Meus', count: personalOnly.length },
+                    { key: 'global', label: 'Globais', count: globalExercises.length },
+                  ] as const).map((opt) => {
+                    const active = source === opt.key;
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => setSource(opt.key)}
+                        className={`h-9 rounded-md border text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                          active
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background border-input hover:bg-accent'
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        <span className={`text-[10px] ${active ? 'opacity-80' : 'text-muted-foreground'}`}>
+                          ({opt.count})
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="ai-prompt" className="text-xs font-medium flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5 text-primary" />
                   Objetivo do treino
                 </Label>
-                <span className="text-[10px] font-medium text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
-                  {selectedCategoryIds.length > 0
-                    ? `${filteredExercises.length}/${exercises.length} filtrados`
-                    : `${exercises.length} na biblioteca`}
-                </span>
+                <Textarea
+                  id="ai-prompt"
+                  ref={promptRef}
+                  value={prompt}
+                  onChange={(e) => { setPrompt(e.target.value); clearIf('prompt'); }}
+                  placeholder="Ex.: Quero uma sequência com foco em glúteos e flexibilidade"
+                  rows={4}
+                  className="resize-none text-sm leading-relaxed"
+                  aria-invalid={!!errorOf('prompt')}
+                />
+                <FieldError message={errorOf('prompt')} />
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {EXAMPLES.map((ex) => (
+                    <button
+                      key={ex}
+                      type="button"
+                      onClick={() => setPrompt(ex)}
+                      className="text-[11px] px-2.5 py-1 rounded-full border border-border/70 bg-background hover:bg-accent hover:border-primary/40 text-foreground/80 transition-colors"
+                    >
+                      {ex.length > 42 ? ex.slice(0, 42) + '…' : ex}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="rounded-md border border-border/70 divide-y divide-border/60 bg-muted/20">
-                <section className="p-3 space-y-2">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Descreva
-                  </p>
-                  <Textarea
-                    id="ai-prompt"
-                    ref={promptRef}
-                    value={prompt}
-                    onChange={(e) => { setPrompt(e.target.value); clearIf('prompt'); }}
-                    placeholder="Ex.: Quero uma sequência com foco em glúteos e flexibilidade para chegar no espacate"
-                    rows={4}
-                    className="resize-none text-sm leading-relaxed bg-background"
-                    aria-invalid={!!errorOf('prompt')}
-                  />
-                  <FieldError message={errorOf('prompt')} />
-                </section>
-
-                <section className="p-3 space-y-1.5">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Sugestões
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {EXAMPLES.map((ex) => (
-                      <button
-                        key={ex}
-                        type="button"
-                        onClick={() => setPrompt(ex)}
-                        className="text-[11px] px-2.5 py-1 rounded-full border border-border/70 bg-background hover:bg-accent hover:border-primary/40 text-foreground/80 transition-colors"
-                      >
-                        {ex.length > 42 ? ex.slice(0, 42) + '…' : ex}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                {sortedCategories.length > 0 && (
-                  <section className="p-3 space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        Categorias (opcional)
-                      </p>
-                      {selectedCategoryIds.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setSelectedCategoryIds([])}
-                          className="text-[10px] text-primary hover:underline"
-                        >
-                          Limpar
-                        </button>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground leading-snug">
-                      Restringe a IA aos exercícios dessas categorias (ex.: equipamentos disponíveis).
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
-                      {sortedCategories.map((c) => {
-                        const active = selectedCategoryIds.includes(c.id);
-                        return (
-                          <button
-                            key={c.id}
-                            type="button"
-                            onClick={() => toggleCategory(c.id)}
-                            className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
-                              active
-                                ? 'bg-primary text-primary-foreground border-primary'
-                                : 'bg-background border-border/70 hover:bg-accent hover:border-primary/40 text-foreground/80'
-                            } ${c.isChild ? 'ml-3' : ''}`}
-                            title={c.isChild && c.parentName ? `${c.parentName} › ${c.name}` : c.name}
-                          >
-                            {c.isChild ? `↳ ${c.name}` : c.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </section>
-                )}
-
-                <section className="p-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="ai-count" className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Quantidade de exercícios
-                    </Label>
-                    <Input
-                      id="ai-count"
-                      ref={countRef}
-                      inputMode="numeric"
-                      value={count}
-                      onChange={(e) => { setCount(e.target.value.replace(/\D/g, '')); clearIf('count'); }}
-                      placeholder="8"
-                      className="bg-background"
-                      aria-invalid={!!errorOf('count')}
-                    />
-                    <FieldError message={errorOf('count')} />
-                  </div>
-                </section>
+              <div className="space-y-1.5">
+                <Label htmlFor="ai-count" className="text-xs font-medium">
+                  Quantidade de exercícios por treino
+                </Label>
+                <Input
+                  id="ai-count"
+                  ref={countRef}
+                  inputMode="numeric"
+                  value={count}
+                  onChange={(e) => { setCount(e.target.value.replace(/\D/g, '')); clearIf('count'); }}
+                  placeholder="8"
+                  aria-invalid={!!errorOf('count')}
+                />
+                <FieldError message={errorOf('count')} />
               </div>
             </div>
+          )}
 
-            <div className="space-y-2">
-              <Label className="text-xs font-medium">Dias da semana (opcional)</Label>
+          {step === 1 && (
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <p className="font-serif text-lg leading-tight">Escolha as categorias</p>
+                <p className="text-xs text-muted-foreground leading-snug">
+                  A IA usará apenas exercícios das categorias selecionadas. Deixe vazio para usar toda a biblioteca.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>{filteredExercises.length} exercícios disponíveis</span>
+                {selectedCategoryIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategoryIds([])}
+                    className="text-primary hover:underline"
+                  >
+                    Limpar seleção
+                  </button>
+                )}
+              </div>
+
+              {sortedCategories.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">Nenhuma categoria criada ainda.</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {sortedCategories.map((c) => {
+                    const active = selectedCategoryIds.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => toggleCategory(c.id)}
+                        className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                          active
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background border-border/70 hover:bg-accent hover:border-primary/40 text-foreground/80'
+                        } ${c.isChild ? 'ml-3' : ''}`}
+                        title={c.isChild && c.parentName ? `${c.parentName} › ${c.name}` : c.name}
+                      >
+                        {c.isChild ? `↳ ${c.name}` : c.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-5">
+              <div className="space-y-1">
+                <p className="font-serif text-lg leading-tight">Em quais dias?</p>
+                <p className="text-xs text-muted-foreground leading-snug">
+                  Selecionar mais de um dia cria <strong>um treino para cada</strong>.
+                </p>
+              </div>
+
               <div className="flex flex-wrap gap-1.5">
                 {DAYS.map((day, idx) => (
                   <button
@@ -456,45 +475,74 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                   </button>
                 ))}
               </div>
-              {selectedDays.length > 1 && (
-                <div className="space-y-1.5 pt-1">
-                  <p className="text-[10px] text-muted-foreground leading-snug">
-                    Será criado <strong>um treino para cada dia</strong> selecionado.
-                  </p>
-                  <label className="flex items-center gap-2 cursor-pointer">
+
+              {totalDays > 1 && (
+                <div className="space-y-2 p-3 rounded-md border border-border bg-muted/20">
+                  <label className="flex items-start gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={allowRepeat}
                       onChange={(e) => setAllowRepeat(e.target.checked)}
-                      className="h-4 w-4 rounded border-input accent-primary"
+                      className="h-4 w-4 mt-0.5 rounded border-input accent-primary"
                     />
-                    <span className="text-xs">Permitir repetir exercícios entre os dias</span>
+                    <span className="text-xs leading-snug">
+                      Permitir repetir exercícios entre os dias
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={varyCategories}
+                      onChange={(e) => {
+                        setVaryCategories(e.target.checked);
+                        if (e.target.checked && step === 2) {
+                          // user must have selected categories — if not, push them back
+                          if (selectedCategoryIds.length < 2) {
+                            toast.message('Volte ao passo Categorias e selecione ao menos 2.', { duration: 3000 });
+                          }
+                        }
+                      }}
+                      className="h-4 w-4 mt-0.5 rounded border-input accent-primary"
+                    />
+                    <span className="text-xs leading-snug">
+                      Variar categoria por dia (não repetir a do dia anterior)
+                      {varyCategories && (
+                        <span className="block text-[10px] text-muted-foreground mt-0.5">
+                          {selectedCategoryIds.length >= 2
+                            ? `Rotação entre ${selectedCategoryIds.length} categorias selecionadas.`
+                            : 'Selecione ao menos 2 categorias no passo anterior.'}
+                        </span>
+                      )}
+                    </span>
                   </label>
                 </div>
               )}
+
+              {(() => {
+                const ctx = buildBloodExamHealthContext(bloodExamsQ.data);
+                if (!ctx) return null;
+                return (
+                  <p className="text-[10px] leading-snug text-muted-foreground p-2.5 rounded-md bg-muted/30 border border-border/60">
+                    <span className="font-semibold text-foreground/80">Exame de sangue considerado:</span>{' '}
+                    a IA ajusta intensidade com base nos seus marcadores.
+                  </p>
+                );
+              })()}
             </div>
-          </div>
+          )}
         </div>
 
-        {(() => {
-          const ctx = buildBloodExamHealthContext(bloodExamsQ.data);
-          if (!ctx) return null;
-          return (
-            <div className="px-5 py-2 border-t border-border/60 bg-muted/30">
-              <p className="text-[10px] leading-snug text-muted-foreground">
-                <span className="font-semibold text-foreground/80">Exame de sangue considerado:</span>{' '}
-                a IA vai ajustar intensidade e segurança com base nos seus marcadores.
-              </p>
-            </div>
-          );
-        })()}
-
-        <DialogFooter className="gap-2 sm:gap-2 px-5 py-3 border-t border-border/60 bg-background">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={generating} className="flex-1 sm:flex-none">
-            Cancelar
-          </Button>
-          <Button onClick={handleGenerate} disabled={generating} className="flex-1 sm:flex-none">
-            {generating ? (
+        <WizardFooter
+          current={step}
+          total={STEPS.length}
+          onCancel={() => onOpenChange(false)}
+          onBack={goBack}
+          onNext={goNext}
+          onFinish={handleGenerate}
+          finishDisabled={generating}
+          finishLabel={
+            generating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Gerando...
@@ -504,9 +552,9 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 <Sparkles className="h-4 w-4 mr-2" />
                 Gerar treino
               </>
-            )}
-          </Button>
-        </DialogFooter>
+            )
+          }
+        />
       </DialogContent>
     </Dialog>
   );
