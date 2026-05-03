@@ -6,8 +6,7 @@ const isPreviewOrIframe = (() => {
   if (typeof window === "undefined") return false;
   const isPreviewHost =
     window.location.hostname.includes("id-preview--") ||
-    window.location.hostname.includes("lovableproject.com") ||
-    window.location.hostname.includes("lovable.app");
+    window.location.hostname.includes("lovableproject.com");
   try {
     return isPreviewHost || window.self !== window.top;
   } catch {
@@ -41,6 +40,23 @@ export function UpdatePrompt() {
       });
     };
 
+    let activeReg: ServiceWorkerRegistration | null = null;
+
+    const startPolling = (reg: ServiceWorkerRegistration) => {
+      activeReg = reg;
+      // Check every 5 min while the tab is open (browser & PWA).
+      setInterval(() => {
+        reg.update().catch(() => {});
+      }, 5 * 60 * 1000);
+      // Also re-check whenever the tab becomes visible / focused —
+      // covers reopening the PWA and switching back to the browser tab.
+      const recheck = () => reg.update().catch(() => {});
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") recheck();
+      });
+      window.addEventListener("focus", recheck);
+    };
+
     // Dynamically import the virtual register module from vite-plugin-pwa
     import("virtual:pwa-register")
       .then(({ registerSW }) => {
@@ -50,10 +66,7 @@ export function UpdatePrompt() {
           onRegisteredSW(_swUrl, reg) {
             if (cancelled || !reg) return;
             setupWaiting(reg);
-            // periodically check for updates while app is open (every 30 min)
-            setInterval(() => {
-              reg.update().catch(() => {});
-            }, 30 * 60 * 1000);
+            startPolling(reg);
           },
           onNeedRefresh() {
             setNeedRefresh(true);
@@ -63,7 +76,10 @@ export function UpdatePrompt() {
       .catch(() => {
         // fallback: just attach to existing registration
         navigator.serviceWorker.getRegistration().then((reg) => {
-          if (!cancelled && reg) setupWaiting(reg);
+          if (!cancelled && reg) {
+            setupWaiting(reg);
+            startPolling(reg);
+          }
         });
       });
 
