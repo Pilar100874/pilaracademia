@@ -328,13 +328,15 @@ export function WorkoutViewerDialog({
               <div className="space-y-1">
                 <h3 className="text-xl font-serif text-foreground">Encerrar treino?</h3>
                 <p className="text-sm text-muted-foreground">
-                  {hasCooldown
-                    ? 'Quer terminar com a sequência de alongamento final?'
-                    : 'Tem certeza que deseja finalizar o treino agora?'}
+                  {inCooldown
+                    ? 'Tudo certo? Você pode encerrar o alongamento agora.'
+                    : hasCooldown
+                      ? 'Quer terminar com a sequência de alongamento final?'
+                      : 'Tem certeza que deseja finalizar o treino agora?'}
                 </p>
               </div>
               <div className="flex flex-col gap-2">
-                {hasCooldown && (
+                {!inCooldown && hasCooldown && (
                   <Button onClick={startCooldown} className="w-full gap-1.5">
                     <Leaf className="h-4 w-4" />
                     Fazer alongamento final
@@ -342,14 +344,14 @@ export function WorkoutViewerDialog({
                 )}
                 <Button
                   onClick={finishWorkout}
-                  variant={hasCooldown ? 'outline' : 'default'}
+                  variant={!inCooldown && hasCooldown ? 'outline' : 'default'}
                   className="w-full gap-1.5"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   Encerrar agora
                 </Button>
                 <Button onClick={() => setShowFinishPrompt(false)} variant="ghost" className="w-full">
-                  Continuar treinando
+                  {inCooldown ? 'Continuar alongando' : 'Continuar treinando'}
                 </Button>
               </div>
             </div>
