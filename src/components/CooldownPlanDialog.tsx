@@ -226,3 +226,19 @@ export function CooldownPlanDialog({ open, onOpenChange }: CooldownPlanDialogPro
     </>
   );
 }
+
+function CooldownPromptToggle() {
+  const [enabled, setEnabled] = useCooldownPromptEnabled();
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-md border border-border bg-muted/30 p-3">
+      <div className="min-w-0">
+        <Label className="cursor-pointer">Perguntar ao finalizar treino</Label>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Quando desativado, o app não pergunta se quer rodar o alongamento ao encerrar um treino.
+        </p>
+      </div>
+      <Switch checked={enabled} onCheckedChange={setEnabled} />
+    </div>
+  );
+}
+
