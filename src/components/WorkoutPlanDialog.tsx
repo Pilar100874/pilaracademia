@@ -156,15 +156,40 @@ export function WorkoutPlanDialog({
     }
   };
 
+  // Ensure a plan exists (auto-creates on first action when creating a new plan).
+  const ensurePlan = async (): Promise<WorkoutPlan | null> => {
+    if (currentPlan) return currentPlan;
+    if (!name.trim()) {
+      setError('name', 'Informe o nome do treino antes de adicionar exercícios');
+      nameRef.current?.focus();
+      return null;
+    }
+    const created = await createPlan.mutateAsync({
+      name: name.trim(),
+      days_of_week: selectedDays,
+      cooldown_enabled: cooldownEnabled,
+    });
+    if (created && onCreated) onCreated(created as WorkoutPlan);
+    return (created as WorkoutPlan) || null;
+  };
+
+  const openAddExercise = async (cooldown: boolean) => {
+    const plan = await ensurePlan();
+    if (!plan) return;
+    setAddingCooldown(cooldown);
+    setSelectExerciseOpen(true);
+  };
+
   const handleSelectFromLibrary = async (
     libraryExercise: LibraryExercise,
     sets: number,
     reps: number
   ) => {
-    if (!editingPlan) return;
+    const plan = currentPlan ?? (await ensurePlan());
+    if (!plan) return;
 
     await addExercise.mutateAsync({
-      workout_plan_id: editingPlan.id,
+      workout_plan_id: plan.id,
       name: libraryExercise.name,
       sets,
       reps,
