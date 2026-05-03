@@ -35,9 +35,10 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedDate: Date;
+  onAdded?: () => void;
 }
 
-export function DailyMenuDialog({ open, onOpenChange, selectedDate }: Props) {
+export function DailyMenuDialog({ open, onOpenChange, selectedDate, onAdded }: Props) {
   const { getGoals } = useProfile();
   const planInfo = useCurrentBodyPlan();
   const { list: bloodExamsQ } = useBloodExams();
