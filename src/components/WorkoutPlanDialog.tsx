@@ -344,8 +344,7 @@ export function WorkoutPlanDialog({
               </div>
             )}
 
-            {editingPlan && (
-              <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
+            <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <Leaf className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -355,12 +354,14 @@ export function WorkoutPlanDialog({
                     checked={cooldownEnabled}
                     onCheckedChange={async (v) => {
                       setCooldownEnabled(v);
-                      await updatePlan.mutateAsync({
-                        id: editingPlan.id,
-                        name: name.trim() || editingPlan.name,
-                        days_of_week: selectedDays,
-                        cooldown_enabled: v,
-                      });
+                      if (editingPlan) {
+                        await updatePlan.mutateAsync({
+                          id: editingPlan.id,
+                          name: name.trim() || editingPlan.name,
+                          days_of_week: selectedDays,
+                          cooldown_enabled: v,
+                        });
+                      }
                     }}
                   />
                 </div>
