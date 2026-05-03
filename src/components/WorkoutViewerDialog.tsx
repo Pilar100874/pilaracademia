@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
-import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon, Sparkles, Flame, Battery, BatteryLow, Zap } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { AnalysisOverlay } from '@/components/AnalysisOverlay';
 import { WorkoutFormCoach } from '@/components/WorkoutFormCoach';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
+import { applyEnergyMode, ENERGY_MODE_LABEL, type EnergyMode } from '@/lib/workoutEnergyMode';
 
 interface WorkoutViewerDialogProps {
   open: boolean;
@@ -23,7 +24,13 @@ export function WorkoutViewerDialog({
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
-  const exercises = plan.exercises || [];
+  const [energyMode, setEnergyMode] = useState<EnergyMode | null>(null);
+
+  const baseExercises = plan.exercises || [];
+  const { exercises, removedCount } = useMemo(() => {
+    if (!energyMode) return { exercises: baseExercises, removedCount: 0 };
+    return applyEnergyMode(baseExercises as any[], energyMode);
+  }, [baseExercises, energyMode]);
 
   const currentExercise = exercises[currentExerciseIndex];
 
