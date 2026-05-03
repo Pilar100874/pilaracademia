@@ -138,7 +138,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       const n = parseInt(count, 10);
       const first = validateRequired([
         { key: 'name', ref: nameRef, valid: !!name.trim(), message: 'Dê um nome para o treino' },
-        { key: 'prompt', ref: promptRef, valid: !!prompt.trim() && prompt.trim().length >= 5, message: 'Descreva o objetivo (mín. 5 caracteres)' },
+        ...(useBodyPlan ? [] : [{ key: 'prompt', ref: promptRef, valid: !!prompt.trim() && prompt.trim().length >= 5, message: 'Descreva o objetivo (mín. 5 caracteres)' }]),
         { key: 'count', ref: countRef, valid: !!n && n >= 1, message: 'Quantidade inválida' },
       ]);
       if (first) { setError(first.key, first.message); return false; }
