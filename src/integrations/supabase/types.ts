@@ -3404,6 +3404,7 @@ export type Database = {
           created_at: string
           days_of_week: number[]
           id: string
+          is_cooldown_plan: boolean
           name: string
           updated_at: string
           user_id: string
@@ -3413,6 +3414,7 @@ export type Database = {
           created_at?: string
           days_of_week?: number[]
           id?: string
+          is_cooldown_plan?: boolean
           name: string
           updated_at?: string
           user_id: string
@@ -3422,6 +3424,7 @@ export type Database = {
           created_at?: string
           days_of_week?: number[]
           id?: string
+          is_cooldown_plan?: boolean
           name?: string
           updated_at?: string
           user_id?: string

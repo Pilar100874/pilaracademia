@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
+import { WorkoutPlan, useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon, Sparkles, Flame, Battery, BatteryLow, Zap, Leaf, CheckCircle2 } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { AnalysisOverlay } from '@/components/AnalysisOverlay';
@@ -28,10 +28,11 @@ export function WorkoutViewerDialog({
   const [inCooldown, setInCooldown] = useState(false);
   const [showFinishPrompt, setShowFinishPrompt] = useState(false);
 
+  const { cooldownPlan } = useWorkoutPlans();
   const allExercises = plan.exercises || [];
   const mainBase = useMemo(() => allExercises.filter((e: any) => !e.is_cooldown), [allExercises]);
-  const cooldownBase = useMemo(() => allExercises.filter((e: any) => e.is_cooldown), [allExercises]);
-  const hasCooldown = (plan.cooldown_enabled ?? true) && cooldownBase.length > 0;
+  const cooldownBase = useMemo(() => cooldownPlan?.exercises ?? [], [cooldownPlan]);
+  const hasCooldown = cooldownBase.length > 0;
 
   const baseExercises = inCooldown ? cooldownBase : mainBase;
   const { exercises, removedCount } = useMemo(() => {

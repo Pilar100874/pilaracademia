@@ -1,0 +1,2 @@
+ALTER TABLE public.workout_plans ADD COLUMN IF NOT EXISTS is_cooldown_plan boolean NOT NULL DEFAULT false;
+CREATE UNIQUE INDEX IF NOT EXISTS workout_plans_one_cooldown_per_user ON public.workout_plans(user_id) WHERE is_cooldown_plan = true;
