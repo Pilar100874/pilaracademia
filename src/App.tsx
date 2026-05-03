@@ -24,6 +24,7 @@ import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { UpdatePrompt } from "@/components/UpdatePrompt";
 import { SplashScreen } from "@/components/SplashScreen";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "./pages/NotFound";
@@ -219,6 +220,7 @@ const App = () => {
             <AuthProvider>
               <AppRoutes />
               <InstallPrompt />
+              <UpdatePrompt />
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>
