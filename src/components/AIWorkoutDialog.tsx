@@ -51,6 +51,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
   const { list: bloodExamsQ } = useBloodExams();
+  const planInfo = useCurrentBodyPlan();
 
   const [step, setStep] = useState(0);
   const [name, setName] = useState(initialName || '');
