@@ -129,7 +129,12 @@ export function BodyAnalysisFilter({ value, onChange, compact }: Props) {
             className="h-8 text-sm"
           />
         </div>
-        <ScrollArea className="h-[360px]">
+        <div
+          className="max-h-[60vh] overflow-y-auto overscroll-contain"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
           <div className="p-3 space-y-3">
             {BODY_GROUPS.map((g) => (
               <div key={g.group} className="space-y-1.5">
@@ -181,7 +186,7 @@ export function BodyAnalysisFilter({ value, onChange, compact }: Props) {
               ))}
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   );
