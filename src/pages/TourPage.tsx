@@ -4,6 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { BottomNav } from '@/components/BottomNav';
 import { cn } from '@/lib/utils';
+import tourDashboard from '@/assets/tour-dashboard.jpg';
+import tourMenu from '@/assets/tour-menu.jpg';
+import tourWorkouts from '@/assets/tour-workouts.jpg';
+import tourHealth from '@/assets/tour-health.jpg';
 
 type Step = {
   icon: typeof Home;
@@ -19,6 +23,7 @@ type Section = {
   accent: string;
   bg: string;
   route: string;
+  image: string;
   steps: Step[];
 };
 
@@ -31,6 +36,7 @@ const SECTIONS: Section[] = [
     accent: 'text-rose-600',
     bg: 'bg-rose-500/10',
     route: '/',
+    image: tourDashboard,
     steps: [
       { icon: Calendar, title: '1. Escolha o dia', desc: 'Use o seletor no topo. Tudo que registrar fica vinculado ao dia ativo, não à data do sistema.' },
       { icon: Plus, title: '2. Toque no + flutuante', desc: 'Abre o menu de adicionar comida com 5 opções: foto, código de barras, busca, kit ou texto livre.' },
@@ -48,6 +54,7 @@ const SECTIONS: Section[] = [
     accent: 'text-amber-600',
     bg: 'bg-amber-500/10',
     route: '/menu',
+    image: tourMenu,
     steps: [
       { icon: Sparkles, title: '1. Gerar cardápio', desc: 'A IA monta 7 dias respeitando suas metas calóricas, restrições e exames de sangue recentes.' },
       { icon: ChefHat, title: '2. Ver receitas', desc: 'Toque em uma refeição para abrir ingredientes, modo de preparo e macros detalhados.' },
@@ -63,6 +70,7 @@ const SECTIONS: Section[] = [
     accent: 'text-foreground',
     bg: 'bg-foreground/10',
     route: '/workouts',
+    image: tourWorkouts,
     steps: [
       { icon: Plus, title: '1. Criar treino', desc: 'Combine exercícios da biblioteca com séries, repetições e descanso. Ative o alongamento final se quiser.' },
       { icon: Sparkles, title: '2. Ou gere com IA', desc: 'A IA cria treinos a partir do seu objetivo, equipamentos e exames — basta descrever o que precisa.' },
@@ -80,6 +88,7 @@ const SECTIONS: Section[] = [
     accent: 'text-emerald-600',
     bg: 'bg-emerald-500/10',
     route: '/health',
+    image: tourHealth,
     steps: [
       { icon: FlaskConical, title: '1. Upload de exame de sangue', desc: 'Tire foto ou envie o PDF do laudo. A IA extrai marcadores e mostra evolução em gráficos.' },
       { icon: Sparkles, title: '2. Ajuste automático', desc: 'O cardápio diário e os treinos sugeridos são ajustados conforme o que está alterado no exame.' },
@@ -125,16 +134,28 @@ export default function TourPage() {
                   key={s.id}
                   type="button"
                   onClick={() => setActive(s.id)}
-                  className="group rounded-md border border-border bg-card p-4 flex items-center gap-4 text-left hover:bg-muted/30 transition-colors"
+                  className="group rounded-md border border-border bg-card overflow-hidden text-left hover:bg-muted/30 transition-colors"
                 >
-                  <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl shrink-0', s.bg)}>
-                    <s.icon className={cn('h-6 w-6', s.accent)} />
+                  <div className="aspect-[16/10] w-full overflow-hidden bg-muted/30">
+                    <img
+                      src={s.image}
+                      alt={s.title}
+                      loading="lazy"
+                      width={1024}
+                      height={640}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold">{s.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">{s.subtitle}</p>
+                  <div className="p-4 flex items-center gap-4">
+                    <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl shrink-0', s.bg)}>
+                      <s.icon className={cn('h-6 w-6', s.accent)} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold">{s.title}</p>
+                      <p className="text-xs text-muted-foreground truncate">{s.subtitle}</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                 </button>
               ))}
             </div>
@@ -150,13 +171,25 @@ export default function TourPage() {
 
         {current && (
           <>
-            <section className="rounded-md border border-border bg-card p-4 flex items-center gap-3">
-              <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl shrink-0', current.bg)}>
-                <current.icon className={cn('h-6 w-6', current.accent)} />
+            <section className="rounded-md border border-border bg-card overflow-hidden">
+              <div className="aspect-[16/10] w-full overflow-hidden bg-muted/30">
+                <img
+                  src={current.image}
+                  alt={current.title}
+                  loading="lazy"
+                  width={1024}
+                  height={640}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <div className="flex-1">
-                <p className="font-semibold">{current.title}</p>
-                <p className="text-xs text-muted-foreground">{current.subtitle}</p>
+              <div className="p-4 flex items-center gap-3">
+                <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl shrink-0', current.bg)}>
+                  <current.icon className={cn('h-6 w-6', current.accent)} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold">{current.title}</p>
+                  <p className="text-xs text-muted-foreground">{current.subtitle}</p>
+                </div>
               </div>
             </section>
 
