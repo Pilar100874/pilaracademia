@@ -116,6 +116,7 @@ export function DailyMenuDialog({ open, onOpenChange, selectedDate, onAdded }: P
         })),
       });
       setAddedMeals((prev) => new Set(prev).add(idx));
+      onAdded?.();
       toast.success(`${meal.name} adicionada ao dia`);
     } catch (e: any) {
       toast.error(e.message || 'Erro ao adicionar refeição');
