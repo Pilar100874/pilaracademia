@@ -68,8 +68,21 @@ export function WorkoutViewerDialog({
       setCurrentExerciseIndex(0);
       setCurrentPhotoIndex(0);
       setEnergyMode(null);
+      setInCooldown(false);
+      setShowFinishPrompt(false);
     }
   }, [open]);
+
+  const startCooldown = () => {
+    setInCooldown(true);
+    setCurrentExerciseIndex(0);
+    setShowFinishPrompt(false);
+  };
+
+  const finishWorkout = () => {
+    setShowFinishPrompt(false);
+    onOpenChange(false);
+  };
 
   const handlePreviousExercise = () => {
     if (!isFirstExercise) {
