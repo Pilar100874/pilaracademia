@@ -25,12 +25,19 @@ export function WorkoutViewerDialog({
   const [showVideo, setShowVideo] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
   const [energyMode, setEnergyMode] = useState<EnergyMode | null>(null);
+  const [inCooldown, setInCooldown] = useState(false);
+  const [showFinishPrompt, setShowFinishPrompt] = useState(false);
 
-  const baseExercises = plan.exercises || [];
+  const allExercises = plan.exercises || [];
+  const mainBase = useMemo(() => allExercises.filter((e: any) => !e.is_cooldown), [allExercises]);
+  const cooldownBase = useMemo(() => allExercises.filter((e: any) => e.is_cooldown), [allExercises]);
+  const hasCooldown = (plan.cooldown_enabled ?? true) && cooldownBase.length > 0;
+
+  const baseExercises = inCooldown ? cooldownBase : mainBase;
   const { exercises, removedCount } = useMemo(() => {
-    if (!energyMode) return { exercises: baseExercises, removedCount: 0 };
+    if (!energyMode || inCooldown) return { exercises: baseExercises, removedCount: 0 };
     return applyEnergyMode(baseExercises as any[], energyMode);
-  }, [baseExercises, energyMode]);
+  }, [baseExercises, energyMode, inCooldown]);
 
   const currentExercise = exercises[currentExerciseIndex];
 
