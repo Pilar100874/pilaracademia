@@ -402,7 +402,7 @@ export function WorkoutPlanDialog({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => { setAddingCooldown(true); setSelectExerciseOpen(true); }}
+                          onClick={() => openAddExercise(true)}
                         >
                           <Plus className="h-4 w-4 mr-1" />
                           Adicionar alongamento
@@ -423,7 +423,7 @@ export function WorkoutPlanDialog({
                           size="sm"
                           variant="outline"
                           className="w-full"
-                          onClick={() => { setAddingCooldown(true); setSelectExerciseOpen(true); }}
+                          onClick={() => openAddExercise(true)}
                         >
                           <Plus className="h-4 w-4 mr-1" />
                           Adicionar alongamento
