@@ -235,7 +235,9 @@ Deno.serve(async (req) => {
             video_url: pub.publicUrl,
             video_start_seconds: null,
             video_end_seconds: null,
-            category_id: category_id || null,
+            category_id: isMaster ? null : (category_id || null),
+            is_global: isMaster,
+            clinic_id: null,
           })
           .select()
           .single();
