@@ -184,31 +184,23 @@ export function SelectExerciseDialog({
             />
           </div>
 
-          {/* Category filter — categories only apply to personal items */}
+          {/* Category filter */}
           <div className="flex items-center gap-2">
-            {activeTab === 'mine' ? (
-              <>
-                <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
-                <Select value={filterCategory} onValueChange={setFilterCategory}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Filtrar por categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_CATEGORIES}>Todas as categorias</SelectItem>
-                    <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </>
-            ) : (
-              <p className="flex-1 text-xs text-muted-foreground">
-                Biblioteca compartilhada — disponível para todos os usuários.
-              </p>
-            )}
+            <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Filtrar por categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_CATEGORIES}>Todas as categorias</SelectItem>
+                <SelectItem value={NO_CATEGORY}>Sem categoria</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <BodyAnalysisFilter value={bodyFilter} onChange={setBodyFilter} compact />
           </div>
 
