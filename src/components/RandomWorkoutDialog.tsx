@@ -113,6 +113,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     setAestheticKeys(new Set());
     setMobilityKeys(new Set());
     setSelectedDays([]);
+    setAllowRepeat(true);
   };
 
   const handleGenerate = async () => {
