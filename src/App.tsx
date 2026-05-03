@@ -20,6 +20,7 @@ import InsightsPage from "@/pages/InsightsPage";
 import FoodPreferencesPage from "@/pages/FoodPreferencesPage";
 import SharedSummaryPage from "@/pages/SharedSummaryPage";
 import HelpPage from "@/pages/HelpPage";
+import TourPage from "@/pages/TourPage";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import MovementAnalysisAccessPage from "@/pages/MovementAnalysisAccessPage";
@@ -197,6 +198,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <HelpPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tour"
+        element={
+          <ProtectedRoute>
+            <TourPage />
           </ProtectedRoute>
         }
       />
