@@ -71,7 +71,9 @@ export function ProductConsumptionDialog({
   const packageInfo = useMemo(() => {
     if (!product) return null;
     
-    const isLiquid = product.is_liquid;
+    // Treat as liquid if explicitly flagged OR if it has a package volume in ml
+    // (covers legacy products saved without is_liquid=true).
+    const isLiquid = product.is_liquid || (!!product.package_volume_ml && product.package_volume_ml > 0);
     const totalVolume = product.package_volume_ml;
     const totalWeight = product.package_total_weight;
     const totalUnits = product.package_total_units;
@@ -170,7 +172,7 @@ export function ProductConsumptionDialog({
     
     setIsSubmitting(true);
     try {
-      const isLiquid = product.is_liquid;
+      const isLiquid = packageInfo.isLiquid;
       const liquidMl = isLiquid ? consumedMl : 0;
       const quantity = isLiquid ? consumedMl : consumedSolid.grams;
       
