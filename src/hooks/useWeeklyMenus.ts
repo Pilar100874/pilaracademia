@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { buildFoodPreferencesContext, FoodPreferences } from './useFoodPreferences';
+import { buildBloodExamContext } from '@/lib/bloodExamContext';
 
 export interface WeeklyMenuMeal {
   name: string;
@@ -75,8 +76,19 @@ export function useWeeklyMenus() {
         prefsRow as unknown as FoodPreferences | null,
       ) || undefined;
 
+      // Busca exame de sangue mais recente para personalizar cardápio
+      const { data: bloodExams } = await supabase
+        .from('blood_exams')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('collected_at', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false })
+        .limit(1);
+      const blood_exam_context =
+        buildBloodExamContext((bloodExams as any) || []) || undefined;
+
       const { data, error } = await supabase.functions.invoke('generate-weekly-menu', {
-        body: { profile: profileRow, notes, food_preferences_context },
+        body: { profile: profileRow, notes, food_preferences_context, blood_exam_context },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
