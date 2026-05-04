@@ -26,7 +26,6 @@ import PrivacyPage from "@/pages/PrivacyPage";
 import MovementAnalysisAccessPage from "@/pages/MovementAnalysisAccessPage";
 import WeeklyMenuPage from "@/pages/WeeklyMenuPage";
 import { BackgroundAnalysisProvider } from "@/contexts/BackgroundAnalysisContext";
-import { AppearanceProvider } from "@/contexts/AppearanceContext";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { UpdatePrompt } from "@/components/UpdatePrompt";
@@ -244,18 +243,16 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <AppearanceProvider>
-            {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
-            <BrowserRouter>
-              <AuthProvider>
-                <BackgroundAnalysisProvider>
-                  <AppRoutes />
-                  <InstallPrompt />
-                  <UpdatePrompt />
-                </BackgroundAnalysisProvider>
-              </AuthProvider>
-            </BrowserRouter>
-          </AppearanceProvider>
+          {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+          <BrowserRouter>
+            <AuthProvider>
+              <BackgroundAnalysisProvider>
+                <AppRoutes />
+                <InstallPrompt />
+                <UpdatePrompt />
+              </BackgroundAnalysisProvider>
+            </AuthProvider>
+          </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

@@ -10,7 +10,6 @@ import { BottomNav } from '@/components/BottomNav';
 import { DataExportSection } from '@/components/DataExportSection';
 import { ShareSummaryDialog } from '@/components/ShareSummaryDialog';
 import { RemindersSection } from '@/components/RemindersSection';
-import { AppearanceSection } from '@/components/AppearanceSection';
 import { DeleteAccountDialog } from '@/components/DeleteAccountDialog';
 import { useIsMaster } from '@/hooks/useIsMaster';
 
@@ -359,8 +358,6 @@ export function ProfilePage() {
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
-
-        <AppearanceSection />
 
         <RemindersSection />
 

@@ -454,33 +454,3 @@
     padding: 0.5rem 0.75rem !important;
   }
 }
-
-/* ===== Dashboard "today" style variants ===== */
-/* Default ('depth') keeps the 4D treatment defined above. These variants
-   override only the Dashboard cards (.card-feature, .card-compact). */
-
-/* FLAT — clean, modern, no depth, soft borders */
-[data-dash-style="flat"] .card-feature,
-[data-dash-style="flat"] .card-compact {
-  background: hsl(var(--card)) !important;
-  border: 1px solid hsl(var(--border)) !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-}
-[data-dash-style="flat"] .card-feature::before { display: none; }
-[data-dash-style="flat"] .card-compact:hover { transform: none !important; box-shadow: none !important; }
-
-/* MINIMAL — paper feel, hairline only, no fill */
-[data-dash-style="minimal"] .card-feature,
-[data-dash-style="minimal"] .card-compact {
-  background: transparent !important;
-  border: none !important;
-  border-bottom: 1px solid hsl(var(--border)) !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-}
-[data-dash-style="minimal"] .card-feature::before { display: none; }
-[data-dash-style="minimal"] .card-compact:hover { transform: none !important; box-shadow: none !important; }
