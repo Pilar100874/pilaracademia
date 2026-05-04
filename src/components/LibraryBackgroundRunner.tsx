@@ -205,8 +205,9 @@ export function LibraryBackgroundRunner() {
     }
 
     return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
+      // NOTE: não cancelamos aqui — em StrictMode o efeito desmonta+remonta
+      // imediatamente, e o runnerStarted (module-level) impede re-execução.
+      // Só removemos o listener para evitar leak.
       document.removeEventListener('visibilitychange', onVis);
     };
   }, [user, exercises, queryClient]);
