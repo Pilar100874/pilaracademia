@@ -393,24 +393,39 @@
     pointer-events: none;
     z-index: 1;
   }
-  .chart-3d .recharts-surface { overflow: visible; }
-  .chart-3d .recharts-bar-rectangle path,
-  .chart-3d .recharts-rectangle.recharts-bar-rectangle {
-    filter: drop-shadow(0 4px 6px hsl(220 20% 15% / 0.15));
+  .chart-3d .recharts-surface,
+  .recharts-wrapper .recharts-surface { overflow: visible; }
+
+  /* Apply 3D drop shadows to all recharts series globally */
+  .recharts-wrapper .recharts-bar-rectangle path,
+  .recharts-wrapper .recharts-rectangle.recharts-bar-rectangle {
+    filter: drop-shadow(0 4px 6px hsl(220 20% 15% / 0.18));
   }
-  .chart-3d .recharts-line-curve,
-  .chart-3d .recharts-area-curve {
-    filter: drop-shadow(0 6px 10px hsl(220 20% 15% / 0.18));
+  .recharts-wrapper .recharts-line-curve,
+  .recharts-wrapper .recharts-area-curve {
+    filter: drop-shadow(0 6px 10px hsl(220 20% 15% / 0.2));
   }
-  .chart-3d .recharts-dot circle {
-    filter: drop-shadow(0 2px 4px hsl(220 20% 15% / 0.25));
+  .recharts-wrapper .recharts-dot circle {
+    filter: drop-shadow(0 2px 4px hsl(220 20% 15% / 0.28));
   }
-  .chart-3d .recharts-pie-sector path {
-    filter: drop-shadow(0 6px 12px hsl(220 20% 15% / 0.2));
+  .recharts-wrapper .recharts-pie-sector path {
+    filter: drop-shadow(0 6px 12px hsl(220 20% 15% / 0.22));
   }
-  .chart-3d .recharts-cartesian-grid-horizontal line,
-  .chart-3d .recharts-cartesian-grid-vertical line {
+  .recharts-wrapper .recharts-cartesian-grid-horizontal line,
+  .recharts-wrapper .recharts-cartesian-grid-vertical line {
     stroke: hsl(220 15% 88%);
     stroke-dasharray: 3 4;
+  }
+  /* Tooltip with 4D feel */
+  .recharts-default-tooltip,
+  .recharts-tooltip-wrapper > div {
+    background: linear-gradient(155deg, hsl(0 0% 100%) 0%, hsl(40 20% 98%) 100%) !important;
+    border: 1px solid hsl(220 15% 88% / 0.7) !important;
+    border-radius: 0.75rem !important;
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.9) inset,
+      0 8px 16px -4px hsl(220 20% 15% / 0.12),
+      0 16px 32px -8px hsl(220 20% 15% / 0.18) !important;
+    padding: 0.5rem 0.75rem !important;
   }
 }
