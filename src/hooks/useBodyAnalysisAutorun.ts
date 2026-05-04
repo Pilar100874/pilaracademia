@@ -5,21 +5,46 @@ import type { LibraryExercise } from './useExerciseLibrary';
 import { useAuth } from './useAuth';
 
 const FAILED_KEY = 'pilar:body-analysis-failed';
+const FAILED_TTL_MS = 10 * 60 * 1000; // 10 min — depois disso tenta de novo
 
-const readFailed = (): Set<string> => {
+type FailedMap = Record<string, number>;
+
+const readFailedMap = (): FailedMap => {
   try {
     const raw = sessionStorage.getItem(FAILED_KEY);
-    return new Set<string>(raw ? JSON.parse(raw) : []);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    // Compatibilidade com formato antigo (array)
+    if (Array.isArray(parsed)) return {};
+    return parsed as FailedMap;
   } catch {
-    return new Set();
+    return {};
   }
+};
+
+const readFailed = (): Set<string> => {
+  const map = readFailedMap();
+  const now = Date.now();
+  const valid = new Set<string>();
+  for (const [id, ts] of Object.entries(map)) {
+    if (now - ts < FAILED_TTL_MS) valid.add(id);
+  }
+  return valid;
 };
 
 const addFailed = (id: string) => {
   try {
-    const set = readFailed();
-    set.add(id);
-    sessionStorage.setItem(FAILED_KEY, JSON.stringify([...set]));
+    const map = readFailedMap();
+    map[id] = Date.now();
+    sessionStorage.setItem(FAILED_KEY, JSON.stringify(map));
+  } catch {
+    /* ignore */
+  }
+};
+
+export const clearBodyAnalysisFailedCache = () => {
+  try {
+    sessionStorage.removeItem(FAILED_KEY);
   } catch {
     /* ignore */
   }
