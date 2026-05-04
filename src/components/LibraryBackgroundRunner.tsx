@@ -25,13 +25,12 @@ export function LibraryBackgroundRunner() {
   const { user } = useAuth();
   const { exercises } = useExerciseLibrary();
   const queryClient = useQueryClient();
-  const startedRef = useRef(false);
 
   useEffect(() => {
     if (!user) return;
-    if (startedRef.current) return;
+    if (runnerStarted) return;
     if (!exercises || exercises.length === 0) return;
-    startedRef.current = true;
+    runnerStarted = true;
 
     let cancelled = false;
     const onVis = () => { if (document.hidden) cancelled = true; };
