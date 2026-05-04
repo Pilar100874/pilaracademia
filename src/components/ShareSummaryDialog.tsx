@@ -145,72 +145,76 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-md max-h-[90vh] overflow-y-auto"
+        className="w-[calc(100vw-1rem)] max-w-md sm:max-w-lg max-h-[92vh] overflow-y-auto p-4 sm:p-6"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <DialogHeader>
-          <DialogTitle>Compartilhar com profissional</DialogTitle>
-          <DialogDescription>
-            Gere um PDF para baixar ou um link público temporário para enviar ao seu nutricionista
-            ou médico.
+        <DialogHeader className="text-left">
+          <DialogTitle className="text-lg sm:text-xl">Compartilhar com profissional</DialogTitle>
+          <DialogDescription className="text-sm leading-relaxed">
+            Gere um PDF completo para enviar ao seu nutricionista ou médico, ou um link público
+            temporário que ele abre direto no navegador.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 py-2">
+        <div className="space-y-4 py-2">
           {/* PDF download */}
-          <section className="rounded-md border border-border bg-card p-3 space-y-2">
+          <section className="rounded-md border border-border bg-card p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              <h3 className="text-sm font-semibold">PDF resumido</h3>
+              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+              <h3 className="text-sm font-semibold">Relatório completo em PDF</h3>
             </div>
-            <p className="text-[12px] text-muted-foreground leading-relaxed">
-              Baixa um PDF que você pode anexar por email ou WhatsApp. Inclui perfil, peso recente
-              e marcadores fora da faixa.
+            <p className="text-[13px] text-muted-foreground leading-relaxed">
+              Inclui perfil, metas, médias dos últimos 30 dias, evolução do peso, glicemia,
+              atividades, análises corporais e exames de sangue (com tendências e marcadores fora
+              da faixa).
             </p>
             <Button
-              variant="outline"
-              size="sm"
+              variant="default"
+              size="lg"
               onClick={handlePDF}
               disabled={pdfBusy}
-              className="w-full"
+              className="w-full h-11"
             >
               {pdfBusy ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Gerando…
+                </>
               ) : (
                 <>
-                  <FileText className="h-3.5 w-3.5 mr-1.5" />
-                  Baixar PDF
+                  <FileText className="h-4 w-4 mr-2" />
+                  Baixar relatório PDF
                 </>
               )}
             </Button>
           </section>
 
           {/* Public link */}
-          <section className="rounded-md border border-border bg-card p-3 space-y-3">
+          <section className="rounded-md border border-border bg-card p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <Share2 className="h-4 w-4 text-muted-foreground" />
+              <Share2 className="h-4 w-4 text-muted-foreground shrink-0" />
               <h3 className="text-sm font-semibold">Link público temporário</h3>
             </div>
-            <p className="text-[12px] text-muted-foreground leading-relaxed">
+            <p className="text-[13px] text-muted-foreground leading-relaxed">
               Profissional abre direto no navegador, sem precisar de conta. Você pode revogar a
               qualquer momento.
             </p>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div>
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
                   Período de dados
                 </Label>
-                <div className="grid grid-cols-3 gap-1.5 mt-1">
+                <div className="grid grid-cols-3 gap-2 mt-1.5">
                   {PERIOD_OPTIONS.map((p) => (
                     <button
                       key={p.v}
                       type="button"
                       onClick={() => setPeriodDays(p.v)}
                       className={cn(
-                        'text-xs py-1.5 rounded-md border transition-colors',
+                        'h-10 text-sm rounded-md border transition-colors active:scale-[0.98]',
                         periodDays === p.v
-                          ? 'border-primary bg-primary/5 text-foreground'
+                          ? 'border-primary bg-primary/5 text-foreground font-medium'
                           : 'border-border bg-background text-muted-foreground',
                       )}
                     >
@@ -223,16 +227,16 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
                   Validade do link
                 </Label>
-                <div className="grid grid-cols-3 gap-1.5 mt-1">
+                <div className="grid grid-cols-3 gap-2 mt-1.5">
                   {VALIDITY_OPTIONS.map((p) => (
                     <button
                       key={p.v}
                       type="button"
                       onClick={() => setValidityDays(p.v)}
                       className={cn(
-                        'text-xs py-1.5 rounded-md border transition-colors',
+                        'h-10 text-sm rounded-md border transition-colors active:scale-[0.98]',
                         validityDays === p.v
-                          ? 'border-primary bg-primary/5 text-foreground'
+                          ? 'border-primary bg-primary/5 text-foreground font-medium'
                           : 'border-border bg-background text-muted-foreground',
                       )}
                     >
@@ -243,12 +247,15 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
               </div>
             </div>
 
-            <Button onClick={handleCreate} disabled={creating} size="sm" className="w-full">
+            <Button onClick={handleCreate} disabled={creating} size="lg" className="w-full h-11">
               {creating ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Gerando…
+                </>
               ) : (
                 <>
-                  <Share2 className="h-3.5 w-3.5 mr-1.5" />
+                  <Share2 className="h-4 w-4 mr-2" />
                   Gerar link
                 </>
               )}
@@ -261,7 +268,7 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
                 Carregando…
               </p>
             ) : activeLinks.length > 0 ? (
-              <div className="space-y-2 pt-2 border-t border-border">
+              <div className="space-y-2 pt-3 border-t border-border">
                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
                   Links ativos
                 </p>
@@ -270,55 +277,60 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
                   return (
                     <div
                       key={link.id}
-                      className="rounded-md border border-border bg-background p-2 space-y-1.5"
+                      className="rounded-md border border-border bg-background p-3 space-y-2"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap">
-                          <span className="inline-flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {link.period_days}d de dados
-                          </span>
-                          <span>·</span>
-                          <span>
-                            expira{' '}
-                            {format(parseISO(link.expires_at), "d 'de' MMM", {
-                              locale: ptBR,
-                            })}
-                          </span>
-                          {link.view_count > 0 && (
-                            <>
-                              <span>·</span>
-                              <span className="inline-flex items-center gap-1">
-                                <Eye className="h-3 w-3" />
-                                {link.view_count}
-                              </span>
-                            </>
-                          )}
-                        </div>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                        <span className="inline-flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {link.period_days}d de dados
+                        </span>
+                        <span>·</span>
+                        <span>
+                          expira{' '}
+                          {format(parseISO(link.expires_at), "d 'de' MMM", {
+                            locale: ptBR,
+                          })}
+                        </span>
+                        {link.view_count > 0 && (
+                          <>
+                            <span>·</span>
+                            <span className="inline-flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              {link.view_count}
+                            </span>
+                          </>
+                        )}
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <code className="flex-1 text-[10px] truncate bg-muted/40 px-1.5 py-1 rounded">
-                          {url}
-                        </code>
+                      <code className="block w-full text-[11px] break-all bg-muted/40 px-2 py-1.5 rounded">
+                        {url}
+                      </code>
+                      <div className="flex gap-2">
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 h-9"
                           onClick={() => handleCopy(link.token)}
                         >
                           {copiedToken === link.token ? (
-                            <Check className="h-3.5 w-3.5 text-emerald-600" />
+                            <>
+                              <Check className="h-3.5 w-3.5 mr-1.5 text-emerald-600" />
+                              Copiado
+                            </>
                           ) : (
-                            <Copy className="h-3.5 w-3.5" />
+                            <>
+                              <Copy className="h-3.5 w-3.5 mr-1.5" />
+                              Copiar link
+                            </>
                           )}
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive"
+                          variant="outline"
+                          size="sm"
+                          className="h-9 text-destructive hover:text-destructive"
                           onClick={() => handleRevoke(link.id)}
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                          Revogar
                         </Button>
                       </div>
                     </div>
@@ -329,8 +341,8 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
           </section>
         </div>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">
+        <DialogFooter className="pt-2">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full h-10">
             Fechar
           </Button>
         </DialogFooter>
