@@ -244,16 +244,18 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
-          <BrowserRouter>
-            <AuthProvider>
-              <BackgroundAnalysisProvider>
-                <AppRoutes />
-                <InstallPrompt />
-                <UpdatePrompt />
-              </BackgroundAnalysisProvider>
-            </AuthProvider>
-          </BrowserRouter>
+          <AppearanceProvider>
+            {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+            <BrowserRouter>
+              <AuthProvider>
+                <BackgroundAnalysisProvider>
+                  <AppRoutes />
+                  <InstallPrompt />
+                  <UpdatePrompt />
+                </BackgroundAnalysisProvider>
+              </AuthProvider>
+            </BrowserRouter>
+          </AppearanceProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>
