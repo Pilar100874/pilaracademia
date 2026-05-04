@@ -294,4 +294,15 @@
   .bg-macro-protein { background-color: hsl(var(--protein)); }
   .bg-macro-carbs { background-color: hsl(var(--carbs)); }
   .bg-macro-fat { background-color: hsl(var(--fat)); }
+
+  /* "4D" icon badge: gradient + inner ring + soft drop */
+  .icon-3d {
+    background: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(40 20% 96%) 100%);
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100%) inset,
+      0 -1px 0 0 hsl(220 20% 15% / 0.05) inset,
+      0 2px 4px -1px hsl(220 20% 15% / 0.08),
+      0 4px 8px -2px hsl(220 20% 15% / 0.06);
+    border: 1px solid hsl(220 15% 90% / 0.6);
+  }
 }
