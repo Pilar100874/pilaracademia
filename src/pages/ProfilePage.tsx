@@ -10,6 +10,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { DataExportSection } from '@/components/DataExportSection';
 import { ShareSummaryDialog } from '@/components/ShareSummaryDialog';
 import { RemindersSection } from '@/components/RemindersSection';
+import { AppearanceSection } from '@/components/AppearanceSection';
 import { DeleteAccountDialog } from '@/components/DeleteAccountDialog';
 import { useIsMaster } from '@/hooks/useIsMaster';
 
