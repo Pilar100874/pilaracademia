@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
-import { useBodyAnalysisAutorun } from '@/hooks/useBodyAnalysisAutorun';
+import { useBodyAnalysisAutorun, clearBodyAnalysisFailedCache } from '@/hooks/useBodyAnalysisAutorun';
 import { ClassificationBadges } from '@/components/ClassificationBadges';
 import {
   BodyAnalysisFilter,
