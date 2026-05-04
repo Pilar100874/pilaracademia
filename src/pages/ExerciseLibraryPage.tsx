@@ -1536,13 +1536,13 @@ export default function ExerciseLibraryPage() {
                 : undefined
             }
             bodyAnalysis={
-              videoPreview ? exercises.find((e) => e.id === videoPreview.id)?.body_analysis ?? null : null
+              videoPreview ? videoList.find((e) => e.id === videoPreview.id)?.body_analysis ?? videoPreview.body_analysis ?? null : null
             }
             aestheticAnalysis={
-              videoPreview ? exercises.find((e) => e.id === videoPreview.id)?.aesthetic_analysis ?? null : null
+              videoPreview ? videoList.find((e) => e.id === videoPreview.id)?.aesthetic_analysis ?? videoPreview.aesthetic_analysis ?? null : null
             }
             mobilityAnalysis={
-              videoPreview ? exercises.find((e) => e.id === videoPreview.id)?.mobility_analysis ?? null : null
+              videoPreview ? videoList.find((e) => e.id === videoPreview.id)?.mobility_analysis ?? videoPreview.mobility_analysis ?? null : null
             }
           />
         );
