@@ -307,9 +307,15 @@
   }
 
   /* ===== Global "4D" depth treatment =====
-     Applies layered gradient + highlight + soft shadow to common shadcn surfaces. */
+     Applies layered gradient + highlight + soft shadow to common shadcn surfaces
+     and any element styled like a card (bg-card + rounded-*). */
   [data-slot="card"],
-  .ui-card-3d {
+  .ui-card-3d,
+  .bg-card.rounded-md,
+  .bg-card.rounded-lg,
+  .bg-card.rounded-xl,
+  .bg-card.rounded-2xl,
+  .bg-card.rounded-3xl {
     background:
       linear-gradient(155deg, hsl(0 0% 100%) 0%, hsl(40 20% 98%) 100%) !important;
     border: 1px solid hsl(220 15% 90% / 0.7) !important;
@@ -318,6 +324,25 @@
       0 -1px 0 0 hsl(220 20% 15% / 0.03) inset,
       0 2px 6px -2px hsl(220 20% 15% / 0.06),
       0 12px 28px -10px hsl(220 20% 15% / 0.14) !important;
+  }
+  /* Hover lift for interactive cards */
+  button.bg-card.rounded-md:hover,
+  button.bg-card.rounded-lg:hover,
+  button.bg-card.rounded-xl:hover,
+  button.bg-card.rounded-2xl:hover,
+  button.bg-card.rounded-3xl:hover,
+  a.bg-card.rounded-md:hover,
+  a.bg-card.rounded-lg:hover,
+  a.bg-card.rounded-xl:hover,
+  a.bg-card.rounded-2xl:hover,
+  a.bg-card.rounded-3xl:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.9) inset,
+      0 -1px 0 0 hsl(220 20% 15% / 0.04) inset,
+      0 4px 8px -2px hsl(220 20% 15% / 0.08),
+      0 20px 36px -12px hsl(220 20% 15% / 0.2) !important;
+    transition: all 0.25s ease;
   }
 
   /* Buttons get a subtle bevel + soft shadow */
