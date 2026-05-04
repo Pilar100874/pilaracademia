@@ -158,13 +158,14 @@ export default function HelpPage() {
         <section className="rounded-md border border-border bg-card p-4 space-y-2">
           <div className="flex items-center gap-2">
             <Activity className="h-4 w-4 text-emerald-500" />
-            <h3 className="font-semibold text-sm">TDEE e BMR — o que significam?</h3>
+            <h3 className="font-semibold text-sm">Quanto seu corpo gasta de calorias?</h3>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            <strong className="text-foreground">BMR</strong> é quanto seu corpo gasta parado,
-            só para se manter vivo. <strong className="text-foreground">TDEE</strong> é o
-            total que você gasta no dia (BMR + atividades + treinos). Sua meta calórica
-            diária é calculada a partir do TDEE, ajustada pelo seu objetivo.
+            O <strong className="text-foreground">gasto em repouso</strong> é o que seu corpo
+            queima parado, só para se manter vivo. O <strong className="text-foreground">gasto
+            diário total</strong> soma esse repouso com tudo que você faz no dia (caminhar,
+            trabalhar, treinar). Sua meta de calorias é calculada a partir desse total e
+            ajustada pelo seu objetivo.
           </p>
         </section>
 

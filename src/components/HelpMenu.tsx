@@ -152,7 +152,7 @@ const HELP_BY_ROUTE: Record<string, HelpSection> = {
     title: 'Configuração inicial',
     intro: 'Wizard de boas-vindas que coleta os dados base para os cálculos do app.',
     steps: [
-      { label: 'Dados pessoais', desc: 'Peso, altura, idade e sexo — base para BMR/TDEE e metas.' },
+      { label: 'Dados pessoais', desc: 'Peso, altura, idade e sexo — base para calcular seu gasto calórico e metas.' },
       { label: 'Objetivo', desc: 'Perder, manter ou ganhar massa — define o saldo calórico sugerido.' },
       { label: 'Atividade', desc: 'Quanto você se mexe no dia a dia, fora dos treinos.' },
       { label: 'Preferências', desc: 'Restrições alimentares para personalizar sugestões.' },
@@ -306,7 +306,7 @@ export function HelpMenu({ inline = false, className }: HelpMenuProps) {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium">Guia completo de nutrientes</p>
-                <p className="text-xs text-muted-foreground">Entenda proteína, carboidrato, gordura, calorias e TDEE</p>
+                <p className="text-xs text-muted-foreground">Entenda proteína, carboidrato, gordura e seu gasto calórico</p>
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </button>
