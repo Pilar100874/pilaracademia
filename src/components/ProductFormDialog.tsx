@@ -234,6 +234,10 @@ export function ProductFormDialog({
 
     const barcode = formBarcode.trim() || `CUSTOM_${Date.now()}`;
 
+    // If user filled package volume (ml), the product is necessarily a liquid.
+    const hasVolume = !!formPackageVolume && Number(formPackageVolume) > 0;
+    const effectiveIsLiquid = formIsLiquid || hasVolume;
+
     setIsSaving(true);
     try {
       const savedProduct = await saveProduct({
@@ -250,8 +254,8 @@ export function ProductFormDialog({
         saturated_fat: Number(formSaturatedFat) || 0,
         trans_fat: Number(formTransFat) || 0,
         reference_quantity: Number(formRefQuantity) || 100,
-        reference_unit: formIsLiquid ? 'ml' : formRefUnit,
-        is_liquid: formIsLiquid,
+        reference_unit: effectiveIsLiquid ? 'ml' : formRefUnit,
+        is_liquid: effectiveIsLiquid,
         is_natural: false,
         package_total_weight: formPackageWeight ? Number(formPackageWeight) : null,
         package_total_units: formPackageUnits ? Number(formPackageUnits) : null,
