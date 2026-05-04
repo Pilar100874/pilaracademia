@@ -1,10 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useExerciseLibrary, type LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { useQueryClient } from '@tanstack/react-query';
 import { compressVideoFile } from '@/lib/compressVideo';
+
+// Module-level flag — sobrevive a remontagens do StrictMode em dev
+// e garante que a rotina rode **uma única vez por sessão**.
+let runnerStarted = false;
 
 /**
  * Global background runner — corre em qualquer rota assim que o usuário
@@ -21,13 +25,12 @@ export function LibraryBackgroundRunner() {
   const { user } = useAuth();
   const { exercises } = useExerciseLibrary();
   const queryClient = useQueryClient();
-  const startedRef = useRef(false);
 
   useEffect(() => {
     if (!user) return;
-    if (startedRef.current) return;
+    if (runnerStarted) return;
     if (!exercises || exercises.length === 0) return;
-    startedRef.current = true;
+    runnerStarted = true;
 
     let cancelled = false;
     const onVis = () => { if (document.hidden) cancelled = true; };
@@ -202,8 +205,9 @@ export function LibraryBackgroundRunner() {
     }
 
     return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
+      // NOTE: não cancelamos aqui — em StrictMode o efeito desmonta+remonta
+      // imediatamente, e o runnerStarted (module-level) impede re-execução.
+      // Só removemos o listener para evitar leak.
       document.removeEventListener('visibilitychange', onVis);
     };
   }, [user, exercises, queryClient]);
