@@ -368,7 +368,10 @@ export function Dashboard() {
         {/* Glycemia Tracker */}
         <GlycemiaTracker selectedDate={selectedDate} />
 
-        {/* Smart alerts (Adaptação) */}
+        {/* Body analysis plan shortcut (Adaptação) */}
+        {isViewingToday && <BodyPlanShortcut />}
+
+        {/* Smart alerts */}
         {isViewingToday && <SmartAlertsCard alerts={smartAlerts} />}
 
         {/* Adherence score (Aderência ao plano) */}
