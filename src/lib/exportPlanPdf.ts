@@ -29,7 +29,7 @@ export function exportPlanToPdf(plan: BodyPlan, profileName?: string) {
   sep();
 
   line('Calorias e macros', 13, true);
-  line(`TDEE: ${plan.calories?.tdee ?? '—'} kcal · Meta: ${plan.calories?.target ?? '—'} kcal`, 11);
+  line(`Gasto total/dia: ${plan.calories?.tdee ?? '—'} kcal · Meta: ${plan.calories?.target ?? '—'} kcal`, 11);
   line(`Proteína ${plan.macros?.protein_g}g · Carboidrato ${plan.macros?.carbs_g}g · Gordura ${plan.macros?.fat_g}g`, 11);
   if (plan.macros?.water_ml) line(`Água: ${plan.macros.water_ml} ml/dia`, 11);
   sep();

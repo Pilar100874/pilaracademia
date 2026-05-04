@@ -91,11 +91,11 @@ export function HealthPage() {
       max: Math.round(restingHr + reserve * hi),
     });
     return [
-      { label: 'Z1 — Recuperação', desc: 'Aquecimento, recuperação ativa', range: zone(0.50, 0.60), color: 'bg-sky-500', text: 'text-sky-600' },
-      { label: 'Z2 — Aeróbico leve', desc: 'Queima de gordura, base aeróbica', range: zone(0.60, 0.70), color: 'bg-green-500', text: 'text-green-600' },
-      { label: 'Z3 — Aeróbico', desc: 'Resistência cardiovascular', range: zone(0.70, 0.80), color: 'bg-amber-500', text: 'text-amber-600' },
-      { label: 'Z4 — Limiar', desc: 'Performance, limiar anaeróbico', range: zone(0.80, 0.90), color: 'bg-orange-500', text: 'text-orange-600' },
-      { label: 'Z5 — Máximo', desc: 'HIIT, esforço máximo (curto)', range: zone(0.90, 1.00), color: 'bg-red-500', text: 'text-red-600' },
+      { label: 'Z1 — Bem leve', desc: 'Aquecimento e recuperação', range: zone(0.50, 0.60), color: 'bg-sky-500', text: 'text-sky-600' },
+      { label: 'Z2 — Leve', desc: 'Queima de gordura, dá pra conversar', range: zone(0.60, 0.70), color: 'bg-green-500', text: 'text-green-600' },
+      { label: 'Z3 — Moderado', desc: 'Respiração mais forte, ainda confortável', range: zone(0.70, 0.80), color: 'bg-amber-500', text: 'text-amber-600' },
+      { label: 'Z4 — Forte', desc: 'Puxado, fica difícil falar', range: zone(0.80, 0.90), color: 'bg-orange-500', text: 'text-orange-600' },
+      { label: 'Z5 — Máximo', desc: 'Tiros intensos e curtos', range: zone(0.90, 1.00), color: 'bg-red-500', text: 'text-red-600' },
     ];
   }, [hrMax]);
 
@@ -294,7 +294,7 @@ export function HealthPage() {
               ))}
             </div>
             <p className="text-[11px] text-muted-foreground mt-3">
-              Use no cardio: Z2 para queima de gordura, Z4–Z5 para HIIT. Ajuste se conhecer sua FC de repouso real.
+              No cardio: fique na Z2 para queimar gordura; use Z4–Z5 em tiros curtos e intensos. Ajuste se souber sua frequência cardíaca de repouso real.
             </p>
           </div>
         )}
@@ -304,7 +304,7 @@ export function HealthPage() {
           <div className="card-compact">
             <div className="flex items-center gap-2 mb-3">
               <Heart className="h-4 w-4 text-rose-500" />
-              <span className="text-sm font-semibold">Taxa Metabólica Basal</span>
+              <span className="text-sm font-semibold">Gasto em repouso</span>
             </div>
             <p className="text-3xl font-bold text-center">{Math.round(bmr)} kcal/dia</p>
             <p className="text-xs text-muted-foreground text-center mt-2">

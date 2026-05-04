@@ -216,7 +216,7 @@ export default function OnboardingPage() {
                       ))}
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-1">
-                      Usado apenas para fórmulas metabólicas (BMR/TDEE).
+                      Usado apenas para calcular seu gasto calórico estimado.
                     </p>
                   </div>
 
@@ -333,11 +333,11 @@ export default function OnboardingPage() {
                       <span className="text-2xl font-semibold">{preview.cal} <span className="text-xs text-muted-foreground">kcal</span></span>
                     </div>
                     <div className="flex items-baseline justify-between text-xs text-muted-foreground">
-                      <span>Metabolismo basal (BMR)</span>
+                      <span>Gasto em repouso</span>
                       <span>{preview.bmr} kcal</span>
                     </div>
                     <div className="flex items-baseline justify-between text-xs text-muted-foreground">
-                      <span>Gasto total estimado (TDEE)</span>
+                      <span>Gasto total estimado no dia</span>
                       <span>{preview.tdee} kcal</span>
                     </div>
                   </div>

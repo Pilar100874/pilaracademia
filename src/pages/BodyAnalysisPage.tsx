@@ -65,6 +65,15 @@ const profileLabels: Record<string, string> = {
   saudavel: 'Saudável',
 };
 
+function cardioTypeLabel(type?: string | null): string {
+  if (!type) return '';
+  const k = type.toString().toUpperCase();
+  if (k === 'LISS') return 'Cardio leve contínuo';
+  if (k === 'HIIT') return 'Tiros intensos curtos';
+  if (k === 'MISTO') return 'Misto (leve + intenso)';
+  return type;
+}
+
 function alertIcon(level: string) {
   if (level === 'critical') return <AlertTriangle className="h-4 w-4 text-red-600" />;
   if (level === 'warning') return <AlertCircle className="h-4 w-4 text-amber-600" />;
@@ -254,7 +263,7 @@ function PlanView({
           {e.body_water_kg != null && <Stat label="Água corporal" value={e.body_water_kg} unit="kg" />}
           {e.bone_mass_kg != null && <Stat label="Massa óssea" value={e.bone_mass_kg} unit="kg" />}
           {e.visceral_fat != null && <Stat label="Gordura visceral" value={e.visceral_fat} />}
-          {e.bmr_kcal != null && <Stat label="TMB" value={Math.round(e.bmr_kcal)} unit="kcal" />}
+          {e.bmr_kcal != null && <Stat label="Gasto em repouso" value={Math.round(e.bmr_kcal)} unit="kcal" />}
         </div>
       </div>
 
@@ -284,8 +293,8 @@ function PlanView({
         </div>
 
         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
-          <Stat label="TDEE" value={plan.calories?.tdee} unit="kcal" />
-          <Stat label="Alvo diário" value={plan.calories?.target} unit="kcal" />
+          <Stat label="Gasto total/dia" value={plan.calories?.tdee} unit="kcal" />
+          <Stat label="Meta diária" value={plan.calories?.target} unit="kcal" />
         </div>
 
         <div className="grid grid-cols-3 gap-2">
@@ -457,10 +466,10 @@ function PlanView({
         <div className="rounded-md border border-border bg-card p-4 space-y-2">
           <div className="flex items-center gap-2">
             <Heart className="h-4 w-4 text-rose-500" />
-            <span className="font-semibold">Cardio & NEAT</span>
+            <span className="font-semibold">Cardio e movimento do dia</span>
           </div>
           <p className="text-sm">
-            {plan.cardio.type ? <b>{plan.cardio.type}</b> : null}
+            {plan.cardio.type ? <b>{cardioTypeLabel(plan.cardio.type)}</b> : null}
             {plan.cardio.sessions_per_week != null && ` · ${plan.cardio.sessions_per_week}x/sem`}
             {plan.cardio.minutes_per_session != null && ` · ${plan.cardio.minutes_per_session} min`}
           </p>
@@ -637,7 +646,7 @@ function CompareDialog({
     { key: 'visceral_fat', label: 'Visceral', invert: true, decimals: 0 },
     { key: 'body_water_kg', label: 'Água', unit: 'kg', decimals: 1 },
     { key: 'bmi', label: 'IMC', invert: true, decimals: 1 },
-    { key: 'bmr_kcal', label: 'TMB', unit: 'kcal', decimals: 0 },
+    { key: 'bmr_kcal', label: 'Gasto em repouso', unit: 'kcal', decimals: 0 },
   ];
 
   return (
