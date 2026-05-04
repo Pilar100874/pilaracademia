@@ -206,18 +206,66 @@
   .touch-action-none { touch-action: none; }
   .touch-action-pan-y { touch-action: pan-y; }
   
-  /* Modern card styles */
+  /* ===== "4D" depth cards =====
+     Layered gradient + inner highlight + soft outer shadow + crisp border.
+     Subtle hover lift for tactile feel. */
   .card-compact {
-    @apply rounded-2xl bg-card p-4 shadow-soft;
+    @apply relative rounded-2xl p-4 transition-all duration-300;
+    background:
+      linear-gradient(145deg, hsl(0 0% 100% / 0.95) 0%, hsl(40 20% 98% / 0.85) 100%);
+    border: 1px solid hsl(220 15% 90% / 0.7);
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.9) inset,
+      0 -1px 0 0 hsl(220 20% 15% / 0.03) inset,
+      0 1px 2px hsl(220 20% 15% / 0.04),
+      0 8px 24px -10px hsl(220 20% 15% / 0.12);
+    backdrop-filter: blur(8px);
+  }
+  .card-compact:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.9) inset,
+      0 -1px 0 0 hsl(220 20% 15% / 0.04) inset,
+      0 2px 4px hsl(220 20% 15% / 0.06),
+      0 16px 32px -10px hsl(220 20% 15% / 0.18);
   }
 
   .card-feature {
-    @apply rounded-3xl p-5 shadow-card bg-card;
+    @apply relative rounded-3xl p-5 transition-all duration-300 overflow-hidden;
+    background:
+      radial-gradient(120% 80% at 0% 0%, hsl(24 95% 53% / 0.06) 0%, transparent 50%),
+      radial-gradient(120% 80% at 100% 100%, hsl(199 89% 48% / 0.05) 0%, transparent 55%),
+      linear-gradient(155deg, hsl(0 0% 100%) 0%, hsl(40 20% 98%) 100%);
+    border: 1px solid hsl(220 15% 90% / 0.7);
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.9) inset,
+      0 -2px 0 0 hsl(220 20% 15% / 0.04) inset,
+      0 4px 12px -4px hsl(220 20% 15% / 0.08),
+      0 24px 48px -16px hsl(220 20% 15% / 0.18);
+  }
+  .card-feature::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, hsl(0 0% 100% / 0.6) 0%, transparent 30%);
+    pointer-events: none;
   }
 
   /* Clean entry card */
   .entry-card {
-    @apply flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft transition-all duration-200;
+    @apply flex items-center gap-3 rounded-2xl p-3 transition-all duration-200;
+    background: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(40 20% 98%) 100%);
+    border: 1px solid hsl(220 15% 92% / 0.7);
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.9) inset,
+      0 2px 6px -2px hsl(220 20% 15% / 0.06);
+  }
+  .entry-card:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.9) inset,
+      0 4px 12px -2px hsl(220 20% 15% / 0.1);
   }
 
   /* Status colors */
@@ -246,4 +294,15 @@
   .bg-macro-protein { background-color: hsl(var(--protein)); }
   .bg-macro-carbs { background-color: hsl(var(--carbs)); }
   .bg-macro-fat { background-color: hsl(var(--fat)); }
+
+  /* "4D" icon badge: gradient + inner ring + soft drop */
+  .icon-3d {
+    background: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(40 20% 96%) 100%);
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100%) inset,
+      0 -1px 0 0 hsl(220 20% 15% / 0.05) inset,
+      0 2px 4px -1px hsl(220 20% 15% / 0.08),
+      0 4px 8px -2px hsl(220 20% 15% / 0.06);
+    border: 1px solid hsl(220 15% 90% / 0.6);
+  }
 }
