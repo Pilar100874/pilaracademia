@@ -25,16 +25,17 @@ serve(async (req) => {
   }
 
   try {
-    const { profile, notes, food_preferences_context } = (await req.json()) as {
+    const { profile, notes, food_preferences_context, blood_exam_context } = (await req.json()) as {
       profile: Profile;
       notes?: string;
       food_preferences_context?: string;
+      blood_exam_context?: string;
     };
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const systemPrompt = `Você é um nutricionista brasileiro. Crie um cardápio semanal de 7 dias (segunda a domingo) em português, com 4 refeições por dia (Café da manhã, Almoço, Lanche, Jantar). Use comidas brasileiras simples e acessíveis. Considere as metas e preferências do usuário. RESPEITE RIGOROSAMENTE as restrições alimentares e a lista de alimentos a evitar — NUNCA inclua itens proibidos. Inclua também uma lista de compras consolidada agrupada por categoria (Proteínas, Carboidratos, Frutas, Vegetais, Laticínios, Outros).`;
+    const systemPrompt = `Você é um nutricionista brasileiro. Crie um cardápio semanal de 7 dias (segunda a domingo) em português, com 4 refeições por dia (Café da manhã, Almoço, Lanche, Jantar). Use comidas brasileiras simples e acessíveis. Considere as metas e preferências do usuário. RESPEITE RIGOROSAMENTE as restrições alimentares e a lista de alimentos a evitar — NUNCA inclua itens proibidos. Se houver EXAMES DE SANGUE, priorize as orientações alimentares correspondentes (ex.: colesterol/LDL/triglicérides altos → menos gordura saturada e frituras, mais fibras e ômega-3; HOMA-IR/glicemia/HbA1c altos → reduzir carboidratos simples e açúcares, preferir integrais; ácido úrico alto → menos vísceras e carnes vermelhas; ferritina/B12/vit. D baixas → incluir fontes específicas). Inclua também uma lista de compras consolidada agrupada por categoria (Proteínas, Carboidratos, Frutas, Vegetais, Laticínios, Outros).`;
 
     const userPrompt = `Perfil do usuário:
 - Meta calórica diária: ${profile.daily_calories ?? "n/a"} kcal
@@ -44,9 +45,10 @@ serve(async (req) => {
 - Preferências (legado): ${profile.food_preferences ?? "nenhuma específica"}
 - Restrições (legado): ${profile.food_restrictions ?? "nenhuma"}
 ${food_preferences_context ? `\n${food_preferences_context}` : ""}
+${blood_exam_context ? `\nEXAMES DE SANGUE RECENTES (priorizar estas orientações no cardápio):\n${blood_exam_context}` : ""}
 ${notes ? `\nObservações adicionais do usuário: ${notes}` : ""}
 
-Gere o cardápio semanal completo respeitando todas as restrições.`;
+Gere o cardápio semanal completo respeitando todas as restrições e ajustando as escolhas conforme os exames de sangue, quando disponíveis.`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
