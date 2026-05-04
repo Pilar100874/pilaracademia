@@ -92,12 +92,10 @@ export default function ExerciseLibraryPage() {
     };
   }, [user, queryClient]);
 
-  // Auto-análise corporal em background (Gemini) — um vídeo por vez.
-  // Limpa o cache de falhas a cada montagem para que a página retomar tente novamente.
-  useEffect(() => {
-    clearBodyAnalysisFailedCache();
-  }, []);
-  const analysisProgress = useBodyAnalysisAutorun(exercises);
+  // Auto-análise corporal + otimização de vídeos rodam globalmente em
+  // <LibraryBackgroundRunner /> (montado no App.tsx). A barra inline foi
+  // removida — o progresso aparece como toast persistente em qualquer página.
+  const analysisProgress: { done: number; total: number; current?: string } | null = null;
 
   const [activeTab, setActiveTab] = useState<'mine' | 'global'>('mine');
   const [search, setSearch] = useState('');
