@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
-import { useBodyAnalysisAutorun } from '@/hooks/useBodyAnalysisAutorun';
+import { useBodyAnalysisAutorun, clearBodyAnalysisFailedCache } from '@/hooks/useBodyAnalysisAutorun';
 import { ClassificationBadges } from '@/components/ClassificationBadges';
 import {
   BodyAnalysisFilter,
@@ -93,6 +93,10 @@ export default function ExerciseLibraryPage() {
   }, [user, queryClient]);
 
   // Auto-análise corporal em background (Gemini) — um vídeo por vez.
+  // Limpa o cache de falhas a cada montagem para que a página retomar tente novamente.
+  useEffect(() => {
+    clearBodyAnalysisFailedCache();
+  }, []);
   const analysisProgress = useBodyAnalysisAutorun(exercises);
 
   const [activeTab, setActiveTab] = useState<'mine' | 'global'>('mine');
