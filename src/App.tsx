@@ -249,6 +249,7 @@ const App = () => {
             <AuthProvider>
               <BackgroundAnalysisProvider>
                 <AppRoutes />
+                <LibraryBackgroundRunner />
                 <InstallPrompt />
                 <UpdatePrompt />
               </BackgroundAnalysisProvider>
