@@ -129,7 +129,7 @@ export function CooldownPlanDialog({ open, onOpenChange }: CooldownPlanDialogPro
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Leaf className="h-5 w-5 text-emerald-600" />
-              Alongamento Final
+              Final de Aula
             </DialogTitle>
           </DialogHeader>
 
