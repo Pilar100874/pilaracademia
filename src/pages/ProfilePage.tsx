@@ -360,6 +360,8 @@ export function ProfilePage() {
           </button>
         </div>
 
+        <AppearanceSection />
+
         <RemindersSection />
 
         <DataExportSection />
