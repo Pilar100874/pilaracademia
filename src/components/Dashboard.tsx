@@ -370,6 +370,37 @@ export function Dashboard() {
         {/* Glycemia Tracker */}
         <GlycemiaTracker selectedDate={selectedDate} />
 
+        {/* Smart alerts (Adaptação) */}
+        {isViewingToday && <SmartAlertsCard alerts={smartAlerts} />}
+
+        {/* Adherence score (Aderência ao plano) */}
+        {isViewingToday && <AdherenceCard score={adherence} />}
+
+        {/* Adherence trend (Aderência últimos 7 dias) */}
+        {isViewingToday && <AdherenceHistoryChart days={7} />}
+
+        {/* AI daily menu CTA (Cardápio do dia pela IA) */}
+        {isViewingToday && (
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="w-full rounded-md border border-border bg-card p-3 text-left flex items-center gap-3 hover:bg-muted/30 transition-colors"
+          >
+            <div className="h-9 w-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+              <Flame className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">Cardápio do dia pela IA</p>
+              <p className="text-xs text-muted-foreground">
+                Refeições prontas que batem suas metas
+              </p>
+            </div>
+            <span className="text-xs text-primary font-medium">Gerar</span>
+          </button>
+        )}
+
+        {/* Weekly check-in */}
+        {isViewingToday && <WeeklyCheckinCard />}
+
         {/* Recently Logged Section */}
         <div>
           <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
