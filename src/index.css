@@ -305,4 +305,127 @@
       0 4px 8px -2px hsl(220 20% 15% / 0.06);
     border: 1px solid hsl(220 15% 90% / 0.6);
   }
+
+  /* ===== Global "4D" depth treatment =====
+     Applies layered gradient + highlight + soft shadow to common shadcn surfaces. */
+  [data-slot="card"],
+  .ui-card-3d {
+    background:
+      linear-gradient(155deg, hsl(0 0% 100%) 0%, hsl(40 20% 98%) 100%) !important;
+    border: 1px solid hsl(220 15% 90% / 0.7) !important;
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.9) inset,
+      0 -1px 0 0 hsl(220 20% 15% / 0.03) inset,
+      0 2px 6px -2px hsl(220 20% 15% / 0.06),
+      0 12px 28px -10px hsl(220 20% 15% / 0.14) !important;
+  }
+
+  /* Buttons get a subtle bevel + soft shadow */
+  button[data-slot="button"]:not([data-variant="ghost"]):not([data-variant="link"]),
+  .btn-3d {
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.5) inset,
+      0 -1px 0 0 hsl(220 20% 15% / 0.08) inset,
+      0 1px 2px hsl(220 20% 15% / 0.06),
+      0 4px 10px -3px hsl(220 20% 15% / 0.15);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  }
+  button[data-slot="button"]:not([data-variant="ghost"]):not([data-variant="link"]):hover,
+  .btn-3d:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.6) inset,
+      0 -1px 0 0 hsl(220 20% 15% / 0.1) inset,
+      0 2px 4px hsl(220 20% 15% / 0.08),
+      0 8px 16px -3px hsl(220 20% 15% / 0.2);
+    filter: brightness(1.03);
+  }
+  button[data-slot="button"]:not([data-variant="ghost"]):not([data-variant="link"]):active,
+  .btn-3d:active {
+    transform: translateY(0);
+    filter: brightness(0.97);
+  }
+
+  /* Inputs get inset depth */
+  [data-slot="input"],
+  [data-slot="textarea"],
+  [data-slot="select-trigger"] {
+    background: linear-gradient(180deg, hsl(40 20% 97%) 0%, hsl(0 0% 100%) 100%) !important;
+    box-shadow:
+      0 1px 2px hsl(220 20% 15% / 0.04) inset,
+      0 0 0 1px hsl(220 15% 90% / 0.6) inset !important;
+  }
+
+  /* Popovers / dropdowns / dialogs get floating depth */
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="select-content"],
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"] {
+    background: linear-gradient(155deg, hsl(0 0% 100%) 0%, hsl(40 20% 98%) 100%) !important;
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.9) inset,
+      0 8px 16px -4px hsl(220 20% 15% / 0.12),
+      0 24px 48px -12px hsl(220 20% 15% / 0.22) !important;
+    border: 1px solid hsl(220 15% 88% / 0.7) !important;
+  }
+
+  /* Badges with soft 3D feel */
+  [data-slot="badge"] {
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.6) inset,
+      0 -1px 0 0 hsl(220 20% 15% / 0.06) inset,
+      0 1px 2px hsl(220 20% 15% / 0.06);
+  }
+
+  /* ===== "4D" charts =====
+     Wrapper that gives recharts a glassy, depth feel + drop shadow on series. */
+  .chart-3d {
+    position: relative;
+  }
+  .chart-3d::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+      radial-gradient(60% 80% at 50% 0%, hsl(0 0% 100% / 0.5) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .chart-3d .recharts-surface,
+  .recharts-wrapper .recharts-surface { overflow: visible; }
+
+  /* Apply 3D drop shadows to all recharts series globally */
+  .recharts-wrapper .recharts-bar-rectangle path,
+  .recharts-wrapper .recharts-rectangle.recharts-bar-rectangle {
+    filter: drop-shadow(0 4px 6px hsl(220 20% 15% / 0.18));
+  }
+  .recharts-wrapper .recharts-line-curve,
+  .recharts-wrapper .recharts-area-curve {
+    filter: drop-shadow(0 6px 10px hsl(220 20% 15% / 0.2));
+  }
+  .recharts-wrapper .recharts-dot circle {
+    filter: drop-shadow(0 2px 4px hsl(220 20% 15% / 0.28));
+  }
+  .recharts-wrapper .recharts-pie-sector path {
+    filter: drop-shadow(0 6px 12px hsl(220 20% 15% / 0.22));
+  }
+  .recharts-wrapper .recharts-cartesian-grid-horizontal line,
+  .recharts-wrapper .recharts-cartesian-grid-vertical line {
+    stroke: hsl(220 15% 88%);
+    stroke-dasharray: 3 4;
+  }
+  /* Tooltip with 4D feel */
+  .recharts-default-tooltip,
+  .recharts-tooltip-wrapper > div {
+    background: linear-gradient(155deg, hsl(0 0% 100%) 0%, hsl(40 20% 98%) 100%) !important;
+    border: 1px solid hsl(220 15% 88% / 0.7) !important;
+    border-radius: 0.75rem !important;
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.9) inset,
+      0 8px 16px -4px hsl(220 20% 15% / 0.12),
+      0 16px 32px -8px hsl(220 20% 15% / 0.18) !important;
+    padding: 0.5rem 0.75rem !important;
+  }
 }
