@@ -172,7 +172,7 @@ export function ProductConsumptionDialog({
     
     setIsSubmitting(true);
     try {
-      const isLiquid = product.is_liquid;
+      const isLiquid = packageInfo.isLiquid;
       const liquidMl = isLiquid ? consumedMl : 0;
       const quantity = isLiquid ? consumedMl : consumedSolid.grams;
       
