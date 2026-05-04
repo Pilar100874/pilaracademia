@@ -65,6 +65,15 @@ const profileLabels: Record<string, string> = {
   saudavel: 'Saudável',
 };
 
+function cardioTypeLabel(type?: string | null): string {
+  if (!type) return '';
+  const k = type.toString().toUpperCase();
+  if (k === 'LISS') return 'Cardio leve contínuo';
+  if (k === 'HIIT') return 'Tiros intensos curtos';
+  if (k === 'MISTO') return 'Misto (leve + intenso)';
+  return type;
+}
+
 function alertIcon(level: string) {
   if (level === 'critical') return <AlertTriangle className="h-4 w-4 text-red-600" />;
   if (level === 'warning') return <AlertCircle className="h-4 w-4 text-amber-600" />;
