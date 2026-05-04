@@ -1,10 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useExerciseLibrary, type LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { useQueryClient } from '@tanstack/react-query';
 import { compressVideoFile } from '@/lib/compressVideo';
+
+// Module-level flag — sobrevive a remontagens do StrictMode em dev
+// e garante que a rotina rode **uma única vez por sessão**.
+let runnerStarted = false;
 
 /**
  * Global background runner — corre em qualquer rota assim que o usuário
