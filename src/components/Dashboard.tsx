@@ -244,10 +244,8 @@ export function Dashboard() {
           </button>
         )}
 
-        {/* Body analysis plan shortcut */}
-        {isViewingToday && <BodyPlanShortcut />}
+        {/* (Plano corporal/Adaptação, aderência, cardápio do dia e check-in semanal foram movidos para depois da glicemia) */}
 
-        {/* (Adaptação, aderência, cardápio do dia e check-in semanal foram movidos para depois da glicemia) */}
 
         {/* Main Calorie Card */}
         <div className="card-feature">
@@ -370,7 +368,10 @@ export function Dashboard() {
         {/* Glycemia Tracker */}
         <GlycemiaTracker selectedDate={selectedDate} />
 
-        {/* Smart alerts (Adaptação) */}
+        {/* Body analysis plan shortcut (Adaptação) */}
+        {isViewingToday && <BodyPlanShortcut />}
+
+        {/* Smart alerts */}
         {isViewingToday && <SmartAlertsCard alerts={smartAlerts} />}
 
         {/* Adherence score (Aderência ao plano) */}
