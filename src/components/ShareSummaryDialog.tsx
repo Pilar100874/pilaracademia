@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
+
 import { collectUserData, downloadPDF } from '@/lib/exportUserData';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -49,7 +49,7 @@ const VALIDITY_OPTIONS = [
 
 export function ShareSummaryDialog({ open, onOpenChange }: Props) {
   const { user } = useAuth();
-  const { profile } = useProfile();
+  
   const [periodDays, setPeriodDays] = useState(30);
   const [validityDays, setValidityDays] = useState(7);
   const [links, setLinks] = useState<ShareLink[]>([]);
