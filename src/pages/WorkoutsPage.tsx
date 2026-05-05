@@ -6,13 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/EmptyState';
 import { useWorkoutPlans, WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { ListSkeleton } from '@/components/ListSkeleton';
-import { Plus, Dumbbell, Loader2, Library, Shuffle, Sparkles, Leaf } from 'lucide-react';
+import { Plus, Dumbbell, Loader2, Library, Shuffle, Sparkles, Leaf, QrCode } from 'lucide-react';
 import { WorkoutPlanDialog } from '@/components/WorkoutPlanDialog';
 import { WorkoutPlanCard } from '@/components/WorkoutPlanCard';
 import { WorkoutViewerDialog } from '@/components/WorkoutViewerDialog';
 import { RandomWorkoutDialog } from '@/components/RandomWorkoutDialog';
 import { AIWorkoutDialog } from '@/components/AIWorkoutDialog';
 import { CooldownPlanDialog } from '@/components/CooldownPlanDialog';
+import { ReceiveWorkoutDialog } from '@/components/ReceiveWorkoutDialog';
 
 const DAYS_OF_WEEK = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
