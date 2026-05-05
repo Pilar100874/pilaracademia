@@ -99,10 +99,10 @@ export function ShareWorkoutDialog({ open, onOpenChange, plan }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-[calc(100vw-2rem)] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>Compartilhar treino</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+        <DialogHeader className="text-left">
+          <DialogTitle className="text-base sm:text-lg">Compartilhar treino</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm break-words">
             "{plan.name}" — link válido por 24 horas.
           </DialogDescription>
         </DialogHeader>
@@ -112,42 +112,43 @@ export function ShareWorkoutDialog({ open, onOpenChange, plan }: Props) {
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
-          <Tabs defaultValue="public" className="w-full">
+          <Tabs defaultValue="public" className="w-full min-w-0">
             <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="public">Sem login</TabsTrigger>
-              <TabsTrigger value="import">Importar p/ conta</TabsTrigger>
+              <TabsTrigger value="public" className="text-xs sm:text-sm">Sem login</TabsTrigger>
+              <TabsTrigger value="import" className="text-xs sm:text-sm">Importar p/ conta</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="public" className="space-y-3 pt-3">
+            <TabsContent value="public" className="space-y-3 pt-3 min-w-0">
               <p className="text-xs text-muted-foreground">
                 Quem ler este QR pode executar o treino direto no navegador, sem instalar o app.
               </p>
-              <div className="flex justify-center p-4 bg-white rounded-md border border-border">
-                <QRCodeCanvas value={publicUrl} size={192} includeMargin />
+              <div className="flex justify-center p-3 sm:p-4 bg-white rounded-md border border-border">
+                <QRCodeCanvas value={publicUrl} size={160} includeMargin className="max-w-full h-auto" />
               </div>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 min-w-0 text-xs bg-muted rounded px-2 py-1 truncate block">{publicUrl}</code>
-                <Button size="icon" variant="outline" onClick={() => copy('public', publicUrl)}>
+              <div className="flex items-center gap-2 min-w-0">
+                <code className="flex-1 min-w-0 text-[11px] sm:text-xs bg-muted rounded px-2 py-1.5 truncate">{publicUrl}</code>
+                <Button size="icon" variant="outline" className="shrink-0" onClick={() => copy('public', publicUrl)}>
                   {copied === 'public' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
             </TabsContent>
 
-            <TabsContent value="import" className="space-y-3 pt-3">
+            <TabsContent value="import" className="space-y-3 pt-3 min-w-0">
               <p className="text-xs text-muted-foreground">
                 Outro usuário logado pode escanear este QR (ou abrir o link) para receber e aprovar a inclusão do treino na conta dele.
               </p>
-              <div className="flex justify-center p-4 bg-white rounded-md border border-border">
-                <QRCodeCanvas value={importUrl} size={192} includeMargin />
+              <div className="flex justify-center p-3 sm:p-4 bg-white rounded-md border border-border">
+                <QRCodeCanvas value={importUrl} size={160} includeMargin className="max-w-full h-auto" />
               </div>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 min-w-0 text-xs bg-muted rounded px-2 py-1 truncate block">{importUrl}</code>
-                <Button size="icon" variant="outline" onClick={() => copy('import', importUrl)}>
+              <div className="flex items-center gap-2 min-w-0">
+                <code className="flex-1 min-w-0 text-[11px] sm:text-xs bg-muted rounded px-2 py-1.5 truncate">{importUrl}</code>
+                <Button size="icon" variant="outline" className="shrink-0" onClick={() => copy('import', importUrl)}>
                   {copied === 'import' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
-              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                <ScanLine className="h-3 w-3" /> Quem recebe pode também colar o link manualmente no navegador.
+              <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+                <ScanLine className="h-3 w-3 mt-0.5 shrink-0" />
+                <span>Quem recebe pode também colar o link manualmente no navegador.</span>
               </p>
             </TabsContent>
           </Tabs>
