@@ -7,7 +7,7 @@
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 const BODY_KEYS = [
@@ -106,17 +106,26 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const profRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?user_id=eq.${userId}&select=movement_analysis_enabled`,
+    const [profRes, roleRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/profiles?user_id=eq.${userId}&select=movement_analysis_enabled`,
       {
         headers: {
           apikey: SERVICE_KEY,
           Authorization: `Bearer ${SERVICE_KEY}`,
         },
-      }
-    );
+      }),
+      fetch(`${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&role=eq.master_admin&clinic_id=is.null&select=role&limit=1`, {
+        headers: {
+          apikey: SERVICE_KEY,
+          Authorization: `Bearer ${SERVICE_KEY}`,
+        },
+      }),
+    ]);
     const profRows = profRes.ok ? await profRes.json() : [];
-    const enabled = Array.isArray(profRows) && profRows[0]?.movement_analysis_enabled === true;
+    const roleRows = roleRes.ok ? await roleRes.json() : [];
+    const enabled =
+      (Array.isArray(roleRows) && roleRows.length > 0) ||
+      (Array.isArray(profRows) && profRows[0]?.movement_analysis_enabled === true);
     if (!enabled) {
       return new Response(
         JSON.stringify({
