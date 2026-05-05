@@ -212,7 +212,7 @@ export function LibraryBackgroundRunner() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [user, exercises, queryClient, upsert, remove]);
+  }, [user, exercises, queryClient, upsert, remove, pathname]);
 
   return null;
 }
