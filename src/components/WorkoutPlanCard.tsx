@@ -265,14 +265,3 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
   );
 }
 
-      <ConfirmDeleteDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Excluir treino"
-        itemName={plan.name}
-        onConfirm={confirmDelete}
-        isDeleting={deletePlan.isPending}
-      />
-    </Card>
-  );
-}
