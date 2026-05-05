@@ -51,10 +51,10 @@ export function LibraryBackgroundRunner() {
     if (!hasPending) return;
 
     const cancelled = false;
-    // Pequeno delay para não competir com o render inicial.
+    // Marca como iniciado IMEDIATAMENTE para evitar que re-renders
+    // (causados por setQueryData dentro do run) cancelem a execução.
+    runnerStarted = true;
     const timer = window.setTimeout(() => {
-      if (runnerStarted) return;
-      runnerStarted = true;
       void run().finally(() => {
         runnerStarted = false;
       });
