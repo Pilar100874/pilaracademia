@@ -53,10 +53,10 @@ export function LibraryBackgroundRunner() {
       if (optQueue.length > 0) {
         let done = 0;
         let saved = 0;
-        upsert({ id: OPT_JOB, label: 'Otimizando vídeos', done: 0, total: optQueue.length });
+        upsert({ id: JOB_ID, label: 'Otimizando vídeos', done: 0, total: optQueue.length });
         for (const ex of optQueue) {
           if (cancelled) break;
-          upsert({ id: OPT_JOB, label: 'Otimizando vídeos', done, total: optQueue.length, current: ex.name });
+          upsert({ id: JOB_ID, label: 'Otimizando vídeos', done, total: optQueue.length, current: ex.name });
           try {
             const url = ex.video_url!;
             const res = await fetch(url);
@@ -100,9 +100,9 @@ export function LibraryBackgroundRunner() {
             console.warn('[bg] optimize failed', ex.id, err);
           }
           done++;
-          upsert({ id: OPT_JOB, label: 'Otimizando vídeos', done, total: optQueue.length, current: ex.name });
+          upsert({ id: JOB_ID, label: 'Otimizando vídeos', done, total: optQueue.length, current: ex.name });
         }
-        remove(OPT_JOB);
+        remove(JOB_ID);
         if (!cancelled && done > 0) {
           const mb = saved > 0 ? ` — ${(saved / (1024 * 1024)).toFixed(1)} MB economizados` : '';
           toast.success(`Otimização de vídeos concluída${mb}`, { duration: 4000 });
@@ -142,10 +142,10 @@ export function LibraryBackgroundRunner() {
       if (aiQueue.length === 0) return;
 
       let done = 0;
-      upsert({ id: AI_JOB, label: 'Análise por IA', done: 0, total: aiQueue.length });
+      upsert({ id: JOB_ID, label: 'Análise por IA', done: 0, total: aiQueue.length });
       for (const ex of aiQueue) {
         if (cancelled) break;
-        upsert({ id: AI_JOB, label: 'Análise por IA', done, total: aiQueue.length, current: ex.name });
+        upsert({ id: JOB_ID, label: 'Análise por IA', done, total: aiQueue.length, current: ex.name });
         try {
           const { data, error } = await supabase.functions.invoke('analyze-exercise-video', {
             body: { videoUrl: ex.video_url, exerciseName: ex.name, categories: ex.category_ids },
@@ -182,9 +182,9 @@ export function LibraryBackgroundRunner() {
           console.warn('[bg] AI analysis failed', ex.id, err);
         }
         done++;
-        upsert({ id: AI_JOB, label: 'Análise por IA', done, total: aiQueue.length, current: ex.name });
+        upsert({ id: JOB_ID, label: 'Análise por IA', done, total: aiQueue.length, current: ex.name });
       }
-      remove(AI_JOB);
+      remove(JOB_ID);
       if (!cancelled && done > 0) {
         toast.success('Análise por IA concluída', { duration: 4000 });
       }
