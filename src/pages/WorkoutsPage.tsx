@@ -164,6 +164,8 @@ export function WorkoutsPage() {
 
       <CooldownPlanDialog open={cooldownOpen} onOpenChange={setCooldownOpen} />
 
+      <ReceiveWorkoutDialog open={receiveOpen} onOpenChange={setReceiveOpen} />
+
       {viewingPlan && (
         <WorkoutViewerDialog
           open={viewerOpen}
