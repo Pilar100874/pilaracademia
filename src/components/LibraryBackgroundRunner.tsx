@@ -63,74 +63,8 @@ export function LibraryBackgroundRunner() {
 
 
     async function run() {
-      // ---------- Etapa 1: Otimização de vídeos ----------
-      const fresh1 = queryClient.getQueryData<LibraryExercise[]>(['exercise-library', user.id]) ?? exercises;
-      const optQueue = fresh1.filter(
-        (ex) => ex.video_type === 'upload' && !!ex.video_url && !ex.video_optimized_at,
-      );
-
-      if (optQueue.length > 0) {
-        let done = 0;
-        let saved = 0;
-        upsert({ id: JOB_OPT, label: 'Otimizando vídeos', done: 0, total: optQueue.length });
-        for (const ex of optQueue) {
-          if (cancelled) break;
-          upsert({ id: JOB_OPT, label: 'Otimizando vídeos', done, total: optQueue.length, current: ex.name });
-          try {
-            const url = ex.video_url!;
-            const res = await fetch(url);
-            if (!res.ok) throw new Error('download failed');
-            const blob = await res.blob();
-            const origSize = blob.size;
-            const inputFile = new File([blob], 'video.mp4', { type: blob.type || 'video/mp4' });
-            const compressed = await compressVideoFile(inputFile);
-            if (compressed === inputFile || compressed.size >= origSize) {
-              const checkedAt = new Date().toISOString();
-              await supabase.from('exercise_library').update({ video_optimized_at: checkedAt } as never).eq('id', ex.id);
-              queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>
-                old?.map((e) => (e.id === ex.id ? { ...e, video_optimized_at: checkedAt } : e)) ?? old,
-              );
-            } else {
-              const path = `${user.id}/${Date.now()}-auto.webm`;
-              const { error: upErr } = await supabase.storage
-                .from('exercise-videos')
-                .upload(path, compressed, { contentType: 'video/webm', upsert: false });
-              if (upErr) throw upErr;
-              const { data: pub } = supabase.storage.from('exercise-videos').getPublicUrl(path);
-              const optimizedAt = new Date().toISOString();
-              await supabase
-                .from('exercise_library')
-                .update({ video_url: pub.publicUrl, video_optimized_at: optimizedAt } as never)
-                .eq('id', ex.id);
-              queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>
-                old?.map((e) => (e.id === ex.id ? { ...e, video_url: pub.publicUrl, video_optimized_at: optimizedAt } : e)) ?? old,
-              );
-              saved += origSize - compressed.size;
-              try {
-                const marker = '/exercise-videos/';
-                const idx = url.indexOf(marker);
-                if (idx >= 0) {
-                  const oldPath = url.substring(idx + marker.length).split('?')[0];
-                  await supabase.storage.from('exercise-videos').remove([oldPath]);
-                }
-              } catch { /* ignore */ }
-            }
-          } catch (err) {
-            console.warn('[bg] optimize failed', ex.id, err);
-          }
-          done++;
-          upsert({ id: JOB_OPT, label: 'Otimizando vídeos', done, total: optQueue.length, current: ex.name });
-        }
-        remove(JOB_OPT);
-        if (!cancelled && done > 0) {
-          const mb = saved > 0 ? ` — ${(saved / (1024 * 1024)).toFixed(1)} MB economizados` : '';
-          toast.success(`Otimização de vídeos concluída${mb}`, { duration: 4000 });
-        }
-      }
-
-      if (cancelled) { remove(JOB_OPT); remove(JOB_AI); return; }
-
-      // ---------- Etapa 2: Análise por IA ----------
+      // Verificação de permissão p/ análise por IA (definida antes para
+      // calcular o total da barra unificada)
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
@@ -148,23 +82,90 @@ export function LibraryBackgroundRunner() {
           .maybeSingle();
         allowed = (data as { movement_analysis_enabled?: boolean } | null)?.movement_analysis_enabled === true;
       }
-      if (!allowed) { return; }
 
-      const fresh2 = queryClient.getQueryData<LibraryExercise[]>(['exercise-library', user.id]) ?? exercises;
-      const aiQueue = fresh2.filter(
-        (ex) =>
-          (!ex.body_analyzed_at || !ex.mobility_analysis) &&
-          !!ex.video_url &&
-          !!ex.video_type &&
-          ex.video_type !== 'instagram',
+      const fresh1 = queryClient.getQueryData<LibraryExercise[]>(['exercise-library', user.id]) ?? exercises;
+      const optQueue = fresh1.filter(
+        (ex) => ex.video_type === 'upload' && !!ex.video_url && !ex.video_optimized_at,
       );
-      if (aiQueue.length === 0) { return; }
+      const aiQueue = allowed
+        ? fresh1.filter(
+            (ex) =>
+              (!ex.body_analyzed_at || !ex.mobility_analysis) &&
+              !!ex.video_url &&
+              !!ex.video_type &&
+              ex.video_type !== 'instagram',
+          )
+        : [];
+
+      const total = optQueue.length + aiQueue.length;
+      if (total === 0) return;
 
       let done = 0;
-      upsert({ id: JOB_AI, label: 'Análise por IA', done: 0, total: aiQueue.length });
-      for (const ex of aiQueue) {
+      let saved = 0;
+      upsert({ id: JOB_ID, label: JOB_LABEL, done: 0, total });
+
+      // ---------- Etapa 1: Otimização (ajuste de resolução) ----------
+      for (const ex of optQueue) {
         if (cancelled) break;
-        upsert({ id: JOB_AI, label: 'Análise por IA', done, total: aiQueue.length, current: ex.name });
+        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
+        try {
+          const url = ex.video_url!;
+          const res = await fetch(url);
+          if (!res.ok) throw new Error('download failed');
+          const blob = await res.blob();
+          const origSize = blob.size;
+          const inputFile = new File([blob], 'video.mp4', { type: blob.type || 'video/mp4' });
+          const compressed = await compressVideoFile(inputFile);
+          if (compressed === inputFile || compressed.size >= origSize) {
+            const checkedAt = new Date().toISOString();
+            await supabase.from('exercise_library').update({ video_optimized_at: checkedAt } as never).eq('id', ex.id);
+            queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>
+              old?.map((e) => (e.id === ex.id ? { ...e, video_optimized_at: checkedAt } : e)) ?? old,
+            );
+          } else {
+            const path = `${user.id}/${Date.now()}-auto.webm`;
+            const { error: upErr } = await supabase.storage
+              .from('exercise-videos')
+              .upload(path, compressed, { contentType: 'video/webm', upsert: false });
+            if (upErr) throw upErr;
+            const { data: pub } = supabase.storage.from('exercise-videos').getPublicUrl(path);
+            const optimizedAt = new Date().toISOString();
+            await supabase
+              .from('exercise_library')
+              .update({ video_url: pub.publicUrl, video_optimized_at: optimizedAt } as never)
+              .eq('id', ex.id);
+            queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>
+              old?.map((e) => (e.id === ex.id ? { ...e, video_url: pub.publicUrl, video_optimized_at: optimizedAt } : e)) ?? old,
+            );
+            saved += origSize - compressed.size;
+            try {
+              const marker = '/exercise-videos/';
+              const idx = url.indexOf(marker);
+              if (idx >= 0) {
+                const oldPath = url.substring(idx + marker.length).split('?')[0];
+                await supabase.storage.from('exercise-videos').remove([oldPath]);
+              }
+            } catch { /* ignore */ }
+          }
+        } catch (err) {
+          console.warn('[bg] optimize failed', ex.id, err);
+        }
+        done++;
+        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
+      }
+
+      // ---------- Etapa 2: Classificação por IA ----------
+      // Recarrega a fila de IA para refletir possíveis mudanças de video_url
+      const fresh2 = queryClient.getQueryData<LibraryExercise[]>(['exercise-library', user.id]) ?? exercises;
+      const aiQueueFinal = allowed
+        ? aiQueue
+            .map((ex) => fresh2.find((e) => e.id === ex.id) ?? ex)
+            .filter((ex) => !!ex.video_url && !!ex.video_type && ex.video_type !== 'instagram')
+        : [];
+
+      for (const ex of aiQueueFinal) {
+        if (cancelled) break;
+        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
         try {
           const { data, error } = await supabase.functions.invoke('analyze-exercise-video', {
             body: { videoUrl: ex.video_url, exerciseName: ex.name, categories: ex.category_ids },
@@ -201,11 +202,13 @@ export function LibraryBackgroundRunner() {
           console.warn('[bg] AI analysis failed', ex.id, err);
         }
         done++;
-        upsert({ id: JOB_AI, label: 'Análise por IA', done, total: aiQueue.length, current: ex.name });
+        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
       }
-      remove(JOB_AI);
+
+      remove(JOB_ID);
       if (!cancelled && done > 0) {
-        toast.success('Análise por IA concluída', { duration: 4000 });
+        const mb = saved > 0 ? ` — ${(saved / (1024 * 1024)).toFixed(1)} MB economizados` : '';
+        toast.success(`Vídeos processados${mb}`, { duration: 4000 });
       }
     }
 
