@@ -260,12 +260,15 @@ const App = () => {
           {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
           <BrowserRouter>
             <AuthProvider>
-              <BackgroundAnalysisProvider>
-                <AppRoutes />
-                <LibraryBackgroundRunner />
-                <InstallPrompt />
-                <UpdatePrompt />
-              </BackgroundAnalysisProvider>
+              <BackgroundProgressProvider>
+                <BackgroundAnalysisProvider>
+                  <AppRoutes />
+                  <LibraryBackgroundRunner />
+                  <GlobalBackgroundProgressBar />
+                  <InstallPrompt />
+                  <UpdatePrompt />
+                </BackgroundAnalysisProvider>
+              </BackgroundProgressProvider>
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>
