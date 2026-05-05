@@ -11,8 +11,7 @@ import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
 // e garante que a rotina rode **uma única vez por sessão**.
 let runnerStarted = false;
 
-const OPT_JOB = 'lib-optimize';
-const AI_JOB = 'lib-ai';
+const JOB_ID = 'lib-bg';
 
 /**
  * Global background runner — corre em qualquer rota assim que o usuário
