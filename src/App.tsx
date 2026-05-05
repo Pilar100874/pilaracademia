@@ -38,6 +38,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 
 const queryClient = new QueryClient();
 
@@ -267,6 +268,7 @@ const App = () => {
                   <GlobalBackgroundProgressBar />
                   <InstallPrompt />
                   <UpdatePrompt />
+                  <SonnerToaster richColors position="top-center" />
                 </BackgroundAnalysisProvider>
               </BackgroundProgressProvider>
             </AuthProvider>
