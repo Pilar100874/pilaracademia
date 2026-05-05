@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,18 +8,19 @@ import { useQueryClient } from '@tanstack/react-query';
 import { compressVideoFile } from '@/lib/compressVideo';
 import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
 
-// Module-level flag — sobrevive a remontagens do StrictMode em dev
-// e garante que a rotina rode **uma única vez por sessão**.
+// Module-level flag — evita execuções concorrentes da mesma fila.
+// É liberado ao final de run() para permitir uma nova verificação
+// toda vez que o usuário abrir a Biblioteca.
 let runnerStarted = false;
 
 const JOB_OPT = 'lib-bg-opt';
 const JOB_AI = 'lib-bg-ai';
 
 /**
- * Global background runner — corre em qualquer rota assim que o usuário
- * está logado. Processa duas filas em sequência, mostrando uma BARRA DE
- * PROGRESSO GLOBAL no topo (com porcentagem) — igual à da otimização de
- * vídeos:
+ * Background runner — toda vez que o usuário abre a Biblioteca de
+ * Exercícios (/exercises), verifica se há vídeos pendentes de
+ * otimização ou análise por IA e processa-os em sequência, mostrando
+ * uma BARRA DE PROGRESSO GLOBAL no topo (com porcentagem):
  *
  * 1) Otimização de vídeos legados (MP4 → 720p WebM no navegador)
  * 2) Análise por IA do conteúdo de cada vídeo (Gemini via edge function)
@@ -28,21 +30,37 @@ export function LibraryBackgroundRunner() {
   const { exercises } = useExerciseLibrary();
   const queryClient = useQueryClient();
   const { upsert, remove } = useBackgroundProgress();
+  const { pathname } = useLocation();
 
   useEffect(() => {
     if (!user) return;
     if (runnerStarted) return;
     if (!exercises || exercises.length === 0) return;
+    // Só dispara quando o usuário entra na Biblioteca
+    if (!pathname.startsWith('/exercises')) return;
+
+    // Verificação rápida: existe algo pendente?
+    const hasPending =
+      exercises.some((ex) => ex.video_type === 'upload' && !!ex.video_url && !ex.video_optimized_at) ||
+      exercises.some(
+        (ex) =>
+          (!ex.body_analyzed_at || !ex.mobility_analysis) &&
+          !!ex.video_url &&
+          !!ex.video_type &&
+          ex.video_type !== 'instagram',
+      );
+    if (!hasPending) return;
 
     const cancelled = false;
     // Pequeno delay para não competir com o render inicial.
-    // IMPORTANTE: só marca runnerStarted quando run() realmente começa,
-    // para evitar que uma re-renderização (que limpa o timer) trave a fila.
     const timer = window.setTimeout(() => {
       if (runnerStarted) return;
       runnerStarted = true;
-      void run();
-    }, 4000);
+      void run().finally(() => {
+        runnerStarted = false;
+      });
+    }, 1500);
+
 
     async function run() {
       // ---------- Etapa 1: Otimização de vídeos ----------
