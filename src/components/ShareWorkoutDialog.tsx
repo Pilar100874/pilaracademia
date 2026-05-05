@@ -99,7 +99,7 @@ export function ShareWorkoutDialog({ open, onOpenChange, plan }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md w-[calc(100vw-2rem)] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Compartilhar treino</DialogTitle>
           <DialogDescription>
