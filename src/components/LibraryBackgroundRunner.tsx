@@ -33,11 +33,16 @@ export function LibraryBackgroundRunner() {
     if (!user) return;
     if (runnerStarted) return;
     if (!exercises || exercises.length === 0) return;
-    runnerStarted = true;
 
-    let cancelled = false;
+    const cancelled = false;
     // Pequeno delay para não competir com o render inicial.
-    const timer = window.setTimeout(() => { void run(); }, 4000);
+    // IMPORTANTE: só marca runnerStarted quando run() realmente começa,
+    // para evitar que uma re-renderização (que limpa o timer) trave a fila.
+    const timer = window.setTimeout(() => {
+      if (runnerStarted) return;
+      runnerStarted = true;
+      void run();
+    }, 4000);
 
     async function run() {
       // ---------- Etapa 1: Otimização de vídeos ----------
