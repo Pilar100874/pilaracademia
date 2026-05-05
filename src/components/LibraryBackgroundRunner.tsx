@@ -188,7 +188,6 @@ export function LibraryBackgroundRunner() {
 
     return () => {
       window.clearTimeout(timer);
-      document.removeEventListener('visibilitychange', onVis);
     };
   }, [user, exercises, queryClient, upsert, remove]);
 
