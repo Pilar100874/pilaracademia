@@ -3,13 +3,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
-import { Edit, ChevronRight, ChevronLeft, Dumbbell, Play, Trash2 } from 'lucide-react';
+import { Edit, ChevronRight, ChevronLeft, Dumbbell, Play, Trash2, Share2 } from 'lucide-react';
 import { LazyVideoPreview } from '@/components/LazyVideoPreview';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { summarizeWorkout } from '@/lib/exerciseAnalysis';
 import { ClassificationBadges } from '@/components/ClassificationBadges';
+import { ShareWorkoutDialog } from '@/components/ShareWorkoutDialog';
 
 const DAYS_SHORT = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
