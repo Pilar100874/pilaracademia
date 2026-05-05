@@ -13,8 +13,8 @@ import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
 // toda vez que o usuário abrir a Biblioteca.
 let runnerStarted = false;
 
-const JOB_OPT = 'lib-bg-opt';
-const JOB_AI = 'lib-bg-ai';
+const JOB_ID = 'lib-bg-process';
+const JOB_LABEL = 'Ajustando resolução e classificando vídeo';
 
 /**
  * Background runner — toda vez que o usuário abre a Biblioteca de
