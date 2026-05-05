@@ -51,10 +51,10 @@ export function LibraryBackgroundRunner() {
     if (!hasPending) return;
 
     const cancelled = false;
-    // Pequeno delay para não competir com o render inicial.
+    // Marca como iniciado IMEDIATAMENTE para evitar que re-renders
+    // (causados por setQueryData dentro do run) cancelem a execução.
+    runnerStarted = true;
     const timer = window.setTimeout(() => {
-      if (runnerStarted) return;
-      runnerStarted = true;
       void run().finally(() => {
         runnerStarted = false;
       });
@@ -233,9 +233,8 @@ export function LibraryBackgroundRunner() {
       }
     }
 
-    return () => {
-      window.clearTimeout(timer);
-    };
+    // NÃO limpa o timer no cleanup — re-renders (causados pelo próprio
+    // runner ao atualizar o cache) cancelariam a execução antes de iniciar.
   }, [user, exercises, queryClient, upsert, remove, pathname]);
 
   return null;
