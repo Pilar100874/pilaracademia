@@ -218,11 +218,32 @@ export function useExerciseLibrary() {
         .in('id', data.ids);
       if (upErr) throw upErr;
     },
+    onMutate: async (vars) => {
+      const queryKey = ['exercise-library', user?.id];
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<LibraryExercise[]>(queryKey);
+      const idSet = new Set(vars.ids);
+      queryClient.setQueryData<LibraryExercise[]>(queryKey, (old = []) =>
+        old.map((ex) => {
+          if (!idSet.has(ex.id)) return ex;
+          const next = vars.category_id ? [vars.category_id] : [];
+          return { ...ex, category_ids: next, category_id: vars.category_id };
+        })
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(['exercise-library', user?.id], ctx.previous);
+      }
+      toast.error('Erro ao mover exercícios');
+    },
     onSuccess: (_d, vars) => {
-      queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
       toast.success(`${vars.ids.length} exercício(s) movido(s)`);
     },
-    onError: () => toast.error('Erro ao mover exercícios'),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+    },
   });
 
   const toggleExerciseCategory = useMutation({
