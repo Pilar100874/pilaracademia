@@ -36,9 +36,6 @@ export function LibraryBackgroundRunner() {
     runnerStarted = true;
 
     let cancelled = false;
-    const onVis = () => { if (document.hidden) cancelled = true; };
-    document.addEventListener('visibilitychange', onVis);
-
     // Pequeno delay para não competir com o render inicial.
     const timer = window.setTimeout(() => { void run(); }, 4000);
 
