@@ -226,6 +226,15 @@ function AppRoutes() {
         }
       />
       <Route path="/r/:token" element={<SharedSummaryPage />} />
+      <Route path="/p/treino/:token" element={<PublicWorkoutPage />} />
+      <Route
+        path="/import/treino/:token"
+        element={
+          <ProtectedRoute>
+            <ImportWorkoutPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/auth"
         element={
