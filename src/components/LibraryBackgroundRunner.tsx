@@ -96,6 +96,10 @@ export function LibraryBackgroundRunner() {
           )
         : [];
 
+      const optIds = new Set(optQueue.map((ex) => ex.id));
+      const aiReadyQueue = aiQueue.filter((ex) => !optIds.has(ex.id));
+      const aiAfterOptQueue = aiQueue.filter((ex) => optIds.has(ex.id));
+
       const total = optQueue.length + aiQueue.length;
       if (total === 0) return;
 
@@ -103,7 +107,55 @@ export function LibraryBackgroundRunner() {
       let saved = 0;
       upsert({ id: JOB_ID, label: JOB_LABEL, done: 0, total });
 
-      // ---------- Etapa 1: Otimização (ajuste de resolução) ----------
+      const analyzeExercise = async (ex: LibraryExercise) => {
+        const { data, error } = await supabase.functions.invoke('analyze-exercise-video', {
+          body: { videoUrl: ex.video_url, exerciseName: ex.name, categories: ex.category_ids },
+        });
+        if (error) throw error;
+        if (data?.fallback) throw new Error(data?.message || 'AI service unavailable');
+        if (!data?.body_analysis || !data?.aesthetic_analysis || !data?.mobility_analysis) {
+          throw new Error('resposta inválida');
+        }
+        const analyzedAt = new Date().toISOString();
+        await supabase
+          .from('exercise_library')
+          .update({
+            body_analysis: data.body_analysis,
+            aesthetic_analysis: data.aesthetic_analysis,
+            mobility_analysis: data.mobility_analysis,
+            body_analyzed_at: analyzedAt,
+          } as never)
+          .eq('id', ex.id);
+        queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>
+          old?.map((e) =>
+            e.id === ex.id
+              ? {
+                  ...e,
+                  body_analysis: data.body_analysis,
+                  aesthetic_analysis: data.aesthetic_analysis,
+                  mobility_analysis: data.mobility_analysis,
+                  body_analyzed_at: analyzedAt,
+                }
+              : e,
+          ) ?? old,
+        );
+      };
+
+      // ---------- Etapa 1: Classificação de vídeos já prontos ----------
+      // Evita que a análise fique presa atrás da compressão de vídeos legados.
+      for (const ex of aiReadyQueue) {
+        if (cancelled) break;
+        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
+        try {
+          await analyzeExercise(ex);
+        } catch (err) {
+          console.warn('[bg] AI analysis failed', ex.id, err);
+        }
+        done++;
+        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
+      }
+
+      // ---------- Etapa 2: Otimização (ajuste de resolução) ----------
       for (const ex of optQueue) {
         if (cancelled) break;
         upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
@@ -153,11 +205,11 @@ export function LibraryBackgroundRunner() {
         upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
       }
 
-      // ---------- Etapa 2: Classificação por IA ----------
+      // ---------- Etapa 3: Classificação dos vídeos que acabaram de otimizar ----------
       // Recarrega a fila de IA para refletir possíveis mudanças de video_url
       const fresh2 = queryClient.getQueryData<LibraryExercise[]>(['exercise-library', user.id]) ?? exercises;
       const aiQueueFinal = allowed
-        ? aiQueue
+        ? aiAfterOptQueue
             .map((ex) => fresh2.find((e) => e.id === ex.id) ?? ex)
             .filter((ex) => !!ex.video_url && !!ex.video_type && ex.video_type !== 'instagram')
         : [];
@@ -166,37 +218,7 @@ export function LibraryBackgroundRunner() {
         if (cancelled) break;
         upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
         try {
-          const { data, error } = await supabase.functions.invoke('analyze-exercise-video', {
-            body: { videoUrl: ex.video_url, exerciseName: ex.name, categories: ex.category_ids },
-          });
-          if (error) throw error;
-          if (data?.fallback) throw new Error(data?.message || 'AI service unavailable');
-          if (!data?.body_analysis || !data?.aesthetic_analysis || !data?.mobility_analysis) {
-            throw new Error('resposta inválida');
-          }
-          const analyzedAt = new Date().toISOString();
-          await supabase
-            .from('exercise_library')
-            .update({
-              body_analysis: data.body_analysis,
-              aesthetic_analysis: data.aesthetic_analysis,
-              mobility_analysis: data.mobility_analysis,
-              body_analyzed_at: analyzedAt,
-            } as never)
-            .eq('id', ex.id);
-          queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>
-            old?.map((e) =>
-              e.id === ex.id
-                ? {
-                    ...e,
-                    body_analysis: data.body_analysis,
-                    aesthetic_analysis: data.aesthetic_analysis,
-                    mobility_analysis: data.mobility_analysis,
-                    body_analyzed_at: analyzedAt,
-                  }
-                : e,
-            ) ?? old,
-          );
+          await analyzeExercise(ex);
         } catch (err) {
           console.warn('[bg] AI analysis failed', ex.id, err);
         }
