@@ -6,13 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/EmptyState';
 import { useWorkoutPlans, WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { ListSkeleton } from '@/components/ListSkeleton';
-import { Plus, Dumbbell, Loader2, Library, Shuffle, Sparkles, Leaf } from 'lucide-react';
+import { Plus, Dumbbell, Loader2, Library, Shuffle, Sparkles, Leaf, QrCode } from 'lucide-react';
 import { WorkoutPlanDialog } from '@/components/WorkoutPlanDialog';
 import { WorkoutPlanCard } from '@/components/WorkoutPlanCard';
 import { WorkoutViewerDialog } from '@/components/WorkoutViewerDialog';
 import { RandomWorkoutDialog } from '@/components/RandomWorkoutDialog';
 import { AIWorkoutDialog } from '@/components/AIWorkoutDialog';
 import { CooldownPlanDialog } from '@/components/CooldownPlanDialog';
+import { ReceiveWorkoutDialog } from '@/components/ReceiveWorkoutDialog';
 
 const DAYS_OF_WEEK = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -26,6 +27,7 @@ export function WorkoutsPage() {
   const [randomOpen, setRandomOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [cooldownOpen, setCooldownOpen] = useState(false);
+  const [receiveOpen, setReceiveOpen] = useState(false);
 
   const handleEdit = (plan: WorkoutPlan) => {
     setEditingPlan(plan);
@@ -63,6 +65,10 @@ export function WorkoutsPage() {
             <Button size="sm" variant="outline" onClick={() => navigate('/exercises')}>
               <Library className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Biblioteca</span>
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setReceiveOpen(true)}>
+              <QrCode className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Receber</span>
             </Button>
             <Button size="sm" variant="outline" onClick={() => setCooldownOpen(true)}>
               <Leaf className="h-4 w-4 sm:mr-1 text-emerald-600" />
@@ -157,6 +163,8 @@ export function WorkoutsPage() {
       />
 
       <CooldownPlanDialog open={cooldownOpen} onOpenChange={setCooldownOpen} />
+
+      <ReceiveWorkoutDialog open={receiveOpen} onOpenChange={setReceiveOpen} />
 
       {viewingPlan && (
         <WorkoutViewerDialog

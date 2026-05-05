@@ -5,26 +5,29 @@ import { useAuth } from '@/hooks/useAuth';
 import { useExerciseLibrary, type LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { useQueryClient } from '@tanstack/react-query';
 import { compressVideoFile } from '@/lib/compressVideo';
+import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
 
 // Module-level flag — sobrevive a remontagens do StrictMode em dev
 // e garante que a rotina rode **uma única vez por sessão**.
 let runnerStarted = false;
 
+const OPT_JOB = 'lib-optimize';
+const AI_JOB = 'lib-ai';
+
 /**
  * Global background runner — corre em qualquer rota assim que o usuário
- * está logado. Processa duas filas em sequência, mostrando um toast
- * persistente com progresso (estilo bioimpedância/exames):
+ * está logado. Processa duas filas em sequência, mostrando uma BARRA DE
+ * PROGRESSO GLOBAL no topo (com porcentagem) — igual à da otimização de
+ * vídeos:
  *
  * 1) Otimização de vídeos legados (MP4 → 720p WebM no navegador)
  * 2) Análise por IA do conteúdo de cada vídeo (Gemini via edge function)
- *
- * Roda apenas uma vez por sessão, em série (1 por vez), respeita visibilidade
- * da aba e a flag `profiles.movement_analysis_enabled`.
  */
 export function LibraryBackgroundRunner() {
   const { user } = useAuth();
   const { exercises } = useExerciseLibrary();
   const queryClient = useQueryClient();
+  const { upsert, remove } = useBackgroundProgress();
 
   useEffect(() => {
     if (!user) return;
@@ -47,14 +50,12 @@ export function LibraryBackgroundRunner() {
       );
 
       if (optQueue.length > 0) {
-        const toastId = toast.loading(`Otimizando vídeos — 0/${optQueue.length}`, {
-          description: 'Reduzindo tamanho para carregar mais rápido.',
-          duration: Infinity,
-        });
         let done = 0;
         let saved = 0;
+        upsert({ id: OPT_JOB, label: 'Otimizando vídeos', done: 0, total: optQueue.length });
         for (const ex of optQueue) {
           if (cancelled) break;
+          upsert({ id: OPT_JOB, label: 'Otimizando vídeos', done, total: optQueue.length, current: ex.name });
           try {
             const url = ex.video_url!;
             const res = await fetch(url);
@@ -98,25 +99,18 @@ export function LibraryBackgroundRunner() {
             console.warn('[bg] optimize failed', ex.id, err);
           }
           done++;
-          const pct = Math.round((done / optQueue.length) * 100);
-          toast.loading(`Otimizando vídeos — ${done}/${optQueue.length} (${pct}%)`, {
-            id: toastId,
-            description: ex.name,
-            duration: Infinity,
-          });
+          upsert({ id: OPT_JOB, label: 'Otimizando vídeos', done, total: optQueue.length, current: ex.name });
         }
-        if (cancelled) {
-          toast.dismiss(toastId);
-        } else {
+        remove(OPT_JOB);
+        if (!cancelled && done > 0) {
           const mb = saved > 0 ? ` — ${(saved / (1024 * 1024)).toFixed(1)} MB economizados` : '';
-          toast.success(`Otimização de vídeos concluída${mb}`, { id: toastId, duration: 5000 });
+          toast.success(`Otimização de vídeos concluída${mb}`, { duration: 4000 });
         }
       }
 
       if (cancelled) return;
 
       // ---------- Etapa 2: Análise por IA ----------
-      // Permissão: master admin OU profiles.movement_analysis_enabled = true
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
@@ -146,14 +140,11 @@ export function LibraryBackgroundRunner() {
       );
       if (aiQueue.length === 0) return;
 
-      const toastId = toast.loading(`Analisando vídeos por IA — 0/${aiQueue.length}`, {
-        description: 'Classificação corporal, estética e mobilidade.',
-        duration: Infinity,
-      });
-
       let done = 0;
+      upsert({ id: AI_JOB, label: 'Análise por IA', done: 0, total: aiQueue.length });
       for (const ex of aiQueue) {
         if (cancelled) break;
+        upsert({ id: AI_JOB, label: 'Análise por IA', done, total: aiQueue.length, current: ex.name });
         try {
           const { data, error } = await supabase.functions.invoke('analyze-exercise-video', {
             body: { videoUrl: ex.video_url, exerciseName: ex.name, categories: ex.category_ids },
@@ -190,27 +181,19 @@ export function LibraryBackgroundRunner() {
           console.warn('[bg] AI analysis failed', ex.id, err);
         }
         done++;
-        const pct = Math.round((done / aiQueue.length) * 100);
-        toast.loading(`Analisando vídeos por IA — ${done}/${aiQueue.length} (${pct}%)`, {
-          id: toastId,
-          description: ex.name,
-          duration: Infinity,
-        });
+        upsert({ id: AI_JOB, label: 'Análise por IA', done, total: aiQueue.length, current: ex.name });
       }
-      if (cancelled) {
-        toast.dismiss(toastId);
-      } else {
-        toast.success('Análise por IA concluída', { id: toastId, duration: 5000 });
+      remove(AI_JOB);
+      if (!cancelled && done > 0) {
+        toast.success('Análise por IA concluída', { duration: 4000 });
       }
     }
 
     return () => {
-      // NOTE: não cancelamos aqui — em StrictMode o efeito desmonta+remonta
-      // imediatamente, e o runnerStarted (module-level) impede re-execução.
-      // Só removemos o listener para evitar leak.
+      window.clearTimeout(timer);
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [user, exercises, queryClient]);
+  }, [user, exercises, queryClient, upsert, remove]);
 
   return null;
 }

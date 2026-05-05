@@ -3464,6 +3464,45 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_shares: {
+        Row: {
+          active: boolean
+          created_at: string
+          expires_at: string
+          id: string
+          plan_name: string
+          snapshot: Json
+          token: string
+          user_id: string
+          view_count: number
+          workout_plan_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          plan_name: string
+          snapshot?: Json
+          token?: string
+          user_id: string
+          view_count?: number
+          workout_plan_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          plan_name?: string
+          snapshot?: Json
+          token?: string
+          user_id?: string
+          view_count?: number
+          workout_plan_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -3507,6 +3546,10 @@ export type Database = {
       }
       is_master_admin: { Args: { _user_id: string }; Returns: boolean }
       register_share_link_view: { Args: { _token: string }; Returns: undefined }
+      register_workout_share_view: {
+        Args: { _token: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:

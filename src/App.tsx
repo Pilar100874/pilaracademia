@@ -26,7 +26,11 @@ import PrivacyPage from "@/pages/PrivacyPage";
 import MovementAnalysisAccessPage from "@/pages/MovementAnalysisAccessPage";
 import WeeklyMenuPage from "@/pages/WeeklyMenuPage";
 import { BackgroundAnalysisProvider } from "@/contexts/BackgroundAnalysisContext";
+import { BackgroundProgressProvider } from "@/contexts/BackgroundProgressContext";
 import { LibraryBackgroundRunner } from "@/components/LibraryBackgroundRunner";
+import { GlobalBackgroundProgressBar } from "@/components/GlobalBackgroundProgressBar";
+import { PublicWorkoutPage } from "@/pages/PublicWorkoutPage";
+import { ImportWorkoutPage } from "@/pages/ImportWorkoutPage";
 import { Dashboard } from "@/components/Dashboard";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { UpdatePrompt } from "@/components/UpdatePrompt";
@@ -222,6 +226,15 @@ function AppRoutes() {
         }
       />
       <Route path="/r/:token" element={<SharedSummaryPage />} />
+      <Route path="/p/treino/:token" element={<PublicWorkoutPage />} />
+      <Route
+        path="/import/treino/:token"
+        element={
+          <ProtectedRoute>
+            <ImportWorkoutPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/auth"
         element={
@@ -247,12 +260,15 @@ const App = () => {
           {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
           <BrowserRouter>
             <AuthProvider>
-              <BackgroundAnalysisProvider>
-                <AppRoutes />
-                <LibraryBackgroundRunner />
-                <InstallPrompt />
-                <UpdatePrompt />
-              </BackgroundAnalysisProvider>
+              <BackgroundProgressProvider>
+                <BackgroundAnalysisProvider>
+                  <AppRoutes />
+                  <LibraryBackgroundRunner />
+                  <GlobalBackgroundProgressBar />
+                  <InstallPrompt />
+                  <UpdatePrompt />
+                </BackgroundAnalysisProvider>
+              </BackgroundProgressProvider>
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>
