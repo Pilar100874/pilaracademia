@@ -66,6 +66,10 @@ export function WorkoutsPage() {
               <Library className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Biblioteca</span>
             </Button>
+            <Button size="sm" variant="outline" onClick={() => setReceiveOpen(true)}>
+              <QrCode className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Receber</span>
+            </Button>
             <Button size="sm" variant="outline" onClick={() => setCooldownOpen(true)}>
               <Leaf className="h-4 w-4 sm:mr-1 text-emerald-600" />
               <span className="hidden sm:inline">Final de Aula</span>
