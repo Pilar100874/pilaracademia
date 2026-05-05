@@ -108,7 +108,7 @@ export function LibraryBackgroundRunner() {
         }
       }
 
-      if (cancelled) return;
+      if (cancelled) { remove(JOB_ID); return; }
 
       // ---------- Etapa 2: Análise por IA ----------
       const { data: roleData } = await supabase
@@ -128,7 +128,7 @@ export function LibraryBackgroundRunner() {
           .maybeSingle();
         allowed = (data as { movement_analysis_enabled?: boolean } | null)?.movement_analysis_enabled === true;
       }
-      if (!allowed) return;
+      if (!allowed) { remove(JOB_ID); return; }
 
       const fresh2 = queryClient.getQueryData<LibraryExercise[]>(['exercise-library', user.id]) ?? exercises;
       const aiQueue = fresh2.filter(
@@ -138,7 +138,7 @@ export function LibraryBackgroundRunner() {
           !!ex.video_type &&
           ex.video_type !== 'instagram',
       );
-      if (aiQueue.length === 0) return;
+      if (aiQueue.length === 0) { remove(JOB_ID); return; }
 
       let done = 0;
       upsert({ id: JOB_ID, label: 'Análise por IA', done: 0, total: aiQueue.length });
