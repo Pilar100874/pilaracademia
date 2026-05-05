@@ -27,6 +27,7 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const { deletePlan } = useWorkoutPlans();
 
   const summary = useMemo(
