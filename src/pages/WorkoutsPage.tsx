@@ -14,6 +14,7 @@ import { RandomWorkoutDialog } from '@/components/RandomWorkoutDialog';
 import { AIWorkoutDialog } from '@/components/AIWorkoutDialog';
 import { CooldownPlanDialog } from '@/components/CooldownPlanDialog';
 import { ReceiveWorkoutDialog } from '@/components/ReceiveWorkoutDialog';
+import { WorkoutPreloader } from '@/components/WorkoutPreloader';
 
 const DAYS_OF_WEEK = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
