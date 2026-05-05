@@ -233,9 +233,8 @@ export function LibraryBackgroundRunner() {
       }
     }
 
-    return () => {
-      window.clearTimeout(timer);
-    };
+    // NÃO limpa o timer no cleanup — re-renders (causados pelo próprio
+    // runner ao atualizar o cache) cancelariam a execução antes de iniciar.
   }, [user, exercises, queryClient, upsert, remove, pathname]);
 
   return null;
