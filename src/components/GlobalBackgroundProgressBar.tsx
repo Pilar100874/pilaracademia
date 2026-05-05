@@ -1,15 +1,22 @@
 import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
 import { Progress } from '@/components/ui/progress';
 import { Loader2 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 /**
  * Barra fixa no topo que mostra o progresso (em %) das rotinas que rodam
  * em background — otimização de vídeos e análise por IA da biblioteca.
  * Cada job aparece como uma faixa empilhada (em ordem de criação).
+ *
+ * Visível somente na página da Biblioteca de Exercícios (/exercises) para
+ * não poluir outras telas — o runner continua rodando em background.
  */
 export function GlobalBackgroundProgressBar() {
   const { jobs } = useBackgroundProgress();
+  const { pathname } = useLocation();
   if (jobs.length === 0) return null;
+  if (!pathname.startsWith('/exercises')) return null;
+
 
   return (
     <div className="fixed top-0 inset-x-0 z-[60] pointer-events-none">
