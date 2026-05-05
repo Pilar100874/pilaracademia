@@ -25,6 +25,7 @@ export function WorkoutsPage() {
   const [editingPlan, setEditingPlan] = useState<WorkoutPlan | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewingPlan, setViewingPlan] = useState<WorkoutPlan | null>(null);
+  const [preloadingPlan, setPreloadingPlan] = useState<WorkoutPlan | null>(null);
   const [randomOpen, setRandomOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [cooldownOpen, setCooldownOpen] = useState(false);
@@ -36,8 +37,9 @@ export function WorkoutsPage() {
   };
 
   const handleStart = (plan: WorkoutPlan) => {
-    setViewingPlan(plan);
-    setViewerOpen(true);
+    // Preload images + uploaded videos before opening the viewer to avoid
+    // stutter on the first exercise.
+    setPreloadingPlan(plan);
   };
 
   const handleCloseDialog = () => {
