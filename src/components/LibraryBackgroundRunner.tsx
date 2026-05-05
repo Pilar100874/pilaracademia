@@ -102,7 +102,6 @@ export function LibraryBackgroundRunner() {
           done++;
           upsert({ id: JOB_ID, label: 'Otimizando vídeos', done, total: optQueue.length, current: ex.name });
         }
-        remove(JOB_ID);
         if (!cancelled && done > 0) {
           const mb = saved > 0 ? ` — ${(saved / (1024 * 1024)).toFixed(1)} MB economizados` : '';
           toast.success(`Otimização de vídeos concluída${mb}`, { duration: 4000 });
