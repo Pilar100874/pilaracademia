@@ -11,7 +11,8 @@ import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
 // e garante que a rotina rode **uma única vez por sessão**.
 let runnerStarted = false;
 
-const JOB_ID = 'lib-bg';
+const JOB_OPT = 'lib-bg-opt';
+const JOB_AI = 'lib-bg-ai';
 
 /**
  * Global background runner — corre em qualquer rota assim que o usuário
@@ -53,10 +54,10 @@ export function LibraryBackgroundRunner() {
       if (optQueue.length > 0) {
         let done = 0;
         let saved = 0;
-        upsert({ id: JOB_ID, label: 'Otimizando vídeos', done: 0, total: optQueue.length });
+        upsert({ id: JOB_OPT, label: 'Otimizando vídeos', done: 0, total: optQueue.length });
         for (const ex of optQueue) {
           if (cancelled) break;
-          upsert({ id: JOB_ID, label: 'Otimizando vídeos', done, total: optQueue.length, current: ex.name });
+          upsert({ id: JOB_OPT, label: 'Otimizando vídeos', done, total: optQueue.length, current: ex.name });
           try {
             const url = ex.video_url!;
             const res = await fetch(url);
@@ -100,15 +101,16 @@ export function LibraryBackgroundRunner() {
             console.warn('[bg] optimize failed', ex.id, err);
           }
           done++;
-          upsert({ id: JOB_ID, label: 'Otimizando vídeos', done, total: optQueue.length, current: ex.name });
+          upsert({ id: JOB_OPT, label: 'Otimizando vídeos', done, total: optQueue.length, current: ex.name });
         }
+        remove(JOB_OPT);
         if (!cancelled && done > 0) {
           const mb = saved > 0 ? ` — ${(saved / (1024 * 1024)).toFixed(1)} MB economizados` : '';
           toast.success(`Otimização de vídeos concluída${mb}`, { duration: 4000 });
         }
       }
 
-      if (cancelled) { remove(JOB_ID); return; }
+      if (cancelled) { remove(JOB_OPT); remove(JOB_AI); return; }
 
       // ---------- Etapa 2: Análise por IA ----------
       const { data: roleData } = await supabase
@@ -128,7 +130,7 @@ export function LibraryBackgroundRunner() {
           .maybeSingle();
         allowed = (data as { movement_analysis_enabled?: boolean } | null)?.movement_analysis_enabled === true;
       }
-      if (!allowed) { remove(JOB_ID); return; }
+      if (!allowed) { return; }
 
       const fresh2 = queryClient.getQueryData<LibraryExercise[]>(['exercise-library', user.id]) ?? exercises;
       const aiQueue = fresh2.filter(
@@ -138,13 +140,13 @@ export function LibraryBackgroundRunner() {
           !!ex.video_type &&
           ex.video_type !== 'instagram',
       );
-      if (aiQueue.length === 0) { remove(JOB_ID); return; }
+      if (aiQueue.length === 0) { return; }
 
       let done = 0;
-      upsert({ id: JOB_ID, label: 'Análise por IA', done: 0, total: aiQueue.length });
+      upsert({ id: JOB_AI, label: 'Análise por IA', done: 0, total: aiQueue.length });
       for (const ex of aiQueue) {
         if (cancelled) break;
-        upsert({ id: JOB_ID, label: 'Análise por IA', done, total: aiQueue.length, current: ex.name });
+        upsert({ id: JOB_AI, label: 'Análise por IA', done, total: aiQueue.length, current: ex.name });
         try {
           const { data, error } = await supabase.functions.invoke('analyze-exercise-video', {
             body: { videoUrl: ex.video_url, exerciseName: ex.name, categories: ex.category_ids },
@@ -181,9 +183,9 @@ export function LibraryBackgroundRunner() {
           console.warn('[bg] AI analysis failed', ex.id, err);
         }
         done++;
-        upsert({ id: JOB_ID, label: 'Análise por IA', done, total: aiQueue.length, current: ex.name });
+        upsert({ id: JOB_AI, label: 'Análise por IA', done, total: aiQueue.length, current: ex.name });
       }
-      remove(JOB_ID);
+      remove(JOB_AI);
       if (!cancelled && done > 0) {
         toast.success('Análise por IA concluída', { duration: 4000 });
       }
