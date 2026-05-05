@@ -40,7 +40,17 @@ import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      retry: 1,
+    },
+  },
+});
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
