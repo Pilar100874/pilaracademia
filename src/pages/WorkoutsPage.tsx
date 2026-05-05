@@ -14,6 +14,7 @@ import { RandomWorkoutDialog } from '@/components/RandomWorkoutDialog';
 import { AIWorkoutDialog } from '@/components/AIWorkoutDialog';
 import { CooldownPlanDialog } from '@/components/CooldownPlanDialog';
 import { ReceiveWorkoutDialog } from '@/components/ReceiveWorkoutDialog';
+import { WorkoutPreloader } from '@/components/WorkoutPreloader';
 
 const DAYS_OF_WEEK = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -24,6 +25,7 @@ export function WorkoutsPage() {
   const [editingPlan, setEditingPlan] = useState<WorkoutPlan | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewingPlan, setViewingPlan] = useState<WorkoutPlan | null>(null);
+  const [preloadingPlan, setPreloadingPlan] = useState<WorkoutPlan | null>(null);
   const [randomOpen, setRandomOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [cooldownOpen, setCooldownOpen] = useState(false);
@@ -35,8 +37,9 @@ export function WorkoutsPage() {
   };
 
   const handleStart = (plan: WorkoutPlan) => {
-    setViewingPlan(plan);
-    setViewerOpen(true);
+    // Preload images + uploaded videos before opening the viewer to avoid
+    // stutter on the first exercise.
+    setPreloadingPlan(plan);
   };
 
   const handleCloseDialog = () => {
@@ -165,6 +168,18 @@ export function WorkoutsPage() {
       <CooldownPlanDialog open={cooldownOpen} onOpenChange={setCooldownOpen} />
 
       <ReceiveWorkoutDialog open={receiveOpen} onOpenChange={setReceiveOpen} />
+
+      <WorkoutPreloader
+        plan={preloadingPlan}
+        onReady={() => {
+          if (preloadingPlan) {
+            setViewingPlan(preloadingPlan);
+            setViewerOpen(true);
+          }
+          setPreloadingPlan(null);
+        }}
+        onCancel={() => setPreloadingPlan(null)}
+      />
 
       {viewingPlan && (
         <WorkoutViewerDialog
