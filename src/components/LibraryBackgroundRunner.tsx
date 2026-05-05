@@ -36,10 +36,9 @@ export function LibraryBackgroundRunner() {
     if (!user) return;
     if (runnerStarted) return;
     if (!exercises || exercises.length === 0) return;
-    // Só dispara quando o usuário entra na Biblioteca
-    if (!pathname.startsWith('/exercises')) return;
+    // Não dispara em telas públicas/auth
+    if (pathname.startsWith('/auth') || pathname.startsWith('/reset-password') || pathname.startsWith('/p/') || pathname.startsWith('/r/')) return;
 
-    // Verificação rápida: existe algo pendente?
     const hasPending =
       exercises.some((ex) => ex.video_type === 'upload' && !!ex.video_url && !ex.video_optimized_at) ||
       exercises.some(
