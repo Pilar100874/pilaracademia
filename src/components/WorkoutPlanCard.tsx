@@ -233,6 +233,14 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
             <Button
               size="icon"
               variant="ghost"
+              onClick={(e) => { e.stopPropagation(); setShareOpen(true); }}
+              title="Compartilhar treino"
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
               onClick={handleDelete}
               title="Excluir treino"
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -242,6 +250,20 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
           </div>
         </div>
       </CardContent>
+
+      <ConfirmDeleteDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Excluir treino"
+        itemName={plan.name}
+        onConfirm={confirmDelete}
+        isDeleting={deletePlan.isPending}
+      />
+
+      <ShareWorkoutDialog open={shareOpen} onOpenChange={setShareOpen} plan={plan} />
+    </Card>
+  );
+}
 
       <ConfirmDeleteDialog
         open={confirmOpen}
