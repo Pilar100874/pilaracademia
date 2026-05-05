@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,21 +27,29 @@ const JOB_LABEL = 'Ajustando resolução e classificando vídeo';
  */
 export function LibraryBackgroundRunner() {
   const { user } = useAuth();
-  const { exercises } = useExerciseLibrary();
+  const { exercises, allExercises, isMaster } = useExerciseLibrary();
   const queryClient = useQueryClient();
   const { upsert, remove } = useBackgroundProgress();
   const { pathname } = useLocation();
 
+  const processableExercises = useMemo(
+    () =>
+      (allExercises ?? exercises).filter(
+        (ex) => !ex.is_global || isMaster || ex.user_id === user?.id,
+      ),
+    [allExercises, exercises, isMaster, user?.id],
+  );
+
   useEffect(() => {
     if (!user) return;
     if (runnerStarted) return;
-    if (!exercises || exercises.length === 0) return;
+    if (!processableExercises || processableExercises.length === 0) return;
     // Não dispara em telas públicas/auth
     if (pathname.startsWith('/auth') || pathname.startsWith('/reset-password') || pathname.startsWith('/p/') || pathname.startsWith('/r/')) return;
 
     const hasPending =
-      exercises.some((ex) => ex.video_type === 'upload' && !!ex.video_url && !ex.video_optimized_at) ||
-      exercises.some(
+      processableExercises.some((ex) => ex.video_type === 'upload' && !!ex.video_url && !ex.video_optimized_at) ||
+      processableExercises.some(
         (ex) =>
           (!ex.body_analyzed_at || !ex.mobility_analysis) &&
           !!ex.video_url &&
@@ -82,7 +90,8 @@ export function LibraryBackgroundRunner() {
         allowed = (data as { movement_analysis_enabled?: boolean } | null)?.movement_analysis_enabled === true;
       }
 
-      const fresh1 = queryClient.getQueryData<LibraryExercise[]>(['exercise-library', user.id]) ?? exercises;
+      const cached = queryClient.getQueryData<LibraryExercise[]>(['exercise-library', user.id]) ?? processableExercises;
+      const fresh1 = cached.filter((ex) => !ex.is_global || isMaster || ex.user_id === user.id);
       const optQueue = fresh1.filter(
         (ex) => ex.video_type === 'upload' && !!ex.video_url && !ex.video_optimized_at,
       );
@@ -117,7 +126,7 @@ export function LibraryBackgroundRunner() {
           throw new Error('resposta inválida');
         }
         const analyzedAt = new Date().toISOString();
-        await supabase
+        const { error: updateError } = await supabase
           .from('exercise_library')
           .update({
             body_analysis: data.body_analysis,
@@ -126,6 +135,7 @@ export function LibraryBackgroundRunner() {
             body_analyzed_at: analyzedAt,
           } as never)
           .eq('id', ex.id);
+        if (updateError) throw updateError;
         queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>
           old?.map((e) =>
             e.id === ex.id
@@ -169,7 +179,8 @@ export function LibraryBackgroundRunner() {
           const compressed = await compressVideoFile(inputFile);
           if (compressed === inputFile || compressed.size >= origSize) {
             const checkedAt = new Date().toISOString();
-            await supabase.from('exercise_library').update({ video_optimized_at: checkedAt } as never).eq('id', ex.id);
+            const { error: markError } = await supabase.from('exercise_library').update({ video_optimized_at: checkedAt } as never).eq('id', ex.id);
+            if (markError) throw markError;
             queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>
               old?.map((e) => (e.id === ex.id ? { ...e, video_optimized_at: checkedAt } : e)) ?? old,
             );
@@ -181,10 +192,11 @@ export function LibraryBackgroundRunner() {
             if (upErr) throw upErr;
             const { data: pub } = supabase.storage.from('exercise-videos').getPublicUrl(path);
             const optimizedAt = new Date().toISOString();
-            await supabase
+            const { error: videoUpdateError } = await supabase
               .from('exercise_library')
               .update({ video_url: pub.publicUrl, video_optimized_at: optimizedAt } as never)
               .eq('id', ex.id);
+            if (videoUpdateError) throw videoUpdateError;
             queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>
               old?.map((e) => (e.id === ex.id ? { ...e, video_url: pub.publicUrl, video_optimized_at: optimizedAt } : e)) ?? old,
             );
@@ -207,7 +219,7 @@ export function LibraryBackgroundRunner() {
 
       // ---------- Etapa 3: Classificação dos vídeos que acabaram de otimizar ----------
       // Recarrega a fila de IA para refletir possíveis mudanças de video_url
-      const fresh2 = queryClient.getQueryData<LibraryExercise[]>(['exercise-library', user.id]) ?? exercises;
+      const fresh2 = queryClient.getQueryData<LibraryExercise[]>(['exercise-library', user.id]) ?? processableExercises;
       const aiQueueFinal = allowed
         ? aiAfterOptQueue
             .map((ex) => fresh2.find((e) => e.id === ex.id) ?? ex)
@@ -235,7 +247,7 @@ export function LibraryBackgroundRunner() {
 
     // NÃO limpa o timer no cleanup — re-renders (causados pelo próprio
     // runner ao atualizar o cache) cancelariam a execução antes de iniciar.
-  }, [user, exercises, queryClient, upsert, remove, pathname]);
+  }, [user, processableExercises, isMaster, queryClient, upsert, remove, pathname]);
 
   return null;
 }
