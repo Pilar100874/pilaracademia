@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,8 +32,12 @@ export function LibraryBackgroundRunner() {
   const { upsert, remove } = useBackgroundProgress();
   const { pathname } = useLocation();
 
-  const processableExercises = (allExercises ?? exercises).filter(
-    (ex) => !ex.is_global || isMaster || ex.user_id === user?.id,
+  const processableExercises = useMemo(
+    () =>
+      (allExercises ?? exercises).filter(
+        (ex) => !ex.is_global || isMaster || ex.user_id === user?.id,
+      ),
+    [allExercises, exercises, isMaster, user?.id],
   );
 
   useEffect(() => {
