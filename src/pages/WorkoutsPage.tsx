@@ -169,6 +169,18 @@ export function WorkoutsPage() {
 
       <ReceiveWorkoutDialog open={receiveOpen} onOpenChange={setReceiveOpen} />
 
+      <WorkoutPreloader
+        plan={preloadingPlan}
+        onReady={() => {
+          if (preloadingPlan) {
+            setViewingPlan(preloadingPlan);
+            setViewerOpen(true);
+          }
+          setPreloadingPlan(null);
+        }}
+        onCancel={() => setPreloadingPlan(null)}
+      />
+
       {viewingPlan && (
         <WorkoutViewerDialog
           open={viewerOpen}
