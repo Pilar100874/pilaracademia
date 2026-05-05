@@ -27,6 +27,7 @@ export function WorkoutsPage() {
   const [randomOpen, setRandomOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [cooldownOpen, setCooldownOpen] = useState(false);
+  const [receiveOpen, setReceiveOpen] = useState(false);
 
   const handleEdit = (plan: WorkoutPlan) => {
     setEditingPlan(plan);
