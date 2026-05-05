@@ -268,6 +268,7 @@ const App = () => {
                   <GlobalBackgroundProgressBar />
                   <InstallPrompt />
                   <UpdatePrompt />
+                  <SonnerToaster richColors position="top-center" />
                 </BackgroundAnalysisProvider>
               </BackgroundProgressProvider>
             </AuthProvider>
