@@ -99,7 +99,7 @@ export function ShareWorkoutDialog({ open, onOpenChange, plan }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md w-[calc(100vw-2rem)] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Compartilhar treino</DialogTitle>
           <DialogDescription>
@@ -126,7 +126,7 @@ export function ShareWorkoutDialog({ open, onOpenChange, plan }: Props) {
                 <QRCodeCanvas value={publicUrl} size={192} includeMargin />
               </div>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs bg-muted rounded px-2 py-1 truncate">{publicUrl}</code>
+                <code className="flex-1 min-w-0 text-xs bg-muted rounded px-2 py-1 truncate block">{publicUrl}</code>
                 <Button size="icon" variant="outline" onClick={() => copy('public', publicUrl)}>
                   {copied === 'public' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
@@ -141,7 +141,7 @@ export function ShareWorkoutDialog({ open, onOpenChange, plan }: Props) {
                 <QRCodeCanvas value={importUrl} size={192} includeMargin />
               </div>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs bg-muted rounded px-2 py-1 truncate">{importUrl}</code>
+                <code className="flex-1 min-w-0 text-xs bg-muted rounded px-2 py-1 truncate block">{importUrl}</code>
                 <Button size="icon" variant="outline" onClick={() => copy('import', importUrl)}>
                   {copied === 'import' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
