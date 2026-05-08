@@ -106,9 +106,12 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     if (selectedCategoryIds.length > 0) {
       p = p.filter((ex) => (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id)));
     }
+    if (filterNoExtras) {
+      p = p.filter((ex) => !ex.extra_ids || ex.extra_ids.length === 0);
+    }
     return p;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exercises, bodyKeys, aestheticKeys, mobilityKeys, min, selectedCategoryIds]);
+  }, [exercises, bodyKeys, aestheticKeys, mobilityKeys, min, selectedCategoryIds, filterNoExtras]);
 
   const toggleBody = (k: BodyAnalysisKey) => {
     clearIf('classif');
