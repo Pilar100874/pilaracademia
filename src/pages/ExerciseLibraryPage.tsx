@@ -2179,6 +2179,20 @@ export default function ExerciseLibraryPage() {
                     />
                   </div>
                 )}
+                <div className="space-y-2">
+                  <Label>Equipamentos extras <span className="text-xs text-muted-foreground font-normal">(opcional)</span></Label>
+                  <ExtrasPicker
+                    selectedIds={igExtras}
+                    onToggle={(id) =>
+                      setIgExtras((prev) =>
+                        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                      )
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Será aplicado a todos os exercícios importados.
+                  </p>
+                </div>
 
                 {/* Configuração do token Apify — visível apenas para o master (pilar). Demais usuários usam o token compartilhado do servidor automaticamente. */}
                 {isMaster && (
