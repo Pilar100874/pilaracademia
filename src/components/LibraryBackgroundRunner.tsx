@@ -54,6 +54,11 @@ export function LibraryBackgroundRunner() {
     if (!processableExercises || processableExercises.length === 0) return;
     // Não dispara em telas públicas/auth
     if (pathname.startsWith('/auth') || pathname.startsWith('/reset-password') || pathname.startsWith('/p/') || pathname.startsWith('/r/')) return;
+    // Aguarda qualquer importação em andamento (upload em massa,
+    // Instagram) terminar antes de começar a processar vídeos. Quando
+    // `endImport()` é chamado, `subscribeImportBusy` re-dispara este
+    // effect via setBusyTick e o runner inicia.
+    if (isImportBusy()) return;
 
     const hasPending =
       processableExercises.some((ex) => ex.video_type === 'upload' && !!ex.video_url && !ex.video_optimized_at) ||
