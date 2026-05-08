@@ -136,10 +136,9 @@ export function useExerciseExtras() {
 
   /** Apply an extra to many exercises at once. */
   const bulkAssignExtra = useMutation({
-    mutationFn: async (vars: { extraId: string; exerciseIds: string[]; mode: 'add' | 'remove'; silent?: boolean }) => {
+    mutationFn: async (vars: { extraId: string; exerciseIds: string[]; mode: 'add' | 'remove'; silent?: boolean; skipInvalidate?: boolean }) => {
       if (!vars.exerciseIds.length) return;
       if (vars.mode === 'add') {
-        // Idempotent: ignore conflicts
         const rows = vars.exerciseIds.map((id) => ({ exercise_id: id, extra_id: vars.extraId }));
         const { error } = await supabase
           .from('exercise_library_extras')
@@ -154,8 +153,26 @@ export function useExerciseExtras() {
         if (error) throw error;
       }
     },
+    onMutate: async (vars) => {
+      const libKey = ['exercise-library', user?.id];
+      await queryClient.cancelQueries({ queryKey: libKey });
+      const previous = queryClient.getQueryData<any[]>(libKey);
+      const idSet = new Set(vars.exerciseIds);
+      queryClient.setQueryData<any[]>(libKey, (old = []) =>
+        old.map((ex) => {
+          if (!idSet.has(ex.id)) return ex;
+          const set = new Set<string>(ex.extra_ids ?? []);
+          if (vars.mode === 'add') set.add(vars.extraId);
+          else set.delete(vars.extraId);
+          return { ...ex, extra_ids: [...set] };
+        })
+      );
+      return { previous };
+    },
     onSuccess: (_d, vars) => {
-      queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+      if (!vars.skipInvalidate) {
+        queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+      }
       if (vars.silent) return;
       toast.success(
         vars.mode === 'add'
@@ -163,7 +180,8 @@ export function useExerciseExtras() {
           : `Equipamento removido de ${vars.exerciseIds.length} exercício(s)`
       );
     },
-    onError: (err) => {
+    onError: (err, _vars, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(['exercise-library', user?.id], ctx.previous);
       console.error('[bulkAssignExtra] failed', err);
       toast.error('Erro ao aplicar equipamento');
     },
