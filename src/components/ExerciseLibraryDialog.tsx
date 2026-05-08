@@ -66,6 +66,9 @@ export function ExerciseLibraryDialog({
         setDefaultSets(editingExercise.default_sets);
         setDefaultReps(editingExercise.default_reps);
         setCategoryId(editingExercise.category_id ?? null);
+        const initialExtras = editingExercise.extra_ids ?? [];
+        setExtraIds(initialExtras);
+        setInitialExtraIds(initialExtras);
         const existingImages = (editingExercise.image_urls || []).map(url => ({
           type: 'url' as const,
           value: url,
@@ -82,6 +85,8 @@ export function ExerciseLibraryDialog({
         setDefaultSets(1);
         setDefaultReps(10);
         setCategoryId(null);
+        setExtraIds([]);
+        setInitialExtraIds([]);
         setImages([]);
         setVideo({
           video_type: null,
