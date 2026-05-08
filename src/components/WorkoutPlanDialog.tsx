@@ -121,12 +121,14 @@ export function WorkoutPlanDialog({
         id: currentPlan.id,
         name: name.trim(),
         days_of_week: selectedDays,
+        objective: objective.trim() || null,
       });
       onOpenChange(false);
     } else {
       const created = await createPlan.mutateAsync({
         name: name.trim(),
         days_of_week: selectedDays,
+        objective: objective.trim() || null,
       });
       if (created && onCreated) onCreated(created as WorkoutPlan);
       onOpenChange(false);
