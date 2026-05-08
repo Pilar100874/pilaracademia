@@ -128,8 +128,8 @@ export default function ExerciseLibraryPage() {
   const [newMoveCategoryName, setNewMoveCategoryName] = useState('');
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleteBlocked, setBulkDeleteBlocked] = useState<{
-    deletableIds: string[];
-    blocked: { id: string; name: string; plans: string[] }[];
+    ids: string[];
+    inUse: { id: string; name: string; plans: string[] }[];
   } | null>(null);
   const [bulkDeleteChecking, setBulkDeleteChecking] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
