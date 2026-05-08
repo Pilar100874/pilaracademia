@@ -393,17 +393,25 @@ export default function ExerciseLibraryPage() {
     setDialogOpen(true);
   };
 
+  // Removes workout_exercises rows that reference this library exercise
+  // (matching either by exercise_library_id or legacy by name with null link).
+  const cascadeRemoveFromWorkouts = async (ex: LibraryExercise) => {
+    await Promise.all([
+      supabase.from('workout_exercises').delete().eq('exercise_library_id', ex.id),
+      supabase
+        .from('workout_exercises')
+        .delete()
+        .is('exercise_library_id', null)
+        .eq('name', ex.name),
+    ]);
+  };
+
   const handleDelete = async (exercise: LibraryExercise) => {
     try {
       const usage = await checkExerciseUsage([exercise.id]);
-      const plans = usage.get(exercise.id);
-      if (plans && plans.length > 0) {
-        toast.error(
-          `Não é possível excluir: usado em ${plans.length} treino(s) — ${plans.join(', ')}`
-        );
-        return;
-      }
+      const plans = usage.get(exercise.id) ?? [];
       setExerciseToDelete(exercise);
+      setPlansForDelete(plans);
       setDeleteDialogOpen(true);
     } catch {
       toast.error('Erro ao verificar uso do exercício');
@@ -412,9 +420,14 @@ export default function ExerciseLibraryPage() {
 
   const confirmDelete = async () => {
     if (exerciseToDelete) {
+      if (plansForDelete.length > 0) {
+        await cascadeRemoveFromWorkouts(exerciseToDelete);
+      }
       await deleteExercise.mutateAsync(exerciseToDelete.id);
+      await queryClient.invalidateQueries({ queryKey: ['workout-plans'] });
       setDeleteDialogOpen(false);
       setExerciseToDelete(null);
+      setPlansForDelete([]);
     }
   };
 
