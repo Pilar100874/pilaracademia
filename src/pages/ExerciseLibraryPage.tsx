@@ -77,7 +77,7 @@ export default function ExerciseLibraryPage() {
   const { user } = useAuth();
   const { exercises, globalExercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise, toggleExerciseCategory, copyGlobalToPersonal, isMaster } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
-  const { bulkAssignExtra } = useExerciseExtras();
+  const { extras, bulkAssignExtra } = useExerciseExtras();
 
   // Realtime: sincroniza alterações da biblioteca de exercícios entre dispositivos/abas
   useEffect(() => {
@@ -148,6 +148,7 @@ export default function ExerciseLibraryPage() {
   const [igNamePrefix, setIgNamePrefix] = useState('');
   const [igCategoryChoice, setIgCategoryChoice] = useState<string>(NO_CATEGORY);
   const [igNewCategoryName, setIgNewCategoryName] = useState('');
+  const [igExtras, setIgExtras] = useState<string[]>([]);
   const [igImporting, setIgImporting] = useState(false);
   const [igProgress, setIgProgress] = useState(0);
   const [igProgressLabel, setIgProgressLabel] = useState('');
@@ -609,6 +610,24 @@ export default function ExerciseLibraryPage() {
       // Auto-otimiza os vídeos recém-importados em background (re-codifica
       // para 720p WebM no navegador para carregarem mais rápido).
       const createdList = Array.isArray(data?.created) ? data.created : [];
+      // Apply selected equipment to each newly created exercise
+      if (createdList.length > 0 && igExtras.length > 0) {
+        const ids = createdList.map((c: any) => c.id).filter(Boolean);
+        if (ids.length > 0) {
+          await Promise.all(
+            igExtras.map((extraId) =>
+              bulkAssignExtra.mutateAsync({
+                extraId,
+                exerciseIds: ids,
+                mode: 'add',
+                silent: true,
+                skipInvalidate: true,
+              })
+            )
+          );
+          await queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+        }
+      }
       if (createdList.length > 0) {
         const toCompress: LibraryExercise[] = createdList.map((c: any) => ({
           id: c.id,
@@ -1104,6 +1123,7 @@ export default function ExerciseLibraryPage() {
                       : NO_CATEGORY
                   );
                   setIgNewCategoryName('');
+                  setIgExtras([]);
                   setIgUrl('');
                   setIgNamePrefix('');
                   setIgError(null);
@@ -1625,6 +1645,20 @@ export default function ExerciseLibraryPage() {
           });
         };
 
+        const handleToggleExtra = (extraId: string, checked: boolean) => {
+          if (!videoPreview) return;
+          bulkAssignExtra.mutate({
+            extraId,
+            exerciseIds: [videoPreview.id],
+            mode: checked ? 'add' : 'remove',
+            silent: true,
+          });
+        };
+
+        const currentLib = videoPreview
+          ? exercises.find((e) => e.id === videoPreview.id)
+          : undefined;
+
         return (
           <VideoPreviewDialog
             open={!!videoPreview}
@@ -1643,6 +1677,12 @@ export default function ExerciseLibraryPage() {
                 ? { current: currentIndex + 1, total: videoList.length }
                 : undefined
             }
+            currentCategoryIds={currentLib?.category_ids ?? []}
+            categoryOptions={categoryOptions}
+            onToggleCategory={handleToggleCategory}
+            currentExtraIds={currentLib?.extra_ids ?? []}
+            extraOptions={extras.map((e) => ({ id: e.id, name: e.name }))}
+            onToggleExtra={handleToggleExtra}
             bodyAnalysis={
               videoPreview ? videoList.find((e) => e.id === videoPreview.id)?.body_analysis ?? videoPreview.body_analysis ?? null : null
             }
@@ -2160,6 +2200,20 @@ export default function ExerciseLibraryPage() {
                     />
                   </div>
                 )}
+                <div className="space-y-2">
+                  <Label>Equipamentos extras <span className="text-xs text-muted-foreground font-normal">(opcional)</span></Label>
+                  <ExtrasPicker
+                    selectedIds={igExtras}
+                    onToggle={(id) =>
+                      setIgExtras((prev) =>
+                        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                      )
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Será aplicado a todos os exercícios importados.
+                  </p>
+                </div>
 
                 {/* Configuração do token Apify — visível apenas para o master (pilar). Demais usuários usam o token compartilhado do servidor automaticamente. */}
                 {isMaster && (
@@ -2224,6 +2278,7 @@ export default function ExerciseLibraryPage() {
                     setIgPartialErrors([]);
                     setIgUrl('');
                     setIgNamePrefix('');
+                    setIgExtras([]);
                   }}
                 >
                   Importar outro
