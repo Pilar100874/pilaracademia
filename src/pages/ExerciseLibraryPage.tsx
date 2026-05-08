@@ -850,6 +850,7 @@ export default function ExerciseLibraryPage() {
         setRecompressing((p) =>
           p ? { ...p, done: p.done + 1, saved: savedBytes } : p
         );
+        tick(LIB_BG_JOB_ID, ex.name);
       }
     }
 
