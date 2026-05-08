@@ -261,18 +261,15 @@ export default function ExerciseLibraryPage() {
     try {
       const ids = Array.from(selectedIds);
       const usage = await checkExerciseUsage(ids);
-      const deletableIds: string[] = [];
-      const blocked: { id: string; name: string; plans: string[] }[] = [];
+      const inUse: { id: string; name: string; plans: string[] }[] = [];
       ids.forEach((id) => {
         const plans = usage.get(id);
-        const ex = exercises.find((e) => e.id === id);
         if (plans && plans.length > 0) {
-          blocked.push({ id, name: ex?.name ?? 'Exercício', plans });
-        } else {
-          deletableIds.push(id);
+          const ex = exercises.find((e) => e.id === id);
+          inUse.push({ id, name: ex?.name ?? 'Exercício', plans });
         }
       });
-      setBulkDeleteBlocked({ deletableIds, blocked });
+      setBulkDeleteBlocked({ ids, inUse });
       setBulkDeleteOpen(true);
     } catch {
       toast.error('Erro ao verificar uso dos exercícios');
@@ -283,16 +280,23 @@ export default function ExerciseLibraryPage() {
 
   const runBulkDelete = async () => {
     if (!bulkDeleteBlocked) return;
-    const { deletableIds } = bulkDeleteBlocked;
-    if (!deletableIds.length) {
+    const { ids, inUse } = bulkDeleteBlocked;
+    if (!ids.length) {
       setBulkDeleteOpen(false);
       return;
     }
     setBulkDeleting(true);
     try {
-      for (const id of deletableIds) {
+      // Cascade-remove from workouts for items in use
+      if (inUse.length > 0) {
+        const inUseSet = new Set(inUse.map((i) => i.id));
+        const toCascade = exercises.filter((e) => inUseSet.has(e.id));
+        await Promise.all(toCascade.map((e) => cascadeRemoveFromWorkouts(e)));
+      }
+      for (const id of ids) {
         await deleteExercise.mutateAsync(id);
       }
+      await queryClient.invalidateQueries({ queryKey: ['workout-plans'] });
       setBulkDeleteOpen(false);
       setBulkDeleteBlocked(null);
       exitSelectionMode();
