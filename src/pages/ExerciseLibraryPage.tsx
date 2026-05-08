@@ -1123,6 +1123,7 @@ export default function ExerciseLibraryPage() {
                       : NO_CATEGORY
                   );
                   setIgNewCategoryName('');
+                  setIgExtras([]);
                   setIgUrl('');
                   setIgNamePrefix('');
                   setIgError(null);
