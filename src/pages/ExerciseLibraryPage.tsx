@@ -783,6 +783,7 @@ export default function ExerciseLibraryPage() {
     }
 
     setRecompressing({ done: 0, total: candidates.length, saved: 0 });
+    addWork(LIB_BG_JOB_ID, LIB_BG_JOB_LABEL, candidates.length);
     let savedBytes = 0;
     let successCount = 0;
 
