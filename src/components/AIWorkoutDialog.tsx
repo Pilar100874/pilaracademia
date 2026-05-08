@@ -63,6 +63,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [varyCategories, setVaryCategories] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
+  const [extraCounts, setExtraCounts] = useState<Record<string, string>>({});
   const [source, setSource] = useState<'all' | 'mine' | 'global'>('all');
   const [useBodyPlan, setUseBodyPlan] = useState(false);
   const [generating, setGenerating] = useState(false);
