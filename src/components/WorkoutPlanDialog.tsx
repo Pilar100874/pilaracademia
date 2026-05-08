@@ -154,6 +154,7 @@ export function WorkoutPlanDialog({
     const created = await createPlan.mutateAsync({
       name: name.trim(),
       days_of_week: selectedDays,
+      objective: objective.trim() || null,
     });
     if (created && onCreated) onCreated(created as WorkoutPlan);
     return (created as WorkoutPlan) || null;
