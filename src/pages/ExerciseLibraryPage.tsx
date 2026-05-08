@@ -1645,6 +1645,20 @@ export default function ExerciseLibraryPage() {
           });
         };
 
+        const handleToggleExtra = (extraId: string, checked: boolean) => {
+          if (!videoPreview) return;
+          bulkAssignExtra.mutate({
+            extraId,
+            exerciseIds: [videoPreview.id],
+            mode: checked ? 'add' : 'remove',
+            silent: true,
+          });
+        };
+
+        const currentLib = videoPreview
+          ? libraryExercises.find((e) => e.id === videoPreview.id)
+          : undefined;
+
         return (
           <VideoPreviewDialog
             open={!!videoPreview}
