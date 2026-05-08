@@ -1677,6 +1677,12 @@ export default function ExerciseLibraryPage() {
                 ? { current: currentIndex + 1, total: videoList.length }
                 : undefined
             }
+            currentCategoryIds={currentLib?.category_ids ?? []}
+            categoryOptions={categoryOptions}
+            onToggleCategory={handleToggleCategory}
+            currentExtraIds={currentLib?.extra_ids ?? []}
+            extraOptions={extras.map((e) => ({ id: e.id, name: e.name }))}
+            onToggleExtra={handleToggleExtra}
             bodyAnalysis={
               videoPreview ? videoList.find((e) => e.id === videoPreview.id)?.body_analysis ?? videoPreview.body_analysis ?? null : null
             }
