@@ -43,6 +43,7 @@ import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
 import { getStorageStatus } from '@/lib/videoCache';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { compressVideoFile } from '@/lib/compressVideo';
+import { hashBlob, hashUrl } from '@/lib/videoHash';
 import {
   Dialog,
   DialogContent,
