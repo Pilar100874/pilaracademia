@@ -77,13 +77,6 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
             <Label className="text-xs">Adicionar equipamento</Label>
             <div className="flex gap-2">
               <Input
-                value={newIcon}
-                onChange={(e) => setNewIcon(e.target.value.slice(0, 2))}
-                placeholder="🏐"
-                className="h-9 w-14 text-center"
-                aria-label="Ícone (emoji opcional)"
-              />
-              <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => {
