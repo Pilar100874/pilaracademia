@@ -236,14 +236,19 @@ export function ExerciseLibraryDialog({
         const next = new Set(extraIds);
         const toAdd = [...next].filter((id) => !initial.has(id));
         const toRemove = [...initial].filter((id) => !next.has(id));
-        await Promise.all([
-          ...toAdd.map((extraId) =>
-            toggleExerciseExtra.mutateAsync({ exerciseId: exerciseId!, extraId, checked: true })
-          ),
-          ...toRemove.map((extraId) =>
-            toggleExerciseExtra.mutateAsync({ exerciseId: exerciseId!, extraId, checked: false })
-          ),
-        ]);
+        try {
+          await Promise.all([
+            ...toAdd.map((extraId) =>
+              bulkAssignExtra.mutateAsync({ extraId, exerciseIds: [exerciseId!], mode: 'add' })
+            ),
+            ...toRemove.map((extraId) =>
+              bulkAssignExtra.mutateAsync({ extraId, exerciseIds: [exerciseId!], mode: 'remove' })
+            ),
+          ]);
+        } catch (err) {
+          console.error('[ExerciseLibraryDialog] extras sync failed', err);
+          // Don't block dialog close — exercise itself was saved.
+        }
       }
 
       onOpenChange(false);
