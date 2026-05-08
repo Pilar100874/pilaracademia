@@ -610,6 +610,24 @@ export default function ExerciseLibraryPage() {
       // Auto-otimiza os vídeos recém-importados em background (re-codifica
       // para 720p WebM no navegador para carregarem mais rápido).
       const createdList = Array.isArray(data?.created) ? data.created : [];
+      // Apply selected equipment to each newly created exercise
+      if (createdList.length > 0 && igExtras.length > 0) {
+        const ids = createdList.map((c: any) => c.id).filter(Boolean);
+        if (ids.length > 0) {
+          await Promise.all(
+            igExtras.map((extraId) =>
+              bulkAssignExtra.mutateAsync({
+                extraId,
+                exerciseIds: ids,
+                mode: 'add',
+                silent: true,
+                skipInvalidate: true,
+              })
+            )
+          );
+          await queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+        }
+      }
       if (createdList.length > 0) {
         const toCompress: LibraryExercise[] = createdList.map((c: any) => ({
           id: c.id,
