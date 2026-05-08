@@ -22,6 +22,7 @@ import {
   type BodyAnalysisFilterValue,
 } from '@/components/BodyAnalysisFilter';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
+import { ManageExtrasDialog } from '@/components/ManageExtrasDialog';
 import { ApifySettingsCard } from '@/components/ApifySettingsCard';
 import {
   Collapsible,
@@ -130,6 +131,7 @@ export default function ExerciseLibraryPage() {
   const [renameValue, setRenameValue] = useState('');
   const [renameParentId, setRenameParentId] = useState<string | null>(null);
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
+  const [manageExtrasOpen, setManageExtrasOpen] = useState(false);
   const [newCategoryValue, setNewCategoryValue] = useState('');
   const [newCategoryParentId, setNewCategoryParentId] = useState<string | null>(null);
   const [igDialogOpen, setIgDialogOpen] = useState(false);
@@ -1140,6 +1142,15 @@ export default function ExerciseLibraryPage() {
             >
               <FolderPlus className="h-4 w-4" />
             </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9 shrink-0"
+              title="Gerenciar equipamentos extras"
+              onClick={() => setManageExtrasOpen(true)}
+            >
+              <Dumbbell className="h-4 w-4" />
+            </Button>
             <BodyAnalysisFilter value={bodyFilter} onChange={setBodyFilter} compact />
             {filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY && (
               <>
@@ -1439,6 +1450,11 @@ export default function ExerciseLibraryPage() {
           if (!open) setEditingExercise(null);
         }}
         editingExercise={editingExercise}
+      />
+
+      <ManageExtrasDialog
+        open={manageExtrasOpen}
+        onOpenChange={setManageExtrasOpen}
       />
 
       <ConfirmDeleteDialog
