@@ -293,9 +293,14 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         const picked = [...pinned, ...aiPicked];
         if (!picked.length) continue;
 
+        const planObjective = useBodyPlan
+          ? (bodyPlanContext || 'Treino sugerido a partir da análise corporal')
+          : prompt.trim();
+
         const plan = await createPlan.mutateAsync({
           name: (name.trim() + bucket.suffix).slice(0, 80),
           days_of_week: bucket.days,
+          objective: planObjective || null,
         });
 
         await Promise.all(

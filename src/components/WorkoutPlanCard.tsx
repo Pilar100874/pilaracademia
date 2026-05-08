@@ -106,12 +106,17 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1">
               <h3 className="font-semibold truncate">{plan.name}</h3>
               <Badge variant="secondary" className="shrink-0">
                 {exerciseCount} exercício{exerciseCount !== 1 ? 's' : ''}
               </Badge>
             </div>
+            {plan.objective && (
+              <p className="text-xs text-muted-foreground italic mb-2 line-clamp-2">
+                {plan.objective}
+              </p>
+            )}
 
             {/* Days of week pills */}
             <div className="flex gap-1 mb-3">

@@ -31,6 +31,7 @@ export interface WorkoutPlan {
   days_of_week: number[];
   cooldown_enabled?: boolean;
   is_cooldown_plan?: boolean;
+  objective?: string | null;
   created_at: string;
   updated_at: string;
   exercises?: WorkoutExercise[];
@@ -93,7 +94,7 @@ export function useWorkoutPlans() {
   });
 
   const createPlan = useMutation({
-    mutationFn: async (data: { name: string; days_of_week: number[]; cooldown_enabled?: boolean; is_cooldown_plan?: boolean }) => {
+    mutationFn: async (data: { name: string; days_of_week: number[]; cooldown_enabled?: boolean; is_cooldown_plan?: boolean; objective?: string | null }) => {
       if (!user) throw new Error('User not authenticated');
 
       const { data: plan, error } = await supabase
@@ -104,6 +105,7 @@ export function useWorkoutPlans() {
           days_of_week: data.days_of_week,
           ...(data.cooldown_enabled !== undefined ? { cooldown_enabled: data.cooldown_enabled } : {}),
           ...(data.is_cooldown_plan !== undefined ? { is_cooldown_plan: data.is_cooldown_plan } : {}),
+          ...(data.objective !== undefined ? { objective: data.objective } : {}),
         } as any)
         .select()
         .single();
@@ -121,14 +123,15 @@ export function useWorkoutPlans() {
   });
 
   const updatePlan = useMutation({
-    mutationFn: async (data: { id: string; name: string; days_of_week: number[]; cooldown_enabled?: boolean }) => {
+    mutationFn: async (data: { id: string; name: string; days_of_week: number[]; cooldown_enabled?: boolean; objective?: string | null }) => {
       const { error } = await supabase
         .from('workout_plans')
         .update({
           name: data.name,
           days_of_week: data.days_of_week,
           ...(data.cooldown_enabled !== undefined ? { cooldown_enabled: data.cooldown_enabled } : {}),
-        })
+          ...(data.objective !== undefined ? { objective: data.objective } : {}),
+        } as any)
         .eq('id', data.id);
 
       if (error) throw error;

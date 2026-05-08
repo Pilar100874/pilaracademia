@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useWorkoutPlans, WorkoutPlan, WorkoutExercise } from '@/hooks/useWorkoutPlans';
@@ -61,6 +62,7 @@ export function WorkoutPlanDialog({
   } = useWorkoutPlans();
 
   const [name, setName] = useState('');
+  const [objective, setObjective] = useState('');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [localExercises, setLocalExercises] = useState<WorkoutExercise[]>([]);
   const [selectExerciseOpen, setSelectExerciseOpen] = useState(false);
@@ -85,9 +87,11 @@ export function WorkoutPlanDialog({
   useEffect(() => {
     if (open && editingPlan) {
       setName(editingPlan.name);
+      setObjective(editingPlan.objective || '');
       setSelectedDays(editingPlan.days_of_week);
     } else if (!open) {
       setName('');
+      setObjective('');
       setSelectedDays([]);
     }
   }, [editingPlan?.id, open]);
@@ -117,12 +121,14 @@ export function WorkoutPlanDialog({
         id: currentPlan.id,
         name: name.trim(),
         days_of_week: selectedDays,
+        objective: objective.trim() || null,
       });
       onOpenChange(false);
     } else {
       const created = await createPlan.mutateAsync({
         name: name.trim(),
         days_of_week: selectedDays,
+        objective: objective.trim() || null,
       });
       if (created && onCreated) onCreated(created as WorkoutPlan);
       onOpenChange(false);
@@ -148,6 +154,7 @@ export function WorkoutPlanDialog({
     const created = await createPlan.mutateAsync({
       name: name.trim(),
       days_of_week: selectedDays,
+      objective: objective.trim() || null,
     });
     if (created && onCreated) onCreated(created as WorkoutPlan);
     return (created as WorkoutPlan) || null;
@@ -264,6 +271,18 @@ export function WorkoutPlanDialog({
                 aria-invalid={!!errorOf('name')}
               />
               <FieldError message={errorOf('name')} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="objective">Objetivo do treino <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+              <Textarea
+                id="objective"
+                value={objective}
+                onChange={(e) => setObjective(e.target.value)}
+                placeholder="Ex.: Foco em hipertrofia de membros inferiores e mobilidade de quadril"
+                rows={3}
+                className="resize-none text-sm"
+              />
             </div>
 
             <div className="space-y-2">

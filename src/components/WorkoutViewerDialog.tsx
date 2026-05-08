@@ -290,6 +290,11 @@ export function WorkoutViewerDialog({
               <h2 className="text-white font-extrabold text-base sm:text-lg leading-tight tracking-tight truncate drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {plan.name}
               </h2>
+              {plan.objective && (
+                <p className="text-white/85 text-[11px] leading-snug italic line-clamp-1 mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                  {plan.objective}
+                </p>
+              )}
               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 <span className="inline-flex items-baseline gap-1 text-white text-[11px] font-semibold bg-white/15 px-2 py-0.5 rounded-full backdrop-blur-sm">
                   <span className="font-bold">{exercises.length}</span>
