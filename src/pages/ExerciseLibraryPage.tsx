@@ -1203,6 +1203,33 @@ export default function ExerciseLibraryPage() {
               </>
             )}
           </div>
+          <div className="pt-1">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Filtrar por equipamento
+              </span>
+              {filterExtras.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setFilterExtras([])}
+                  className="text-[11px] text-muted-foreground hover:text-foreground underline"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
+            <ExtrasPicker
+              selectedIds={filterExtras}
+              onToggle={(id) =>
+                setFilterExtras((prev) =>
+                  prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                )
+              }
+              allowCreate={false}
+              compact
+              emptyHint="Crie equipamentos no botão 🏋️ acima."
+            />
+          </div>
         </div>
         {bulkUploading && (
           <div className="px-4 pb-3 space-y-1.5">
