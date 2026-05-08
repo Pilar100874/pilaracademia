@@ -28,6 +28,7 @@ export function BulkExtrasDialog({
   onDone,
 }: BulkExtrasDialogProps) {
   const { bulkAssignExtra } = useExerciseExtras();
+  const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string[]>([]);
   const [mode, setMode] = useState<'add' | 'remove'>('add');
   const [running, setRunning] = useState(false);
@@ -43,9 +44,23 @@ export function BulkExtrasDialog({
     if (!selected.length || !exerciseIds.length) return;
     setRunning(true);
     try {
-      for (const extraId of selected) {
-        await bulkAssignExtra.mutateAsync({ extraId, exerciseIds, mode });
-      }
+      await Promise.all(
+        selected.map((extraId) =>
+          bulkAssignExtra.mutateAsync({
+            extraId,
+            exerciseIds,
+            mode,
+            silent: true,
+            skipInvalidate: true,
+          })
+        )
+      );
+      queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+      toast.success(
+        mode === 'add'
+          ? `${selected.length} equipamento(s) adicionado(s) a ${exerciseIds.length} exercício(s)`
+          : `${selected.length} equipamento(s) removido(s) de ${exerciseIds.length} exercício(s)`
+      );
       onDone?.();
       onOpenChange(false);
     } finally {
