@@ -62,6 +62,7 @@ export function WorkoutPlanDialog({
   } = useWorkoutPlans();
 
   const [name, setName] = useState('');
+  const [objective, setObjective] = useState('');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [localExercises, setLocalExercises] = useState<WorkoutExercise[]>([]);
   const [selectExerciseOpen, setSelectExerciseOpen] = useState(false);
