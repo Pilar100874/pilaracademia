@@ -22,6 +22,7 @@ import {
   type BodyAnalysisFilterValue,
 } from '@/components/BodyAnalysisFilter';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
+import { ManageExtrasDialog } from '@/components/ManageExtrasDialog';
 import { ApifySettingsCard } from '@/components/ApifySettingsCard';
 import {
   Collapsible,
