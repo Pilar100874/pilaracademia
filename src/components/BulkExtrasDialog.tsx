@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ExtrasPicker } from '@/components/ExtrasPicker';
 import { useExerciseExtras } from '@/hooks/useExerciseExtras';
+import { toast } from 'sonner';
 import { Loader2, Plus, Minus } from 'lucide-react';
 
 interface BulkExtrasDialogProps {
@@ -26,6 +28,7 @@ export function BulkExtrasDialog({
   onDone,
 }: BulkExtrasDialogProps) {
   const { bulkAssignExtra } = useExerciseExtras();
+  const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string[]>([]);
   const [mode, setMode] = useState<'add' | 'remove'>('add');
   const [running, setRunning] = useState(false);
@@ -41,9 +44,23 @@ export function BulkExtrasDialog({
     if (!selected.length || !exerciseIds.length) return;
     setRunning(true);
     try {
-      for (const extraId of selected) {
-        await bulkAssignExtra.mutateAsync({ extraId, exerciseIds, mode });
-      }
+      await Promise.all(
+        selected.map((extraId) =>
+          bulkAssignExtra.mutateAsync({
+            extraId,
+            exerciseIds,
+            mode,
+            silent: true,
+            skipInvalidate: true,
+          })
+        )
+      );
+      queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+      toast.success(
+        mode === 'add'
+          ? `${selected.length} equipamento(s) adicionado(s) a ${exerciseIds.length} exercício(s)`
+          : `${selected.length} equipamento(s) removido(s) de ${exerciseIds.length} exercício(s)`
+      );
       onDone?.();
       onOpenChange(false);
     } finally {
