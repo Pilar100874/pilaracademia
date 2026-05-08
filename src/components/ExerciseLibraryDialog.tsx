@@ -38,7 +38,7 @@ export function ExerciseLibraryDialog({
 }: ExerciseLibraryDialogProps) {
   const { exercises, createExercise, updateExercise, uploadExerciseImage } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
-  const { toggleExerciseExtra } = useExerciseExtras();
+  const { bulkAssignExtra } = useExerciseExtras();
 
   const [name, setName] = useState('');
   const [defaultSets, setDefaultSets] = useState(3);
@@ -236,14 +236,19 @@ export function ExerciseLibraryDialog({
         const next = new Set(extraIds);
         const toAdd = [...next].filter((id) => !initial.has(id));
         const toRemove = [...initial].filter((id) => !next.has(id));
-        await Promise.all([
-          ...toAdd.map((extraId) =>
-            toggleExerciseExtra.mutateAsync({ exerciseId: exerciseId!, extraId, checked: true })
-          ),
-          ...toRemove.map((extraId) =>
-            toggleExerciseExtra.mutateAsync({ exerciseId: exerciseId!, extraId, checked: false })
-          ),
-        ]);
+        try {
+          await Promise.all([
+            ...toAdd.map((extraId) =>
+              bulkAssignExtra.mutateAsync({ extraId, exerciseIds: [exerciseId!], mode: 'add', silent: true })
+            ),
+            ...toRemove.map((extraId) =>
+              bulkAssignExtra.mutateAsync({ extraId, exerciseIds: [exerciseId!], mode: 'remove', silent: true })
+            ),
+          ]);
+        } catch (err) {
+          console.error('[ExerciseLibraryDialog] extras sync failed', err);
+          // Don't block dialog close — exercise itself was saved.
+        }
       }
 
       onOpenChange(false);

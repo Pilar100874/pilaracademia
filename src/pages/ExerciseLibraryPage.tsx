@@ -25,6 +25,7 @@ import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ManageExtrasDialog } from '@/components/ManageExtrasDialog';
 import { BulkExtrasDialog } from '@/components/BulkExtrasDialog';
 import { ExtrasPicker } from '@/components/ExtrasPicker';
+import { useExerciseExtras } from '@/hooks/useExerciseExtras';
 import { ApifySettingsCard } from '@/components/ApifySettingsCard';
 import {
   Collapsible,
@@ -76,6 +77,7 @@ export default function ExerciseLibraryPage() {
   const { user } = useAuth();
   const { exercises, globalExercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise, toggleExerciseCategory, copyGlobalToPersonal, isMaster } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
+  const { bulkAssignExtra } = useExerciseExtras();
 
   // Realtime: sincroniza alterações da biblioteca de exercícios entre dispositivos/abas
   useEffect(() => {
@@ -119,6 +121,7 @@ export default function ExerciseLibraryPage() {
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
   const [bulkCategoryChoice, setBulkCategoryChoice] = useState<string>(NO_CATEGORY);
   const [newBulkCategoryName, setNewBulkCategoryName] = useState('');
+  const [bulkExtras, setBulkExtras] = useState<string[]>([]);
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -700,7 +703,7 @@ export default function ExerciseLibraryPage() {
           .getPublicUrl(path);
         const optimizedAt = hasWebmUrl(pub.publicUrl) || toUpload === file ? new Date().toISOString() : null;
 
-        await createExercise.mutateAsync({
+        const created = await createExercise.mutateAsync({
           name: generateUniqueName(baseName, usedNames),
           default_sets: 1,
           default_reps: 10,
@@ -712,6 +715,15 @@ export default function ExerciseLibraryPage() {
           video_end_seconds: null,
           category_id: targetCategoryId,
         });
+        // Apply selected extras to the new exercise
+        const newId = (created as any)?.id;
+        if (newId && bulkExtras.length) {
+          await Promise.all(
+            bulkExtras.map((extraId) =>
+              bulkAssignExtra.mutateAsync({ extraId, exerciseIds: [newId], mode: 'add', silent: true })
+            )
+          );
+        }
         successCount++;
       } catch (err) {
         console.error('Bulk upload error', err);
@@ -722,6 +734,7 @@ export default function ExerciseLibraryPage() {
     }
 
     setBulkUploading(null);
+    setBulkExtras([]);
     if (successCount > 0) {
       toast.success(`${successCount} exercício(s) criado(s)`);
     }
@@ -1771,14 +1784,15 @@ export default function ExerciseLibraryPage() {
           if (!open) {
             setPendingFiles(null);
             setNewBulkCategoryName('');
+            setBulkExtras([]);
           }
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Categoria dos vídeos</DialogTitle>
+            <DialogTitle>Categoria e equipamentos</DialogTitle>
             <DialogDescription>
-              {pendingFiles?.length} vídeo(s) selecionado(s). Escolha em qual categoria criar os exercícios.
+              {pendingFiles?.length} vídeo(s) selecionado(s). Escolha a categoria e (opcional) os equipamentos usados.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -1815,6 +1829,20 @@ export default function ExerciseLibraryPage() {
                 />
               </div>
             )}
+            <div className="space-y-2">
+              <Label>Equipamentos extras <span className="text-xs text-muted-foreground font-normal">(opcional)</span></Label>
+              <ExtrasPicker
+                selectedIds={bulkExtras}
+                onToggle={(id) =>
+                  setBulkExtras((prev) =>
+                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                  )
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                Será aplicado a todos os exercícios criados nesse upload.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -1822,6 +1850,7 @@ export default function ExerciseLibraryPage() {
               onClick={() => {
                 setPendingFiles(null);
                 setNewBulkCategoryName('');
+                setBulkExtras([]);
               }}
             >
               Cancelar
