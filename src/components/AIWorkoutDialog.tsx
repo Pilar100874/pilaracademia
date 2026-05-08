@@ -533,24 +533,69 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                   {selectedExtraIds.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => setSelectedExtraIds([])}
+                      onClick={() => { setSelectedExtraIds([]); setExtraCounts({}); }}
                       className="text-[10px] text-muted-foreground hover:text-foreground underline"
                     >
                       Limpar
                     </button>
                   )}
                 </div>
+                <p className="text-[10px] text-muted-foreground leading-snug">
+                  Quantos exercícios devem usar cada equipamento? Eles entram em sequência no início do treino.
+                </p>
                 <ExtrasPicker
                   selectedIds={selectedExtraIds}
-                  onToggle={(id) =>
-                    setSelectedExtraIds((prev) =>
-                      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-                    )
-                  }
+                  onToggle={(id) => {
+                    setSelectedExtraIds((prev) => {
+                      if (prev.includes(id)) {
+                        setExtraCounts((c) => {
+                          const next = { ...c };
+                          delete next[id];
+                          return next;
+                        });
+                        return prev.filter((x) => x !== id);
+                      }
+                      setExtraCounts((c) => ({ ...c, [id]: c[id] ?? '1' }));
+                      return [...prev, id];
+                    });
+                  }}
                   allowCreate={false}
                   compact
                   emptyHint="Nenhum equipamento cadastrado."
+                  renderAdornment={(extra, active) =>
+                    active ? (
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={extraCounts[extra.id] ?? ''}
+                        onChange={(e) =>
+                          setExtraCounts((c) => ({
+                            ...c,
+                            [extra.id]: e.target.value.replace(/\D/g, '').slice(0, 2),
+                          }))
+                        }
+                        placeholder="qtd"
+                        className="h-6 w-10 rounded border border-border/70 bg-background text-[11px] text-center px-1 focus:outline-none focus:border-primary"
+                        aria-label={`Quantidade de exercícios com ${extra.name}`}
+                      />
+                    ) : null
+                  }
                 />
+                {(() => {
+                  const totalQuota = selectedExtraIds.reduce(
+                    (s, id) => s + (parseInt(extraCounts[id] || '0', 10) || 0),
+                    0
+                  );
+                  const nVal = parseInt(count, 10) || 0;
+                  if (totalQuota > nVal) {
+                    return (
+                      <p className="text-[10px] text-destructive">
+                        A soma dos equipamentos ({totalQuota}) ultrapassa a quantidade de exercícios ({nVal}).
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </div>
           )}
