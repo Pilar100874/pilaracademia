@@ -14,6 +14,9 @@ interface ExtrasPickerProps {
   /** Optional render of right-side adornment per chip (e.g. count input). */
   renderAdornment?: (extra: ExerciseExtra, selected: boolean) => React.ReactNode;
   emptyHint?: string;
+  /** When defined, shows a "Sem equipamento" chip controlled by these props. */
+  noneSelected?: boolean;
+  onToggleNone?: () => void;
 }
 
 export function ExtrasPicker({
