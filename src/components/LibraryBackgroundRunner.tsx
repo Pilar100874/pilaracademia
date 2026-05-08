@@ -280,6 +280,7 @@ export function LibraryBackgroundRunner() {
         } catch (err) {
           console.warn('[bg] optimize failed', ex.id, err);
         }
+        optAttempts.add(ex.id); saveAttempts('lib-bg-opt-attempts', optAttempts);
         processedCount++;
         tick(JOB_ID, ex.name);
       }
