@@ -18,9 +18,10 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
+import { useExerciseExtras } from '@/hooks/useExerciseExtras';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { LazyVideoPreview } from '@/components/LazyVideoPreview';
-import { Dumbbell, Search, Plus, Check, ImageIcon, Tag, Loader2, Globe } from 'lucide-react';
+import { Dumbbell, Search, Plus, Check, ImageIcon, Tag, Loader2, Globe, Wrench } from 'lucide-react';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import {
   BodyAnalysisFilter,
@@ -49,9 +50,11 @@ export function SelectExerciseDialog({
 }: SelectExerciseDialogProps) {
   const { exercises, globalExercises, isLoading } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
+  const { extras } = useExerciseExtras();
   const [activeTab, setActiveTab] = useState<Tab>('mine');
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
+  const [filterExtraIds, setFilterExtraIds] = useState<string[]>([]);
   const [bodyFilter, setBodyFilter] = useState<BodyAnalysisFilterValue>(EMPTY_BODY_FILTER);
   // Ordered list of selected exercise ids — defines insertion order
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -107,8 +110,11 @@ export function SelectExerciseDialog({
       const allowed = descendantsMap.get(filterCategory) ?? new Set([filterCategory]);
       matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
     }
+    const matchesExtras =
+      filterExtraIds.length === 0 ||
+      (ex.extra_ids ?? []).some((id) => filterExtraIds.includes(id));
     const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, ex.mobility_analysis, bodyFilter);
-    return matchesSearch && matchesCategory && matchesBody;
+    return matchesSearch && matchesCategory && matchesExtras && matchesBody;
   });
 
   const toggleSelect = (id: string) => {
