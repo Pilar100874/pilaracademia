@@ -89,6 +89,7 @@ export function VideoPreviewDialog({
 
   const showNav = !!(onPrev || onNext);
   const selected = new Set(currentCategoryIds ?? []);
+  const selectedExtras = new Set(currentExtraIds ?? []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
