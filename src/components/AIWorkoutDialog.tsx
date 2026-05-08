@@ -123,12 +123,20 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const sourceFiltered =
     source === 'mine' ? personalOnly : source === 'global' ? globalExercises : exercises;
 
-  const filteredExercises =
-    selectedCategoryIds.length === 0
-      ? sourceFiltered
-      : sourceFiltered.filter((ex) =>
-          (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id))
-        );
+  const filteredExercises = (() => {
+    let list = sourceFiltered;
+    if (selectedCategoryIds.length > 0) {
+      list = list.filter((ex) =>
+        (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id))
+      );
+    }
+    if (selectedExtraIds.length > 0) {
+      list = list.filter((ex) =>
+        selectedExtraIds.every((id) => (ex.extra_ids || []).includes(id))
+      );
+    }
+    return list;
+  })();
 
   const toggleDay = (idx: number) => {
     setSelectedDays((prev) =>
