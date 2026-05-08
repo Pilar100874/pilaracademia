@@ -349,6 +349,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
               video_start_seconds: ex.video_start_seconds,
               video_end_seconds: ex.video_end_seconds,
               exercise_library_id: ex.id,
+              _silent: true,
             })
           )
         );
