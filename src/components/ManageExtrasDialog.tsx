@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Pencil, Trash2, Check, X, Loader2, Globe } from 'lucide-react';
 import { useExerciseExtras, type ExerciseExtra } from '@/hooks/useExerciseExtras';
+import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -23,11 +24,16 @@ interface ManageExtrasDialogProps {
 export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogProps) {
   const { user } = useAuth();
   const { extras, isLoading, createExtra, updateExtra, deleteExtra } = useExerciseExtras();
+  const { exercises: libraryExercises } = useExerciseLibrary();
 
   const [newName, setNewName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [toDelete, setToDelete] = useState<ExerciseExtra | null>(null);
+
+  const linkedCount = toDelete
+    ? libraryExercises.filter((ex) => (ex.extra_ids ?? []).includes(toDelete.id)).length
+    : 0;
 
   const handleCreate = async () => {
     const name = newName.trim();
@@ -205,7 +211,11 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
         open={!!toDelete}
         onOpenChange={(o) => !o && setToDelete(null)}
         title="Excluir equipamento?"
-        description={`"${toDelete?.name}" será removido. Os exercícios vinculados deixarão de ter este equipamento.`}
+        description={
+          linkedCount > 0
+            ? `"${toDelete?.name}" será removido. ${linkedCount} exercício(s) estão vinculados a este equipamento — o vínculo será desfeito (os exercícios continuam existindo, mas sem este equipamento).`
+            : `"${toDelete?.name}" será removido. Nenhum exercício está vinculado a este equipamento.`
+        }
         onConfirm={async () => {
           if (!toDelete) return;
           try {
