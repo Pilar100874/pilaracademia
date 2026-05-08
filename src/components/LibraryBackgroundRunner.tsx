@@ -7,14 +7,15 @@ import { useExerciseLibrary, type LibraryExercise } from '@/hooks/useExerciseLib
 import { useQueryClient } from '@tanstack/react-query';
 import { compressVideoFile } from '@/lib/compressVideo';
 import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
+import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL } from '@/lib/libraryBgJob';
 
 // Module-level flag — evita execuções concorrentes da mesma fila.
 // É liberado ao final de run() para permitir uma nova verificação
 // toda vez que o usuário abrir a Biblioteca.
 let runnerStarted = false;
 
-const JOB_ID = 'lib-bg-process';
-const JOB_LABEL = 'Ajustando resolução e classificando vídeo';
+const JOB_ID = LIB_BG_JOB_ID;
+const JOB_LABEL = LIB_BG_JOB_LABEL;
 
 /**
  * Background runner — toda vez que o usuário abre a Biblioteca de
