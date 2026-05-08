@@ -307,6 +307,7 @@ export function LibraryBackgroundRunner() {
         } catch (err) {
           console.warn('[bg] hash backfill failed', ex.id, err);
         }
+        hashAttempts.add(ex.id); saveAttempts('lib-bg-hash-attempts', hashAttempts);
         processedCount++;
         tick(JOB_ID, ex.name);
       }
