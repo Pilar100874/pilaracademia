@@ -89,7 +89,7 @@ export function ExtrasPicker({
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className={`${chipBase} rounded-full border border-dashed border-border/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors inline-flex items-center gap-1`}
+            className={`${chipBase} rounded-full border border-dashed border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors inline-flex items-center gap-1`}
           >
             <Plus className="h-3 w-3" />
             Novo
