@@ -393,6 +393,22 @@ export function ExerciseLibraryDialog({
               </p>
             </div>
 
+            {/* Equipamentos extras */}
+            <div className="space-y-2">
+              <Label>Equipamentos extras</Label>
+              <ExtrasPicker
+                selectedIds={extraIds}
+                onToggle={(id) =>
+                  setExtraIds((prev) =>
+                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                  )
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                Bola, halter, elástico, arco, caixa... Selecione os que esse exercício usa.
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="default-sets">Séries Padrão</Label>
