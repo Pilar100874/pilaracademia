@@ -484,6 +484,7 @@ export default function ExerciseLibraryPage() {
         : NO_CATEGORY;
     setBulkCategoryChoice(initial);
     setNewBulkCategoryName('');
+    setBulkExtras([]);
     setPendingFiles(files);
   };
 
