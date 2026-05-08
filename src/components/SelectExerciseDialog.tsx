@@ -133,6 +133,7 @@ export function SelectExerciseDialog({
     setSelectedIds([]);
     setSearch('');
     setFilterCategory(ALL_CATEGORIES);
+    setFilterExtraIds([]);
     setBodyFilter(EMPTY_BODY_FILTER);
 
     (async () => {
@@ -153,6 +154,7 @@ export function SelectExerciseDialog({
       setSelectedIds([]);
       setSearch('');
       setFilterCategory(ALL_CATEGORIES);
+      setFilterExtraIds([]);
       setBodyFilter(EMPTY_BODY_FILTER);
     }
     onOpenChange(isOpen);
