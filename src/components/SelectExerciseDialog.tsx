@@ -212,6 +212,45 @@ export function SelectExerciseDialog({
             <BodyAnalysisFilter value={bodyFilter} onChange={setBodyFilter} compact />
           </div>
 
+          {/* Extras filter */}
+          {extras.length > 0 && (
+            <div className="flex items-start gap-2">
+              <Wrench className="h-4 w-4 text-muted-foreground shrink-0 mt-1.5" />
+              <div className="flex-1 flex flex-wrap gap-1.5">
+                {extras.map((ex) => {
+                  const active = filterExtraIds.includes(ex.id);
+                  return (
+                    <button
+                      key={ex.id}
+                      type="button"
+                      onClick={() =>
+                        setFilterExtraIds((prev) =>
+                          prev.includes(ex.id) ? prev.filter((x) => x !== ex.id) : [...prev, ex.id]
+                        )
+                      }
+                      className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                        active
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border/70 hover:bg-accent text-foreground/80'
+                      }`}
+                    >
+                      {ex.icon ? `${ex.icon} ` : ''}{ex.name}
+                    </button>
+                  );
+                })}
+                {filterExtraIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterExtraIds([])}
+                    className="text-[11px] px-2 py-1 text-muted-foreground hover:text-foreground"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {selectedIds.length > 0 && (
             <p className="text-xs text-muted-foreground">
               {selectedIds.length} selecionado(s) — serão adicionados na ordem em que você clicou
