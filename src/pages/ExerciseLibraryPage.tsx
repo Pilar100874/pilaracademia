@@ -358,7 +358,8 @@ export default function ExerciseLibraryPage() {
     const matchesExtras =
       filterExtras.length === 0 ||
       filterExtras.every((id) => (ex.extra_ids ?? []).includes(id));
-    return matchesSearch && matchesCategory && matchesBody && matchesExtras;
+    const matchesNoExtras = !filterNoExtras || !ex.extra_ids || ex.extra_ids.length === 0;
+    return matchesSearch && matchesCategory && matchesBody && matchesExtras && matchesNoExtras;
   });
 
   const [convertingId, setConvertingId] = useState<string | null>(null);
