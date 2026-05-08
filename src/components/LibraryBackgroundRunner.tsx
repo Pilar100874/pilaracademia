@@ -7,7 +7,8 @@ import { useExerciseLibrary, type LibraryExercise } from '@/hooks/useExerciseLib
 import { useQueryClient } from '@tanstack/react-query';
 import { compressVideoFile } from '@/lib/compressVideo';
 import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
-import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL } from '@/lib/libraryBgJob';
+import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL, isImportBusy, subscribeImportBusy } from '@/lib/libraryBgJob';
+import { useEffect as useEffectReact, useState } from 'react';
 
 // Module-level flag — evita execuções concorrentes da mesma fila.
 // É liberado ao final de run() para permitir uma nova verificação
