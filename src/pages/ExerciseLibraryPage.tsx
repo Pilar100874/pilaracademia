@@ -698,6 +698,8 @@ export default function ExerciseLibraryPage() {
     beginImport();
     const usedNames = new Set<string>();
     let successCount = 0;
+    let duplicateCount = 0;
+    const sessionHashes = new Set<string>();
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -709,6 +711,38 @@ export default function ExerciseLibraryPage() {
         if (file.size > 50 * 1024 * 1024) {
           toast.error(`${file.name}: maior que 50 MB`);
           continue;
+        }
+
+        // Compute hash of original file to detect duplicates BEFORE
+        // compressing and uploading — saves bandwidth + storage.
+        let videoHash: string | null = null;
+        try {
+          videoHash = await hashBlob(file);
+        } catch { /* ignore — sem hash, segue */ }
+
+        if (videoHash) {
+          // Já importado nesta mesma sessão?
+          if (sessionHashes.has(videoHash)) {
+            toast.warning(`${file.name}: vídeo duplicado — não importado.`);
+            duplicateCount++;
+            continue;
+          }
+          // Já existe no banco? (próprios + globais visíveis)
+          const { data: existing } = await supabase
+            .from('exercise_library')
+            .select('id, name')
+            .eq('video_hash', videoHash)
+            .or(`user_id.eq.${user.id},is_global.eq.true`)
+            .limit(1)
+            .maybeSingle();
+          if (existing) {
+            toast.warning(
+              `${file.name}: já existe como "${(existing as any).name}" — não importado.`,
+            );
+            duplicateCount++;
+            continue;
+          }
+          sessionHashes.add(videoHash);
         }
 
         // Compress to ~720p WebM in the browser before upload. Falls back
