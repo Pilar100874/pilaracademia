@@ -59,7 +59,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
-import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL } from '@/lib/libraryBgJob';
+import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL, beginImport, endImport } from '@/lib/libraryBgJob';
 
 const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
