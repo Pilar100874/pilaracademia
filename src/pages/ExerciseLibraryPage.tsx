@@ -121,6 +121,7 @@ export default function ExerciseLibraryPage() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [bulkExtrasOpen, setBulkExtrasOpen] = useState(false);
   const [moveCategoryChoice, setMoveCategoryChoice] = useState<string>(NO_CATEGORY);
   const [newMoveCategoryName, setNewMoveCategoryName] = useState('');
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
