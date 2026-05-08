@@ -775,6 +775,7 @@ export default function ExerciseLibraryPage() {
           video_type: 'upload',
           video_url: pub.publicUrl,
           video_optimized_at: optimizedAt,
+          video_hash: videoHash,
           video_start_seconds: 0,
           video_end_seconds: null,
           category_id: targetCategoryId,
