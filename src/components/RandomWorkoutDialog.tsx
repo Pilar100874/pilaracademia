@@ -171,6 +171,15 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
         toast.error('Variar categorias exige ao menos 2 selecionadas.');
         return false;
       }
+      const totalQuota = selectedExtraIds.reduce(
+        (sum, id) => sum + (parseInt(extraCounts[id] || '0', 10) || 0),
+        0
+      );
+      const n = parseInt(count, 10) || 0;
+      if (totalQuota > n) {
+        toast.error('Soma de equipamentos ultrapassa a quantidade de exercícios.');
+        return false;
+      }
       if (!pool.length) {
         toast.error('Nenhum exercício corresponde aos filtros. Reduza o % mínimo ou amplie a seleção.');
         return false;
