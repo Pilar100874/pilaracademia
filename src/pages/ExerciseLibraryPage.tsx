@@ -1655,7 +1655,7 @@ export default function ExerciseLibraryPage() {
               // biblioteca (pelo menos 1 exercício referencia) + os já
               // marcados no exercício atual (para permitir desmarcar).
               const usedIds = new Set<string>();
-              for (const ex of (allExercises ?? exercises)) {
+              for (const ex of [...exercises, ...(globalExercises ?? [])]) {
                 for (const id of ex.extra_ids ?? []) usedIds.add(id);
               }
               for (const id of currentLib?.extra_ids ?? []) usedIds.add(id);
