@@ -1007,6 +1007,15 @@ export default function ExerciseLibraryPage() {
               </Button>
               <Button
                 size="sm"
+                variant="outline"
+                disabled={selectedIds.size === 0}
+                onClick={() => setBulkExtrasOpen(true)}
+              >
+                <Dumbbell className="h-4 w-4 mr-1" />
+                Equipar ({selectedIds.size})
+              </Button>
+              <Button
+                size="sm"
                 variant="destructive"
                 disabled={selectedIds.size === 0 || bulkDeleteChecking}
                 onClick={openBulkDelete}
