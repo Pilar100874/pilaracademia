@@ -511,10 +511,10 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                   <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                     Equipamentos extras
                   </p>
-                  {selectedExtraIds.length > 0 && (
+                  {(selectedExtraIds.length > 0 || filterNoExtras) && (
                     <button
                       type="button"
-                      onClick={() => { setSelectedExtraIds([]); setExtraCounts({}); }}
+                      onClick={() => { setSelectedExtraIds([]); setExtraCounts({}); setFilterNoExtras(false); }}
                       className="text-[10px] text-muted-foreground hover:text-foreground underline"
                     >
                       Limpar
@@ -527,6 +527,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                 <ExtrasPicker
                   selectedIds={selectedExtraIds}
                   onToggle={(id) => {
+                    if (filterNoExtras) return;
                     setSelectedExtraIds((prev) => {
                       if (prev.includes(id)) {
                         setExtraCounts((c) => {
@@ -538,6 +539,14 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                       }
                       setExtraCounts((c) => ({ ...c, [id]: c[id] ?? '1' }));
                       return [...prev, id];
+                    });
+                  }}
+                  noneSelected={filterNoExtras}
+                  onToggleNone={() => {
+                    setFilterNoExtras((v) => {
+                      const next = !v;
+                      if (next) { setSelectedExtraIds([]); setExtraCounts({}); }
+                      return next;
                     });
                   }}
                   allowCreate={false}
