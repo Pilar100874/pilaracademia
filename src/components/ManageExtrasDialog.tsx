@@ -123,12 +123,6 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
                       {isEditing ? (
                         <>
                           <Input
-                            value={editIcon}
-                            onChange={(e) => setEditIcon(e.target.value.slice(0, 2))}
-                            className="h-8 w-12 text-center"
-                            placeholder="🏐"
-                          />
-                          <Input
                             value={editName}
                             onChange={(e) => setEditName(e.target.value)}
                             onKeyDown={(e) => {
@@ -162,9 +156,6 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
                         </>
                       ) : (
                         <>
-                          <span className="w-8 text-center text-lg leading-none">
-                            {ex.icon || '•'}
-                          </span>
                           <span className="flex-1 text-sm truncate flex items-center gap-1.5">
                             {ex.name}
                             {ex.is_global && (
