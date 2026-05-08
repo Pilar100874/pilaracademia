@@ -239,10 +239,10 @@ export function ExerciseLibraryDialog({
         try {
           await Promise.all([
             ...toAdd.map((extraId) =>
-              bulkAssignExtra.mutateAsync({ extraId, exerciseIds: [exerciseId!], mode: 'add' })
+              bulkAssignExtra.mutateAsync({ extraId, exerciseIds: [exerciseId!], mode: 'add', silent: true })
             ),
             ...toRemove.map((extraId) =>
-              bulkAssignExtra.mutateAsync({ extraId, exerciseIds: [exerciseId!], mode: 'remove' })
+              bulkAssignExtra.mutateAsync({ extraId, exerciseIds: [exerciseId!], mode: 'remove', silent: true })
             ),
           ]);
         } catch (err) {
