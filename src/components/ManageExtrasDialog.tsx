@@ -24,6 +24,10 @@ interface ManageExtrasDialogProps {
 export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogProps) {
   const { user } = useAuth();
   const { extras, isLoading, createExtra, updateExtra, deleteExtra } = useExerciseExtras();
+  const { exercises: libraryExercises } = useExerciseLibrary();
+  const linkedCount = toDelete
+    ? libraryExercises.filter((ex) => (ex.extra_ids ?? []).includes(toDelete.id)).length
+    : 0;
 
   const [newName, setNewName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
