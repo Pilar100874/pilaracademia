@@ -1527,10 +1527,17 @@ export default function ExerciseLibraryPage() {
 
       <ConfirmDeleteDialog
         open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open) { setExerciseToDelete(null); setPlansForDelete([]); }
+        }}
         onConfirm={confirmDelete}
         title="Excluir exercício?"
-        description={`O exercício "${exerciseToDelete?.name}" será removido da biblioteca. Os treinos que usam este exercício não serão afetados.`}
+        description={
+          plansForDelete.length > 0
+            ? `"${exerciseToDelete?.name}" está sendo usado em ${plansForDelete.length} treino(s): ${plansForDelete.join(', ')}. Ao excluir, ele também será removido desses treinos. Deseja continuar?`
+            : `O exercício "${exerciseToDelete?.name}" será removido da biblioteca.`
+        }
       />
 
       <ConfirmDeleteDialog
