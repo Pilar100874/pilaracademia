@@ -87,9 +87,11 @@ export function WorkoutPlanDialog({
   useEffect(() => {
     if (open && editingPlan) {
       setName(editingPlan.name);
+      setObjective(editingPlan.objective || '');
       setSelectedDays(editingPlan.days_of_week);
     } else if (!open) {
       setName('');
+      setObjective('');
       setSelectedDays([]);
     }
   }, [editingPlan?.id, open]);
