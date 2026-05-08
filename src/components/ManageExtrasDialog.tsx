@@ -25,19 +25,16 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
   const { extras, isLoading, createExtra, updateExtra, deleteExtra } = useExerciseExtras();
 
   const [newName, setNewName] = useState('');
-  const [newIcon, setNewIcon] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [editIcon, setEditIcon] = useState('');
   const [toDelete, setToDelete] = useState<ExerciseExtra | null>(null);
 
   const handleCreate = async () => {
     const name = newName.trim();
     if (!name) return;
     try {
-      await createExtra.mutateAsync({ name, icon: newIcon.trim() || null });
+      await createExtra.mutateAsync({ name, icon: null });
       setNewName('');
-      setNewIcon('');
     } catch {
       /* toast tratado */
     }
@@ -46,7 +43,6 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
   const startEdit = (e: ExerciseExtra) => {
     setEditingId(e.id);
     setEditName(e.name);
-    setEditIcon(e.icon ?? '');
   };
 
   const saveEdit = async () => {
@@ -57,7 +53,7 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
       await updateExtra.mutateAsync({
         id: editingId,
         name,
-        icon: editIcon.trim() || null,
+        icon: null,
       });
       setEditingId(null);
     } catch {
@@ -80,13 +76,6 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
           <div className="rounded-md border border-border/70 bg-muted/30 p-3 space-y-2">
             <Label className="text-xs">Adicionar equipamento</Label>
             <div className="flex gap-2">
-              <Input
-                value={newIcon}
-                onChange={(e) => setNewIcon(e.target.value.slice(0, 2))}
-                placeholder="🏐"
-                className="h-9 w-14 text-center"
-                aria-label="Ícone (emoji opcional)"
-              />
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
@@ -134,12 +123,6 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
                       {isEditing ? (
                         <>
                           <Input
-                            value={editIcon}
-                            onChange={(e) => setEditIcon(e.target.value.slice(0, 2))}
-                            className="h-8 w-12 text-center"
-                            placeholder="🏐"
-                          />
-                          <Input
                             value={editName}
                             onChange={(e) => setEditName(e.target.value)}
                             onKeyDown={(e) => {
@@ -173,9 +156,6 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
                         </>
                       ) : (
                         <>
-                          <span className="w-8 text-center text-lg leading-none">
-                            {ex.icon || '•'}
-                          </span>
                           <span className="flex-1 text-sm truncate flex items-center gap-1.5">
                             {ex.name}
                             {ex.is_global && (
