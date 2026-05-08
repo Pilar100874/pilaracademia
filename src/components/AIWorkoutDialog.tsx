@@ -309,7 +309,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
         if (!allowRepeat) picked.forEach((ex) => usedIds.add(ex.id));
         totalCreated++;
-        if (data?.rationale) lastRationale = data.rationale;
       }
 
       if (totalCreated === 0) {
