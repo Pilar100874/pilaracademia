@@ -142,7 +142,7 @@ export function useExerciseLibrary() {
         .single();
 
       if (error) throw error;
-      return { ...exercise, category_ids: data.category_id ? [data.category_id] : [] } as unknown as LibraryExercise;
+      return { ...exercise, category_ids: data.category_id ? [data.category_id] : [], extra_ids: [] } as unknown as LibraryExercise;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
