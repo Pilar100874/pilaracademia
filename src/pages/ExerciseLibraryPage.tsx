@@ -53,7 +53,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2, CheckSquare, X, FolderInput, Pencil, FolderPlus, Instagram, KeyRound, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2, CheckSquare, X, FolderInput, Pencil, FolderPlus, Instagram, KeyRound, ExternalLink, CheckCircle2, Copy as CopyIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -103,7 +103,7 @@ export default function ExerciseLibraryPage() {
   // <LibraryBackgroundRunner /> (montado no App.tsx). A barra inline foi
   // removida — o progresso aparece como toast persistente em qualquer página.
   const analysisProgress: { done: number; total: number; current?: string } | null = null;
-  const { addWork, tick } = useBackgroundProgress();
+  const { addWork, tick, remove: removeBgJob } = useBackgroundProgress();
 
   const [activeTab, setActiveTab] = useState<'mine' | 'global'>('mine');
   const [search, setSearch] = useState('');
@@ -161,6 +161,111 @@ export default function ExerciseLibraryPage() {
     | { kind: 'success'; created: number; failed: number; categoryId: string | null }
     | null
   >(null);
+
+  // ===== Análise de vídeos duplicados (mesmo conteúdo, hash SHA-256) =====
+  type DupGroup = { hash: string; items: LibraryExercise[] };
+  const [dupScanning, setDupScanning] = useState(false);
+  const [dupGroups, setDupGroups] = useState<DupGroup[] | null>(null);
+  const [dupDialogOpen, setDupDialogOpen] = useState(false);
+  // Map<hash, Set<exerciseId>> — ids marcados para exclusão (padrão: todos
+  // exceto o mais antigo do grupo).
+  const [dupSelected, setDupSelected] = useState<Map<string, Set<string>>>(new Map());
+  const [dupDeleting, setDupDeleting] = useState(false);
+
+  const analyzeDuplicateVideos = async () => {
+    if (dupScanning) return;
+    const candidates = sourceList.filter((ex) => !!ex.video_url && ex.video_type !== 'youtube');
+    if (candidates.length === 0) {
+      toast.info('Nenhum vídeo para analisar nesta aba.');
+      return;
+    }
+    setDupScanning(true);
+    const jobId = 'dup-scan';
+    addWork(jobId, 'Analisando vídeos duplicados', candidates.length);
+    const hashes = new Map<string, LibraryExercise[]>();
+    for (const ex of candidates) {
+      try {
+        const url = await getFreshMediaUrl(ex.video_url!);
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('download');
+        const buf = await res.arrayBuffer();
+        const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+        const hex = Array.from(new Uint8Array(hashBuf))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('');
+        const arr = hashes.get(hex) ?? [];
+        arr.push(ex);
+        hashes.set(hex, arr);
+      } catch (err) {
+        console.warn('[dup] hash failed', ex.id, err);
+      }
+      tick(jobId, ex.name);
+    }
+    const groups: DupGroup[] = [];
+    for (const [hash, items] of hashes.entries()) {
+      if (items.length > 1) {
+        // Mantém o mais antigo (created_at asc); o resto vai pré-selecionado para exclusão.
+        const sorted = [...items].sort((a, b) =>
+          (a.created_at ?? '').localeCompare(b.created_at ?? ''),
+        );
+        groups.push({ hash, items: sorted });
+      }
+    }
+    setDupScanning(false);
+    removeBgJob(jobId);
+    if (groups.length === 0) {
+      toast.success('Nenhum vídeo duplicado encontrado.');
+      setDupGroups(null);
+      return;
+    }
+    const sel = new Map<string, Set<string>>();
+    groups.forEach((g) => sel.set(g.hash, new Set(g.items.slice(1).map((e) => e.id))));
+    setDupSelected(sel);
+    setDupGroups(groups);
+    setDupDialogOpen(true);
+  };
+
+  const toggleDupSelect = (hash: string, id: string) => {
+    setDupSelected((prev) => {
+      const next = new Map(prev);
+      const cur = new Set(next.get(hash) ?? []);
+      if (cur.has(id)) cur.delete(id);
+      else cur.add(id);
+      next.set(hash, cur);
+      return next;
+    });
+  };
+
+  const runDeleteDuplicates = async () => {
+    if (!dupGroups) return;
+    const idsToDelete = new Set<string>();
+    dupSelected.forEach((set) => set.forEach((id) => idsToDelete.add(id)));
+    if (idsToDelete.size === 0) {
+      setDupDialogOpen(false);
+      return;
+    }
+    setDupDeleting(true);
+    try {
+      const toCascade = sourceList.filter((e) => idsToDelete.has(e.id));
+      await Promise.all(toCascade.map((e) => cascadeRemoveFromWorkouts(e)));
+      for (const id of idsToDelete) {
+        try {
+          await deleteExercise.mutateAsync(id);
+        } catch (err) {
+          console.warn('[dup] delete failed', id, err);
+        }
+      }
+      await queryClient.invalidateQueries({ queryKey: ['workout-plans'] });
+      await queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+      toast.success(`${idsToDelete.size} duplicata(s) excluída(s).`);
+      setDupDialogOpen(false);
+      setDupGroups(null);
+    } catch {
+      toast.error('Erro ao excluir duplicatas.');
+    } finally {
+      setDupDeleting(false);
+    }
+  };
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
@@ -1016,6 +1121,21 @@ export default function ExerciseLibraryPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end ml-auto">
+          {!selectionMode && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={dupScanning || dupDeleting}
+              onClick={analyzeDuplicateVideos}
+              title="Detecta vídeos com conteúdo idêntico (mesmo arquivo) e permite excluí-los"
+            >
+              {dupScanning ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Analisando...</>
+              ) : (
+                <><CopyIcon className="h-4 w-4 mr-1" /> Analisar duplicatas</>
+              )}
+            </Button>
+          )}
           {!selectionMode && pendingOptimizationCount > 0 && (
             <Button
               variant="outline"
@@ -1676,6 +1796,84 @@ export default function ExerciseLibraryPage() {
           />
         );
       })()}
+
+      {/* Confirmação de exclusão de duplicatas */}
+      <Dialog
+        open={dupDialogOpen}
+        onOpenChange={(open) => {
+          if (dupDeleting) return;
+          setDupDialogOpen(open);
+          if (!open) setDupGroups(null);
+        }}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Vídeos duplicados encontrados</DialogTitle>
+            <DialogDescription>
+              {dupGroups
+                ? `${dupGroups.length} grupo(s) de vídeos com conteúdo idêntico. Marque os que devem ser excluídos — por padrão, mantemos o mais antigo.`
+                : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[55vh] overflow-y-auto">
+            {dupGroups?.map((g, gi) => (
+              <div key={g.hash} className="rounded-md border border-border p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Grupo {gi + 1} — {g.items.length} vídeos idênticos
+                </p>
+                <ul className="space-y-1.5">
+                  {g.items.map((ex, idx) => {
+                    const checked = dupSelected.get(g.hash)?.has(ex.id) ?? false;
+                    return (
+                      <li key={ex.id} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          id={`dup-${ex.id}`}
+                          checked={checked}
+                          onCheckedChange={() => toggleDupSelect(g.hash, ex.id)}
+                        />
+                        <label
+                          htmlFor={`dup-${ex.id}`}
+                          className="flex-1 cursor-pointer truncate"
+                        >
+                          <span className="font-medium">{ex.name}</span>
+                          {idx === 0 && (
+                            <span className="ml-2 text-xs text-muted-foreground">(mais antigo)</span>
+                          )}
+                          {ex.created_at && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              {new Date(ex.created_at).toLocaleDateString('pt-BR')}
+                            </span>
+                          )}
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDupDialogOpen(false)}
+              disabled={dupDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={runDeleteDuplicates}
+              disabled={dupDeleting}
+            >
+              {dupDeleting ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Excluindo...</>
+              ) : (
+                `Excluir ${Array.from(dupSelected.values()).reduce((s, set) => s + set.size, 0)}`
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk delete dialog */}
       <Dialog
