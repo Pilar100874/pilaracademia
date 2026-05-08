@@ -18,9 +18,10 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useExerciseLibrary, LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
+import { useExerciseExtras } from '@/hooks/useExerciseExtras';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { LazyVideoPreview } from '@/components/LazyVideoPreview';
-import { Dumbbell, Search, Plus, Check, ImageIcon, Tag, Loader2, Globe } from 'lucide-react';
+import { Dumbbell, Search, Plus, Check, ImageIcon, Tag, Loader2, Globe, Wrench } from 'lucide-react';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import {
   BodyAnalysisFilter,
@@ -49,9 +50,11 @@ export function SelectExerciseDialog({
 }: SelectExerciseDialogProps) {
   const { exercises, globalExercises, isLoading } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
+  const { extras } = useExerciseExtras();
   const [activeTab, setActiveTab] = useState<Tab>('mine');
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
+  const [filterExtraIds, setFilterExtraIds] = useState<string[]>([]);
   const [bodyFilter, setBodyFilter] = useState<BodyAnalysisFilterValue>(EMPTY_BODY_FILTER);
   // Ordered list of selected exercise ids — defines insertion order
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -107,8 +110,11 @@ export function SelectExerciseDialog({
       const allowed = descendantsMap.get(filterCategory) ?? new Set([filterCategory]);
       matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
     }
+    const matchesExtras =
+      filterExtraIds.length === 0 ||
+      (ex.extra_ids ?? []).some((id) => filterExtraIds.includes(id));
     const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, ex.mobility_analysis, bodyFilter);
-    return matchesSearch && matchesCategory && matchesBody;
+    return matchesSearch && matchesCategory && matchesExtras && matchesBody;
   });
 
   const toggleSelect = (id: string) => {
@@ -127,6 +133,7 @@ export function SelectExerciseDialog({
     setSelectedIds([]);
     setSearch('');
     setFilterCategory(ALL_CATEGORIES);
+    setFilterExtraIds([]);
     setBodyFilter(EMPTY_BODY_FILTER);
 
     (async () => {
@@ -147,6 +154,7 @@ export function SelectExerciseDialog({
       setSelectedIds([]);
       setSearch('');
       setFilterCategory(ALL_CATEGORIES);
+      setFilterExtraIds([]);
       setBodyFilter(EMPTY_BODY_FILTER);
     }
     onOpenChange(isOpen);
@@ -203,6 +211,45 @@ export function SelectExerciseDialog({
             </Select>
             <BodyAnalysisFilter value={bodyFilter} onChange={setBodyFilter} compact />
           </div>
+
+          {/* Extras filter */}
+          {extras.length > 0 && (
+            <div className="flex items-start gap-2">
+              <Wrench className="h-4 w-4 text-muted-foreground shrink-0 mt-1.5" />
+              <div className="flex-1 flex flex-wrap gap-1.5">
+                {extras.map((ex) => {
+                  const active = filterExtraIds.includes(ex.id);
+                  return (
+                    <button
+                      key={ex.id}
+                      type="button"
+                      onClick={() =>
+                        setFilterExtraIds((prev) =>
+                          prev.includes(ex.id) ? prev.filter((x) => x !== ex.id) : [...prev, ex.id]
+                        )
+                      }
+                      className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                        active
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border/70 hover:bg-accent text-foreground/80'
+                      }`}
+                    >
+                      {ex.icon ? `${ex.icon} ` : ''}{ex.name}
+                    </button>
+                  );
+                })}
+                {filterExtraIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterExtraIds([])}
+                    className="text-[11px] px-2 py-1 text-muted-foreground hover:text-foreground"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {selectedIds.length > 0 && (
             <p className="text-xs text-muted-foreground">

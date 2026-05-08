@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/select';
 import { LibraryExercise, useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
+import { useExerciseExtras } from '@/hooks/useExerciseExtras';
+import { ExtrasPicker } from '@/components/ExtrasPicker';
 import { X, Dumbbell, Save, Crop, Camera, ImageIcon, Plus } from 'lucide-react';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { ExerciseVideoEditor, ExerciseVideoData } from '@/components/ExerciseVideoEditor';
@@ -36,11 +38,14 @@ export function ExerciseLibraryDialog({
 }: ExerciseLibraryDialogProps) {
   const { exercises, createExercise, updateExercise, uploadExerciseImage } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
+  const { toggleExerciseExtra } = useExerciseExtras();
 
   const [name, setName] = useState('');
   const [defaultSets, setDefaultSets] = useState(3);
   const [defaultReps, setDefaultReps] = useState(10);
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [extraIds, setExtraIds] = useState<string[]>([]);
+  const [initialExtraIds, setInitialExtraIds] = useState<string[]>([]);
   const [images, setImages] = useState<Array<{ type: 'url' | 'file'; value: string; file?: File }>>([]);
   const [video, setVideo] = useState<ExerciseVideoData>({
     video_type: null,
@@ -61,6 +66,9 @@ export function ExerciseLibraryDialog({
         setDefaultSets(editingExercise.default_sets);
         setDefaultReps(editingExercise.default_reps);
         setCategoryId(editingExercise.category_id ?? null);
+        const initialExtras = editingExercise.extra_ids ?? [];
+        setExtraIds(initialExtras);
+        setInitialExtraIds(initialExtras);
         const existingImages = (editingExercise.image_urls || []).map(url => ({
           type: 'url' as const,
           value: url,
@@ -77,6 +85,8 @@ export function ExerciseLibraryDialog({
         setDefaultSets(1);
         setDefaultReps(10);
         setCategoryId(null);
+        setExtraIds([]);
+        setInitialExtraIds([]);
         setImages([]);
         setVideo({
           video_type: null,
@@ -211,10 +221,29 @@ export function ExerciseLibraryDialog({
         category_id: categoryId,
       };
 
+      let exerciseId = editingExercise?.id ?? null;
       if (editingExercise) {
         await updateExercise.mutateAsync({ id: editingExercise.id, ...payload });
       } else {
-        await createExercise.mutateAsync(payload);
+        const created = await createExercise.mutateAsync(payload);
+        exerciseId = (created as any)?.id ?? null;
+      }
+
+      // Sync extras (junction). For new exercise: insert all selected.
+      // For edit: diff against initialExtraIds.
+      if (exerciseId) {
+        const initial = new Set(initialExtraIds);
+        const next = new Set(extraIds);
+        const toAdd = [...next].filter((id) => !initial.has(id));
+        const toRemove = [...initial].filter((id) => !next.has(id));
+        await Promise.all([
+          ...toAdd.map((extraId) =>
+            toggleExerciseExtra.mutateAsync({ exerciseId: exerciseId!, extraId, checked: true })
+          ),
+          ...toRemove.map((extraId) =>
+            toggleExerciseExtra.mutateAsync({ exerciseId: exerciseId!, extraId, checked: false })
+          ),
+        ]);
       }
 
       onOpenChange(false);
@@ -361,6 +390,22 @@ export function ExerciseLibraryDialog({
               </Select>
               <p className="text-xs text-muted-foreground">
                 Para criar categorias, use a tela da Biblioteca de Exercícios.
+              </p>
+            </div>
+
+            {/* Equipamentos extras */}
+            <div className="space-y-2">
+              <Label>Equipamentos extras</Label>
+              <ExtrasPicker
+                selectedIds={extraIds}
+                onToggle={(id) =>
+                  setExtraIds((prev) =>
+                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                  )
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                Bola, halter, elástico, arco, caixa... Selecione os que esse exercício usa.
               </p>
             </div>
 
