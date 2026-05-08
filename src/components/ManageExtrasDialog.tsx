@@ -25,19 +25,16 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
   const { extras, isLoading, createExtra, updateExtra, deleteExtra } = useExerciseExtras();
 
   const [newName, setNewName] = useState('');
-  const [newIcon, setNewIcon] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [editIcon, setEditIcon] = useState('');
   const [toDelete, setToDelete] = useState<ExerciseExtra | null>(null);
 
   const handleCreate = async () => {
     const name = newName.trim();
     if (!name) return;
     try {
-      await createExtra.mutateAsync({ name, icon: newIcon.trim() || null });
+      await createExtra.mutateAsync({ name, icon: null });
       setNewName('');
-      setNewIcon('');
     } catch {
       /* toast tratado */
     }
@@ -46,7 +43,6 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
   const startEdit = (e: ExerciseExtra) => {
     setEditingId(e.id);
     setEditName(e.name);
-    setEditIcon(e.icon ?? '');
   };
 
   const saveEdit = async () => {
@@ -57,7 +53,7 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
       await updateExtra.mutateAsync({
         id: editingId,
         name,
-        icon: editIcon.trim() || null,
+        icon: null,
       });
       setEditingId(null);
     } catch {
