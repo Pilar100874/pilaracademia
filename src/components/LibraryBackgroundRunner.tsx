@@ -212,6 +212,7 @@ export function LibraryBackgroundRunner() {
         } catch (err) {
           console.warn('[bg] AI analysis failed', ex.id, err);
         }
+        aiAttempts.add(ex.id); saveAttempts('lib-bg-ai-attempts', aiAttempts);
         processedCount++;
         tick(JOB_ID, ex.name);
       }
