@@ -2258,6 +2258,7 @@ export default function ExerciseLibraryPage() {
                     setIgPartialErrors([]);
                     setIgUrl('');
                     setIgNamePrefix('');
+                    setIgExtras([]);
                   }}
                 >
                   Importar outro
