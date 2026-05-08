@@ -352,7 +352,10 @@ export default function ExerciseLibraryPage() {
       matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
     }
     const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, ex.mobility_analysis, bodyFilter);
-    return matchesSearch && matchesCategory && matchesBody;
+    const matchesExtras =
+      filterExtras.length === 0 ||
+      filterExtras.every((id) => (ex.extra_ids ?? []).includes(id));
+    return matchesSearch && matchesCategory && matchesBody && matchesExtras;
   });
 
   const [convertingId, setConvertingId] = useState<string | null>(null);
