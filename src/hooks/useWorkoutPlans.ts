@@ -180,12 +180,14 @@ export function useWorkoutPlans() {
       video_end_seconds?: number | null;
       exercise_library_id?: string | null;
       is_cooldown?: boolean;
+      _silent?: boolean;
     }) => {
+      const { _silent, ...payload } = data;
       const { data: exercise, error } = await supabase
         .from('workout_exercises')
         .insert({
-          ...data,
-          image_url: data.image_urls?.[0] || null, // Keep backward compatibility
+          ...payload,
+          image_url: payload.image_urls?.[0] || null, // Keep backward compatibility
         })
         .select()
         .single();
@@ -193,9 +195,9 @@ export function useWorkoutPlans() {
       if (error) throw error;
       return exercise;
     },
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['workout-plans'] });
-      toast.success('Exercício adicionado!');
+      if (!vars._silent) toast.success('Exercício adicionado!');
     },
     onError: () => {
       toast.error('Erro ao adicionar exercício');
