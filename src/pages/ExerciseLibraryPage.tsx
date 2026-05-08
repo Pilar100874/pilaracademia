@@ -105,6 +105,7 @@ export default function ExerciseLibraryPage() {
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [bodyFilter, setBodyFilter] = useState<BodyAnalysisFilterValue>(EMPTY_BODY_FILTER);
   const [filterExtras, setFilterExtras] = useState<string[]>([]);
+  const [filterNoExtras, setFilterNoExtras] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<LibraryExercise | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -357,7 +358,8 @@ export default function ExerciseLibraryPage() {
     const matchesExtras =
       filterExtras.length === 0 ||
       filterExtras.every((id) => (ex.extra_ids ?? []).includes(id));
-    return matchesSearch && matchesCategory && matchesBody && matchesExtras;
+    const matchesNoExtras = !filterNoExtras || !ex.extra_ids || ex.extra_ids.length === 0;
+    return matchesSearch && matchesCategory && matchesBody && matchesExtras && matchesNoExtras;
   });
 
   const [convertingId, setConvertingId] = useState<string | null>(null);
@@ -1219,10 +1221,10 @@ export default function ExerciseLibraryPage() {
               <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 Filtrar por equipamento
               </span>
-              {filterExtras.length > 0 && (
+              {(filterExtras.length > 0 || filterNoExtras) && (
                 <button
                   type="button"
-                  onClick={() => setFilterExtras([])}
+                  onClick={() => { setFilterExtras([]); setFilterNoExtras(false); }}
                   className="text-[11px] text-muted-foreground hover:text-foreground underline"
                 >
                   Limpar
@@ -1236,6 +1238,8 @@ export default function ExerciseLibraryPage() {
                   prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
                 )
               }
+              noneSelected={filterNoExtras}
+              onToggleNone={() => setFilterNoExtras((v) => !v)}
               allowCreate={false}
               compact
               emptyHint="Crie equipamentos no botão 🏋️ acima."

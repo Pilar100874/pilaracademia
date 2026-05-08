@@ -50,6 +50,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   const [mobilityKeys, setMobilityKeys] = useState<Set<MobilityAnalysisKey>>(new Set());
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
+  const [filterNoExtras, setFilterNoExtras] = useState(false);
   const [extraCounts, setExtraCounts] = useState<Record<string, string>>({});
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [allowRepeat, setAllowRepeat] = useState(true);
@@ -105,9 +106,12 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     if (selectedCategoryIds.length > 0) {
       p = p.filter((ex) => (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id)));
     }
+    if (filterNoExtras) {
+      p = p.filter((ex) => !ex.extra_ids || ex.extra_ids.length === 0);
+    }
     return p;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exercises, bodyKeys, aestheticKeys, mobilityKeys, min, selectedCategoryIds]);
+  }, [exercises, bodyKeys, aestheticKeys, mobilityKeys, min, selectedCategoryIds, filterNoExtras]);
 
   const toggleBody = (k: BodyAnalysisKey) => {
     clearIf('classif');
@@ -140,6 +144,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     setMobilityKeys(new Set());
     setSelectedCategoryIds([]);
     setSelectedExtraIds([]);
+    setFilterNoExtras(false);
     setExtraCounts({});
     setSelectedDays([]);
     setAllowRepeat(true);
@@ -506,10 +511,10 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                   <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                     Equipamentos extras
                   </p>
-                  {selectedExtraIds.length > 0 && (
+                  {(selectedExtraIds.length > 0 || filterNoExtras) && (
                     <button
                       type="button"
-                      onClick={() => { setSelectedExtraIds([]); setExtraCounts({}); }}
+                      onClick={() => { setSelectedExtraIds([]); setExtraCounts({}); setFilterNoExtras(false); }}
                       className="text-[10px] text-muted-foreground hover:text-foreground underline"
                     >
                       Limpar
@@ -522,6 +527,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                 <ExtrasPicker
                   selectedIds={selectedExtraIds}
                   onToggle={(id) => {
+                    if (filterNoExtras) return;
                     setSelectedExtraIds((prev) => {
                       if (prev.includes(id)) {
                         setExtraCounts((c) => {
@@ -533,6 +539,14 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                       }
                       setExtraCounts((c) => ({ ...c, [id]: c[id] ?? '1' }));
                       return [...prev, id];
+                    });
+                  }}
+                  noneSelected={filterNoExtras}
+                  onToggleNone={() => {
+                    setFilterNoExtras((v) => {
+                      const next = !v;
+                      if (next) { setSelectedExtraIds([]); setExtraCounts({}); }
+                      return next;
                     });
                   }}
                   allowCreate={false}

@@ -65,6 +65,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [varyCategories, setVaryCategories] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
+  const [filterNoExtras, setFilterNoExtras] = useState(false);
   const [extraCounts, setExtraCounts] = useState<Record<string, string>>({});
   const [source, setSource] = useState<'all' | 'mine' | 'global'>('all');
   const [useBodyPlan, setUseBodyPlan] = useState(false);
@@ -98,6 +99,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setVaryCategories(false);
     setSelectedCategoryIds([]);
     setSelectedExtraIds([]);
+    setFilterNoExtras(false);
     setExtraCounts({});
     setSource('all');
     setUseBodyPlan(false);
@@ -127,12 +129,13 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const sourceFiltered =
     source === 'mine' ? personalOnly : source === 'global' ? globalExercises : exercises;
 
-  const filteredExercises =
-    selectedCategoryIds.length === 0
-      ? sourceFiltered
-      : sourceFiltered.filter((ex) =>
-          (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id))
-        );
+  const filteredExercises = sourceFiltered.filter((ex) => {
+    const matchesCat =
+      selectedCategoryIds.length === 0 ||
+      (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id));
+    const matchesNoExtras = !filterNoExtras || !ex.extra_ids || ex.extra_ids.length === 0;
+    return matchesCat && matchesNoExtras;
+  });
 
   const toggleDay = (idx: number) => {
     setSelectedDays((prev) =>
@@ -571,10 +574,10 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                   <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                     Equipamentos extras
                   </p>
-                  {selectedExtraIds.length > 0 && (
+                  {(selectedExtraIds.length > 0 || filterNoExtras) && (
                     <button
                       type="button"
-                      onClick={() => { setSelectedExtraIds([]); setExtraCounts({}); }}
+                      onClick={() => { setSelectedExtraIds([]); setExtraCounts({}); setFilterNoExtras(false); }}
                       className="text-[10px] text-muted-foreground hover:text-foreground underline"
                     >
                       Limpar
@@ -587,6 +590,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 <ExtrasPicker
                   selectedIds={selectedExtraIds}
                   onToggle={(id) => {
+                    if (filterNoExtras) return;
                     setSelectedExtraIds((prev) => {
                       if (prev.includes(id)) {
                         setExtraCounts((c) => {
@@ -598,6 +602,14 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                       }
                       setExtraCounts((c) => ({ ...c, [id]: c[id] ?? '1' }));
                       return [...prev, id];
+                    });
+                  }}
+                  noneSelected={filterNoExtras}
+                  onToggleNone={() => {
+                    setFilterNoExtras((v) => {
+                      const next = !v;
+                      if (next) { setSelectedExtraIds([]); setExtraCounts({}); }
+                      return next;
                     });
                   }}
                   allowCreate={false}

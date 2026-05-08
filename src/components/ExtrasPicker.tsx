@@ -14,6 +14,9 @@ interface ExtrasPickerProps {
   /** Optional render of right-side adornment per chip (e.g. count input). */
   renderAdornment?: (extra: ExerciseExtra, selected: boolean) => React.ReactNode;
   emptyHint?: string;
+  /** When defined, shows a "Sem equipamento" chip controlled by these props. */
+  noneSelected?: boolean;
+  onToggleNone?: () => void;
 }
 
 export function ExtrasPicker({
@@ -23,6 +26,8 @@ export function ExtrasPicker({
   compact = false,
   renderAdornment,
   emptyHint = 'Nenhum equipamento extra criado ainda.',
+  noneSelected,
+  onToggleNone,
 }: ExtrasPickerProps) {
   const { extras, createExtra } = useExerciseExtras();
   const [creating, setCreating] = useState(false);
@@ -47,6 +52,19 @@ export function ExtrasPicker({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5">
+        {onToggleNone && (
+          <button
+            type="button"
+            onClick={onToggleNone}
+            className={`${chipBase} rounded-full border transition-colors ${
+              noneSelected
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-background border-dashed border-border/70 hover:bg-accent hover:border-primary/40 text-foreground/80'
+            }`}
+          >
+            Sem equipamento
+          </button>
+        )}
         {extras.map((ex) => {
           const active = selectedIds.includes(ex.id);
           return (
