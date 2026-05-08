@@ -9,6 +9,7 @@ import { WizardStepper, WizardFooter } from '@/components/WizardShell';
 
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
+import { ExtrasPicker } from '@/components/ExtrasPicker';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { Shuffle, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
