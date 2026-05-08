@@ -734,6 +734,7 @@ export default function ExerciseLibraryPage() {
     }
 
     setBulkUploading(null);
+    setBulkExtras([]);
     if (successCount > 0) {
       toast.success(`${successCount} exercício(s) criado(s)`);
     }
