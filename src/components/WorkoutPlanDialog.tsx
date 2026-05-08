@@ -274,6 +274,18 @@ export function WorkoutPlanDialog({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="objective">Objetivo do treino <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+              <Textarea
+                id="objective"
+                value={objective}
+                onChange={(e) => setObjective(e.target.value)}
+                placeholder="Ex.: Foco em hipertrofia de membros inferiores e mobilidade de quadril"
+                rows={3}
+                className="resize-none text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label>Dias da Semana</Label>
               <div className="flex flex-wrap gap-2">
                 {DAYS_OF_WEEK.map((day) => (
