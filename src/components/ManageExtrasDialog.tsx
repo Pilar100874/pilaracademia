@@ -25,14 +25,15 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
   const { user } = useAuth();
   const { extras, isLoading, createExtra, updateExtra, deleteExtra } = useExerciseExtras();
   const { exercises: libraryExercises } = useExerciseLibrary();
-  const linkedCount = toDelete
-    ? libraryExercises.filter((ex) => (ex.extra_ids ?? []).includes(toDelete.id)).length
-    : 0;
 
   const [newName, setNewName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [toDelete, setToDelete] = useState<ExerciseExtra | null>(null);
+
+  const linkedCount = toDelete
+    ? libraryExercises.filter((ex) => (ex.extra_ids ?? []).includes(toDelete.id)).length
+    : 0;
 
   const handleCreate = async () => {
     const name = newName.trim();
