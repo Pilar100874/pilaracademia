@@ -769,16 +769,29 @@ export default function ExerciseLibraryPage() {
           continue;
         }
 
-        // Compute hash of original file to detect duplicates BEFORE
-        // compressing and uploading — saves bandwidth + storage.
-        let videoHash: string | null = null;
+        // Compress to ~720p WebM in the browser before upload. Falls back
+        // to the original file if the browser can't transcode.
+        let toUpload: File = file;
         try {
-          videoHash = await hashBlob(file);
-        } catch { /* ignore — sem hash, segue */ }
+          toUpload = await compressVideoFile(file);
+        } catch {
+          toUpload = file;
+        }
 
-        if (videoHash) {
+        // Hashea os bytes que SERÃO armazenados (pós-compressão) — assim
+        // bate com o hash dos vídeos já otimizados na biblioteca.
+        // Também tenta um hash do arquivo bruto como fallback (caso o
+        // mesmo arquivo já tenha sido importado anteriormente quando a
+        // compressão ainda não estava ativa).
+        let videoHash: string | null = null;
+        let rawHash: string | null = null;
+        try { videoHash = await hashBlob(toUpload); } catch { /* ignore */ }
+        try { if (toUpload !== file) rawHash = await hashBlob(file); } catch { /* ignore */ }
+
+        const candidateHashes = [videoHash, rawHash].filter(Boolean) as string[];
+        if (candidateHashes.length > 0) {
           // Já importado nesta mesma sessão?
-          if (sessionHashes.has(videoHash)) {
+          if (candidateHashes.some((h) => sessionHashes.has(h))) {
             toast.warning(`${file.name}: vídeo duplicado — não importado.`);
             duplicateCount++;
             continue;
@@ -787,7 +800,7 @@ export default function ExerciseLibraryPage() {
           const { data: existing } = await supabase
             .from('exercise_library')
             .select('id, name')
-            .eq('video_hash', videoHash)
+            .in('video_hash', candidateHashes)
             .or(`user_id.eq.${user.id},is_global.eq.true`)
             .limit(1)
             .maybeSingle();
@@ -798,16 +811,7 @@ export default function ExerciseLibraryPage() {
             duplicateCount++;
             continue;
           }
-          sessionHashes.add(videoHash);
-        }
-
-        // Compress to ~720p WebM in the browser before upload. Falls back
-        // to the original file if the browser can't transcode.
-        let toUpload: File = file;
-        try {
-          toUpload = await compressVideoFile(file);
-        } catch {
-          toUpload = file;
+          for (const h of candidateHashes) sessionHashes.add(h);
         }
 
         const ext = (toUpload.name.split('.').pop() || 'mp4').toLowerCase();
