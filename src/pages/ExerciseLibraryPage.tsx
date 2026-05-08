@@ -1656,7 +1656,7 @@ export default function ExerciseLibraryPage() {
         };
 
         const currentLib = videoPreview
-          ? libraryExercises.find((e) => e.id === videoPreview.id)
+          ? exercises.find((e) => e.id === videoPreview.id)
           : undefined;
 
         return (
