@@ -129,12 +129,13 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const sourceFiltered =
     source === 'mine' ? personalOnly : source === 'global' ? globalExercises : exercises;
 
-  const filteredExercises =
-    selectedCategoryIds.length === 0
-      ? sourceFiltered
-      : sourceFiltered.filter((ex) =>
-          (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id))
-        );
+  const filteredExercises = sourceFiltered.filter((ex) => {
+    const matchesCat =
+      selectedCategoryIds.length === 0 ||
+      (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id));
+    const matchesNoExtras = !filterNoExtras || !ex.extra_ids || ex.extra_ids.length === 0;
+    return matchesCat && matchesNoExtras;
+  });
 
   const toggleDay = (idx: number) => {
     setSelectedDays((prev) =>
