@@ -1784,14 +1784,15 @@ export default function ExerciseLibraryPage() {
           if (!open) {
             setPendingFiles(null);
             setNewBulkCategoryName('');
+            setBulkExtras([]);
           }
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Categoria dos vídeos</DialogTitle>
+            <DialogTitle>Categoria e equipamentos</DialogTitle>
             <DialogDescription>
-              {pendingFiles?.length} vídeo(s) selecionado(s). Escolha em qual categoria criar os exercícios.
+              {pendingFiles?.length} vídeo(s) selecionado(s). Escolha a categoria e (opcional) os equipamentos usados.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
