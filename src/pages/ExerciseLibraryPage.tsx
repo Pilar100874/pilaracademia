@@ -131,6 +131,7 @@ export default function ExerciseLibraryPage() {
   const [renameValue, setRenameValue] = useState('');
   const [renameParentId, setRenameParentId] = useState<string | null>(null);
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
+  const [manageExtrasOpen, setManageExtrasOpen] = useState(false);
   const [newCategoryValue, setNewCategoryValue] = useState('');
   const [newCategoryParentId, setNewCategoryParentId] = useState<string | null>(null);
   const [igDialogOpen, setIgDialogOpen] = useState(false);
