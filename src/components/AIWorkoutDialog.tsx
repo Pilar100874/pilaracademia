@@ -161,6 +161,15 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           : 'Sua biblioteca está vazia.');
         return false;
       }
+      const totalQuota = selectedExtraIds.reduce(
+        (sum, id) => sum + (parseInt(extraCounts[id] || '0', 10) || 0),
+        0
+      );
+      const nVal = parseInt(count, 10) || 0;
+      if (totalQuota > nVal) {
+        toast.error('Soma de equipamentos ultrapassa a quantidade de exercícios.');
+        return false;
+      }
       return true;
     }
     return true;
