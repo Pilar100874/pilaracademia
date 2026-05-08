@@ -49,6 +49,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   const [aestheticKeys, setAestheticKeys] = useState<Set<AestheticAnalysisKey>>(new Set());
   const [mobilityKeys, setMobilityKeys] = useState<Set<MobilityAnalysisKey>>(new Set());
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [allowRepeat, setAllowRepeat] = useState(true);
   const [varyCategories, setVaryCategories] = useState(false);
