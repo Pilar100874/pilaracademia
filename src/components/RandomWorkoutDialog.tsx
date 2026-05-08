@@ -141,6 +141,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     setAestheticKeys(new Set());
     setMobilityKeys(new Set());
     setSelectedCategoryIds([]);
+    setSelectedExtraIds([]);
     setSelectedDays([]);
     setAllowRepeat(true);
     setVaryCategories(false);
