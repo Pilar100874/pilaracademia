@@ -211,7 +211,11 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
         open={!!toDelete}
         onOpenChange={(o) => !o && setToDelete(null)}
         title="Excluir equipamento?"
-        description={`"${toDelete?.name}" será removido. Os exercícios vinculados deixarão de ter este equipamento.`}
+        description={
+          linkedCount > 0
+            ? `"${toDelete?.name}" será removido. ${linkedCount} exercício(s) estão vinculados a este equipamento — o vínculo será desfeito (os exercícios continuam existindo, mas sem este equipamento).`
+            : `"${toDelete?.name}" será removido. Nenhum exercício está vinculado a este equipamento.`
+        }
         onConfirm={async () => {
           if (!toDelete) return;
           try {
