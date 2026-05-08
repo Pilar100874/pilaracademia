@@ -484,6 +484,7 @@ export default function ExerciseLibraryPage() {
         : NO_CATEGORY;
     setBulkCategoryChoice(initial);
     setNewBulkCategoryName('');
+    setBulkExtras([]);
     setPendingFiles(files);
   };
 
@@ -733,6 +734,7 @@ export default function ExerciseLibraryPage() {
           video_start_seconds: 0,
           video_end_seconds: null,
           category_id: targetCategoryId,
+          _silent: true,
         });
         // Apply selected extras to the new exercise
         const newId = (created as any)?.id;

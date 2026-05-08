@@ -112,6 +112,8 @@ export function useExerciseLibrary() {
       category_id?: string | null;
       /** Master-only: create in the shared global library. */
       is_global?: boolean;
+      /** Suppress success toast — used during bulk operations. */
+      _silent?: boolean;
     }) => {
       if (!user) throw new Error('User not authenticated');
       // Para o usuário master, todas as criações vão para a biblioteca
@@ -144,9 +146,9 @@ export function useExerciseLibrary() {
       if (error) throw error;
       return { ...exercise, category_ids: data.category_id ? [data.category_id] : [], extra_ids: [] } as unknown as LibraryExercise;
     },
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
-      toast.success('Exercício criado!');
+      if (!vars._silent) toast.success('Exercício criado!');
     },
     onError: () => {
       toast.error('Erro ao criar exercício');
