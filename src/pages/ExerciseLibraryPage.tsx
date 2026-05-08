@@ -1452,6 +1452,11 @@ export default function ExerciseLibraryPage() {
         editingExercise={editingExercise}
       />
 
+      <ManageExtrasDialog
+        open={manageExtrasOpen}
+        onOpenChange={setManageExtrasOpen}
+      />
+
       <ConfirmDeleteDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
