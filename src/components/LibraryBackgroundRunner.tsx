@@ -60,17 +60,28 @@ export function LibraryBackgroundRunner() {
     // effect via setBusyTick e o runner inicia.
     if (isImportBusy()) return;
 
+    const getAttempts = (key: string): Set<string> => {
+      try {
+        const raw = sessionStorage.getItem(key);
+        return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+      } catch { return new Set(); }
+    };
+    const optA = getAttempts('lib-bg-opt-attempts');
+    const aiA = getAttempts('lib-bg-ai-attempts');
+    const hashA = getAttempts('lib-bg-hash-attempts');
+
     const hasPending =
-      processableExercises.some((ex) => ex.video_type === 'upload' && !!ex.video_url && !ex.video_optimized_at) ||
+      processableExercises.some((ex) => ex.video_type === 'upload' && !!ex.video_url && !ex.video_optimized_at && !optA.has(ex.id)) ||
       processableExercises.some(
         (ex) =>
           (!ex.body_analyzed_at || !ex.mobility_analysis) &&
           !!ex.video_url &&
           !!ex.video_type &&
-          ex.video_type !== 'instagram',
+          ex.video_type !== 'instagram' &&
+          !aiA.has(ex.id),
       ) ||
       processableExercises.some(
-        (ex) => !!ex.video_url && !!ex.video_type && ex.video_type !== 'youtube' && !ex.video_hash,
+        (ex) => !!ex.video_url && !!ex.video_type && ex.video_type !== 'youtube' && !ex.video_hash && !hashA.has(ex.id),
       );
     if (!hasPending) return;
 
