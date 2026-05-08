@@ -23,6 +23,8 @@ export interface LibraryExercise {
   category_id: string | null;
   /** Todas as categorias atribuídas ao exercício (multi). */
   category_ids: string[];
+  /** Equipamentos extras (bola, halter, elástico…) atribuídos ao exercício. */
+  extra_ids: string[];
   body_analysis: BodyAnalysis | null;
   aesthetic_analysis: AestheticAnalysis | null;
   mobility_analysis: MobilityAnalysis | null;
@@ -49,7 +51,7 @@ export function useExerciseLibrary() {
       if (!user) return [] as LibraryExercise[];
 
       // Bring back personal + global in a single round-trip; junction links separately.
-      const [exRes, linkRes] = await Promise.all([
+      const [exRes, linkRes, extraRes] = await Promise.all([
         supabase
           .from('exercise_library')
           .select('*')
@@ -58,10 +60,14 @@ export function useExerciseLibrary() {
         supabase
           .from('exercise_library_categories')
           .select('exercise_id, category_id'),
+        supabase
+          .from('exercise_library_extras')
+          .select('exercise_id, extra_id'),
       ]);
 
       if (exRes.error) throw exRes.error;
       if (linkRes.error) throw linkRes.error;
+      if (extraRes.error) throw extraRes.error;
 
       const linksByExercise = new Map<string, string[]>();
       for (const link of linkRes.data ?? []) {
@@ -70,9 +76,17 @@ export function useExerciseLibrary() {
         linksByExercise.set(link.exercise_id, arr);
       }
 
+      const extrasByExercise = new Map<string, string[]>();
+      for (const link of extraRes.data ?? []) {
+        const arr = extrasByExercise.get(link.exercise_id) ?? [];
+        arr.push(link.extra_id);
+        extrasByExercise.set(link.exercise_id, arr);
+      }
+
       return (exRes.data ?? []).map((ex: any) => ({
         ...ex,
         category_ids: linksByExercise.get(ex.id) ?? (ex.category_id ? [ex.category_id] : []),
+        extra_ids: extrasByExercise.get(ex.id) ?? [],
       })) as LibraryExercise[];
     },
     enabled: !!user,
