@@ -129,7 +129,7 @@ export function VideoPreviewDialog({
           (extraOptions && extraOptions.length > 0 && onToggleExtra)) && (() => {
           const parents = (categoryOptions ?? []).filter((o) => !o.parentId);
           const childrenByParent = new Map<string, VideoPreviewCategoryOption[]>();
-          categoryOptions.forEach((o) => {
+          (categoryOptions ?? []).forEach((o) => {
             if (o.parentId) {
               const arr = childrenByParent.get(o.parentId) ?? [];
               arr.push(o);
