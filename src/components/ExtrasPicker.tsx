@@ -75,7 +75,7 @@ export function ExtrasPicker({
                 className={`${chipBase} rounded-full border transition-colors ${
                   active
                     ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-background border-border/70 hover:bg-accent hover:border-primary/40 text-foreground/80'
+                    : 'bg-background border-border/70 hover:bg-muted hover:border-primary/40 text-foreground/80'
                 }`}
               >
                 {ex.icon ? `${ex.icon} ` : ''}{ex.name}
