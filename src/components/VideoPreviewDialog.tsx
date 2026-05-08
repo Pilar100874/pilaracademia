@@ -32,6 +32,12 @@ interface VideoPreviewDialogProps {
    * apenas pelos botões prev/next ou setas do teclado.
    */
   onToggleCategory?: (categoryId: string, checked: boolean) => void;
+  /** Equipamentos atualmente atribuídos. */
+  currentExtraIds?: string[];
+  /** Lista de equipamentos disponíveis. */
+  extraOptions?: { id: string; name: string }[];
+  /** Toggle de um equipamento extra. */
+  onToggleExtra?: (extraId: string, checked: boolean) => void;
   /** AI classifications to display as floating overlay. */
   bodyAnalysis?: Record<string, number> | null;
   aestheticAnalysis?: Record<string, number> | null;
