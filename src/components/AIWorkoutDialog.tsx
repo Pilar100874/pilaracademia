@@ -505,6 +505,34 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                   })}
                 </div>
               )}
+
+              <div className="space-y-1.5 pt-3 border-t border-border/60">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Equipamentos extras
+                  </p>
+                  {selectedExtraIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedExtraIds([])}
+                      className="text-[10px] text-muted-foreground hover:text-foreground underline"
+                    >
+                      Limpar
+                    </button>
+                  )}
+                </div>
+                <ExtrasPicker
+                  selectedIds={selectedExtraIds}
+                  onToggle={(id) =>
+                    setSelectedExtraIds((prev) =>
+                      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                    )
+                  }
+                  allowCreate={false}
+                  compact
+                  emptyHint="Nenhum equipamento cadastrado."
+                />
+              </div>
             </div>
           )}
 
