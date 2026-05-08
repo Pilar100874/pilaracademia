@@ -963,6 +963,7 @@ export default function ExerciseLibraryPage() {
     };
 
     setRecompressing({ done: 0, total: queue.length, saved: 0 });
+    addWork(LIB_BG_JOB_ID, LIB_BG_JOB_LABEL, queue.length);
     let done = 0;
     for (const ex of queue) {
       const result = await runOne(ex);
@@ -971,6 +972,7 @@ export default function ExerciseLibraryPage() {
       else failCount++;
       done++;
       setRecompressing({ done, total: queue.length, saved: totalSaved });
+      tick(LIB_BG_JOB_ID, ex.name);
     }
     setRecompressing(null);
     queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
