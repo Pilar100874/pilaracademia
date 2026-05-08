@@ -1829,6 +1829,20 @@ export default function ExerciseLibraryPage() {
                 />
               </div>
             )}
+            <div className="space-y-2">
+              <Label>Equipamentos extras <span className="text-xs text-muted-foreground font-normal">(opcional)</span></Label>
+              <ExtrasPicker
+                selectedIds={bulkExtras}
+                onToggle={(id) =>
+                  setBulkExtras((prev) =>
+                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                  )
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                Será aplicado a todos os exercícios criados nesse upload.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -1836,6 +1850,7 @@ export default function ExerciseLibraryPage() {
               onClick={() => {
                 setPendingFiles(null);
                 setNewBulkCategoryName('');
+                setBulkExtras([]);
               }}
             >
               Cancelar
