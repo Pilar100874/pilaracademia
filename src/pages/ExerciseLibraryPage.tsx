@@ -23,6 +23,7 @@ import {
 } from '@/components/BodyAnalysisFilter';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ManageExtrasDialog } from '@/components/ManageExtrasDialog';
+import { ExtrasPicker } from '@/components/ExtrasPicker';
 import { ApifySettingsCard } from '@/components/ApifySettingsCard';
 import {
   Collapsible,
