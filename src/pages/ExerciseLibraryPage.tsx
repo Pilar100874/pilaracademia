@@ -58,6 +58,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
+import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL } from '@/lib/libraryBgJob';
 
 const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
@@ -101,6 +103,7 @@ export default function ExerciseLibraryPage() {
   // <LibraryBackgroundRunner /> (montado no App.tsx). A barra inline foi
   // removida — o progresso aparece como toast persistente em qualquer página.
   const analysisProgress: { done: number; total: number; current?: string } | null = null;
+  const { addWork, tick } = useBackgroundProgress();
 
   const [activeTab, setActiveTab] = useState<'mine' | 'global'>('mine');
   const [search, setSearch] = useState('');
@@ -780,6 +783,7 @@ export default function ExerciseLibraryPage() {
     }
 
     setRecompressing({ done: 0, total: candidates.length, saved: 0 });
+    addWork(LIB_BG_JOB_ID, LIB_BG_JOB_LABEL, candidates.length);
     let savedBytes = 0;
     let successCount = 0;
 
@@ -846,6 +850,7 @@ export default function ExerciseLibraryPage() {
         setRecompressing((p) =>
           p ? { ...p, done: p.done + 1, saved: savedBytes } : p
         );
+        tick(LIB_BG_JOB_ID, ex.name);
       }
     }
 
@@ -958,6 +963,7 @@ export default function ExerciseLibraryPage() {
     };
 
     setRecompressing({ done: 0, total: queue.length, saved: 0 });
+    addWork(LIB_BG_JOB_ID, LIB_BG_JOB_LABEL, queue.length);
     let done = 0;
     for (const ex of queue) {
       const result = await runOne(ex);
@@ -966,6 +972,7 @@ export default function ExerciseLibraryPage() {
       else failCount++;
       done++;
       setRecompressing({ done, total: queue.length, saved: totalSaved });
+      tick(LIB_BG_JOB_ID, ex.name);
     }
     setRecompressing(null);
     queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
@@ -1316,52 +1323,6 @@ export default function ExerciseLibraryPage() {
             />
           </div>
         )}
-        {recompressing && (() => {
-          const pct = Math.min(
-            100,
-            Math.round((recompressing.done / Math.max(recompressing.total, 1)) * 100)
-          );
-          return (
-            <div className="px-4 pb-3 space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium flex items-center gap-1.5">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Otimizando vídeos
-                  {recompressing.saved > 0 && (
-                    <span className="text-muted-foreground ml-1">
-                      (-{(recompressing.saved / (1024 * 1024)).toFixed(1)} MB)
-                    </span>
-                  )}
-                </span>
-                <span className="text-muted-foreground tabular-nums">{pct}%</span>
-              </div>
-              <Progress value={pct} className="h-2" />
-            </div>
-          );
-        })()}
-        {analysisProgress && analysisProgress.total > 0 && (() => {
-          const pct = Math.min(
-            100,
-            Math.round((analysisProgress.done / Math.max(analysisProgress.total, 1)) * 100)
-          );
-          return (
-            <div className="px-4 pb-3 space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium flex items-center gap-1.5">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Analisando vídeos
-                  {analysisProgress.current && (
-                    <span className="text-muted-foreground ml-1 truncate max-w-[200px]">
-                      — {analysisProgress.current}
-                    </span>
-                  )}
-                </span>
-                <span className="text-muted-foreground tabular-nums">{pct}%</span>
-              </div>
-              <Progress value={pct} className="h-2" />
-            </div>
-          );
-        })()}
       </div>
 
       {/* Content */}

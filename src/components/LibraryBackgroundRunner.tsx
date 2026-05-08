@@ -7,14 +7,15 @@ import { useExerciseLibrary, type LibraryExercise } from '@/hooks/useExerciseLib
 import { useQueryClient } from '@tanstack/react-query';
 import { compressVideoFile } from '@/lib/compressVideo';
 import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
+import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL } from '@/lib/libraryBgJob';
 
 // Module-level flag — evita execuções concorrentes da mesma fila.
 // É liberado ao final de run() para permitir uma nova verificação
 // toda vez que o usuário abrir a Biblioteca.
 let runnerStarted = false;
 
-const JOB_ID = 'lib-bg-process';
-const JOB_LABEL = 'Ajustando resolução e classificando vídeo';
+const JOB_ID = LIB_BG_JOB_ID;
+const JOB_LABEL = LIB_BG_JOB_LABEL;
 
 /**
  * Background runner — toda vez que o usuário abre a Biblioteca de
@@ -29,7 +30,7 @@ export function LibraryBackgroundRunner() {
   const { user } = useAuth();
   const { exercises, allExercises, isMaster } = useExerciseLibrary();
   const queryClient = useQueryClient();
-  const { upsert, remove } = useBackgroundProgress();
+  const { addWork, tick, remove } = useBackgroundProgress();
   const { pathname } = useLocation();
 
   const processableExercises = useMemo(
@@ -112,9 +113,9 @@ export function LibraryBackgroundRunner() {
       const total = optQueue.length + aiQueue.length;
       if (total === 0) return;
 
-      let done = 0;
       let saved = 0;
-      upsert({ id: JOB_ID, label: JOB_LABEL, done: 0, total });
+      let processedCount = 0;
+      addWork(JOB_ID, JOB_LABEL, total);
 
       const analyzeExercise = async (ex: LibraryExercise) => {
         const { data, error } = await supabase.functions.invoke('analyze-exercise-video', {
@@ -155,20 +156,18 @@ export function LibraryBackgroundRunner() {
       // Evita que a análise fique presa atrás da compressão de vídeos legados.
       for (const ex of aiReadyQueue) {
         if (cancelled) break;
-        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
         try {
           await analyzeExercise(ex);
         } catch (err) {
           console.warn('[bg] AI analysis failed', ex.id, err);
         }
-        done++;
-        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
+        processedCount++;
+        tick(JOB_ID, ex.name);
       }
 
       // ---------- Etapa 2: Otimização (ajuste de resolução) ----------
       for (const ex of optQueue) {
         if (cancelled) break;
-        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
         try {
           const url = ex.video_url!;
           const res = await fetch(url);
@@ -213,8 +212,8 @@ export function LibraryBackgroundRunner() {
         } catch (err) {
           console.warn('[bg] optimize failed', ex.id, err);
         }
-        done++;
-        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
+        processedCount++;
+        tick(JOB_ID, ex.name);
       }
 
       // ---------- Etapa 3: Classificação dos vídeos que acabaram de otimizar ----------
@@ -228,18 +227,17 @@ export function LibraryBackgroundRunner() {
 
       for (const ex of aiQueueFinal) {
         if (cancelled) break;
-        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
         try {
           await analyzeExercise(ex);
         } catch (err) {
           console.warn('[bg] AI analysis failed', ex.id, err);
         }
-        done++;
-        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
+        processedCount++;
+        tick(JOB_ID, ex.name);
       }
 
       remove(JOB_ID);
-      if (!cancelled && done > 0) {
+      if (!cancelled && processedCount > 0) {
         const mb = saved > 0 ? ` — ${(saved / (1024 * 1024)).toFixed(1)} MB economizados` : '';
         toast.success(`Vídeos processados${mb}`, { duration: 4000 });
       }
@@ -247,7 +245,7 @@ export function LibraryBackgroundRunner() {
 
     // NÃO limpa o timer no cleanup — re-renders (causados pelo próprio
     // runner ao atualizar o cache) cancelariam a execução antes de iniciar.
-  }, [user, processableExercises, isMaster, queryClient, upsert, remove, pathname]);
+  }, [user, processableExercises, isMaster, queryClient, addWork, tick, remove, pathname]);
 
   return null;
 }
