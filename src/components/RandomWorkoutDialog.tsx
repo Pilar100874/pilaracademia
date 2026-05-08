@@ -202,12 +202,17 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
           }))
         : [{ days: selectedDays, suffix: '' }];
 
-    const samplePicks = (basePool: typeof exercises, excludeIds: Set<string>): typeof exercises => {
-      const remaining = basePool
+    // Weighted sample N exercises from a list (without replacement)
+    const weightedSample = (
+      candidates: typeof exercises,
+      take: number,
+      excludeIds: Set<string>,
+    ): typeof exercises => {
+      const remaining = candidates
         .filter((ex) => !excludeIds.has(ex.id))
         .map((ex) => ({ ex, score: matchScore(ex) }));
       const out: typeof exercises = [];
-      const target = Math.min(n, remaining.length);
+      const target = Math.min(take, remaining.length);
       for (let i = 0; i < target; i++) {
         const total = remaining.reduce((s, r) => s + r.score, 0);
         if (total <= 0) break;
@@ -219,6 +224,31 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
         }
         out.push(remaining[idx].ex);
         remaining.splice(idx, 1);
+      }
+      return out;
+    };
+
+    // Pick respecting extra quotas: extras blocks first (consecutive), then rest.
+    const samplePicks = (basePool: typeof exercises, excludeIds: Set<string>): typeof exercises => {
+      const out: typeof exercises = [];
+      const usedHere = new Set<string>(excludeIds);
+
+      // Extras blocks in the user's selection order
+      for (const extraId of selectedExtraIds) {
+        const want = parseInt(extraCounts[extraId] || '0', 10);
+        if (!want || want <= 0) continue;
+        const candidates = basePool.filter((ex) => (ex.extra_ids || []).includes(extraId));
+        const picked = weightedSample(candidates, want, usedHere);
+        picked.forEach((ex) => {
+          out.push(ex);
+          usedHere.add(ex.id);
+        });
+      }
+
+      const remainingSlots = n - out.length;
+      if (remainingSlots > 0) {
+        const rest = weightedSample(basePool, remainingSlots, usedHere);
+        rest.forEach((ex) => out.push(ex));
       }
       return out;
     };
