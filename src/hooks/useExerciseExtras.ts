@@ -136,7 +136,7 @@ export function useExerciseExtras() {
 
   /** Apply an extra to many exercises at once. */
   const bulkAssignExtra = useMutation({
-    mutationFn: async (vars: { extraId: string; exerciseIds: string[]; mode: 'add' | 'remove' }) => {
+    mutationFn: async (vars: { extraId: string; exerciseIds: string[]; mode: 'add' | 'remove'; silent?: boolean }) => {
       if (!vars.exerciseIds.length) return;
       if (vars.mode === 'add') {
         // Idempotent: ignore conflicts
@@ -156,13 +156,17 @@ export function useExerciseExtras() {
     },
     onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+      if (vars.silent) return;
       toast.success(
         vars.mode === 'add'
           ? `Equipamento adicionado a ${vars.exerciseIds.length} exercício(s)`
           : `Equipamento removido de ${vars.exerciseIds.length} exercício(s)`
       );
     },
-    onError: () => toast.error('Erro ao aplicar equipamento'),
+    onError: (err) => {
+      console.error('[bulkAssignExtra] failed', err);
+      toast.error('Erro ao aplicar equipamento');
+    },
   });
 
   return {
