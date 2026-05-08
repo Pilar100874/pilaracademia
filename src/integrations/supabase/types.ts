@@ -3499,6 +3499,7 @@ export type Database = {
       }
       workout_plans: {
         Row: {
+          ai_rationale: string | null
           cooldown_enabled: boolean
           created_at: string
           days_of_week: number[]
@@ -3510,6 +3511,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_rationale?: string | null
           cooldown_enabled?: boolean
           created_at?: string
           days_of_week?: number[]
@@ -3521,6 +3523,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_rationale?: string | null
           cooldown_enabled?: boolean
           created_at?: string
           days_of_week?: number[]

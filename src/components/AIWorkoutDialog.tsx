@@ -331,6 +331,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           name: (name.trim() + bucket.suffix).slice(0, 80),
           days_of_week: bucket.days,
           objective: planObjective || null,
+          ai_rationale: lastRationale || null,
+          _silent: true,
         });
 
         await Promise.all(
@@ -347,6 +349,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
               video_start_seconds: ex.video_start_seconds,
               video_end_seconds: ex.video_end_seconds,
               exercise_library_id: ex.id,
+              _silent: true,
             })
           )
         );
@@ -361,9 +364,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       }
 
       toast.success(totalCreated > 1 ? `${totalCreated} treinos criados!` : 'Treino criado!');
-      if (lastRationale) {
-        setTimeout(() => toast.message('Sugestão da IA', { description: lastRationale }), 100);
-      }
       reset();
       onOpenChange(false);
     } catch (e) {
