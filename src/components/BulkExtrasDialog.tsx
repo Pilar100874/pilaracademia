@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ExtrasPicker } from '@/components/ExtrasPicker';
 import { useExerciseExtras } from '@/hooks/useExerciseExtras';
+import { toast } from 'sonner';
 import { Loader2, Plus, Minus } from 'lucide-react';
 
 interface BulkExtrasDialogProps {
