@@ -221,10 +221,29 @@ export function ExerciseLibraryDialog({
         category_id: categoryId,
       };
 
+      let exerciseId = editingExercise?.id ?? null;
       if (editingExercise) {
         await updateExercise.mutateAsync({ id: editingExercise.id, ...payload });
       } else {
-        await createExercise.mutateAsync(payload);
+        const created = await createExercise.mutateAsync(payload);
+        exerciseId = (created as any)?.id ?? null;
+      }
+
+      // Sync extras (junction). For new exercise: insert all selected.
+      // For edit: diff against initialExtraIds.
+      if (exerciseId) {
+        const initial = new Set(initialExtraIds);
+        const next = new Set(extraIds);
+        const toAdd = [...next].filter((id) => !initial.has(id));
+        const toRemove = [...initial].filter((id) => !next.has(id));
+        await Promise.all([
+          ...toAdd.map((extraId) =>
+            toggleExerciseExtra.mutateAsync({ exerciseId: exerciseId!, extraId, checked: true })
+          ),
+          ...toRemove.map((extraId) =>
+            toggleExerciseExtra.mutateAsync({ exerciseId: exerciseId!, extraId, checked: false })
+          ),
+        ]);
       }
 
       onOpenChange(false);
