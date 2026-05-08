@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/select';
 import { LibraryExercise, useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
+import { useExerciseExtras } from '@/hooks/useExerciseExtras';
+import { ExtrasPicker } from '@/components/ExtrasPicker';
 import { X, Dumbbell, Save, Crop, Camera, ImageIcon, Plus } from 'lucide-react';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { ExerciseVideoEditor, ExerciseVideoData } from '@/components/ExerciseVideoEditor';
@@ -36,11 +38,14 @@ export function ExerciseLibraryDialog({
 }: ExerciseLibraryDialogProps) {
   const { exercises, createExercise, updateExercise, uploadExerciseImage } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
+  const { toggleExerciseExtra } = useExerciseExtras();
 
   const [name, setName] = useState('');
   const [defaultSets, setDefaultSets] = useState(3);
   const [defaultReps, setDefaultReps] = useState(10);
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [extraIds, setExtraIds] = useState<string[]>([]);
+  const [initialExtraIds, setInitialExtraIds] = useState<string[]>([]);
   const [images, setImages] = useState<Array<{ type: 'url' | 'file'; value: string; file?: File }>>([]);
   const [video, setVideo] = useState<ExerciseVideoData>({
     video_type: null,
