@@ -190,9 +190,11 @@ export function VideoPreviewDialog({
                 <p className="text-white/70 text-[11px] font-medium mb-1.5 text-center drop-shadow">
                   Toque para adicionar/remover. Use ◀ ▶ para mudar de vídeo.
                 </p>
-                <div className="flex gap-2 overflow-x-auto pb-1 px-1 scrollbar-thin">
-                  {parents.map(renderPill)}
-                </div>
+                {parents.length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto pb-1 px-1 scrollbar-thin">
+                    {parents.map(renderPill)}
+                  </div>
+                )}
                 {nodesWithChildren.map((node) => {
                   const subs = childrenByParent.get(node.id) ?? [];
                   if (subs.length === 0) return null;
@@ -208,6 +210,31 @@ export function VideoPreviewDialog({
                     </div>
                   );
                 })}
+                {extraOptions && extraOptions.length > 0 && onToggleExtra && (
+                  <div className="mt-1.5 ml-2 flex items-center gap-2 overflow-x-auto pb-1 px-1 pl-3 scrollbar-thin border-l-2 border-white/20">
+                    <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/50 font-semibold">
+                      Equipamentos
+                    </span>
+                    {extraOptions.map((opt) => {
+                      const active = selectedExtras.has(opt.id);
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => onToggleExtra(opt.id, !active)}
+                          className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium border backdrop-blur-2xl transition-all active:scale-95 ${
+                            active
+                              ? 'bg-white text-black border-white shadow-[0_4px_20px_rgba(255,255,255,0.4)]'
+                              : 'bg-black/50 text-white border-white/25 hover:bg-black/70 hover:border-white/40'
+                          }`}
+                        >
+                          {active && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                          <span className="whitespace-nowrap">{opt.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           );
