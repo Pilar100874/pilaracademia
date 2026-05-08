@@ -125,7 +125,14 @@ export function LibraryBackgroundRunner() {
       const aiReadyQueue = aiQueue.filter((ex) => !optIds.has(ex.id));
       const aiAfterOptQueue = aiQueue.filter((ex) => optIds.has(ex.id));
 
-      const total = optQueue.length + aiQueue.length;
+      // Backfill: vídeos já otimizados (ou IG) sem video_hash → hashea o
+      // que está armazenado no storage (mesmos bytes que novos uploads
+      // hashearão pós-compressão).
+      const hashBackfillQueue = fresh1.filter(
+        (ex) => !!ex.video_url && !!ex.video_type && ex.video_type !== 'youtube' && !ex.video_hash && !optIds.has(ex.id),
+      );
+
+      const total = optQueue.length + aiQueue.length + hashBackfillQueue.length;
       if (total === 0) return;
 
       let saved = 0;
