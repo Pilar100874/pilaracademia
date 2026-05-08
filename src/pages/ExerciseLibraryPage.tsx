@@ -1650,7 +1650,19 @@ export default function ExerciseLibraryPage() {
             categoryOptions={categoryOptions}
             onToggleCategory={handleToggleCategory}
             currentExtraIds={currentLib?.extra_ids ?? []}
-            extraOptions={extras.map((e) => ({ id: e.id, name: e.name }))}
+            extraOptions={(() => {
+              // Lista somente equipamentos efetivamente utilizados na
+              // biblioteca (pelo menos 1 exercício referencia) + os já
+              // marcados no exercício atual (para permitir desmarcar).
+              const usedIds = new Set<string>();
+              for (const ex of (allExercises ?? exercises)) {
+                for (const id of ex.extra_ids ?? []) usedIds.add(id);
+              }
+              for (const id of currentLib?.extra_ids ?? []) usedIds.add(id);
+              return extras
+                .filter((e) => usedIds.has(e.id))
+                .map((e) => ({ id: e.id, name: e.name }));
+            })()}
             onToggleExtra={handleToggleExtra}
             bodyAnalysis={
               videoPreview ? videoList.find((e) => e.id === videoPreview.id)?.body_analysis ?? videoPreview.body_analysis ?? null : null
