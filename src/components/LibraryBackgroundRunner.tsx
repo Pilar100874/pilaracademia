@@ -35,7 +35,10 @@ export function LibraryBackgroundRunner() {
   // Re-renderiza quando o estado de importação muda — o runner aguarda
   // todas as importações terminarem antes de começar a processar vídeos.
   const [, setBusyTick] = useState(0);
-  useEffect(() => subscribeImportBusy(() => setBusyTick((n) => n + 1)), []);
+  useEffect(() => {
+    const unsub = subscribeImportBusy(() => setBusyTick((n) => n + 1));
+    return () => { unsub(); };
+  }, []);
 
   const processableExercises = useMemo(
     () =>
