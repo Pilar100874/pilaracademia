@@ -236,26 +236,52 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           continue;
         }
 
-        const library = available.map((ex) => ({
-          id: ex.id,
-          name: ex.name,
-          body: ex.body_analysis ?? null,
-          aesthetic: ex.aesthetic_analysis ?? null,
-          mobility: ex.mobility_analysis ?? null,
-        }));
-
-        const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
-          body: { prompt: prompt.trim(), count: n, library, health_context: healthContext, body_plan_context: bodyPlanContext },
-        });
-
-        if (error) {
-          const msg = (data as { error?: string } | null)?.error || error.message;
-          toast.error(msg || 'Erro ao gerar treino com IA');
-          continue;
+        // Pre-pin extras: random sample N exercises with each chosen extra (consecutive at start).
+        const pinned: typeof exercises = [];
+        const pinnedIds = new Set<string>();
+        for (const extraId of selectedExtraIds) {
+          const want = parseInt(extraCounts[extraId] || '0', 10);
+          if (!want || want <= 0) continue;
+          const candidates = available.filter(
+            (ex) => (ex.extra_ids || []).includes(extraId) && !pinnedIds.has(ex.id)
+          );
+          // Shuffle and take N
+          const shuffled = [...candidates].sort(() => Math.random() - 0.5).slice(0, want);
+          shuffled.forEach((ex) => {
+            pinned.push(ex);
+            pinnedIds.add(ex.id);
+          });
         }
 
-        const ids: string[] = Array.isArray(data?.exercise_ids) ? data.exercise_ids : [];
-        const picked = ids.map((id) => byId.get(id)).filter(Boolean) as typeof exercises;
+        const remainingCount = Math.max(n - pinned.length, 0);
+        let aiPicked: typeof exercises = [];
+
+        if (remainingCount > 0) {
+          const libraryAvailable = available.filter((ex) => !pinnedIds.has(ex.id));
+          const library = libraryAvailable.map((ex) => ({
+            id: ex.id,
+            name: ex.name,
+            body: ex.body_analysis ?? null,
+            aesthetic: ex.aesthetic_analysis ?? null,
+            mobility: ex.mobility_analysis ?? null,
+          }));
+
+          const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
+            body: { prompt: prompt.trim(), count: remainingCount, library, health_context: healthContext, body_plan_context: bodyPlanContext },
+          });
+
+          if (error) {
+            const msg = (data as { error?: string } | null)?.error || error.message;
+            toast.error(msg || 'Erro ao gerar treino com IA');
+            continue;
+          }
+
+          const ids: string[] = Array.isArray(data?.exercise_ids) ? data.exercise_ids : [];
+          aiPicked = ids.map((id) => byId.get(id)).filter(Boolean) as typeof exercises;
+          if (data?.rationale) lastRationale = data.rationale;
+        }
+
+        const picked = [...pinned, ...aiPicked];
         if (!picked.length) continue;
 
         const plan = await createPlan.mutateAsync({
