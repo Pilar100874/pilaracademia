@@ -805,6 +805,11 @@ export default function ExerciseLibraryPage() {
     if (successCount > 0) {
       toast.success(`${successCount} exercício(s) criado(s)`);
     }
+    if (duplicateCount > 0) {
+      toast.warning(
+        `${duplicateCount} vídeo(s) ignorado(s) por já existirem na biblioteca.`,
+      );
+    }
   };
 
   /**
