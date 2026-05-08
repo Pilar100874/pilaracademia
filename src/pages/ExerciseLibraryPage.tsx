@@ -103,7 +103,7 @@ export default function ExerciseLibraryPage() {
   // <LibraryBackgroundRunner /> (montado no App.tsx). A barra inline foi
   // removida — o progresso aparece como toast persistente em qualquer página.
   const analysisProgress: { done: number; total: number; current?: string } | null = null;
-  const { addWork, tick } = useBackgroundProgress();
+  const { addWork, tick, remove: removeBgJob } = useBackgroundProgress();
 
   const [activeTab, setActiveTab] = useState<'mine' | 'global'>('mine');
   const [search, setSearch] = useState('');
