@@ -1142,6 +1142,39 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_extras: {
+        Row: {
+          clinic_id: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          is_global: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          clinic_id?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_global?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          clinic_id?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_global?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercise_library: {
         Row: {
           aesthetic_analysis: Json | null
@@ -1258,6 +1291,39 @@ export type Database = {
             columns: ["exercise_id"]
             isOneToOne: false
             referencedRelation: "exercise_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercise_library_extras: {
+        Row: {
+          created_at: string
+          exercise_id: string
+          extra_id: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_id: string
+          extra_id: string
+        }
+        Update: {
+          created_at?: string
+          exercise_id?: string
+          extra_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_library_extras_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_library"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercise_library_extras_extra_id_fkey"
+            columns: ["extra_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_extras"
             referencedColumns: ["id"]
           },
         ]
