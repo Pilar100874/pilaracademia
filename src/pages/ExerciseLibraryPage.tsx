@@ -25,6 +25,7 @@ import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ManageExtrasDialog } from '@/components/ManageExtrasDialog';
 import { BulkExtrasDialog } from '@/components/BulkExtrasDialog';
 import { ExtrasPicker } from '@/components/ExtrasPicker';
+import { useExerciseExtras } from '@/hooks/useExerciseExtras';
 import { ApifySettingsCard } from '@/components/ApifySettingsCard';
 import {
   Collapsible,
