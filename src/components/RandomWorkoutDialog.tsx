@@ -50,6 +50,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   const [mobilityKeys, setMobilityKeys] = useState<Set<MobilityAnalysisKey>>(new Set());
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
+  const [extraCounts, setExtraCounts] = useState<Record<string, string>>({});
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [allowRepeat, setAllowRepeat] = useState(true);
   const [varyCategories, setVaryCategories] = useState(false);
@@ -104,12 +105,9 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     if (selectedCategoryIds.length > 0) {
       p = p.filter((ex) => (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id)));
     }
-    if (selectedExtraIds.length > 0) {
-      p = p.filter((ex) => selectedExtraIds.every((id) => (ex.extra_ids || []).includes(id)));
-    }
     return p;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exercises, bodyKeys, aestheticKeys, mobilityKeys, min, selectedCategoryIds, selectedExtraIds]);
+  }, [exercises, bodyKeys, aestheticKeys, mobilityKeys, min, selectedCategoryIds]);
 
   const toggleBody = (k: BodyAnalysisKey) => {
     clearIf('classif');
@@ -142,6 +140,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     setMobilityKeys(new Set());
     setSelectedCategoryIds([]);
     setSelectedExtraIds([]);
+    setExtraCounts({});
     setSelectedDays([]);
     setAllowRepeat(true);
     setVaryCategories(false);
@@ -170,6 +169,15 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     if (s === 2) {
       if (varyCategories && selectedCategoryIds.length < 2) {
         toast.error('Variar categorias exige ao menos 2 selecionadas.');
+        return false;
+      }
+      const totalQuota = selectedExtraIds.reduce(
+        (sum, id) => sum + (parseInt(extraCounts[id] || '0', 10) || 0),
+        0
+      );
+      const n = parseInt(count, 10) || 0;
+      if (totalQuota > n) {
+        toast.error('Soma de equipamentos ultrapassa a quantidade de exercícios.');
         return false;
       }
       if (!pool.length) {
@@ -203,12 +211,17 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
           }))
         : [{ days: selectedDays, suffix: '' }];
 
-    const samplePicks = (basePool: typeof exercises, excludeIds: Set<string>): typeof exercises => {
-      const remaining = basePool
+    // Weighted sample N exercises from a list (without replacement)
+    const weightedSample = (
+      candidates: typeof exercises,
+      take: number,
+      excludeIds: Set<string>,
+    ): typeof exercises => {
+      const remaining = candidates
         .filter((ex) => !excludeIds.has(ex.id))
         .map((ex) => ({ ex, score: matchScore(ex) }));
       const out: typeof exercises = [];
-      const target = Math.min(n, remaining.length);
+      const target = Math.min(take, remaining.length);
       for (let i = 0; i < target; i++) {
         const total = remaining.reduce((s, r) => s + r.score, 0);
         if (total <= 0) break;
@@ -220,6 +233,31 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
         }
         out.push(remaining[idx].ex);
         remaining.splice(idx, 1);
+      }
+      return out;
+    };
+
+    // Pick respecting extra quotas: extras blocks first (consecutive), then rest.
+    const samplePicks = (basePool: typeof exercises, excludeIds: Set<string>): typeof exercises => {
+      const out: typeof exercises = [];
+      const usedHere = new Set<string>(excludeIds);
+
+      // Extras blocks in the user's selection order
+      for (const extraId of selectedExtraIds) {
+        const want = parseInt(extraCounts[extraId] || '0', 10);
+        if (!want || want <= 0) continue;
+        const candidates = basePool.filter((ex) => (ex.extra_ids || []).includes(extraId));
+        const picked = weightedSample(candidates, want, usedHere);
+        picked.forEach((ex) => {
+          out.push(ex);
+          usedHere.add(ex.id);
+        });
+      }
+
+      const remainingSlots = n - out.length;
+      if (remainingSlots > 0) {
+        const rest = weightedSample(basePool, remainingSlots, usedHere);
+        rest.forEach((ex) => out.push(ex));
       }
       return out;
     };
@@ -471,24 +509,69 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                   {selectedExtraIds.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => setSelectedExtraIds([])}
+                      onClick={() => { setSelectedExtraIds([]); setExtraCounts({}); }}
                       className="text-[10px] text-muted-foreground hover:text-foreground underline"
                     >
                       Limpar
                     </button>
                   )}
                 </div>
+                <p className="text-[10px] text-muted-foreground leading-snug">
+                  Selecione e informe quantos exercícios devem usar cada equipamento. Eles entram em sequência.
+                </p>
                 <ExtrasPicker
                   selectedIds={selectedExtraIds}
-                  onToggle={(id) =>
-                    setSelectedExtraIds((prev) =>
-                      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-                    )
-                  }
+                  onToggle={(id) => {
+                    setSelectedExtraIds((prev) => {
+                      if (prev.includes(id)) {
+                        setExtraCounts((c) => {
+                          const next = { ...c };
+                          delete next[id];
+                          return next;
+                        });
+                        return prev.filter((x) => x !== id);
+                      }
+                      setExtraCounts((c) => ({ ...c, [id]: c[id] ?? '1' }));
+                      return [...prev, id];
+                    });
+                  }}
                   allowCreate={false}
                   compact
                   emptyHint="Nenhum equipamento cadastrado."
+                  renderAdornment={(extra, active) =>
+                    active ? (
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={extraCounts[extra.id] ?? ''}
+                        onChange={(e) =>
+                          setExtraCounts((c) => ({
+                            ...c,
+                            [extra.id]: e.target.value.replace(/\D/g, '').slice(0, 2),
+                          }))
+                        }
+                        placeholder="qtd"
+                        className="h-6 w-10 rounded border border-border/70 bg-background text-[11px] text-center px-1 focus:outline-none focus:border-primary"
+                        aria-label={`Quantidade de exercícios com ${extra.name}`}
+                      />
+                    ) : null
+                  }
                 />
+                {(() => {
+                  const totalQuota = selectedExtraIds.reduce(
+                    (s, id) => s + (parseInt(extraCounts[id] || '0', 10) || 0),
+                    0
+                  );
+                  const n = parseInt(count, 10) || 0;
+                  if (totalQuota > n) {
+                    return (
+                      <p className="text-[10px] text-destructive">
+                        A soma dos equipamentos ({totalQuota}) ultrapassa a quantidade de exercícios ({n}).
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </div>
           )}

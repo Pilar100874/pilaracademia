@@ -63,6 +63,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [varyCategories, setVaryCategories] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
+  const [extraCounts, setExtraCounts] = useState<Record<string, string>>({});
   const [source, setSource] = useState<'all' | 'mine' | 'global'>('all');
   const [useBodyPlan, setUseBodyPlan] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -95,6 +96,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setVaryCategories(false);
     setSelectedCategoryIds([]);
     setSelectedExtraIds([]);
+    setExtraCounts({});
     setSource('all');
     setUseBodyPlan(false);
   };
@@ -123,20 +125,12 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const sourceFiltered =
     source === 'mine' ? personalOnly : source === 'global' ? globalExercises : exercises;
 
-  const filteredExercises = (() => {
-    let list = sourceFiltered;
-    if (selectedCategoryIds.length > 0) {
-      list = list.filter((ex) =>
-        (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id))
-      );
-    }
-    if (selectedExtraIds.length > 0) {
-      list = list.filter((ex) =>
-        selectedExtraIds.every((id) => (ex.extra_ids || []).includes(id))
-      );
-    }
-    return list;
-  })();
+  const filteredExercises =
+    selectedCategoryIds.length === 0
+      ? sourceFiltered
+      : sourceFiltered.filter((ex) =>
+          (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id))
+        );
 
   const toggleDay = (idx: number) => {
     setSelectedDays((prev) =>
@@ -165,6 +159,15 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         toast.error(selectedCategoryIds.length
           ? 'Nenhum exercício na biblioteca para as categorias selecionadas.'
           : 'Sua biblioteca está vazia.');
+        return false;
+      }
+      const totalQuota = selectedExtraIds.reduce(
+        (sum, id) => sum + (parseInt(extraCounts[id] || '0', 10) || 0),
+        0
+      );
+      const nVal = parseInt(count, 10) || 0;
+      if (totalQuota > nVal) {
+        toast.error('Soma de equipamentos ultrapassa a quantidade de exercícios.');
         return false;
       }
       return true;
@@ -242,26 +245,52 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           continue;
         }
 
-        const library = available.map((ex) => ({
-          id: ex.id,
-          name: ex.name,
-          body: ex.body_analysis ?? null,
-          aesthetic: ex.aesthetic_analysis ?? null,
-          mobility: ex.mobility_analysis ?? null,
-        }));
-
-        const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
-          body: { prompt: prompt.trim(), count: n, library, health_context: healthContext, body_plan_context: bodyPlanContext },
-        });
-
-        if (error) {
-          const msg = (data as { error?: string } | null)?.error || error.message;
-          toast.error(msg || 'Erro ao gerar treino com IA');
-          continue;
+        // Pre-pin extras: random sample N exercises with each chosen extra (consecutive at start).
+        const pinned: typeof exercises = [];
+        const pinnedIds = new Set<string>();
+        for (const extraId of selectedExtraIds) {
+          const want = parseInt(extraCounts[extraId] || '0', 10);
+          if (!want || want <= 0) continue;
+          const candidates = available.filter(
+            (ex) => (ex.extra_ids || []).includes(extraId) && !pinnedIds.has(ex.id)
+          );
+          // Shuffle and take N
+          const shuffled = [...candidates].sort(() => Math.random() - 0.5).slice(0, want);
+          shuffled.forEach((ex) => {
+            pinned.push(ex);
+            pinnedIds.add(ex.id);
+          });
         }
 
-        const ids: string[] = Array.isArray(data?.exercise_ids) ? data.exercise_ids : [];
-        const picked = ids.map((id) => byId.get(id)).filter(Boolean) as typeof exercises;
+        const remainingCount = Math.max(n - pinned.length, 0);
+        let aiPicked: typeof exercises = [];
+
+        if (remainingCount > 0) {
+          const libraryAvailable = available.filter((ex) => !pinnedIds.has(ex.id));
+          const library = libraryAvailable.map((ex) => ({
+            id: ex.id,
+            name: ex.name,
+            body: ex.body_analysis ?? null,
+            aesthetic: ex.aesthetic_analysis ?? null,
+            mobility: ex.mobility_analysis ?? null,
+          }));
+
+          const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
+            body: { prompt: prompt.trim(), count: remainingCount, library, health_context: healthContext, body_plan_context: bodyPlanContext },
+          });
+
+          if (error) {
+            const msg = (data as { error?: string } | null)?.error || error.message;
+            toast.error(msg || 'Erro ao gerar treino com IA');
+            continue;
+          }
+
+          const ids: string[] = Array.isArray(data?.exercise_ids) ? data.exercise_ids : [];
+          aiPicked = ids.map((id) => byId.get(id)).filter(Boolean) as typeof exercises;
+          if (data?.rationale) lastRationale = data.rationale;
+        }
+
+        const picked = [...pinned, ...aiPicked];
         if (!picked.length) continue;
 
         const plan = await createPlan.mutateAsync({
@@ -289,7 +318,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
         if (!allowRepeat) picked.forEach((ex) => usedIds.add(ex.id));
         totalCreated++;
-        if (data?.rationale) lastRationale = data.rationale;
       }
 
       if (totalCreated === 0) {
@@ -514,24 +542,69 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                   {selectedExtraIds.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => setSelectedExtraIds([])}
+                      onClick={() => { setSelectedExtraIds([]); setExtraCounts({}); }}
                       className="text-[10px] text-muted-foreground hover:text-foreground underline"
                     >
                       Limpar
                     </button>
                   )}
                 </div>
+                <p className="text-[10px] text-muted-foreground leading-snug">
+                  Quantos exercícios devem usar cada equipamento? Eles entram em sequência no início do treino.
+                </p>
                 <ExtrasPicker
                   selectedIds={selectedExtraIds}
-                  onToggle={(id) =>
-                    setSelectedExtraIds((prev) =>
-                      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-                    )
-                  }
+                  onToggle={(id) => {
+                    setSelectedExtraIds((prev) => {
+                      if (prev.includes(id)) {
+                        setExtraCounts((c) => {
+                          const next = { ...c };
+                          delete next[id];
+                          return next;
+                        });
+                        return prev.filter((x) => x !== id);
+                      }
+                      setExtraCounts((c) => ({ ...c, [id]: c[id] ?? '1' }));
+                      return [...prev, id];
+                    });
+                  }}
                   allowCreate={false}
                   compact
                   emptyHint="Nenhum equipamento cadastrado."
+                  renderAdornment={(extra, active) =>
+                    active ? (
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={extraCounts[extra.id] ?? ''}
+                        onChange={(e) =>
+                          setExtraCounts((c) => ({
+                            ...c,
+                            [extra.id]: e.target.value.replace(/\D/g, '').slice(0, 2),
+                          }))
+                        }
+                        placeholder="qtd"
+                        className="h-6 w-10 rounded border border-border/70 bg-background text-[11px] text-center px-1 focus:outline-none focus:border-primary"
+                        aria-label={`Quantidade de exercícios com ${extra.name}`}
+                      />
+                    ) : null
+                  }
                 />
+                {(() => {
+                  const totalQuota = selectedExtraIds.reduce(
+                    (s, id) => s + (parseInt(extraCounts[id] || '0', 10) || 0),
+                    0
+                  );
+                  const nVal = parseInt(count, 10) || 0;
+                  if (totalQuota > nVal) {
+                    return (
+                      <p className="text-[10px] text-destructive">
+                        A soma dos equipamentos ({totalQuota}) ultrapassa a quantidade de exercícios ({nVal}).
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </div>
           )}
