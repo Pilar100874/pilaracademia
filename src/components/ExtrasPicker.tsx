@@ -52,6 +52,19 @@ export function ExtrasPicker({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5">
+        {onToggleNone && (
+          <button
+            type="button"
+            onClick={onToggleNone}
+            className={`${chipBase} rounded-full border transition-colors ${
+              noneSelected
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-background border-dashed border-border/70 hover:bg-accent hover:border-primary/40 text-foreground/80'
+            }`}
+          >
+            Sem equipamento
+          </button>
+        )}
         {extras.map((ex) => {
           const active = selectedIds.includes(ex.id);
           return (
