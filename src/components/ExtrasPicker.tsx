@@ -59,7 +59,7 @@ export function ExtrasPicker({
             className={`${chipBase} rounded-full border transition-colors ${
               noneSelected
                 ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-background border-dashed border-border/70 hover:bg-accent hover:border-primary/40 text-foreground/80'
+                : 'bg-background border-dashed border-border/70 hover:bg-muted hover:border-primary/40 text-foreground/80'
             }`}
           >
             Sem equipamento
