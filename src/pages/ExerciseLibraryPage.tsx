@@ -1017,21 +1017,6 @@ export default function ExerciseLibraryPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end ml-auto">
-          {!selectionMode && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={dupScanning || dupDeleting}
-              onClick={analyzeDuplicateVideos}
-              title="Detecta vídeos com conteúdo idêntico (mesmo arquivo) e permite excluí-los"
-            >
-              {dupScanning ? (
-                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Analisando...</>
-              ) : (
-                <><CopyIcon className="h-4 w-4 mr-1" /> Analisar duplicatas</>
-              )}
-            </Button>
-          )}
           {!selectionMode && pendingOptimizationCount > 0 && (
             <Button
               variant="outline"
