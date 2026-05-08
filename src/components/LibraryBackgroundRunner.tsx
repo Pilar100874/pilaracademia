@@ -68,6 +68,9 @@ export function LibraryBackgroundRunner() {
           !!ex.video_url &&
           !!ex.video_type &&
           ex.video_type !== 'instagram',
+      ) ||
+      processableExercises.some(
+        (ex) => !!ex.video_url && !!ex.video_type && ex.video_type !== 'youtube' && !ex.video_hash,
       );
     if (!hasPending) return;
 
