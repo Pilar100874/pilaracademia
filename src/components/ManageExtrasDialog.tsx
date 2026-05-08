@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Pencil, Trash2, Check, X, Loader2, Globe } from 'lucide-react';
 import { useExerciseExtras, type ExerciseExtra } from '@/hooks/useExerciseExtras';
+import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { useAuth } from '@/hooks/useAuth';
 
