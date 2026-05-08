@@ -32,6 +32,7 @@ export interface WorkoutPlan {
   cooldown_enabled?: boolean;
   is_cooldown_plan?: boolean;
   objective?: string | null;
+  ai_rationale?: string | null;
   created_at: string;
   updated_at: string;
   exercises?: WorkoutExercise[];
