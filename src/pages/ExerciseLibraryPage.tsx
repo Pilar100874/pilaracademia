@@ -121,6 +121,7 @@ export default function ExerciseLibraryPage() {
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
   const [bulkCategoryChoice, setBulkCategoryChoice] = useState<string>(NO_CATEGORY);
   const [newBulkCategoryName, setNewBulkCategoryName] = useState('');
+  const [bulkExtras, setBulkExtras] = useState<string[]>([]);
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
