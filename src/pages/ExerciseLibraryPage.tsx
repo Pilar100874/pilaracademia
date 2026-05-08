@@ -1796,6 +1796,84 @@ export default function ExerciseLibraryPage() {
         );
       })()}
 
+      {/* Confirmação de exclusão de duplicatas */}
+      <Dialog
+        open={dupDialogOpen}
+        onOpenChange={(open) => {
+          if (dupDeleting) return;
+          setDupDialogOpen(open);
+          if (!open) setDupGroups(null);
+        }}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Vídeos duplicados encontrados</DialogTitle>
+            <DialogDescription>
+              {dupGroups
+                ? `${dupGroups.length} grupo(s) de vídeos com conteúdo idêntico. Marque os que devem ser excluídos — por padrão, mantemos o mais antigo.`
+                : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[55vh] overflow-y-auto">
+            {dupGroups?.map((g, gi) => (
+              <div key={g.hash} className="rounded-md border border-border p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Grupo {gi + 1} — {g.items.length} vídeos idênticos
+                </p>
+                <ul className="space-y-1.5">
+                  {g.items.map((ex, idx) => {
+                    const checked = dupSelected.get(g.hash)?.has(ex.id) ?? false;
+                    return (
+                      <li key={ex.id} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          id={`dup-${ex.id}`}
+                          checked={checked}
+                          onCheckedChange={() => toggleDupSelect(g.hash, ex.id)}
+                        />
+                        <label
+                          htmlFor={`dup-${ex.id}`}
+                          className="flex-1 cursor-pointer truncate"
+                        >
+                          <span className="font-medium">{ex.name}</span>
+                          {idx === 0 && (
+                            <span className="ml-2 text-xs text-muted-foreground">(mais antigo)</span>
+                          )}
+                          {ex.created_at && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              {new Date(ex.created_at).toLocaleDateString('pt-BR')}
+                            </span>
+                          )}
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDupDialogOpen(false)}
+              disabled={dupDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={runDeleteDuplicates}
+              disabled={dupDeleting}
+            >
+              {dupDeleting ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Excluindo...</>
+              ) : (
+                `Excluir ${Array.from(dupSelected.values()).reduce((s, set) => s + set.size, 0)}`
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Bulk delete dialog */}
       <Dialog
         open={bulkDeleteOpen}
