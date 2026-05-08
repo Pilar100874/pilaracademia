@@ -32,6 +32,10 @@ export function LibraryBackgroundRunner() {
   const queryClient = useQueryClient();
   const { addWork, tick, remove } = useBackgroundProgress();
   const { pathname } = useLocation();
+  // Re-renderiza quando o estado de importação muda — o runner aguarda
+  // todas as importações terminarem antes de começar a processar vídeos.
+  const [, setBusyTick] = useState(0);
+  useEffect(() => subscribeImportBusy(() => setBusyTick((n) => n + 1)), []);
 
   const processableExercises = useMemo(
     () =>
