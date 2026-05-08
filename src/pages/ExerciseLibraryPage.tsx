@@ -212,6 +212,7 @@ export default function ExerciseLibraryPage() {
       }
     }
     setDupScanning(false);
+    removeBgJob(jobId);
     if (groups.length === 0) {
       toast.success('Nenhum vídeo duplicado encontrado.');
       setDupGroups(null);
