@@ -96,6 +96,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setVaryCategories(false);
     setSelectedCategoryIds([]);
     setSelectedExtraIds([]);
+    setExtraCounts({});
     setSource('all');
     setUseBodyPlan(false);
   };
