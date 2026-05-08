@@ -38,7 +38,7 @@ export function ExerciseLibraryDialog({
 }: ExerciseLibraryDialogProps) {
   const { exercises, createExercise, updateExercise, uploadExerciseImage } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
-  const { toggleExerciseExtra } = useExerciseExtras();
+  const { bulkAssignExtra } = useExerciseExtras();
 
   const [name, setName] = useState('');
   const [defaultSets, setDefaultSets] = useState(3);
