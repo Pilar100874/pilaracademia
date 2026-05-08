@@ -1142,6 +1142,15 @@ export default function ExerciseLibraryPage() {
             >
               <FolderPlus className="h-4 w-4" />
             </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9 shrink-0"
+              title="Gerenciar equipamentos extras"
+              onClick={() => setManageExtrasOpen(true)}
+            >
+              <Dumbbell className="h-4 w-4" />
+            </Button>
             <BodyAnalysisFilter value={bodyFilter} onChange={setBodyFilter} compact />
             {filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY && (
               <>
