@@ -59,7 +59,7 @@ export function ExtrasPicker({
             className={`${chipBase} rounded-full border transition-colors ${
               noneSelected
                 ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-background border-dashed border-border/70 hover:bg-accent hover:border-primary/40 text-foreground/80'
+                : 'bg-background border-dashed border-border/70 hover:bg-muted hover:border-primary/40 text-foreground/80'
             }`}
           >
             Sem equipamento
@@ -75,7 +75,7 @@ export function ExtrasPicker({
                 className={`${chipBase} rounded-full border transition-colors ${
                   active
                     ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-background border-border/70 hover:bg-accent hover:border-primary/40 text-foreground/80'
+                    : 'bg-background border-border/70 hover:bg-muted hover:border-primary/40 text-foreground/80'
                 }`}
               >
                 {ex.icon ? `${ex.icon} ` : ''}{ex.name}
@@ -89,7 +89,7 @@ export function ExtrasPicker({
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className={`${chipBase} rounded-full border border-dashed border-border/70 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors inline-flex items-center gap-1`}
+            className={`${chipBase} rounded-full border border-dashed border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors inline-flex items-center gap-1`}
           >
             <Plus className="h-3 w-3" />
             Novo

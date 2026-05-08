@@ -49,16 +49,20 @@ export function UpdatePrompt() {
       activeReg = reg;
       // Immediate check so the banner can surface on the auth/login screen.
       reg.update().catch(() => {});
-      // Check every 5 min while the tab is open (browser & PWA).
+      // Check every 60s while the tab is open (browser & PWA).
       setInterval(() => {
         reg.update().catch(() => {});
-      }, 5 * 60 * 1000);
+      }, 60 * 1000);
       // Also re-check whenever the tab becomes visible / focused —
       // covers reopening the PWA and switching back to the browser tab.
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") recheck();
       });
       window.addEventListener("focus", recheck);
+      // iOS PWA restores from bgcache via pageshow — also recheck there.
+      window.addEventListener("pageshow", (e) => {
+        if ((e as PageTransitionEvent).persisted) recheck();
+      });
     };
 
     // Dynamically import the virtual register module from vite-plugin-pwa
