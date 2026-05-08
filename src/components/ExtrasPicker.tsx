@@ -26,6 +26,8 @@ export function ExtrasPicker({
   compact = false,
   renderAdornment,
   emptyHint = 'Nenhum equipamento extra criado ainda.',
+  noneSelected,
+  onToggleNone,
 }: ExtrasPickerProps) {
   const { extras, createExtra } = useExerciseExtras();
   const [creating, setCreating] = useState(false);
