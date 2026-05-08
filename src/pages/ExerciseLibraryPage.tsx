@@ -23,6 +23,7 @@ import {
 } from '@/components/BodyAnalysisFilter';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ManageExtrasDialog } from '@/components/ManageExtrasDialog';
+import { ExtrasPicker } from '@/components/ExtrasPicker';
 import { ApifySettingsCard } from '@/components/ApifySettingsCard';
 import {
   Collapsible,
@@ -102,6 +103,7 @@ export default function ExerciseLibraryPage() {
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [bodyFilter, setBodyFilter] = useState<BodyAnalysisFilterValue>(EMPTY_BODY_FILTER);
+  const [filterExtras, setFilterExtras] = useState<string[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<LibraryExercise | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -350,7 +352,10 @@ export default function ExerciseLibraryPage() {
       matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
     }
     const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, ex.mobility_analysis, bodyFilter);
-    return matchesSearch && matchesCategory && matchesBody;
+    const matchesExtras =
+      filterExtras.length === 0 ||
+      filterExtras.every((id) => (ex.extra_ids ?? []).includes(id));
+    return matchesSearch && matchesCategory && matchesBody && matchesExtras;
   });
 
   const [convertingId, setConvertingId] = useState<string | null>(null);
@@ -1197,6 +1202,33 @@ export default function ExerciseLibraryPage() {
                 </Button>
               </>
             )}
+          </div>
+          <div className="pt-1">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Filtrar por equipamento
+              </span>
+              {filterExtras.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setFilterExtras([])}
+                  className="text-[11px] text-muted-foreground hover:text-foreground underline"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
+            <ExtrasPicker
+              selectedIds={filterExtras}
+              onToggle={(id) =>
+                setFilterExtras((prev) =>
+                  prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                )
+              }
+              allowCreate={false}
+              compact
+              emptyHint="Crie equipamentos no botão 🏋️ acima."
+            />
           </div>
         </div>
         {bulkUploading && (
