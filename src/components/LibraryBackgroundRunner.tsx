@@ -227,18 +227,17 @@ export function LibraryBackgroundRunner() {
 
       for (const ex of aiQueueFinal) {
         if (cancelled) break;
-        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
         try {
           await analyzeExercise(ex);
         } catch (err) {
           console.warn('[bg] AI analysis failed', ex.id, err);
         }
-        done++;
-        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
+        processedCount++;
+        tick(JOB_ID, ex.name);
       }
 
       remove(JOB_ID);
-      if (!cancelled && done > 0) {
+      if (!cancelled && processedCount > 0) {
         const mb = saved > 0 ? ` — ${(saved / (1024 * 1024)).toFixed(1)} MB economizados` : '';
         toast.success(`Vídeos processados${mb}`, { duration: 4000 });
       }
@@ -246,7 +245,7 @@ export function LibraryBackgroundRunner() {
 
     // NÃO limpa o timer no cleanup — re-renders (causados pelo próprio
     // runner ao atualizar o cache) cancelariam a execução antes de iniciar.
-  }, [user, processableExercises, isMaster, queryClient, upsert, remove, pathname]);
+  }, [user, processableExercises, isMaster, queryClient, addWork, tick, remove, pathname]);
 
   return null;
 }
