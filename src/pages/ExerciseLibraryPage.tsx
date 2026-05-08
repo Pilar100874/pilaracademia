@@ -703,7 +703,7 @@ export default function ExerciseLibraryPage() {
           .getPublicUrl(path);
         const optimizedAt = hasWebmUrl(pub.publicUrl) || toUpload === file ? new Date().toISOString() : null;
 
-        await createExercise.mutateAsync({
+        const created = await createExercise.mutateAsync({
           name: generateUniqueName(baseName, usedNames),
           default_sets: 1,
           default_reps: 10,
@@ -715,6 +715,15 @@ export default function ExerciseLibraryPage() {
           video_end_seconds: null,
           category_id: targetCategoryId,
         });
+        // Apply selected extras to the new exercise
+        const newId = (created as any)?.id;
+        if (newId && bulkExtras.length) {
+          await Promise.all(
+            bulkExtras.map((extraId) =>
+              bulkAssignExtra.mutateAsync({ extraId, exerciseIds: [newId], mode: 'add', silent: true })
+            )
+          );
+        }
         successCount++;
       } catch (err) {
         console.error('Bulk upload error', err);
