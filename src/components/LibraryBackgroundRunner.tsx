@@ -168,7 +168,6 @@ export function LibraryBackgroundRunner() {
       // ---------- Etapa 2: Otimização (ajuste de resolução) ----------
       for (const ex of optQueue) {
         if (cancelled) break;
-        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
         try {
           const url = ex.video_url!;
           const res = await fetch(url);
@@ -213,8 +212,8 @@ export function LibraryBackgroundRunner() {
         } catch (err) {
           console.warn('[bg] optimize failed', ex.id, err);
         }
-        done++;
-        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
+        processedCount++;
+        tick(JOB_ID, ex.name);
       }
 
       // ---------- Etapa 3: Classificação dos vídeos que acabaram de otimizar ----------
