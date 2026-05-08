@@ -16,6 +16,7 @@ import { WizardStepper, WizardFooter } from '@/components/WizardShell';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { ExtrasPicker } from '@/components/ExtrasPicker';
+import { useExerciseExtras } from '@/hooks/useExerciseExtras';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { useBloodExams } from '@/hooks/useBloodExams';
 import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
@@ -51,6 +52,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const { allExercises: exercises, globalExercises, exercises: personalOnly } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
+  const { extras } = useExerciseExtras();
   const { list: bloodExamsQ } = useBloodExams();
   const planInfo = useCurrentBodyPlan();
 
@@ -245,28 +247,53 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           continue;
         }
 
-        // Pre-pin extras: random sample N exercises with each chosen extra (consecutive at start).
+        // Pre-pin extras: pick EXACTLY the requested count for each chosen extra (consecutive at start).
         const pinned: typeof exercises = [];
         const pinnedIds = new Set<string>();
+        const shortages: { name: string; want: number; have: number }[] = [];
+
         for (const extraId of selectedExtraIds) {
           const want = parseInt(extraCounts[extraId] || '0', 10);
           if (!want || want <= 0) continue;
           const candidates = available.filter(
             (ex) => (ex.extra_ids || []).includes(extraId) && !pinnedIds.has(ex.id)
           );
-          // Shuffle and take N
           const shuffled = [...candidates].sort(() => Math.random() - 0.5).slice(0, want);
           shuffled.forEach((ex) => {
             pinned.push(ex);
             pinnedIds.add(ex.id);
           });
+          if (shuffled.length < want) {
+            const extraName = extras.find((e) => e.id === extraId)?.name || 'equipamento';
+            shortages.push({ name: extraName, want, have: shuffled.length });
+          }
+        }
+
+        if (shortages.length > 0) {
+          const lines = shortages
+            .map((s) => `${s.name}: pediu ${s.want}, tem ${s.have}`)
+            .join(' • ');
+          toast.error(`Exercícios insuficientes${bucket.suffix}`, { description: lines });
+          continue;
         }
 
         const remainingCount = Math.max(n - pinned.length, 0);
         let aiPicked: typeof exercises = [];
 
         if (remainingCount > 0) {
-          const libraryAvailable = available.filter((ex) => !pinnedIds.has(ex.id));
+          // Para preencher o restante, usar APENAS exercícios SEM equipamento extra vinculado,
+          // para não estourar a quota de outros equipamentos.
+          const libraryAvailable = available.filter(
+            (ex) => !pinnedIds.has(ex.id) && (!ex.extra_ids || ex.extra_ids.length === 0)
+          );
+
+          if (libraryAvailable.length < remainingCount) {
+            toast.error(`Não há exercícios sem equipamento suficientes${bucket.suffix}`, {
+              description: `Faltam ${remainingCount - libraryAvailable.length}. Reduza a quantidade total ou cadastre mais exercícios sem equipamento.`,
+            });
+            continue;
+          }
+
           const library = libraryAvailable.map((ex) => ({
             id: ex.id,
             name: ex.name,
