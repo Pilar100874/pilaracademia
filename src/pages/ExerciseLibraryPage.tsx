@@ -1500,6 +1500,13 @@ export default function ExerciseLibraryPage() {
         onOpenChange={setManageExtrasOpen}
       />
 
+      <BulkExtrasDialog
+        open={bulkExtrasOpen}
+        onOpenChange={setBulkExtrasOpen}
+        exerciseIds={Array.from(selectedIds)}
+        onDone={exitSelectionMode}
+      />
+
       <ConfirmDeleteDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
