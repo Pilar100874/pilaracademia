@@ -1221,10 +1221,10 @@ export default function ExerciseLibraryPage() {
               <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 Filtrar por equipamento
               </span>
-              {filterExtras.length > 0 && (
+              {(filterExtras.length > 0 || filterNoExtras) && (
                 <button
                   type="button"
-                  onClick={() => setFilterExtras([])}
+                  onClick={() => { setFilterExtras([]); setFilterNoExtras(false); }}
                   className="text-[11px] text-muted-foreground hover:text-foreground underline"
                 >
                   Limpar
@@ -1238,6 +1238,8 @@ export default function ExerciseLibraryPage() {
                   prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
                 )
               }
+              noneSelected={filterNoExtras}
+              onToggleNone={() => setFilterNoExtras((v) => !v)}
               allowCreate={false}
               compact
               emptyHint="Crie equipamentos no botão 🏋️ acima."
