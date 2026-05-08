@@ -186,11 +186,20 @@ export function LibraryBackgroundRunner() {
           if (!res.ok) throw new Error('download failed');
           const blob = await res.blob();
           const origSize = blob.size;
+          // Calcula hash do conteúdo original — usado depois para detectar
+          // duplicatas no momento da importação.
+          let videoHash: string | null = null;
+          try {
+            const hashBuf = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+            videoHash = Array.from(new Uint8Array(hashBuf))
+              .map((b) => b.toString(16).padStart(2, '0'))
+              .join('');
+          } catch { /* ignore */ }
           const inputFile = new File([blob], 'video.mp4', { type: blob.type || 'video/mp4' });
           const compressed = await compressVideoFile(inputFile);
           if (compressed === inputFile || compressed.size >= origSize) {
             const checkedAt = new Date().toISOString();
-            const { error: markError } = await supabase.from('exercise_library').update({ video_optimized_at: checkedAt } as never).eq('id', ex.id);
+            const { error: markError } = await supabase.from('exercise_library').update({ video_optimized_at: checkedAt, video_hash: videoHash ?? ex.video_hash ?? null } as never).eq('id', ex.id);
             if (markError) throw markError;
             queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>
               old?.map((e) => (e.id === ex.id ? { ...e, video_optimized_at: checkedAt } : e)) ?? old,
@@ -205,7 +214,7 @@ export function LibraryBackgroundRunner() {
             const optimizedAt = new Date().toISOString();
             const { error: videoUpdateError } = await supabase
               .from('exercise_library')
-              .update({ video_url: pub.publicUrl, video_optimized_at: optimizedAt } as never)
+              .update({ video_url: pub.publicUrl, video_optimized_at: optimizedAt, video_hash: videoHash ?? ex.video_hash ?? null } as never)
               .eq('id', ex.id);
             if (videoUpdateError) throw videoUpdateError;
             queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>

@@ -43,6 +43,7 @@ import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
 import { getStorageStatus } from '@/lib/videoCache';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { compressVideoFile } from '@/lib/compressVideo';
+import { hashBlob, hashUrl } from '@/lib/videoHash';
 import {
   Dialog,
   DialogContent,
@@ -53,7 +54,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2, CheckSquare, X, FolderInput, Pencil, FolderPlus, Instagram, KeyRound, ExternalLink, CheckCircle2, Copy as CopyIcon } from 'lucide-react';
+import { Plus, Search, Dumbbell, Edit, Trash2, ImageIcon, ArrowLeft, Tag, Upload, Loader2, CheckSquare, X, FolderInput, Pencil, FolderPlus, Instagram, KeyRound, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -162,110 +163,6 @@ export default function ExerciseLibraryPage() {
     | null
   >(null);
 
-  // ===== Análise de vídeos duplicados (mesmo conteúdo, hash SHA-256) =====
-  type DupGroup = { hash: string; items: LibraryExercise[] };
-  const [dupScanning, setDupScanning] = useState(false);
-  const [dupGroups, setDupGroups] = useState<DupGroup[] | null>(null);
-  const [dupDialogOpen, setDupDialogOpen] = useState(false);
-  // Map<hash, Set<exerciseId>> — ids marcados para exclusão (padrão: todos
-  // exceto o mais antigo do grupo).
-  const [dupSelected, setDupSelected] = useState<Map<string, Set<string>>>(new Map());
-  const [dupDeleting, setDupDeleting] = useState(false);
-
-  const analyzeDuplicateVideos = async () => {
-    if (dupScanning) return;
-    const candidates = sourceList.filter((ex) => !!ex.video_url && ex.video_type !== 'youtube');
-    if (candidates.length === 0) {
-      toast.info('Nenhum vídeo para analisar nesta aba.');
-      return;
-    }
-    setDupScanning(true);
-    const jobId = 'dup-scan';
-    addWork(jobId, 'Analisando vídeos duplicados', candidates.length);
-    const hashes = new Map<string, LibraryExercise[]>();
-    for (const ex of candidates) {
-      try {
-        const url = await getFreshMediaUrl(ex.video_url!);
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('download');
-        const buf = await res.arrayBuffer();
-        const hashBuf = await crypto.subtle.digest('SHA-256', buf);
-        const hex = Array.from(new Uint8Array(hashBuf))
-          .map((b) => b.toString(16).padStart(2, '0'))
-          .join('');
-        const arr = hashes.get(hex) ?? [];
-        arr.push(ex);
-        hashes.set(hex, arr);
-      } catch (err) {
-        console.warn('[dup] hash failed', ex.id, err);
-      }
-      tick(jobId, ex.name);
-    }
-    const groups: DupGroup[] = [];
-    for (const [hash, items] of hashes.entries()) {
-      if (items.length > 1) {
-        // Mantém o mais antigo (created_at asc); o resto vai pré-selecionado para exclusão.
-        const sorted = [...items].sort((a, b) =>
-          (a.created_at ?? '').localeCompare(b.created_at ?? ''),
-        );
-        groups.push({ hash, items: sorted });
-      }
-    }
-    setDupScanning(false);
-    removeBgJob(jobId);
-    if (groups.length === 0) {
-      toast.success('Nenhum vídeo duplicado encontrado.');
-      setDupGroups(null);
-      return;
-    }
-    const sel = new Map<string, Set<string>>();
-    groups.forEach((g) => sel.set(g.hash, new Set(g.items.slice(1).map((e) => e.id))));
-    setDupSelected(sel);
-    setDupGroups(groups);
-    setDupDialogOpen(true);
-  };
-
-  const toggleDupSelect = (hash: string, id: string) => {
-    setDupSelected((prev) => {
-      const next = new Map(prev);
-      const cur = new Set(next.get(hash) ?? []);
-      if (cur.has(id)) cur.delete(id);
-      else cur.add(id);
-      next.set(hash, cur);
-      return next;
-    });
-  };
-
-  const runDeleteDuplicates = async () => {
-    if (!dupGroups) return;
-    const idsToDelete = new Set<string>();
-    dupSelected.forEach((set) => set.forEach((id) => idsToDelete.add(id)));
-    if (idsToDelete.size === 0) {
-      setDupDialogOpen(false);
-      return;
-    }
-    setDupDeleting(true);
-    try {
-      const toCascade = sourceList.filter((e) => idsToDelete.has(e.id));
-      await Promise.all(toCascade.map((e) => cascadeRemoveFromWorkouts(e)));
-      for (const id of idsToDelete) {
-        try {
-          await deleteExercise.mutateAsync(id);
-        } catch (err) {
-          console.warn('[dup] delete failed', id, err);
-        }
-      }
-      await queryClient.invalidateQueries({ queryKey: ['workout-plans'] });
-      await queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
-      toast.success(`${idsToDelete.size} duplicata(s) excluída(s).`);
-      setDupDialogOpen(false);
-      setDupGroups(null);
-    } catch {
-      toast.error('Erro ao excluir duplicatas.');
-    } finally {
-      setDupDeleting(false);
-    }
-  };
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
@@ -721,7 +618,62 @@ export default function ExerciseLibraryPage() {
 
       // Auto-otimiza os vídeos recém-importados em background (re-codifica
       // para 720p WebM no navegador para carregarem mais rápido).
-      const createdList = Array.isArray(data?.created) ? data.created : [];
+      let createdList = Array.isArray(data?.created) ? data.created : [];
+
+      // Detecta duplicatas: hashea cada vídeo recém-criado e remove
+      // os que já existiam na biblioteca (ou que aparecem mais de uma
+      // vez no próprio lote do IG).
+      if (createdList.length > 0) {
+        const dupRemoved: { id: string; name: string; existing?: string }[] = [];
+        const seen = new Map<string, { id: string; name: string }>();
+        const kept: any[] = [];
+        for (const c of createdList) {
+          const h = c.video_url ? await hashUrl(c.video_url) : null;
+          if (!h) {
+            kept.push(c);
+            continue;
+          }
+          // Duplicado dentro do mesmo lote
+          if (seen.has(h)) {
+            dupRemoved.push({ id: c.id, name: c.name, existing: seen.get(h)!.name });
+            continue;
+          }
+          // Duplicado contra exercícios anteriores no banco
+          const { data: existing } = await supabase
+            .from('exercise_library')
+            .select('id, name')
+            .eq('video_hash', h)
+            .neq('id', c.id)
+            .or(`user_id.eq.${user.id},is_global.eq.true`)
+            .limit(1)
+            .maybeSingle();
+          if (existing) {
+            dupRemoved.push({ id: c.id, name: c.name, existing: (existing as any).name });
+            continue;
+          }
+          // Salva o hash no recém-criado para futuras checagens
+          await supabase
+            .from('exercise_library')
+            .update({ video_hash: h } as never)
+            .eq('id', c.id);
+          seen.set(h, { id: c.id, name: c.name });
+          kept.push(c);
+        }
+        if (dupRemoved.length > 0) {
+          // Apaga os duplicados criados (e seus arquivos no storage)
+          for (const d of dupRemoved) {
+            try {
+              await deleteExercise.mutateAsync(d.id);
+            } catch (err) { console.warn('[ig-dup] delete failed', d.id, err); }
+          }
+          toast.warning(
+            `${dupRemoved.length} vídeo(s) duplicado(s) descartado(s) — já existem na biblioteca.`,
+          );
+          await queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+        }
+        createdList = kept;
+      }
+
       // Apply selected equipment to each newly created exercise
       if (createdList.length > 0 && igExtras.length > 0) {
         const ids = createdList.map((c: any) => c.id).filter(Boolean);
@@ -802,6 +754,8 @@ export default function ExerciseLibraryPage() {
     beginImport();
     const usedNames = new Set<string>();
     let successCount = 0;
+    let duplicateCount = 0;
+    const sessionHashes = new Set<string>();
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -813,6 +767,38 @@ export default function ExerciseLibraryPage() {
         if (file.size > 50 * 1024 * 1024) {
           toast.error(`${file.name}: maior que 50 MB`);
           continue;
+        }
+
+        // Compute hash of original file to detect duplicates BEFORE
+        // compressing and uploading — saves bandwidth + storage.
+        let videoHash: string | null = null;
+        try {
+          videoHash = await hashBlob(file);
+        } catch { /* ignore — sem hash, segue */ }
+
+        if (videoHash) {
+          // Já importado nesta mesma sessão?
+          if (sessionHashes.has(videoHash)) {
+            toast.warning(`${file.name}: vídeo duplicado — não importado.`);
+            duplicateCount++;
+            continue;
+          }
+          // Já existe no banco? (próprios + globais visíveis)
+          const { data: existing } = await supabase
+            .from('exercise_library')
+            .select('id, name')
+            .eq('video_hash', videoHash)
+            .or(`user_id.eq.${user.id},is_global.eq.true`)
+            .limit(1)
+            .maybeSingle();
+          if (existing) {
+            toast.warning(
+              `${file.name}: já existe como "${(existing as any).name}" — não importado.`,
+            );
+            duplicateCount++;
+            continue;
+          }
+          sessionHashes.add(videoHash);
         }
 
         // Compress to ~720p WebM in the browser before upload. Falls back
@@ -844,6 +830,7 @@ export default function ExerciseLibraryPage() {
           video_type: 'upload',
           video_url: pub.publicUrl,
           video_optimized_at: optimizedAt,
+          video_hash: videoHash,
           video_start_seconds: 0,
           video_end_seconds: null,
           category_id: targetCategoryId,
@@ -872,6 +859,11 @@ export default function ExerciseLibraryPage() {
     setBulkExtras([]);
     if (successCount > 0) {
       toast.success(`${successCount} exercício(s) criado(s)`);
+    }
+    if (duplicateCount > 0) {
+      toast.warning(
+        `${duplicateCount} vídeo(s) ignorado(s) por já existirem na biblioteca.`,
+      );
     }
   };
 
@@ -1121,21 +1113,6 @@ export default function ExerciseLibraryPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end ml-auto">
-          {!selectionMode && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={dupScanning || dupDeleting}
-              onClick={analyzeDuplicateVideos}
-              title="Detecta vídeos com conteúdo idêntico (mesmo arquivo) e permite excluí-los"
-            >
-              {dupScanning ? (
-                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Analisando...</>
-              ) : (
-                <><CopyIcon className="h-4 w-4 mr-1" /> Analisar duplicatas</>
-              )}
-            </Button>
-          )}
           {!selectionMode && pendingOptimizationCount > 0 && (
             <Button
               variant="outline"
@@ -1796,84 +1773,6 @@ export default function ExerciseLibraryPage() {
           />
         );
       })()}
-
-      {/* Confirmação de exclusão de duplicatas */}
-      <Dialog
-        open={dupDialogOpen}
-        onOpenChange={(open) => {
-          if (dupDeleting) return;
-          setDupDialogOpen(open);
-          if (!open) setDupGroups(null);
-        }}
-      >
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Vídeos duplicados encontrados</DialogTitle>
-            <DialogDescription>
-              {dupGroups
-                ? `${dupGroups.length} grupo(s) de vídeos com conteúdo idêntico. Marque os que devem ser excluídos — por padrão, mantemos o mais antigo.`
-                : ''}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 max-h-[55vh] overflow-y-auto">
-            {dupGroups?.map((g, gi) => (
-              <div key={g.hash} className="rounded-md border border-border p-3 space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Grupo {gi + 1} — {g.items.length} vídeos idênticos
-                </p>
-                <ul className="space-y-1.5">
-                  {g.items.map((ex, idx) => {
-                    const checked = dupSelected.get(g.hash)?.has(ex.id) ?? false;
-                    return (
-                      <li key={ex.id} className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                          id={`dup-${ex.id}`}
-                          checked={checked}
-                          onCheckedChange={() => toggleDupSelect(g.hash, ex.id)}
-                        />
-                        <label
-                          htmlFor={`dup-${ex.id}`}
-                          className="flex-1 cursor-pointer truncate"
-                        >
-                          <span className="font-medium">{ex.name}</span>
-                          {idx === 0 && (
-                            <span className="ml-2 text-xs text-muted-foreground">(mais antigo)</span>
-                          )}
-                          {ex.created_at && (
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              {new Date(ex.created_at).toLocaleDateString('pt-BR')}
-                            </span>
-                          )}
-                        </label>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDupDialogOpen(false)}
-              disabled={dupDeleting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={runDeleteDuplicates}
-              disabled={dupDeleting}
-            >
-              {dupDeleting ? (
-                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Excluindo...</>
-              ) : (
-                `Excluir ${Array.from(dupSelected.values()).reduce((s, set) => s + set.size, 0)}`
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Bulk delete dialog */}
       <Dialog

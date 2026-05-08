@@ -15,6 +15,7 @@ export interface LibraryExercise {
   video_type: 'youtube' | 'upload' | 'instagram' | null;
   video_url: string | null;
   video_optimized_at: string | null;
+  video_hash: string | null;
   video_start_seconds: number | null;
   video_end_seconds: number | null;
   /** True when this exercise belongs to the shared global library (managed by master). */
@@ -107,6 +108,7 @@ export function useExerciseLibrary() {
       video_type?: 'youtube' | 'upload' | 'instagram' | null;
       video_url?: string | null;
       video_optimized_at?: string | null;
+      video_hash?: string | null;
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;
       category_id?: string | null;
@@ -130,6 +132,7 @@ export function useExerciseLibrary() {
         video_type: data.video_type ?? null,
         video_url: data.video_url ?? null,
         video_optimized_at: data.video_optimized_at ?? null,
+        video_hash: data.video_hash ?? null,
         video_start_seconds: data.video_start_seconds ?? null,
         video_end_seconds: data.video_end_seconds ?? null,
         category_id: data.category_id ?? null,
