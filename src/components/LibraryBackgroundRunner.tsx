@@ -113,9 +113,9 @@ export function LibraryBackgroundRunner() {
       const total = optQueue.length + aiQueue.length;
       if (total === 0) return;
 
-      let done = 0;
       let saved = 0;
-      upsert({ id: JOB_ID, label: JOB_LABEL, done: 0, total });
+      let processedCount = 0;
+      addWork(JOB_ID, JOB_LABEL, total);
 
       const analyzeExercise = async (ex: LibraryExercise) => {
         const { data, error } = await supabase.functions.invoke('analyze-exercise-video', {
