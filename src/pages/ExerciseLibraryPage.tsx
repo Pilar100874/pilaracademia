@@ -148,6 +148,7 @@ export default function ExerciseLibraryPage() {
   const [igNamePrefix, setIgNamePrefix] = useState('');
   const [igCategoryChoice, setIgCategoryChoice] = useState<string>(NO_CATEGORY);
   const [igNewCategoryName, setIgNewCategoryName] = useState('');
+  const [igExtras, setIgExtras] = useState<string[]>([]);
   const [igImporting, setIgImporting] = useState(false);
   const [igProgress, setIgProgress] = useState(0);
   const [igProgressLabel, setIgProgressLabel] = useState('');
