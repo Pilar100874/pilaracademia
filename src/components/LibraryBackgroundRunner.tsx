@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +7,7 @@ import { useExerciseLibrary, type LibraryExercise } from '@/hooks/useExerciseLib
 import { useQueryClient } from '@tanstack/react-query';
 import { compressVideoFile } from '@/lib/compressVideo';
 import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
-import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL } from '@/lib/libraryBgJob';
+import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL, isImportBusy, subscribeImportBusy } from '@/lib/libraryBgJob';
 
 // Module-level flag — evita execuções concorrentes da mesma fila.
 // É liberado ao final de run() para permitir uma nova verificação
@@ -32,6 +32,13 @@ export function LibraryBackgroundRunner() {
   const queryClient = useQueryClient();
   const { addWork, tick, remove } = useBackgroundProgress();
   const { pathname } = useLocation();
+  // Re-renderiza quando o estado de importação muda — o runner aguarda
+  // todas as importações terminarem antes de começar a processar vídeos.
+  const [, setBusyTick] = useState(0);
+  useEffect(() => {
+    const unsub = subscribeImportBusy(() => setBusyTick((n) => n + 1));
+    return () => { unsub(); };
+  }, []);
 
   const processableExercises = useMemo(
     () =>
@@ -47,6 +54,11 @@ export function LibraryBackgroundRunner() {
     if (!processableExercises || processableExercises.length === 0) return;
     // Não dispara em telas públicas/auth
     if (pathname.startsWith('/auth') || pathname.startsWith('/reset-password') || pathname.startsWith('/p/') || pathname.startsWith('/r/')) return;
+    // Aguarda qualquer importação em andamento (upload em massa,
+    // Instagram) terminar antes de começar a processar vídeos. Quando
+    // `endImport()` é chamado, `subscribeImportBusy` re-dispara este
+    // effect via setBusyTick e o runner inicia.
+    if (isImportBusy()) return;
 
     const hasPending =
       processableExercises.some((ex) => ex.video_type === 'upload' && !!ex.video_url && !ex.video_optimized_at) ||

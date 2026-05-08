@@ -59,7 +59,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
-import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL } from '@/lib/libraryBgJob';
+import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL, beginImport, endImport } from '@/lib/libraryBgJob';
 
 const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
@@ -379,6 +379,7 @@ export default function ExerciseLibraryPage() {
   const handleConvertInstagram = async (exercise: LibraryExercise) => {
     if (convertingId) return;
     setConvertingId(exercise.id);
+    beginImport();
     const tId = toast.loading(`Importando "${exercise.name}" para o storage...`);
     try {
       const { data, error } = await supabase.functions.invoke(
@@ -396,6 +397,7 @@ export default function ExerciseLibraryPage() {
       );
     } finally {
       setConvertingId(null);
+      endImport();
     }
   };
 
@@ -532,6 +534,7 @@ export default function ExerciseLibraryPage() {
     }
 
     setIgImporting(true);
+    beginImport();
     setIgError(null);
     setIgPartialErrors([]);
     setIgResult(null);
@@ -654,6 +657,7 @@ export default function ExerciseLibraryPage() {
     } finally {
       clearInterval(progressTimer);
       setIgImporting(false);
+      endImport();
       setTimeout(() => {
         setIgProgress(0);
         setIgProgressLabel('');
@@ -690,6 +694,7 @@ export default function ExerciseLibraryPage() {
 
     setPendingFiles(null);
     setBulkUploading({ done: 0, total: files.length });
+    beginImport();
     const usedNames = new Set<string>();
     let successCount = 0;
 
@@ -758,6 +763,7 @@ export default function ExerciseLibraryPage() {
     }
 
     setBulkUploading(null);
+    endImport();
     setBulkExtras([]);
     if (successCount > 0) {
       toast.success(`${successCount} exercício(s) criado(s)`);
