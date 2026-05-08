@@ -23,6 +23,7 @@ import {
 } from '@/components/BodyAnalysisFilter';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
 import { ManageExtrasDialog } from '@/components/ManageExtrasDialog';
+import { BulkExtrasDialog } from '@/components/BulkExtrasDialog';
 import { ExtrasPicker } from '@/components/ExtrasPicker';
 import { ApifySettingsCard } from '@/components/ApifySettingsCard';
 import {
@@ -120,6 +121,7 @@ export default function ExerciseLibraryPage() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [bulkExtrasOpen, setBulkExtrasOpen] = useState(false);
   const [moveCategoryChoice, setMoveCategoryChoice] = useState<string>(NO_CATEGORY);
   const [newMoveCategoryName, setNewMoveCategoryName] = useState('');
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -1005,6 +1007,15 @@ export default function ExerciseLibraryPage() {
               </Button>
               <Button
                 size="sm"
+                variant="outline"
+                disabled={selectedIds.size === 0}
+                onClick={() => setBulkExtrasOpen(true)}
+              >
+                <Dumbbell className="h-4 w-4 mr-1" />
+                Equipar ({selectedIds.size})
+              </Button>
+              <Button
+                size="sm"
                 variant="destructive"
                 disabled={selectedIds.size === 0 || bulkDeleteChecking}
                 onClick={openBulkDelete}
@@ -1487,6 +1498,13 @@ export default function ExerciseLibraryPage() {
       <ManageExtrasDialog
         open={manageExtrasOpen}
         onOpenChange={setManageExtrasOpen}
+      />
+
+      <BulkExtrasDialog
+        open={bulkExtrasOpen}
+        onOpenChange={setBulkExtrasOpen}
+        exerciseIds={Array.from(selectedIds)}
+        onDone={exitSelectionMode}
       />
 
       <ConfirmDeleteDialog
