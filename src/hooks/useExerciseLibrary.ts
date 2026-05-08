@@ -15,6 +15,7 @@ export interface LibraryExercise {
   video_type: 'youtube' | 'upload' | 'instagram' | null;
   video_url: string | null;
   video_optimized_at: string | null;
+  video_hash: string | null;
   video_start_seconds: number | null;
   video_end_seconds: number | null;
   /** True when this exercise belongs to the shared global library (managed by master). */
