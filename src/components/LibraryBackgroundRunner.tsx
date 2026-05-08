@@ -196,25 +196,32 @@ export function LibraryBackgroundRunner() {
           if (!res.ok) throw new Error('download failed');
           const blob = await res.blob();
           const origSize = blob.size;
-          // Calcula hash do conteúdo original — usado depois para detectar
-          // duplicatas no momento da importação.
-          let videoHash: string | null = null;
-          try {
-            const hashBuf = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
-            videoHash = Array.from(new Uint8Array(hashBuf))
-              .map((b) => b.toString(16).padStart(2, '0'))
-              .join('');
-          } catch { /* ignore */ }
           const inputFile = new File([blob], 'video.mp4', { type: blob.type || 'video/mp4' });
           const compressed = await compressVideoFile(inputFile);
+
+          // Helper para hashear um Blob
+          const hashOf = async (b: Blob): Promise<string | null> => {
+            try {
+              const hashBuf = await crypto.subtle.digest('SHA-256', await b.arrayBuffer());
+              return Array.from(new Uint8Array(hashBuf))
+                .map((x) => x.toString(16).padStart(2, '0'))
+                .join('');
+            } catch { return null; }
+          };
+
           if (compressed === inputFile || compressed.size >= origSize) {
+            // Mantém o vídeo atual — hashea o que JÁ está no storage
+            const storedHash = await hashOf(blob);
             const checkedAt = new Date().toISOString();
-            const { error: markError } = await supabase.from('exercise_library').update({ video_optimized_at: checkedAt, video_hash: videoHash ?? ex.video_hash ?? null } as never).eq('id', ex.id);
+            const { error: markError } = await supabase.from('exercise_library').update({ video_optimized_at: checkedAt, video_hash: storedHash ?? ex.video_hash ?? null } as never).eq('id', ex.id);
             if (markError) throw markError;
             queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>
-              old?.map((e) => (e.id === ex.id ? { ...e, video_optimized_at: checkedAt } : e)) ?? old,
+              old?.map((e) => (e.id === ex.id ? { ...e, video_optimized_at: checkedAt, video_hash: storedHash ?? e.video_hash } : e)) ?? old,
             );
           } else {
+            // Hashea os bytes COMPRIMIDOS — mesmos bytes que um novo
+            // upload do mesmo arquivo hashearia (após compressão).
+            const compressedHash = await hashOf(compressed);
             const path = `${user.id}/${Date.now()}-auto.webm`;
             const { error: upErr } = await supabase.storage
               .from('exercise-videos')
@@ -224,11 +231,11 @@ export function LibraryBackgroundRunner() {
             const optimizedAt = new Date().toISOString();
             const { error: videoUpdateError } = await supabase
               .from('exercise_library')
-              .update({ video_url: pub.publicUrl, video_optimized_at: optimizedAt, video_hash: videoHash ?? ex.video_hash ?? null } as never)
+              .update({ video_url: pub.publicUrl, video_optimized_at: optimizedAt, video_hash: compressedHash ?? ex.video_hash ?? null } as never)
               .eq('id', ex.id);
             if (videoUpdateError) throw videoUpdateError;
             queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>
-              old?.map((e) => (e.id === ex.id ? { ...e, video_url: pub.publicUrl, video_optimized_at: optimizedAt } : e)) ?? old,
+              old?.map((e) => (e.id === ex.id ? { ...e, video_url: pub.publicUrl, video_optimized_at: optimizedAt, video_hash: compressedHash ?? e.video_hash } : e)) ?? old,
             );
             saved += origSize - compressed.size;
             try {
@@ -242,6 +249,32 @@ export function LibraryBackgroundRunner() {
           }
         } catch (err) {
           console.warn('[bg] optimize failed', ex.id, err);
+        }
+        processedCount++;
+        tick(JOB_ID, ex.name);
+      }
+
+      // ---------- Etapa 2b: Backfill de hash p/ vídeos já otimizados ----------
+      for (const ex of hashBackfillQueue) {
+        if (cancelled) break;
+        try {
+          const res = await fetch(ex.video_url!);
+          if (!res.ok) throw new Error('download failed');
+          const blob = await res.blob();
+          const hashBuf = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+          const hex = Array.from(new Uint8Array(hashBuf))
+            .map((b) => b.toString(16).padStart(2, '0'))
+            .join('');
+          const { error: hErr } = await supabase
+            .from('exercise_library')
+            .update({ video_hash: hex } as never)
+            .eq('id', ex.id);
+          if (hErr) throw hErr;
+          queryClient.setQueryData<LibraryExercise[]>(['exercise-library', user.id], (old) =>
+            old?.map((e) => (e.id === ex.id ? { ...e, video_hash: hex } : e)) ?? old,
+          );
+        } catch (err) {
+          console.warn('[bg] hash backfill failed', ex.id, err);
         }
         processedCount++;
         tick(JOB_ID, ex.name);
