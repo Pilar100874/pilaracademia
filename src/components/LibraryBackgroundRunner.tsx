@@ -156,14 +156,13 @@ export function LibraryBackgroundRunner() {
       // Evita que a análise fique presa atrás da compressão de vídeos legados.
       for (const ex of aiReadyQueue) {
         if (cancelled) break;
-        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
         try {
           await analyzeExercise(ex);
         } catch (err) {
           console.warn('[bg] AI analysis failed', ex.id, err);
         }
-        done++;
-        upsert({ id: JOB_ID, label: JOB_LABEL, done, total, current: ex.name });
+        processedCount++;
+        tick(JOB_ID, ex.name);
       }
 
       // ---------- Etapa 2: Otimização (ajuste de resolução) ----------
