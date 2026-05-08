@@ -30,7 +30,7 @@ export function LibraryBackgroundRunner() {
   const { user } = useAuth();
   const { exercises, allExercises, isMaster } = useExerciseLibrary();
   const queryClient = useQueryClient();
-  const { upsert, remove } = useBackgroundProgress();
+  const { addWork, tick, remove } = useBackgroundProgress();
   const { pathname } = useLocation();
 
   const processableExercises = useMemo(
