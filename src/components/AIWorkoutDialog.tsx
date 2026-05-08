@@ -15,6 +15,7 @@ import { WizardStepper, WizardFooter } from '@/components/WizardShell';
 
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
+import { ExtrasPicker } from '@/components/ExtrasPicker';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { useBloodExams } from '@/hooks/useBloodExams';
 import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
@@ -61,6 +62,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [allowRepeat, setAllowRepeat] = useState(true);
   const [varyCategories, setVaryCategories] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
   const [source, setSource] = useState<'all' | 'mine' | 'global'>('all');
   const [useBodyPlan, setUseBodyPlan] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -92,6 +94,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setAllowRepeat(true);
     setVaryCategories(false);
     setSelectedCategoryIds([]);
+    setSelectedExtraIds([]);
     setSource('all');
     setUseBodyPlan(false);
   };
@@ -120,12 +123,20 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const sourceFiltered =
     source === 'mine' ? personalOnly : source === 'global' ? globalExercises : exercises;
 
-  const filteredExercises =
-    selectedCategoryIds.length === 0
-      ? sourceFiltered
-      : sourceFiltered.filter((ex) =>
-          (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id))
-        );
+  const filteredExercises = (() => {
+    let list = sourceFiltered;
+    if (selectedCategoryIds.length > 0) {
+      list = list.filter((ex) =>
+        (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id))
+      );
+    }
+    if (selectedExtraIds.length > 0) {
+      list = list.filter((ex) =>
+        selectedExtraIds.every((id) => (ex.extra_ids || []).includes(id))
+      );
+    }
+    return list;
+  })();
 
   const toggleDay = (idx: number) => {
     setSelectedDays((prev) =>
@@ -494,6 +505,34 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                   })}
                 </div>
               )}
+
+              <div className="space-y-1.5 pt-3 border-t border-border/60">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Equipamentos extras
+                  </p>
+                  {selectedExtraIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedExtraIds([])}
+                      className="text-[10px] text-muted-foreground hover:text-foreground underline"
+                    >
+                      Limpar
+                    </button>
+                  )}
+                </div>
+                <ExtrasPicker
+                  selectedIds={selectedExtraIds}
+                  onToggle={(id) =>
+                    setSelectedExtraIds((prev) =>
+                      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                    )
+                  }
+                  allowCreate={false}
+                  compact
+                  emptyHint="Nenhum equipamento cadastrado."
+                />
+              </div>
             </div>
           )}
 

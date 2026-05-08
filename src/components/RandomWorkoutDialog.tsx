@@ -9,6 +9,7 @@ import { WizardStepper, WizardFooter } from '@/components/WizardShell';
 
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
+import { ExtrasPicker } from '@/components/ExtrasPicker';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { Shuffle, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -48,6 +49,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   const [aestheticKeys, setAestheticKeys] = useState<Set<AestheticAnalysisKey>>(new Set());
   const [mobilityKeys, setMobilityKeys] = useState<Set<MobilityAnalysisKey>>(new Set());
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [allowRepeat, setAllowRepeat] = useState(true);
   const [varyCategories, setVaryCategories] = useState(false);
@@ -102,9 +104,12 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     if (selectedCategoryIds.length > 0) {
       p = p.filter((ex) => (ex.category_ids || []).some((id) => selectedCategoryIds.includes(id)));
     }
+    if (selectedExtraIds.length > 0) {
+      p = p.filter((ex) => selectedExtraIds.every((id) => (ex.extra_ids || []).includes(id)));
+    }
     return p;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exercises, bodyKeys, aestheticKeys, mobilityKeys, min, selectedCategoryIds]);
+  }, [exercises, bodyKeys, aestheticKeys, mobilityKeys, min, selectedCategoryIds, selectedExtraIds]);
 
   const toggleBody = (k: BodyAnalysisKey) => {
     clearIf('classif');
@@ -136,6 +141,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     setAestheticKeys(new Set());
     setMobilityKeys(new Set());
     setSelectedCategoryIds([]);
+    setSelectedExtraIds([]);
     setSelectedDays([]);
     setAllowRepeat(true);
     setVaryCategories(false);
@@ -456,6 +462,34 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                   })}
                 </div>
               )}
+
+              <div className="space-y-1.5 pt-2 border-t border-border/60">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Equipamentos extras
+                  </p>
+                  {selectedExtraIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedExtraIds([])}
+                      className="text-[10px] text-muted-foreground hover:text-foreground underline"
+                    >
+                      Limpar
+                    </button>
+                  )}
+                </div>
+                <ExtrasPicker
+                  selectedIds={selectedExtraIds}
+                  onToggle={(id) =>
+                    setSelectedExtraIds((prev) =>
+                      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                    )
+                  }
+                  allowCreate={false}
+                  compact
+                  emptyHint="Nenhum equipamento cadastrado."
+                />
+              </div>
             </div>
           )}
 
