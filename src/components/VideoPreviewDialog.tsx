@@ -124,9 +124,10 @@ export function VideoPreviewDialog({
           </div>
         )}
 
-        {/* Multi-select quick category picker */}
-        {categoryOptions && categoryOptions.length > 0 && onToggleCategory && (() => {
-          const parents = categoryOptions.filter((o) => !o.parentId);
+        {/* Multi-select quick category + extras picker */}
+        {((categoryOptions && categoryOptions.length > 0 && onToggleCategory) ||
+          (extraOptions && extraOptions.length > 0 && onToggleExtra)) && (() => {
+          const parents = (categoryOptions ?? []).filter((o) => !o.parentId);
           const childrenByParent = new Map<string, VideoPreviewCategoryOption[]>();
           categoryOptions.forEach((o) => {
             if (o.parentId) {
