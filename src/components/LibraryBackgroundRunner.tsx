@@ -106,10 +106,27 @@ export function LibraryBackgroundRunner() {
         allowed = (data as { movement_analysis_enabled?: boolean } | null)?.movement_analysis_enabled === true;
       }
 
+      // Per-task "attempted" sets — evita reprocessar o mesmo vídeo em
+      // loop quando uma etapa falha (ex.: análise por IA indisponível).
+      // Persistido em sessionStorage para sobreviver a re-renders, mas
+      // limpa quando o usuário abre uma nova aba/sessão.
+      const loadAttempts = (key: string): Set<string> => {
+        try {
+          const raw = sessionStorage.getItem(key);
+          return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+        } catch { return new Set(); }
+      };
+      const saveAttempts = (key: string, set: Set<string>) => {
+        try { sessionStorage.setItem(key, JSON.stringify(Array.from(set))); } catch { /* ignore */ }
+      };
+      const optAttempts = loadAttempts('lib-bg-opt-attempts');
+      const aiAttempts = loadAttempts('lib-bg-ai-attempts');
+      const hashAttempts = loadAttempts('lib-bg-hash-attempts');
+
       const cached = queryClient.getQueryData<LibraryExercise[]>(['exercise-library', user.id]) ?? processableExercises;
       const fresh1 = cached.filter((ex) => !ex.is_global || isMaster || ex.user_id === user.id);
       const optQueue = fresh1.filter(
-        (ex) => ex.video_type === 'upload' && !!ex.video_url && !ex.video_optimized_at,
+        (ex) => ex.video_type === 'upload' && !!ex.video_url && !ex.video_optimized_at && !optAttempts.has(ex.id),
       );
       const aiQueue = allowed
         ? fresh1.filter(
@@ -117,7 +134,8 @@ export function LibraryBackgroundRunner() {
               (!ex.body_analyzed_at || !ex.mobility_analysis) &&
               !!ex.video_url &&
               !!ex.video_type &&
-              ex.video_type !== 'instagram',
+              ex.video_type !== 'instagram' &&
+              !aiAttempts.has(ex.id),
           )
         : [];
 
@@ -129,7 +147,7 @@ export function LibraryBackgroundRunner() {
       // que está armazenado no storage (mesmos bytes que novos uploads
       // hashearão pós-compressão).
       const hashBackfillQueue = fresh1.filter(
-        (ex) => !!ex.video_url && !!ex.video_type && ex.video_type !== 'youtube' && !ex.video_hash && !optIds.has(ex.id),
+        (ex) => !!ex.video_url && !!ex.video_type && ex.video_type !== 'youtube' && !ex.video_hash && !optIds.has(ex.id) && !hashAttempts.has(ex.id),
       );
 
       const total = optQueue.length + aiQueue.length + hashBackfillQueue.length;
