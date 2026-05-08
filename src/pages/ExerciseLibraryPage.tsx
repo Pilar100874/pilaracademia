@@ -110,6 +110,7 @@ export default function ExerciseLibraryPage() {
   const [editingExercise, setEditingExercise] = useState<LibraryExercise | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState<LibraryExercise | null>(null);
+  const [plansForDelete, setPlansForDelete] = useState<string[]>([]);
   const [zoomExercise, setZoomExercise] = useState<LibraryExercise | null>(null);
   const [videoPreview, setVideoPreview] = useState<LibraryExercise | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -127,8 +128,8 @@ export default function ExerciseLibraryPage() {
   const [newMoveCategoryName, setNewMoveCategoryName] = useState('');
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleteBlocked, setBulkDeleteBlocked] = useState<{
-    deletableIds: string[];
-    blocked: { id: string; name: string; plans: string[] }[];
+    ids: string[];
+    inUse: { id: string; name: string; plans: string[] }[];
   } | null>(null);
   const [bulkDeleteChecking, setBulkDeleteChecking] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -260,18 +261,15 @@ export default function ExerciseLibraryPage() {
     try {
       const ids = Array.from(selectedIds);
       const usage = await checkExerciseUsage(ids);
-      const deletableIds: string[] = [];
-      const blocked: { id: string; name: string; plans: string[] }[] = [];
+      const inUse: { id: string; name: string; plans: string[] }[] = [];
       ids.forEach((id) => {
         const plans = usage.get(id);
-        const ex = exercises.find((e) => e.id === id);
         if (plans && plans.length > 0) {
-          blocked.push({ id, name: ex?.name ?? 'Exercício', plans });
-        } else {
-          deletableIds.push(id);
+          const ex = exercises.find((e) => e.id === id);
+          inUse.push({ id, name: ex?.name ?? 'Exercício', plans });
         }
       });
-      setBulkDeleteBlocked({ deletableIds, blocked });
+      setBulkDeleteBlocked({ ids, inUse });
       setBulkDeleteOpen(true);
     } catch {
       toast.error('Erro ao verificar uso dos exercícios');
@@ -282,16 +280,23 @@ export default function ExerciseLibraryPage() {
 
   const runBulkDelete = async () => {
     if (!bulkDeleteBlocked) return;
-    const { deletableIds } = bulkDeleteBlocked;
-    if (!deletableIds.length) {
+    const { ids, inUse } = bulkDeleteBlocked;
+    if (!ids.length) {
       setBulkDeleteOpen(false);
       return;
     }
     setBulkDeleting(true);
     try {
-      for (const id of deletableIds) {
+      // Cascade-remove from workouts for items in use
+      if (inUse.length > 0) {
+        const inUseSet = new Set(inUse.map((i) => i.id));
+        const toCascade = exercises.filter((e) => inUseSet.has(e.id));
+        await Promise.all(toCascade.map((e) => cascadeRemoveFromWorkouts(e)));
+      }
+      for (const id of ids) {
         await deleteExercise.mutateAsync(id);
       }
+      await queryClient.invalidateQueries({ queryKey: ['workout-plans'] });
       setBulkDeleteOpen(false);
       setBulkDeleteBlocked(null);
       exitSelectionMode();
@@ -392,17 +397,25 @@ export default function ExerciseLibraryPage() {
     setDialogOpen(true);
   };
 
+  // Removes workout_exercises rows that reference this library exercise
+  // (matching either by exercise_library_id or legacy by name with null link).
+  const cascadeRemoveFromWorkouts = async (ex: LibraryExercise) => {
+    await Promise.all([
+      supabase.from('workout_exercises').delete().eq('exercise_library_id', ex.id),
+      supabase
+        .from('workout_exercises')
+        .delete()
+        .is('exercise_library_id', null)
+        .eq('name', ex.name),
+    ]);
+  };
+
   const handleDelete = async (exercise: LibraryExercise) => {
     try {
       const usage = await checkExerciseUsage([exercise.id]);
-      const plans = usage.get(exercise.id);
-      if (plans && plans.length > 0) {
-        toast.error(
-          `Não é possível excluir: usado em ${plans.length} treino(s) — ${plans.join(', ')}`
-        );
-        return;
-      }
+      const plans = usage.get(exercise.id) ?? [];
       setExerciseToDelete(exercise);
+      setPlansForDelete(plans);
       setDeleteDialogOpen(true);
     } catch {
       toast.error('Erro ao verificar uso do exercício');
@@ -411,9 +424,14 @@ export default function ExerciseLibraryPage() {
 
   const confirmDelete = async () => {
     if (exerciseToDelete) {
+      if (plansForDelete.length > 0) {
+        await cascadeRemoveFromWorkouts(exerciseToDelete);
+      }
       await deleteExercise.mutateAsync(exerciseToDelete.id);
+      await queryClient.invalidateQueries({ queryKey: ['workout-plans'] });
       setDeleteDialogOpen(false);
       setExerciseToDelete(null);
+      setPlansForDelete([]);
     }
   };
 
@@ -1513,10 +1531,17 @@ export default function ExerciseLibraryPage() {
 
       <ConfirmDeleteDialog
         open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open) { setExerciseToDelete(null); setPlansForDelete([]); }
+        }}
         onConfirm={confirmDelete}
         title="Excluir exercício?"
-        description={`O exercício "${exerciseToDelete?.name}" será removido da biblioteca. Os treinos que usam este exercício não serão afetados.`}
+        description={
+          plansForDelete.length > 0
+            ? `"${exerciseToDelete?.name}" está sendo usado em ${plansForDelete.length} treino(s): ${plansForDelete.join(', ')}. Ao excluir, ele também será removido desses treinos. Deseja continuar?`
+            : `O exercício "${exerciseToDelete?.name}" será removido da biblioteca.`
+        }
       />
 
       <ConfirmDeleteDialog
@@ -1630,18 +1655,18 @@ export default function ExerciseLibraryPage() {
           <DialogHeader>
             <DialogTitle>Excluir exercícios?</DialogTitle>
             <DialogDescription>
-              {bulkDeleteBlocked && bulkDeleteBlocked.deletableIds.length > 0
-                ? `${bulkDeleteBlocked.deletableIds.length} exercício(s) serão removidos da biblioteca.`
-                : 'Nenhum dos selecionados pode ser excluído.'}
+              {bulkDeleteBlocked && bulkDeleteBlocked.ids.length > 0
+                ? `${bulkDeleteBlocked.ids.length} exercício(s) serão removidos da biblioteca.`
+                : 'Nenhum exercício selecionado.'}
             </DialogDescription>
           </DialogHeader>
-          {bulkDeleteBlocked && bulkDeleteBlocked.blocked.length > 0 && (
+          {bulkDeleteBlocked && bulkDeleteBlocked.inUse.length > 0 && (
             <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 space-y-2 max-h-60 overflow-y-auto">
               <p className="text-sm font-medium text-destructive">
-                {bulkDeleteBlocked.blocked.length} exercício(s) em uso e serão ignorados:
+                {bulkDeleteBlocked.inUse.length} exercício(s) em uso — também serão removidos dos treinos:
               </p>
               <ul className="space-y-1 text-sm">
-                {bulkDeleteBlocked.blocked.map((b) => (
+                {bulkDeleteBlocked.inUse.map((b) => (
                   <li key={b.id} className="text-muted-foreground">
                     <span className="text-foreground font-medium">{b.name}</span>
                     {' '}— treino(s): {b.plans.join(', ')}
@@ -1660,13 +1685,13 @@ export default function ExerciseLibraryPage() {
               disabled={
                 bulkDeleting ||
                 !bulkDeleteBlocked ||
-                bulkDeleteBlocked.deletableIds.length === 0
+                bulkDeleteBlocked.ids.length === 0
               }
             >
               {bulkDeleting ? (
                 <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Excluindo...</>
               ) : (
-                `Excluir ${bulkDeleteBlocked?.deletableIds.length ?? 0}`
+                `Excluir ${bulkDeleteBlocked?.ids.length ?? 0}`
               )}
             </Button>
           </DialogFooter>
