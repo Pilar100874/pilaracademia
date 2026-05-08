@@ -16,6 +16,7 @@ import { WizardStepper, WizardFooter } from '@/components/WizardShell';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { useExerciseCategories } from '@/hooks/useExerciseCategories';
 import { ExtrasPicker } from '@/components/ExtrasPicker';
+import { useExerciseExtras } from '@/hooks/useExerciseExtras';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { useBloodExams } from '@/hooks/useBloodExams';
 import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
