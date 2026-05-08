@@ -50,6 +50,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   const [mobilityKeys, setMobilityKeys] = useState<Set<MobilityAnalysisKey>>(new Set());
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
+  const [filterNoExtras, setFilterNoExtras] = useState(false);
   const [extraCounts, setExtraCounts] = useState<Record<string, string>>({});
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [allowRepeat, setAllowRepeat] = useState(true);
