@@ -601,12 +601,9 @@ export default function ExerciseLibraryPage() {
       // Atualiza a lista de exercícios imediatamente
       await queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
 
-      // Ajusta filtro para mostrar onde os novos foram parar
-      if (targetCategoryId) {
-        setFilterCategory(targetCategoryId);
-      } else {
-        setFilterCategory(ALL_CATEGORIES);
-      }
+      // Ajusta filtro para mostrar onde os novos foram parar.
+      // Sem categoria selecionada → vão para "Sem categoria".
+      setFilterCategory(targetCategoryId ?? NO_CATEGORY);
 
       // Salva resultado para mostrar tela final dentro do dialog
       setIgResult({
