@@ -188,6 +188,16 @@ export default function AdminUsersPage() {
           </Button>
         </div>
       )}
+      {p.user_id !== user?.id && (
+        <button
+          type="button"
+          onClick={() => setConfirmDelete(p)}
+          className="text-[11px] text-destructive hover:underline inline-flex items-center gap-1"
+        >
+          <Trash2 className="h-3 w-3" />
+          Excluir usuário
+        </button>
+      )}
     </li>
   );
 
