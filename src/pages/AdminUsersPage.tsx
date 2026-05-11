@@ -8,7 +8,17 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Loader2, Users, Search, ArrowLeft, Check, X } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Loader2, Users, Search, ArrowLeft, Check, X, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 type ApprovalStatus = 'pending' | 'approved' | 'rejected';
@@ -80,6 +90,24 @@ export default function AdminUsersPage() {
     },
     onError: () => toast.error('Falha ao decidir'),
   });
+
+  const deleteUser = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+        body: { userId },
+      });
+      if (error) throw error;
+      if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'users-list'] });
+      toast.success('Usuário excluído');
+      setConfirmDelete(null);
+    },
+    onError: (err: Error) => toast.error(err.message || 'Falha ao excluir usuário'),
+  });
+
+  const [confirmDelete, setConfirmDelete] = useState<ProfileRow | null>(null);
 
   if (roleLoading) {
     return (
@@ -160,6 +188,16 @@ export default function AdminUsersPage() {
           </Button>
         </div>
       )}
+      {p.user_id !== user?.id && (
+        <button
+          type="button"
+          onClick={() => setConfirmDelete(p)}
+          className="text-[11px] text-destructive hover:underline inline-flex items-center gap-1"
+        >
+          <Trash2 className="h-3 w-3" />
+          Excluir usuário
+        </button>
+      )}
     </li>
   );
 
@@ -226,6 +264,39 @@ export default function AdminUsersPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é <strong>irreversível</strong>. O usuário{' '}
+              <strong>{confirmDelete?.name || confirmDelete?.email || '—'}</strong> e todos os
+              dados associados (vídeos, treinos, registros) serão removidos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteUser.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmDelete) deleteUser.mutate(confirmDelete.user_id);
+              }}
+              disabled={deleteUser.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteUser.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Excluindo…
+                </>
+              ) : (
+                'Excluir definitivamente'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
