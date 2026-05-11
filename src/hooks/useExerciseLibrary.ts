@@ -52,23 +52,50 @@ export function useExerciseLibrary() {
       if (!user) return [] as LibraryExercise[];
 
       // Bring back personal + global in a single round-trip; junction links separately.
-      const [exRes, linkRes, extraRes] = await Promise.all([
-        supabase
-          .from('exercise_library')
-          .select('*')
-          .or(`user_id.eq.${user.id},is_global.eq.true`)
-          .order('name', { ascending: true }),
-        supabase
-          .from('exercise_library_categories')
-          .select('exercise_id, category_id'),
-        supabase
-          .from('exercise_library_extras')
-          .select('exercise_id, extra_id'),
+      // Supabase has a default limit of 1000 rows per query, so we paginate
+      // through all three sources to make sure the full library is loaded.
+      const PAGE = 1000;
+      async function fetchAll<T>(
+        build: (from: number, to: number) => any,
+      ): Promise<T[]> {
+        const all: T[] = [];
+        for (let from = 0; ; from += PAGE) {
+          const to = from + PAGE - 1;
+          const { data, error } = await build(from, to);
+          if (error) throw error;
+          const batch = (data ?? []) as T[];
+          all.push(...batch);
+          if (batch.length < PAGE) break;
+        }
+        return all;
+      }
+
+      const [exData, linkData, extraData] = await Promise.all([
+        fetchAll<any>((from, to) =>
+          supabase
+            .from('exercise_library')
+            .select('*')
+            .or(`user_id.eq.${user.id},is_global.eq.true`)
+            .order('name', { ascending: true })
+            .range(from, to),
+        ),
+        fetchAll<{ exercise_id: string; category_id: string }>((from, to) =>
+          supabase
+            .from('exercise_library_categories')
+            .select('exercise_id, category_id')
+            .range(from, to),
+        ),
+        fetchAll<{ exercise_id: string; extra_id: string }>((from, to) =>
+          supabase
+            .from('exercise_library_extras')
+            .select('exercise_id, extra_id')
+            .range(from, to),
+        ),
       ]);
 
-      if (exRes.error) throw exRes.error;
-      if (linkRes.error) throw linkRes.error;
-      if (extraRes.error) throw extraRes.error;
+      const exRes = { data: exData } as any;
+      const linkRes = { data: linkData } as any;
+      const extraRes = { data: extraData } as any;
 
       const linksByExercise = new Map<string, string[]>();
       for (const link of linkRes.data ?? []) {
