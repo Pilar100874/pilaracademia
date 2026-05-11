@@ -2574,21 +2574,27 @@ export type Database = {
       master_settings: {
         Row: {
           id: number
+          library_analysis_model: string
           payments_mode: string
           trial_days: number
           updated_at: string
+          user_video_analysis_model: string
         }
         Insert: {
           id?: number
+          library_analysis_model?: string
           payments_mode?: string
           trial_days?: number
           updated_at?: string
+          user_video_analysis_model?: string
         }
         Update: {
           id?: number
+          library_analysis_model?: string
           payments_mode?: string
           trial_days?: number
           updated_at?: string
+          user_video_analysis_model?: string
         }
         Relationships: []
       }
@@ -2695,6 +2701,9 @@ export type Database = {
       profiles: {
         Row: {
           activity_level: string | null
+          approval_decided_at: string | null
+          approval_decided_by: string | null
+          approval_status: string
           birth_date: string | null
           created_at: string
           daily_calories: number | null
@@ -2717,6 +2726,7 @@ export type Database = {
           goal: string | null
           height_cm: number | null
           id: string
+          is_active: boolean
           movement_analysis_enabled: boolean
           name: string
           nutrition_override_set_at: string | null
@@ -2724,10 +2734,14 @@ export type Database = {
           onboarding_completed: boolean
           updated_at: string
           user_id: string
+          video_analysis_model: string | null
           weight_kg: number | null
         }
         Insert: {
           activity_level?: string | null
+          approval_decided_at?: string | null
+          approval_decided_by?: string | null
+          approval_status?: string
           birth_date?: string | null
           created_at?: string
           daily_calories?: number | null
@@ -2750,6 +2764,7 @@ export type Database = {
           goal?: string | null
           height_cm?: number | null
           id?: string
+          is_active?: boolean
           movement_analysis_enabled?: boolean
           name: string
           nutrition_override_set_at?: string | null
@@ -2757,10 +2772,14 @@ export type Database = {
           onboarding_completed?: boolean
           updated_at?: string
           user_id: string
+          video_analysis_model?: string | null
           weight_kg?: number | null
         }
         Update: {
           activity_level?: string | null
+          approval_decided_at?: string | null
+          approval_decided_by?: string | null
+          approval_status?: string
           birth_date?: string | null
           created_at?: string
           daily_calories?: number | null
@@ -2783,6 +2802,7 @@ export type Database = {
           goal?: string | null
           height_cm?: number | null
           id?: string
+          is_active?: boolean
           movement_analysis_enabled?: boolean
           name?: string
           nutrition_override_set_at?: string | null
@@ -2790,6 +2810,7 @@ export type Database = {
           onboarding_completed?: boolean
           updated_at?: string
           user_id?: string
+          video_analysis_model?: string | null
           weight_kg?: number | null
         }
         Relationships: []
