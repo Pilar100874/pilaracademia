@@ -170,7 +170,7 @@ export function LibraryBackgroundRunner() {
 
       const analyzeExercise = async (ex: LibraryExercise) => {
         const { data, error } = await supabase.functions.invoke('analyze-exercise-video', {
-          body: { videoUrl: ex.video_url, exerciseName: ex.name, categories: ex.category_ids },
+          body: { videoUrl: ex.video_url, exerciseName: ex.name, categories: ex.category_ids, mode: ex.is_global ? 'library' : 'user' },
         });
         if (error) throw error;
         if (data?.fallback) throw new Error(data?.message || 'AI service unavailable');
