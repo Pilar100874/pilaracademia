@@ -211,7 +211,7 @@ Seja conservador: só atribua valores altos (>60) para aspectos que são clarame
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: resolvedModel,
         messages: [
           { role: 'system', content: systemPrompt },
           {
