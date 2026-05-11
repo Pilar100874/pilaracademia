@@ -601,9 +601,12 @@ export default function ExerciseLibraryPage() {
       // Atualiza a lista de exercícios imediatamente
       await queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
 
-      // Ajusta filtro para mostrar onde os novos foram parar.
-      // Sem categoria selecionada → vão para "Sem categoria".
-      setFilterCategory(targetCategoryId ?? NO_CATEGORY);
+      // Ajusta filtro para mostrar onde os novos foram parar
+      if (targetCategoryId) {
+        setFilterCategory(targetCategoryId);
+      } else {
+        setFilterCategory(ALL_CATEGORIES);
+      }
 
       // Salva resultado para mostrar tela final dentro do dialog
       setIgResult({
@@ -613,35 +616,13 @@ export default function ExerciseLibraryPage() {
         categoryId: targetCategoryId,
       });
 
+      // Auto-otimiza os vídeos recém-importados em background (re-codifica
+      // para 720p WebM no navegador para carregarem mais rápido).
       let createdList = Array.isArray(data?.created) ? data.created : [];
 
-      // 1) PRIMEIRO aplica equipamento em TODOS os criados — assim, mesmo
-      // que algum seja descartado depois como duplicado, o vínculo cai
-      // em cascata e os sobreviventes ficam corretamente classificados.
-      if (createdList.length > 0 && igExtras.length > 0) {
-        const ids = createdList.map((c: any) => c.id).filter(Boolean);
-        if (ids.length > 0) {
-          try {
-            await Promise.all(
-              igExtras.map((extraId) =>
-                bulkAssignExtra.mutateAsync({
-                  extraId,
-                  exerciseIds: ids,
-                  mode: 'add',
-                  silent: true,
-                  skipInvalidate: true,
-                })
-              )
-            );
-          } catch (err) {
-            console.error('[ig-import] falha ao aplicar equipamento', err);
-            toast.error('Não foi possível aplicar o equipamento selecionado.');
-          }
-        }
-      }
-
-      // 2) DEPOIS detecta duplicatas: hashea cada vídeo recém-criado e
-      // remove os que já existiam (ou que se repetem no próprio lote).
+      // Detecta duplicatas: hashea cada vídeo recém-criado e remove
+      // os que já existiam na biblioteca (ou que aparecem mais de uma
+      // vez no próprio lote do IG).
       if (createdList.length > 0) {
         const dupRemoved: { id: string; name: string; existing?: string }[] = [];
         const seen = new Map<string, { id: string; name: string }>();
@@ -652,10 +633,12 @@ export default function ExerciseLibraryPage() {
             kept.push(c);
             continue;
           }
+          // Duplicado dentro do mesmo lote
           if (seen.has(h)) {
             dupRemoved.push({ id: c.id, name: c.name, existing: seen.get(h)!.name });
             continue;
           }
+          // Duplicado contra exercícios anteriores no banco
           const { data: existing } = await supabase
             .from('exercise_library')
             .select('id, name')
@@ -668,6 +651,7 @@ export default function ExerciseLibraryPage() {
             dupRemoved.push({ id: c.id, name: c.name, existing: (existing as any).name });
             continue;
           }
+          // Salva o hash no recém-criado para futuras checagens
           await supabase
             .from('exercise_library')
             .update({ video_hash: h } as never)
@@ -676,7 +660,7 @@ export default function ExerciseLibraryPage() {
           kept.push(c);
         }
         if (dupRemoved.length > 0) {
-          console.info('[ig-import] duplicados descartados:', dupRemoved);
+          // Apaga os duplicados criados (e seus arquivos no storage)
           for (const d of dupRemoved) {
             try {
               await deleteExercise.mutateAsync(d.id);
@@ -686,10 +670,27 @@ export default function ExerciseLibraryPage() {
             `${dupRemoved.length} vídeo(s) duplicado(s) descartado(s) — já existem na biblioteca.`,
           );
           await queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
-        } else {
-          await queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
         }
         createdList = kept;
+      }
+
+      // Apply selected equipment to each newly created exercise
+      if (createdList.length > 0 && igExtras.length > 0) {
+        const ids = createdList.map((c: any) => c.id).filter(Boolean);
+        if (ids.length > 0) {
+          await Promise.all(
+            igExtras.map((extraId) =>
+              bulkAssignExtra.mutateAsync({
+                extraId,
+                exerciseIds: ids,
+                mode: 'add',
+                silent: true,
+                skipInvalidate: true,
+              })
+            )
+          );
+          await queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+        }
       }
       if (createdList.length > 0) {
         const toCompress: LibraryExercise[] = createdList.map((c: any) => ({
