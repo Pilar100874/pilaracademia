@@ -71,6 +71,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
+  // Account status gate (aprovação + ativação)
+  if (profile) {
+    const p = profile as typeof profile & { is_active?: boolean; approval_status?: string };
+    if (p.is_active === false) return <AccountStatusGate status="disabled" />;
+    if (p.approval_status === 'pending') return <AccountStatusGate status="pending" />;
+    if (p.approval_status === 'rejected') return <AccountStatusGate status="rejected" />;
+  }
+
   // Redirect to onboarding if not completed yet (and not already there)
   if (profile && profile.onboarding_completed !== true && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
