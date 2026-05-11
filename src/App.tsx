@@ -246,6 +246,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute>
+            <AdminUsersPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/r/:token" element={<SharedSummaryPage />} />
       <Route path="/p/treino/:token" element={<PublicWorkoutPage />} />
       <Route
