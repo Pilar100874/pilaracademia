@@ -140,7 +140,7 @@ export default function MovementAnalysisAccessPage() {
       // Pega `limit` itens da biblioteca global com vídeo (em qualquer estado)
       const { data: list, error } = await supabase
         .from('exercise_library')
-        .select('id,name,video_url,video_type,category_ids,is_global')
+        .select('id,name,video_url,video_type')
         .eq('is_global', true)
         .not('video_url', 'is', null)
         .neq('video_type', 'instagram')
@@ -152,7 +152,6 @@ export default function MovementAnalysisAccessPage() {
         name: string;
         video_url: string;
         video_type: string;
-        category_ids: string[] | null;
       }>;
       if (items.length === 0) {
         toast.info('Nenhum vídeo encontrado para re-analisar');
