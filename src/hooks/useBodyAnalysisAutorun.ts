@@ -128,6 +128,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
               videoUrl: ex.video_url,
               exerciseName: ex.name,
               categories: ex.category_ids,
+              mode: ex.is_global ? 'library' : 'user',
             },
           });
           if (error) throw error;

@@ -24,6 +24,8 @@ import TourPage from "@/pages/TourPage";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import MovementAnalysisAccessPage from "@/pages/MovementAnalysisAccessPage";
+import AdminUsersPage from "@/pages/AdminUsersPage";
+import AccountStatusGate from "@/components/AccountStatusGate";
 import WeeklyMenuPage from "@/pages/WeeklyMenuPage";
 import { BackgroundAnalysisProvider } from "@/contexts/BackgroundAnalysisContext";
 import { BackgroundProgressProvider } from "@/contexts/BackgroundProgressContext";
@@ -67,6 +69,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Account status gate (aprovação + ativação)
+  if (profile) {
+    const p = profile as typeof profile & { is_active?: boolean; approval_status?: string };
+    if (p.is_active === false) return <AccountStatusGate status="disabled" />;
+    if (p.approval_status === 'pending') return <AccountStatusGate status="pending" />;
+    if (p.approval_status === 'rejected') return <AccountStatusGate status="rejected" />;
   }
 
   // Redirect to onboarding if not completed yet (and not already there)
@@ -233,6 +243,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <MovementAnalysisAccessPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute>
+            <AdminUsersPage />
           </ProtectedRoute>
         }
       />

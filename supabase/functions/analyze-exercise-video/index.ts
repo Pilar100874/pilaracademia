@@ -106,26 +106,41 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const [profRes, roleRes] = await Promise.all([
-      fetch(`${SUPABASE_URL}/rest/v1/profiles?user_id=eq.${userId}&select=movement_analysis_enabled`,
+    const [profRes, roleRes, settingsRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/profiles?user_id=eq.${userId}&select=movement_analysis_enabled,is_active,approval_status,video_analysis_model`,
       {
-        headers: {
-          apikey: SERVICE_KEY,
-          Authorization: `Bearer ${SERVICE_KEY}`,
-        },
+        headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
       }),
       fetch(`${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&role=eq.master_admin&clinic_id=is.null&select=role&limit=1`, {
-        headers: {
-          apikey: SERVICE_KEY,
-          Authorization: `Bearer ${SERVICE_KEY}`,
-        },
+        headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+      }),
+      fetch(`${SUPABASE_URL}/rest/v1/master_settings?id=eq.1&select=library_analysis_model,user_video_analysis_model`, {
+        headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
       }),
     ]);
     const profRows = profRes.ok ? await profRes.json() : [];
     const roleRows = roleRes.ok ? await roleRes.json() : [];
-    const enabled =
-      (Array.isArray(roleRows) && roleRows.length > 0) ||
-      (Array.isArray(profRows) && profRows[0]?.movement_analysis_enabled === true);
+    const settingsRows = settingsRes.ok ? await settingsRes.json() : [];
+    const isMaster = Array.isArray(roleRows) && roleRows.length > 0;
+    const profile = (Array.isArray(profRows) && profRows[0]) || {};
+
+    // Gate de aprovação / ativação (master sempre passa)
+    if (!isMaster) {
+      if (profile?.is_active === false) {
+        return new Response(
+          JSON.stringify({ error: 'USER_DISABLED', message: 'Sua conta está desativada.' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+      if (profile?.approval_status && profile.approval_status !== 'approved') {
+        return new Response(
+          JSON.stringify({ error: 'USER_NOT_APPROVED', message: 'Sua conta ainda não foi aprovada.' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+    }
+
+    const enabled = isMaster || profile?.movement_analysis_enabled === true;
     if (!enabled) {
       return new Response(
         JSON.stringify({
@@ -136,7 +151,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { videoUrl, exerciseName, categories } = await req.json();
+    const { videoUrl, exerciseName, categories, model: requestedModel, mode } = await req.json();
+    const settings = settingsRows[0] || {};
+    // Resolução do modelo:
+    //  - se cliente passar `model`, usa diretamente (admin re-analyze)
+    //  - se `mode === 'library'`, usa master_settings.library_analysis_model
+    //  - caso contrário usa profile.video_analysis_model ?? master_settings.user_video_analysis_model
+    const resolvedModel =
+      (typeof requestedModel === 'string' && requestedModel) ||
+      (mode === 'library'
+        ? settings.library_analysis_model
+        : profile?.video_analysis_model || settings.user_video_analysis_model) ||
+      'google/gemini-2.5-flash';
     if (!videoUrl || typeof videoUrl !== 'string') {
       return new Response(JSON.stringify({ error: 'videoUrl is required' }), {
         status: 400,
@@ -185,7 +211,7 @@ Seja conservador: só atribua valores altos (>60) para aspectos que são clarame
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: resolvedModel,
         messages: [
           { role: 'system', content: systemPrompt },
           {

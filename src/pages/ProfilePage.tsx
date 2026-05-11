@@ -397,19 +397,34 @@ export function ProfilePage() {
           </button>
 
           {isMaster && (
-            <button
-              onClick={() => navigate('/admin/movement-analysis')}
-              className="w-full flex items-center gap-3 py-3 text-left"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
-                <KeyRound className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-sm">Análise de movimento (IA)</p>
-                <p className="text-xs text-muted-foreground">Definir quais usuários podem usar</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </button>
+            <>
+              <button
+                onClick={() => navigate('/admin/movement-analysis')}
+                className="w-full flex items-center gap-3 py-3 text-left"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+                  <KeyRound className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Análise de movimento (IA)</p>
+                  <p className="text-xs text-muted-foreground">Modelo, permissões e re-análise</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+              <button
+                onClick={() => navigate('/admin/users')}
+                className="w-full flex items-center gap-3 py-3 text-left"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+                  <KeyRound className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Usuários</p>
+                  <p className="text-xs text-muted-foreground">Aprovar acessos e ativar/desativar contas</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </>
           )}
         </div>
 
