@@ -166,7 +166,7 @@ export default function MovementAnalysisAccessPage() {
             body: {
               videoUrl: ex.video_url,
               exerciseName: ex.name,
-              categories: ex.category_ids,
+              categories: [],
               model: settings.library_analysis_model,
               mode: 'library',
             },
