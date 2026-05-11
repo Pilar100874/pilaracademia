@@ -91,6 +91,24 @@ export default function AdminUsersPage() {
     onError: () => toast.error('Falha ao decidir'),
   });
 
+  const deleteUser = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+        body: { userId },
+      });
+      if (error) throw error;
+      if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'users-list'] });
+      toast.success('Usuário excluído');
+      setConfirmDelete(null);
+    },
+    onError: (err: Error) => toast.error(err.message || 'Falha ao excluir usuário'),
+  });
+
+  const [confirmDelete, setConfirmDelete] = useState<ProfileRow | null>(null);
+
   if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
