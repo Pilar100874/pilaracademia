@@ -24,6 +24,8 @@ import TourPage from "@/pages/TourPage";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import MovementAnalysisAccessPage from "@/pages/MovementAnalysisAccessPage";
+import AdminUsersPage from "@/pages/AdminUsersPage";
+import AccountStatusGate from "@/components/AccountStatusGate";
 import WeeklyMenuPage from "@/pages/WeeklyMenuPage";
 import { BackgroundAnalysisProvider } from "@/contexts/BackgroundAnalysisContext";
 import { BackgroundProgressProvider } from "@/contexts/BackgroundProgressContext";
