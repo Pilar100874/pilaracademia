@@ -199,17 +199,17 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-32">
+    <div className="min-h-screen bg-background pb-24 md:pb-12">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl px-4 pt-4 pb-3 shadow-soft md:px-0">
-        <div className="mx-auto w-full max-w-5xl md:px-8">
-          <div className="flex items-center justify-between mb-3">
+      <header className="sticky top-0 z-30 bg-card/85 backdrop-blur-xl px-4 pt-4 pb-3 shadow-soft md:px-0 md:border-b md:border-border/40 md:shadow-none md:bg-background/80">
+        <div className="mx-auto w-full max-w-6xl md:px-10 md:py-2">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
             <div>
-              <p className="text-xs text-muted-foreground md:text-sm">
+              <p className="text-xs text-muted-foreground md:text-[11px] md:uppercase md:tracking-[0.18em] md:font-medium">
                 {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
               </p>
-              <h1 className="text-lg font-bold md:text-2xl">
-                Olá, {profile?.name?.split(' ')[0] || 'Usuário'} 👋
+              <h1 className="text-lg font-bold md:text-3xl md:tracking-tight md:mt-1">
+                Olá, {profile?.name?.split(' ')[0] || 'Usuário'} <span className="md:hidden">👋</span>
               </h1>
             </div>
             <div className="flex items-center gap-2">
@@ -234,6 +234,7 @@ export function Dashboard() {
           />
         </div>
       </header>
+
 
       <div className="mx-auto w-full max-w-5xl px-4 md:px-8 space-y-4 md:space-y-6 pt-4 md:pt-6">
 
