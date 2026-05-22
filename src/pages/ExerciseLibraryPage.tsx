@@ -1105,7 +1105,7 @@ export default function ExerciseLibraryPage() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b">
+      <div className="bg-background border-b">
         <div className="flex items-center gap-3 p-4 flex-wrap">
           <Button variant="ghost" size="icon" onClick={() => navigate('/workouts')}>
             <ArrowLeft className="h-5 w-5" />
@@ -1287,9 +1287,10 @@ export default function ExerciseLibraryPage() {
             </TabsList>
           </Tabs>
         </div>
+      </div>
 
-        {/* Search + Filter */}
-        <div className="px-4 pb-4 space-y-2">
+      {/* Search + Filter (sticky) */}
+      <div className="sticky top-0 z-20 bg-background border-b px-4 py-3 space-y-2 shadow-sm">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -1433,7 +1434,8 @@ export default function ExerciseLibraryPage() {
             />
           </div>
         )}
-      </div>
+
+
 
       {/* Content */}
       <div className="p-4">
