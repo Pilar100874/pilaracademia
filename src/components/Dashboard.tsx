@@ -359,17 +359,21 @@ export function Dashboard() {
           </button>
         </div>
 
-        {/* Liquid Tracker */}
-        <LiquidTracker selectedDate={selectedDate} onDataChange={refetchLiquids} />
+        {/* Trackers grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Liquid Tracker */}
+          <LiquidTracker selectedDate={selectedDate} onDataChange={refetchLiquids} />
 
-        {/* Weight Tracker */}
-        <WeightTracker dailyCalorieDeficit={goals.calories - netCalories} showInputInitially={showWeightInput} onInputToggled={setShowWeightInput} />
+          {/* Weight Tracker */}
+          <WeightTracker dailyCalorieDeficit={goals.calories - netCalories} showInputInitially={showWeightInput} onInputToggled={setShowWeightInput} />
 
-        {/* Exercise Tracker */}
-        <ExerciseTracker selectedDate={selectedDate} onDataChange={() => {}} />
+          {/* Exercise Tracker */}
+          <ExerciseTracker selectedDate={selectedDate} onDataChange={() => {}} />
 
-        {/* Glycemia Tracker */}
-        <GlycemiaTracker selectedDate={selectedDate} />
+          {/* Glycemia Tracker */}
+          <GlycemiaTracker selectedDate={selectedDate} />
+        </div>
+
 
         {/* Body analysis plan shortcut (Adaptação) */}
         {isViewingToday && <BodyPlanShortcut />}
