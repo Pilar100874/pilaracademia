@@ -14,30 +14,30 @@ const navItems = [
 
 export function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border/50 px-1 pb-safe overflow-hidden">
-      <div className="flex items-center justify-around h-16 w-full max-w-full">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 px-1 pb-safe overflow-hidden bg-card border-t border-border/50 md:bottom-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:px-2 md:py-1 md:border md:border-border/60 md:rounded-full md:shadow-elevated md:bg-card/95 md:backdrop-blur-xl">
+      <div className="flex items-center justify-around h-16 w-full max-w-full md:h-auto md:gap-1 md:w-auto">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
               cn(
-                "flex flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-2xl transition-all min-w-0 flex-1",
+                "flex flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-2xl transition-all min-w-0 flex-1 md:flex-row md:flex-none md:gap-2 md:px-4 md:py-2 md:rounded-full",
                 isActive 
-                  ? "text-primary" 
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-primary md:bg-primary/10" 
+                  : "text-muted-foreground hover:text-foreground md:hover:bg-muted/60"
               )
             }
           >
             {({ isActive }) => (
               <>
                 <div className={cn(
-                  "p-1.5 rounded-xl transition-all",
-                  isActive && "bg-primary/10"
+                  "p-1.5 rounded-xl transition-all md:p-0",
+                  isActive && "bg-primary/10 md:bg-transparent"
                 )}>
-                  <item.icon className={cn("h-5 w-5", isActive && "text-primary")} />
+                  <item.icon className={cn("h-5 w-5 md:h-4 md:w-4", isActive && "text-primary")} />
                 </div>
-                <span className="text-[9px] font-medium">{item.label}</span>
+                <span className="text-[9px] font-medium md:text-sm">{item.label}</span>
               </>
             )}
           </NavLink>
@@ -45,5 +45,6 @@ export function BottomNav() {
         <HelpMenu inline />
       </div>
     </nav>
+
   );
 }
