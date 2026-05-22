@@ -199,41 +199,44 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 md:pb-32">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl px-4 pt-4 pb-3 shadow-soft">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-xs text-muted-foreground">
-              {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
-            </p>
-            <h1 className="text-lg font-bold">
-              Olá, {profile?.name?.split(' ')[0] || 'Usuário'} 👋
-            </h1>
+      <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl px-4 pt-4 pb-3 shadow-soft md:px-0">
+        <div className="mx-auto w-full max-w-5xl md:px-8">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-xs text-muted-foreground md:text-sm">
+                {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+              </p>
+              <h1 className="text-lg font-bold md:text-2xl">
+                Olá, {profile?.name?.split(' ')[0] || 'Usuário'} 👋
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <StreakBadge />
+              {!isViewingToday && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs h-7"
+                  onClick={() => setSelectedDate(new Date())}
+                >
+                  Hoje
+                </Button>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <StreakBadge />
-            {!isViewingToday && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="text-xs h-7"
-                onClick={() => setSelectedDate(new Date())}
-              >
-                Hoje
-              </Button>
-            )}
-          </div>
+          
+          {/* Day Selector */}
+          <DaySelector 
+            selectedDate={selectedDate} 
+            onSelectDate={setSelectedDate} 
+          />
         </div>
-        
-        {/* Day Selector */}
-        <DaySelector 
-          selectedDate={selectedDate} 
-          onSelectDate={setSelectedDate} 
-        />
       </header>
 
-      <div className="px-4 space-y-4 pt-4">
+      <div className="mx-auto w-full max-w-5xl px-4 md:px-8 space-y-4 md:space-y-6 pt-4 md:pt-6">
+
         {/* Profile warning */}
         {!isProfileComplete() && isViewingToday && (
           <button 
