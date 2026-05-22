@@ -83,14 +83,19 @@ export function useExerciseLibrary() {
           supabase
             .from('exercise_library_categories')
             .select('exercise_id, category_id')
+            .order('exercise_id', { ascending: true })
+            .order('category_id', { ascending: true })
             .range(from, to),
         ),
         fetchAll<{ exercise_id: string; extra_id: string }>((from, to) =>
           supabase
             .from('exercise_library_extras')
             .select('exercise_id, extra_id')
+            .order('exercise_id', { ascending: true })
+            .order('extra_id', { ascending: true })
             .range(from, to),
         ),
+
       ]);
 
       const exRes = { data: exData } as any;
