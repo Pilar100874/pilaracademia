@@ -361,12 +361,15 @@ export default function ExerciseLibraryPage() {
   const sourceList = activeTab === 'global' ? globalExercises : exercises;
   const filteredExercises = sourceList.filter((ex) => {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
+    const primaryCategoryIds = ex.category_id
+      ? [ex.category_id]
+      : ex.category_ids ?? [];
     let matchesCategory = true;
     if (filterCategory === NO_CATEGORY) {
-      matchesCategory = (ex.category_ids?.length ?? 0) === 0;
+      matchesCategory = primaryCategoryIds.length === 0;
     } else if (filterCategory !== ALL_CATEGORIES) {
       const allowed = descendantsMap.get(filterCategory) ?? new Set([filterCategory]);
-      matchesCategory = (ex.category_ids ?? []).some((cid) => allowed.has(cid));
+      matchesCategory = primaryCategoryIds.some((cid) => allowed.has(cid));
     }
     const matchesBody = bodyFilterMatches(ex.body_analysis, ex.aesthetic_analysis, ex.mobility_analysis, bodyFilter);
     const matchesExtras =
