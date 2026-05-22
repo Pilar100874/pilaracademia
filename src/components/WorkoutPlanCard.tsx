@@ -78,12 +78,12 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
         onClick={onStart || onEdit}
         className="flex items-center justify-between p-3 rounded-lg bg-card border cursor-pointer hover:bg-accent/50 transition-colors"
       >
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <Dumbbell className="h-5 w-5 text-primary" />
           </div>
-          <div>
-            <p className="font-medium">{plan.name}</p>
+          <div className="min-w-0 flex-1">
+            <p className="font-medium break-words line-clamp-2">{plan.name}</p>
             <p className="text-sm text-muted-foreground">
               {exerciseCount} exercício{exerciseCount !== 1 ? 's' : ''}
             </p>
