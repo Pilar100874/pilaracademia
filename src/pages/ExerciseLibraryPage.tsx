@@ -1288,8 +1288,8 @@ export default function ExerciseLibraryPage() {
           </Tabs>
         </div>
 
-        {/* Search + Filter */}
-        <div className="px-4 pb-4 space-y-2">
+        {/* Search + Filter (sticky) */}
+        <div className="sticky top-0 z-20 bg-background border-b px-4 py-3 space-y-2 shadow-sm">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
