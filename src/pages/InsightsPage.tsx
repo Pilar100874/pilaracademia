@@ -233,7 +233,7 @@ export default function InsightsPage() {
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
               Painel
             </p>
-            <h1 className="text-lg font-semibold leading-tight truncate">Insights</h1>
+            <h1 className="text-lg font-semibold leading-tight break-words line-clamp-2">Insights</h1>
           </div>
         </div>
       </header>

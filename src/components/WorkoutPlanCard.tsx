@@ -107,7 +107,7 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold truncate">{plan.name}</h3>
+              <h3 className="font-semibold break-words line-clamp-2">{plan.name}</h3>
               <Badge variant="secondary" className="shrink-0">
                 {exerciseCount} exercício{exerciseCount !== 1 ? 's' : ''}
               </Badge>
