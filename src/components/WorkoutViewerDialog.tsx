@@ -282,12 +282,12 @@ export function WorkoutViewerDialog({
 
         {/* Header overlay (on top of media) */}
         <div className="absolute top-4 left-4 right-20 z-40 pointer-events-none">
-          <div className="inline-flex items-center gap-3 bg-black/40 backdrop-blur-xl rounded-2xl pl-2 pr-4 py-2 border border-white/10 shadow-xl">
+          <div className="flex items-start gap-3 bg-black/40 backdrop-blur-xl rounded-2xl pl-2 pr-4 py-2 border border-white/10 shadow-xl">
             <div className="bg-gradient-to-br from-primary to-primary/70 h-10 w-10 rounded-xl flex items-center justify-center shadow-md ring-1 ring-white/20 shrink-0">
               <Dumbbell className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
             </div>
-            <div className="min-w-0">
-              <h2 className="text-white font-extrabold text-base sm:text-lg leading-tight tracking-tight truncate drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-white font-extrabold text-base sm:text-lg leading-tight tracking-tight break-words line-clamp-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {plan.name}
               </h2>
               {plan.objective && (
