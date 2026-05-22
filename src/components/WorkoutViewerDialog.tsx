@@ -429,7 +429,7 @@ export function WorkoutViewerDialog({
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white font-bold text-base truncate leading-tight tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              <p className="text-white font-bold text-base break-words line-clamp-2 leading-tight tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {currentExercise.name}
               </p>
               <div className="flex items-center gap-1.5 mt-1">
@@ -469,7 +469,7 @@ export function WorkoutViewerDialog({
 
             {/* Name + sets×reps (desktop only — mobile shows it in the card above) */}
             <div className="hidden sm:block flex-1 min-w-0 text-left px-1">
-              <p className="text-white font-bold text-base sm:text-lg truncate leading-tight tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              <p className="text-white font-bold text-base sm:text-lg break-words line-clamp-2 leading-tight tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {currentExercise.name}
               </p>
               <div className="flex items-center gap-1.5 mt-1">
