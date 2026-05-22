@@ -1105,7 +1105,7 @@ export default function ExerciseLibraryPage() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b">
+      <div className="bg-background border-b">
         <div className="flex items-center gap-3 p-4 flex-wrap">
           <Button variant="ghost" size="icon" onClick={() => navigate('/workouts')}>
             <ArrowLeft className="h-5 w-5" />
