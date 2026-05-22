@@ -59,12 +59,12 @@ export function WorkoutsPage() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-30 glass border-b border-border/50 px-3 sm:px-4 py-3">
-        <div className="mx-auto max-w-5xl flex items-center justify-between gap-2">
+        <div className="mx-auto max-w-5xl flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <Dumbbell className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
-            <h1 className="text-lg sm:text-xl font-bold break-words line-clamp-2">Meus Treinos</h1>
+            <h1 className="text-lg sm:text-xl font-bold break-words line-clamp-2 min-w-0 flex-1">Meus Treinos</h1>
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex flex-wrap gap-2 lg:shrink-0">
             <Button size="sm" variant="outline" onClick={() => navigate('/exercises')}>
               <Library className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Biblioteca</span>
