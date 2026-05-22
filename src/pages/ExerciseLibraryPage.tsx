@@ -1434,7 +1434,8 @@ export default function ExerciseLibraryPage() {
             />
           </div>
         )}
-      </div>
+
+
 
       {/* Content */}
       <div className="p-4">
