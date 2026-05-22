@@ -174,13 +174,20 @@ export function WorkoutPlanDialog({
     const plan = currentPlan ?? (await ensurePlan());
     if (!plan) return;
 
+    // Coloca o novo exercício no início: desloca os existentes em +1
+    if (exercises.length > 0) {
+      await reorderExercises.mutateAsync(
+        exercises.map((ex, idx) => ({ id: ex.id, order_index: idx + 1 }))
+      );
+    }
+
     await addExercise.mutateAsync({
       workout_plan_id: plan.id,
       name: libraryExercise.name,
       sets,
       reps,
       image_urls: libraryExercise.image_urls || [],
-      order_index: exercises.length,
+      order_index: 0,
       video_type: libraryExercise.video_type ?? null,
       video_url: libraryExercise.video_url ?? null,
       video_start_seconds: libraryExercise.video_start_seconds ?? null,
