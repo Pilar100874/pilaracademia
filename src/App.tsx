@@ -292,7 +292,10 @@ const App = () => {
             <AuthProvider>
               <BackgroundProgressProvider>
                 <BackgroundAnalysisProvider>
-                  <AppRoutes />
+                  <DesktopSidebar />
+                  <div className="md:pl-60">
+                    <AppRoutes />
+                  </div>
                   <LibraryBackgroundRunner />
                   <GlobalBackgroundProgressBar />
                   <InstallPrompt />
