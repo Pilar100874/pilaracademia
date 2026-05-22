@@ -293,7 +293,7 @@ const App = () => {
               <BackgroundProgressProvider>
                 <BackgroundAnalysisProvider>
                   <DesktopSidebar />
-                  <div className="md:pl-60">
+                  <div className="lg:pl-60">
                     <AppRoutes />
                   </div>
                   <LibraryBackgroundRunner />

@@ -89,7 +89,7 @@ export function DesktopSidebar() {
 
   return (
     <aside
-      className="hidden md:flex fixed inset-y-0 left-0 z-30 w-60 flex-col border-r border-border/60 bg-gradient-to-b from-card/95 to-background/95 backdrop-blur-xl"
+      className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-60 flex-col border-r border-border/60 bg-gradient-to-b from-card/95 to-background/95 backdrop-blur-xl"
       aria-label="Navegação principal"
     >
       <button

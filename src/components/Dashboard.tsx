@@ -199,17 +199,17 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-12">
+    <div className="min-h-screen bg-background pb-24 lg:pb-12">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-card/85 backdrop-blur-xl px-4 pt-4 pb-3 shadow-soft md:px-0 md:border-b md:border-border/40 md:shadow-none md:bg-background/80">
-        <div className="mx-auto w-full max-w-6xl md:px-10 md:py-2">
-          <div className="flex items-center justify-between mb-3 md:mb-4">
+      <header className="sticky top-0 z-30 bg-card/85 backdrop-blur-xl px-4 pt-4 pb-3 shadow-soft lg:px-0 lg:border-b lg:border-border/40 lg:shadow-none lg:bg-background/80">
+        <div className="mx-auto w-full max-w-6xl lg:px-10 lg:py-2">
+          <div className="flex items-center justify-between mb-3 lg:mb-4">
             <div>
-              <p className="text-xs text-muted-foreground md:text-[11px] md:uppercase md:tracking-[0.18em] md:font-medium">
+              <p className="text-xs text-muted-foreground lg:text-[11px] lg:uppercase lg:tracking-[0.18em] lg:font-medium">
                 {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
               </p>
-              <h1 className="text-lg font-bold md:text-3xl md:tracking-tight md:mt-1">
-                Olá, {profile?.name?.split(' ')[0] || 'Usuário'} <span className="md:hidden">👋</span>
+              <h1 className="text-lg font-bold lg:text-3xl lg:tracking-tight lg:mt-1">
+                Olá, {profile?.name?.split(' ')[0] || 'Usuário'} <span className="lg:hidden">👋</span>
               </h1>
             </div>
             <div className="flex items-center gap-2">
@@ -236,20 +236,20 @@ export function Dashboard() {
       </header>
 
 
-      <div className="mx-auto w-full max-w-6xl px-4 md:px-10 pt-4 md:pt-8">
+      <div className="mx-auto w-full max-w-6xl px-4 lg:px-10 pt-4 lg:pt-8">
 
         {/* Profile warning */}
         {!isProfileComplete() && isViewingToday && (
           <button 
             onClick={() => navigate('/profile')} 
-            className="w-full rounded-2xl bg-amber-500/10 border border-amber-500/20 p-3 text-left animate-fade-in mb-4 md:mb-6"
+            className="w-full rounded-2xl bg-amber-500/10 border border-amber-500/20 p-3 text-left animate-fade-in mb-4 lg:mb-6"
           >
             <p className="text-sm font-medium text-amber-600">⚠️ Complete seu perfil para metas precisas</p>
           </button>
         )}
 
         {/* Desktop editorial section label */}
-        <div className="hidden md:flex items-baseline justify-between mb-5">
+        <div className="hidden lg:flex items-baseline justify-between mb-5">
           <div>
             <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">
               Painel de hoje
@@ -263,13 +263,13 @@ export function Dashboard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           {/* ===== Left column (main) ===== */}
-          <div className="lg:col-span-2 space-y-4 md:space-y-6 min-w-0">
+          <div className="lg:col-span-2 space-y-4 lg:space-y-6 min-w-0">
 
             {/* Main Calorie Card */}
-            <div className="card-feature md:p-8">
-              <div className="flex items-center justify-center mb-4 md:mb-6">
+            <div className="card-feature lg:p-8">
+              <div className="flex items-center justify-center mb-4 lg:mb-6">
                 <CalorieRing 
                   consumed={consumed.calories}
                   burned={caloriesBurned}
@@ -295,45 +295,45 @@ export function Dashboard() {
             </div>
 
             {/* Quick Stats Row */}
-            <div className="grid grid-cols-4 gap-2 md:gap-3">
+            <div className="grid grid-cols-4 gap-2 lg:gap-3">
               {/* Exercise */}
               <button 
                 onClick={() => navigate('/exercises')}
-                className="card-compact flex flex-col items-center gap-1 py-3 md:py-5"
+                className="card-compact flex flex-col items-center gap-1 py-3 lg:py-5"
               >
-                <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-xl bg-rose-500/10">
-                  <Dumbbell className="h-4 w-4 md:h-5 md:w-5 text-rose-500" />
+                <div className="flex h-9 w-9 lg:h-11 lg:w-11 items-center justify-center rounded-xl bg-rose-500/10">
+                  <Dumbbell className="h-4 w-4 lg:h-5 lg:w-5 text-rose-500" />
                 </div>
-                <span className="text-base md:text-xl font-bold num-display text-rose-500">
+                <span className="text-base lg:text-xl font-bold num-display text-rose-500">
                   {caloriesBurned > 0 ? `-${caloriesBurned}` : '0'}
                 </span>
-                <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted-foreground">kcal</span>
+                <span className="text-[9px] lg:text-[10px] uppercase tracking-wider text-muted-foreground">kcal</span>
               </button>
 
               {/* Liquids */}
               <button 
                 onClick={() => openModal('liquid')}
-                className="card-compact flex flex-col items-center gap-1 py-3 md:py-5"
+                className="card-compact flex flex-col items-center gap-1 py-3 lg:py-5"
               >
-                <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-xl bg-sky-500/10">
-                  <Droplets className="h-4 w-4 md:h-5 md:w-5 text-sky-500" />
+                <div className="flex h-9 w-9 lg:h-11 lg:w-11 items-center justify-center rounded-xl bg-sky-500/10">
+                  <Droplets className="h-4 w-4 lg:h-5 lg:w-5 text-sky-500" />
                 </div>
-                <span className="text-base md:text-xl font-bold num-display text-sky-500">
+                <span className="text-base lg:text-xl font-bold num-display text-sky-500">
                   {formatLiquid(todayLiquid)}
                 </span>
-                <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted-foreground">{formatLiquid(dailyLiquidGoal)}</span>
+                <span className="text-[9px] lg:text-[10px] uppercase tracking-wider text-muted-foreground">{formatLiquid(dailyLiquidGoal)}</span>
               </button>
 
               {/* Weight */}
               <button 
                 onClick={() => setShowWeightInput(true)}
-                className="card-compact flex flex-col items-center gap-1 py-3 md:py-5"
+                className="card-compact flex flex-col items-center gap-1 py-3 lg:py-5"
               >
-                <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-xl bg-violet-500/10">
-                  <Scale className="h-4 w-4 md:h-5 md:w-5 text-violet-500" />
+                <div className="flex h-9 w-9 lg:h-11 lg:w-11 items-center justify-center rounded-xl bg-violet-500/10">
+                  <Scale className="h-4 w-4 lg:h-5 lg:w-5 text-violet-500" />
                 </div>
                 <div className="flex items-center gap-0.5">
-                  <span className="text-base md:text-xl font-bold num-display">
+                  <span className="text-base lg:text-xl font-bold num-display">
                     {currentWeight}
                   </span>
                   {weightEntries.length >= 2 && (
@@ -342,16 +342,16 @@ export function Dashboard() {
                     </span>
                   )}
                 </div>
-                <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted-foreground">kg</span>
+                <span className="text-[9px] lg:text-[10px] uppercase tracking-wider text-muted-foreground">kg</span>
               </button>
 
               {/* Glycemia */}
               <button 
                 onClick={() => {}}
-                className="card-compact flex flex-col items-center gap-1 py-3 md:py-5"
+                className="card-compact flex flex-col items-center gap-1 py-3 lg:py-5"
               >
-                <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-xl bg-emerald-500/10">
-                  <Activity className="h-4 w-4 md:h-5 md:w-5 text-emerald-500" />
+                <div className="flex h-9 w-9 lg:h-11 lg:w-11 items-center justify-center rounded-xl bg-emerald-500/10">
+                  <Activity className="h-4 w-4 lg:h-5 lg:w-5 text-emerald-500" />
                 </div>
                 {(() => {
                   const latestReading = getLatestReading();
@@ -359,17 +359,17 @@ export function Dashboard() {
                     const status = getGlycemiaStatus(latestReading.glucose_mg_dl, latestReading.measurement_type);
                     return (
                       <>
-                        <span className={`text-base md:text-xl font-bold num-display ${status.color}`}>
+                        <span className={`text-base lg:text-xl font-bold num-display ${status.color}`}>
                           {latestReading.glucose_mg_dl}
                         </span>
-                        <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted-foreground">mg/dL</span>
+                        <span className="text-[9px] lg:text-[10px] uppercase tracking-wider text-muted-foreground">mg/dL</span>
                       </>
                     );
                   }
                   return (
                     <>
-                      <span className="text-base md:text-xl font-bold num-display text-muted-foreground">--</span>
-                      <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted-foreground">glicemia</span>
+                      <span className="text-base lg:text-xl font-bold num-display text-muted-foreground">--</span>
+                      <span className="text-[9px] lg:text-[10px] uppercase tracking-wider text-muted-foreground">glicemia</span>
                     </>
                   );
                 })()}
@@ -380,7 +380,7 @@ export function Dashboard() {
             {isViewingToday && (
               <button
                 onClick={() => setMenuOpen(true)}
-                className="hidden md:flex w-full rounded-2xl border border-border bg-card p-4 text-left items-center gap-4 hover:bg-muted/30 transition-colors"
+                className="hidden lg:flex w-full rounded-2xl border border-border bg-card p-4 text-left items-center gap-4 hover:bg-muted/30 transition-colors"
               >
                 <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                   <Flame className="h-5 w-5 text-primary" />
@@ -397,7 +397,7 @@ export function Dashboard() {
 
             {/* Recently Logged Section */}
             <div>
-              <h2 className="text-sm md:text-base font-semibold mb-3 md:mb-4 flex items-center gap-2">
+              <h2 className="text-sm lg:text-base font-semibold mb-3 lg:mb-4 flex items-center gap-2">
                 <Flame className="h-4 w-4 text-primary" />
                 {isViewingToday ? 'Registros recentes' : 'Registros do dia'}
               </h2>
@@ -414,7 +414,7 @@ export function Dashboard() {
           </div>
 
           {/* ===== Right column (sidebar cards) ===== */}
-          <div className="lg:col-span-1 space-y-4 md:space-y-5 min-w-0">
+          <div className="lg:col-span-1 space-y-4 lg:space-y-5 min-w-0">
             {/* Trackers */}
             <LiquidTracker selectedDate={selectedDate} onDataChange={refetchLiquids} />
             <WeightTracker dailyCalorieDeficit={goals.calories - netCalories} showInputInitially={showWeightInput} onInputToggled={setShowWeightInput} />
@@ -435,7 +435,7 @@ export function Dashboard() {
             {isViewingToday && (
               <button
                 onClick={() => setMenuOpen(true)}
-                className="md:hidden w-full rounded-md border border-border bg-card p-3 text-left flex items-center gap-3 hover:bg-muted/30 transition-colors"
+                className="lg:hidden w-full rounded-md border border-border bg-card p-3 text-left flex items-center gap-3 hover:bg-muted/30 transition-colors"
               >
                 <div className="h-9 w-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
                   <Flame className="h-4 w-4 text-primary" />
