@@ -199,17 +199,17 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-32">
+    <div className="min-h-screen bg-background pb-24 md:pb-12">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl px-4 pt-4 pb-3 shadow-soft md:px-0">
-        <div className="mx-auto w-full max-w-5xl md:px-8">
-          <div className="flex items-center justify-between mb-3">
+      <header className="sticky top-0 z-30 bg-card/85 backdrop-blur-xl px-4 pt-4 pb-3 shadow-soft md:px-0 md:border-b md:border-border/40 md:shadow-none md:bg-background/80">
+        <div className="mx-auto w-full max-w-6xl md:px-10 md:py-2">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
             <div>
-              <p className="text-xs text-muted-foreground md:text-sm">
+              <p className="text-xs text-muted-foreground md:text-[11px] md:uppercase md:tracking-[0.18em] md:font-medium">
                 {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
               </p>
-              <h1 className="text-lg font-bold md:text-2xl">
-                Olá, {profile?.name?.split(' ')[0] || 'Usuário'} 👋
+              <h1 className="text-lg font-bold md:text-3xl md:tracking-tight md:mt-1">
+                Olá, {profile?.name?.split(' ')[0] || 'Usuário'} <span className="md:hidden">👋</span>
               </h1>
             </div>
             <div className="flex items-center gap-2">
@@ -235,196 +235,227 @@ export function Dashboard() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-5xl px-4 md:px-8 space-y-4 md:space-y-6 pt-4 md:pt-6">
+
+      <div className="mx-auto w-full max-w-6xl px-4 md:px-10 pt-4 md:pt-8">
 
         {/* Profile warning */}
         {!isProfileComplete() && isViewingToday && (
           <button 
             onClick={() => navigate('/profile')} 
-            className="w-full rounded-2xl bg-amber-500/10 border border-amber-500/20 p-3 text-left animate-fade-in"
+            className="w-full rounded-2xl bg-amber-500/10 border border-amber-500/20 p-3 text-left animate-fade-in mb-4 md:mb-6"
           >
             <p className="text-sm font-medium text-amber-600">⚠️ Complete seu perfil para metas precisas</p>
           </button>
         )}
 
-        {/* (Plano corporal/Adaptação, aderência, cardápio do dia e check-in semanal foram movidos para depois da glicemia) */}
-
-
-        {/* Main Calorie Card */}
-        <div className="card-feature">
-          <div className="flex items-center justify-center mb-4">
-            <CalorieRing 
-              consumed={consumed.calories}
-              burned={caloriesBurned}
-              goal={goals.calories}
-              size={160}
-              strokeWidth={14}
-            />
+        {/* Desktop editorial section label */}
+        <div className="hidden md:flex items-baseline justify-between mb-5">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">
+              Painel de hoje
+            </p>
+            <h2 className="mt-1 text-xl font-bold tracking-tight text-foreground">
+              Seu plano em uma página
+            </h2>
           </div>
-          
-          {/* Macro Summary */}
-          <MacroSummary 
-            consumed={{ 
-              protein: consumed.protein, 
-              carbs: consumed.carbs, 
-              fat: consumed.fat 
-            }}
-            goals={{
-              protein: goals.protein,
-              carbs: goals.carbs,
-              fat: goals.fat,
-            }}
-          />
+          <p className="text-xs text-muted-foreground">
+            {format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          </p>
         </div>
 
-        {/* Quick Stats Row */}
-        <div className="grid grid-cols-4 gap-2">
-          {/* Exercise */}
-          <button 
-            onClick={() => navigate('/exercises')}
-            className="card-compact flex flex-col items-center gap-1 py-3"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10">
-              <Dumbbell className="h-4 w-4 text-rose-500" />
-            </div>
-            <span className="text-base font-bold num-display text-rose-500">
-              {caloriesBurned > 0 ? `-${caloriesBurned}` : '0'}
-            </span>
-            <span className="text-[9px] text-muted-foreground">kcal</span>
-          </button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+          {/* ===== Left column (main) ===== */}
+          <div className="lg:col-span-2 space-y-4 md:space-y-6 min-w-0">
 
-          {/* Liquids */}
-          <button 
-            onClick={() => openModal('liquid')}
-            className="card-compact flex flex-col items-center gap-1 py-3"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10">
-              <Droplets className="h-4 w-4 text-sky-500" />
+            {/* Main Calorie Card */}
+            <div className="card-feature md:p-8">
+              <div className="flex items-center justify-center mb-4 md:mb-6">
+                <CalorieRing 
+                  consumed={consumed.calories}
+                  burned={caloriesBurned}
+                  goal={goals.calories}
+                  size={160}
+                  strokeWidth={14}
+                />
+              </div>
+              
+              {/* Macro Summary */}
+              <MacroSummary 
+                consumed={{ 
+                  protein: consumed.protein, 
+                  carbs: consumed.carbs, 
+                  fat: consumed.fat 
+                }}
+                goals={{
+                  protein: goals.protein,
+                  carbs: goals.carbs,
+                  fat: goals.fat,
+                }}
+              />
             </div>
-            <span className="text-base font-bold num-display text-sky-500">
-              {formatLiquid(todayLiquid)}
-            </span>
-            <span className="text-[9px] text-muted-foreground">{formatLiquid(dailyLiquidGoal)}</span>
-          </button>
 
-          {/* Weight */}
-          <button 
-            onClick={() => setShowWeightInput(true)}
-            className="card-compact flex flex-col items-center gap-1 py-3"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10">
-              <Scale className="h-4 w-4 text-violet-500" />
-            </div>
-            <div className="flex items-center gap-0.5">
-              <span className="text-base font-bold num-display">
-                {currentWeight}
-              </span>
-              {weightEntries.length >= 2 && (
-                <span className="flex items-center text-xs">
-                  {getTrendIcon()}
+            {/* Quick Stats Row */}
+            <div className="grid grid-cols-4 gap-2 md:gap-3">
+              {/* Exercise */}
+              <button 
+                onClick={() => navigate('/exercises')}
+                className="card-compact flex flex-col items-center gap-1 py-3 md:py-5"
+              >
+                <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-xl bg-rose-500/10">
+                  <Dumbbell className="h-4 w-4 md:h-5 md:w-5 text-rose-500" />
+                </div>
+                <span className="text-base md:text-xl font-bold num-display text-rose-500">
+                  {caloriesBurned > 0 ? `-${caloriesBurned}` : '0'}
                 </span>
-              )}
-            </div>
-            <span className="text-[9px] text-muted-foreground">kg</span>
-          </button>
+                <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted-foreground">kcal</span>
+              </button>
 
-          {/* Glycemia */}
-          <button 
-            onClick={() => {}}
-            className="card-compact flex flex-col items-center gap-1 py-3"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10">
-              <Activity className="h-4 w-4 text-emerald-500" />
-            </div>
-            {(() => {
-              const latestReading = getLatestReading();
-              if (latestReading) {
-                const status = getGlycemiaStatus(latestReading.glucose_mg_dl, latestReading.measurement_type);
-                return (
-                  <>
-                    <span className={`text-base font-bold num-display ${status.color}`}>
-                      {latestReading.glucose_mg_dl}
+              {/* Liquids */}
+              <button 
+                onClick={() => openModal('liquid')}
+                className="card-compact flex flex-col items-center gap-1 py-3 md:py-5"
+              >
+                <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-xl bg-sky-500/10">
+                  <Droplets className="h-4 w-4 md:h-5 md:w-5 text-sky-500" />
+                </div>
+                <span className="text-base md:text-xl font-bold num-display text-sky-500">
+                  {formatLiquid(todayLiquid)}
+                </span>
+                <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted-foreground">{formatLiquid(dailyLiquidGoal)}</span>
+              </button>
+
+              {/* Weight */}
+              <button 
+                onClick={() => setShowWeightInput(true)}
+                className="card-compact flex flex-col items-center gap-1 py-3 md:py-5"
+              >
+                <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-xl bg-violet-500/10">
+                  <Scale className="h-4 w-4 md:h-5 md:w-5 text-violet-500" />
+                </div>
+                <div className="flex items-center gap-0.5">
+                  <span className="text-base md:text-xl font-bold num-display">
+                    {currentWeight}
+                  </span>
+                  {weightEntries.length >= 2 && (
+                    <span className="flex items-center text-xs">
+                      {getTrendIcon()}
                     </span>
-                    <span className="text-[9px] text-muted-foreground">mg/dL</span>
-                  </>
-                );
-              }
-              return (
-                <>
-                  <span className="text-base font-bold num-display text-muted-foreground">--</span>
-                  <span className="text-[9px] text-muted-foreground">glicemia</span>
-                </>
-              );
-            })()}
-          </button>
-        </div>
+                  )}
+                </div>
+                <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted-foreground">kg</span>
+              </button>
 
-        {/* Trackers grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Liquid Tracker */}
-          <LiquidTracker selectedDate={selectedDate} onDataChange={refetchLiquids} />
-
-          {/* Weight Tracker */}
-          <WeightTracker dailyCalorieDeficit={goals.calories - netCalories} showInputInitially={showWeightInput} onInputToggled={setShowWeightInput} />
-
-          {/* Exercise Tracker */}
-          <ExerciseTracker selectedDate={selectedDate} onDataChange={() => {}} />
-
-          {/* Glycemia Tracker */}
-          <GlycemiaTracker selectedDate={selectedDate} />
-        </div>
-
-
-        {/* Body analysis plan shortcut (Adaptação) */}
-        {isViewingToday && <BodyPlanShortcut />}
-
-        {/* Smart alerts */}
-        {isViewingToday && <SmartAlertsCard alerts={smartAlerts} />}
-
-        {/* Adherence score (Aderência ao plano) */}
-        {isViewingToday && <AdherenceCard score={adherence} />}
-
-        {/* Adherence trend (Aderência últimos 7 dias) */}
-        {isViewingToday && <AdherenceHistoryChart days={7} />}
-
-        {/* AI daily menu CTA (Cardápio do dia pela IA) */}
-        {isViewingToday && (
-          <button
-            onClick={() => setMenuOpen(true)}
-            className="w-full rounded-md border border-border bg-card p-3 text-left flex items-center gap-3 hover:bg-muted/30 transition-colors"
-          >
-            <div className="h-9 w-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-              <Flame className="h-4 w-4 text-primary" />
+              {/* Glycemia */}
+              <button 
+                onClick={() => {}}
+                className="card-compact flex flex-col items-center gap-1 py-3 md:py-5"
+              >
+                <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-xl bg-emerald-500/10">
+                  <Activity className="h-4 w-4 md:h-5 md:w-5 text-emerald-500" />
+                </div>
+                {(() => {
+                  const latestReading = getLatestReading();
+                  if (latestReading) {
+                    const status = getGlycemiaStatus(latestReading.glucose_mg_dl, latestReading.measurement_type);
+                    return (
+                      <>
+                        <span className={`text-base md:text-xl font-bold num-display ${status.color}`}>
+                          {latestReading.glucose_mg_dl}
+                        </span>
+                        <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted-foreground">mg/dL</span>
+                      </>
+                    );
+                  }
+                  return (
+                    <>
+                      <span className="text-base md:text-xl font-bold num-display text-muted-foreground">--</span>
+                      <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-muted-foreground">glicemia</span>
+                    </>
+                  );
+                })()}
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold">Cardápio do dia pela IA</p>
-              <p className="text-xs text-muted-foreground">
-                Refeições prontas que batem suas metas
-              </p>
+
+            {/* AI daily menu CTA (Cardápio do dia pela IA) - mobile shows in right column; on desktop keep in main */}
+            {isViewingToday && (
+              <button
+                onClick={() => setMenuOpen(true)}
+                className="hidden md:flex w-full rounded-2xl border border-border bg-card p-4 text-left items-center gap-4 hover:bg-muted/30 transition-colors"
+              >
+                <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Flame className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-semibold">Cardápio do dia pela IA</p>
+                  <p className="text-sm text-muted-foreground">
+                    Refeições prontas que batem suas metas
+                  </p>
+                </div>
+                <span className="text-sm text-primary font-semibold px-3 py-1.5 rounded-full bg-primary/10">Gerar</span>
+              </button>
+            )}
+
+            {/* Recently Logged Section */}
+            <div>
+              <h2 className="text-sm md:text-base font-semibold mb-3 md:mb-4 flex items-center gap-2">
+                <Flame className="h-4 w-4 text-primary" />
+                {isViewingToday ? 'Registros recentes' : 'Registros do dia'}
+              </h2>
+              
+              <RecentFoodList 
+                entries={entries}
+                onUpdate={handleUpdateEntry}
+                onDelete={handleDeleteEntry}
+                onEditTyped={setEditingTypedEntry}
+                onEditVoice={setEditingVoiceEntry}
+                onEditPhotoBarcode={setEditingPhotoEntry}
+              />
             </div>
-            <span className="text-xs text-primary font-medium">Gerar</span>
-          </button>
-        )}
+          </div>
 
-        {/* Weekly check-in */}
-        {isViewingToday && <WeeklyCheckinCard />}
+          {/* ===== Right column (sidebar cards) ===== */}
+          <div className="lg:col-span-1 space-y-4 md:space-y-5 min-w-0">
+            {/* Trackers */}
+            <LiquidTracker selectedDate={selectedDate} onDataChange={refetchLiquids} />
+            <WeightTracker dailyCalorieDeficit={goals.calories - netCalories} showInputInitially={showWeightInput} onInputToggled={setShowWeightInput} />
+            <ExerciseTracker selectedDate={selectedDate} onDataChange={() => {}} />
+            <GlycemiaTracker selectedDate={selectedDate} />
 
-        {/* Recently Logged Section */}
-        <div>
-          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <Flame className="h-4 w-4 text-primary" />
-            {isViewingToday ? 'Registros recentes' : 'Registros do dia'}
-          </h2>
-          
-          <RecentFoodList 
-            entries={entries}
-            onUpdate={handleUpdateEntry}
-            onDelete={handleDeleteEntry}
-            onEditTyped={setEditingTypedEntry}
-            onEditVoice={setEditingVoiceEntry}
-            onEditPhotoBarcode={setEditingPhotoEntry}
-          />
+            {/* Body analysis plan shortcut */}
+            {isViewingToday && <BodyPlanShortcut />}
+
+            {/* Smart alerts */}
+            {isViewingToday && <SmartAlertsCard alerts={smartAlerts} />}
+
+            {/* Adherence */}
+            {isViewingToday && <AdherenceCard score={adherence} />}
+            {isViewingToday && <AdherenceHistoryChart days={7} />}
+
+            {/* Daily menu CTA (mobile only — desktop renders in main column) */}
+            {isViewingToday && (
+              <button
+                onClick={() => setMenuOpen(true)}
+                className="md:hidden w-full rounded-md border border-border bg-card p-3 text-left flex items-center gap-3 hover:bg-muted/30 transition-colors"
+              >
+                <div className="h-9 w-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                  <Flame className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">Cardápio do dia pela IA</p>
+                  <p className="text-xs text-muted-foreground">
+                    Refeições prontas que batem suas metas
+                  </p>
+                </div>
+                <span className="text-xs text-primary font-medium">Gerar</span>
+              </button>
+            )}
+
+            {/* Weekly check-in */}
+            {isViewingToday && <WeeklyCheckinCard />}
+          </div>
         </div>
+
+
 
         {/* Edit dialog for photo/barcode entries */}
         {editingPhotoEntry && (
