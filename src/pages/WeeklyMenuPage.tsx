@@ -61,7 +61,7 @@ export default function WeeklyMenuPage() {
         <div className="mx-auto max-w-5xl flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
-            <h1 className="text-lg sm:text-xl font-bold truncate">Cardápio Semanal</h1>
+            <h1 className="text-lg sm:text-xl font-bold break-words line-clamp-2">Cardápio Semanal</h1>
           </div>
           <Button size="sm" onClick={() => setGenerateOpen(true)}>
             <Sparkles className="h-4 w-4 sm:mr-1" />

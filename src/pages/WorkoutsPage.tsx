@@ -62,7 +62,7 @@ export function WorkoutsPage() {
         <div className="mx-auto max-w-5xl flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <Dumbbell className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
-            <h1 className="text-lg sm:text-xl font-bold truncate">Meus Treinos</h1>
+            <h1 className="text-lg sm:text-xl font-bold break-words line-clamp-2">Meus Treinos</h1>
           </div>
           <div className="flex gap-2 shrink-0">
             <Button size="sm" variant="outline" onClick={() => navigate('/exercises')}>

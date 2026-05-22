@@ -112,7 +112,7 @@ export default function FoodPreferencesPage() {
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
               Personalização
             </p>
-            <h1 className="text-lg font-semibold leading-tight truncate">
+            <h1 className="text-lg font-semibold leading-tight break-words line-clamp-2">
               Preferências alimentares
             </h1>
           </div>

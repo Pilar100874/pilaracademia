@@ -1108,7 +1108,7 @@ export default function ExerciseLibraryPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold truncate">Biblioteca de Exercícios</h1>
+            <h1 className="text-xl font-bold break-words line-clamp-2">Biblioteca de Exercícios</h1>
             <p className="text-sm text-muted-foreground">
               {activeTab === 'global'
                 ? `${globalExercises.length} global${globalExercises.length !== 1 ? 'is' : ''}`
