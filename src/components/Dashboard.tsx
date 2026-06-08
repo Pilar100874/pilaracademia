@@ -267,9 +267,6 @@ export function Dashboard() {
           {/* ===== Left column (main) ===== */}
           <div className="lg:col-span-2 space-y-4 lg:space-y-6 min-w-0">
 
-            {/* Body analysis plan shortcut — first screen */}
-            {isViewingToday && <BodyPlanShortcut />}
-
             {/* Main Calorie Card */}
             <div className="card-feature lg:p-8">
               <div className="flex items-center justify-center mb-4 lg:mb-6">
