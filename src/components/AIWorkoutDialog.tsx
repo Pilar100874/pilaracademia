@@ -69,6 +69,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [extraCounts, setExtraCounts] = useState<Record<string, string>>({});
   const [source, setSource] = useState<'all' | 'mine' | 'global'>('all');
   const [useBodyPlan, setUseBodyPlan] = useState(false);
+  const [useBloodExam, setUseBloodExam] = useState(true);
   const [generating, setGenerating] = useState(false);
 
   const nameRef = useRef<HTMLInputElement>(null);
@@ -103,6 +104,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setExtraCounts({});
     setSource('all');
     setUseBodyPlan(false);
+    setUseBloodExam(true);
   };
 
   const toggleCategory = (id: string) => {
@@ -197,7 +199,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
     setGenerating(true);
     try {
-      const healthContext = buildBloodExamHealthContext(bloodExamsQ.data) || undefined;
+      const healthContext = useBloodExam ? (buildBloodExamHealthContext(bloodExamsQ.data) || undefined) : undefined;
       let bodyPlanContext: string | undefined;
       if (useBodyPlan && planInfo?.plan) {
         const p = planInfo.plan;
@@ -726,10 +728,22 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 const ctx = buildBloodExamHealthContext(bloodExamsQ.data);
                 if (!ctx) return null;
                 return (
-                  <p className="text-[10px] leading-snug text-muted-foreground p-2.5 rounded-md bg-muted/30 border border-border/60">
-                    <span className="font-semibold text-foreground/80">Exame de sangue considerado:</span>{' '}
-                    a IA ajusta intensidade com base nos seus marcadores.
-                  </p>
+                  <label className="flex items-start gap-2 cursor-pointer p-2.5 rounded-md bg-muted/30 border border-border/60">
+                    <input
+                      type="checkbox"
+                      checked={useBloodExam}
+                      onChange={(e) => setUseBloodExam(e.target.checked)}
+                      className="h-4 w-4 mt-0.5 rounded border-input accent-primary"
+                    />
+                    <span className="text-xs leading-snug">
+                      <span className="font-semibold">Considerar exames de sangue</span>
+                      <span className="block text-[10px] text-muted-foreground mt-0.5">
+                        {useBloodExam
+                          ? 'A IA ajusta a intensidade com base nos seus marcadores.'
+                          : 'Os exames serão ignorados nesta geração.'}
+                      </span>
+                    </span>
+                  </label>
                 );
               })()}
             </div>
