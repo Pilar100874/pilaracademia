@@ -534,30 +534,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 />
                 <FieldError message={errorOf('count')} />
               </div>
-
-              {planInfo?.plan?.training_intent?.focus && (
-                <div className="rounded-md border border-border bg-muted/20 p-3 space-y-2">
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={useBodyPlan}
-                      onChange={(e) => setUseBodyPlan(e.target.checked)}
-                      className="h-4 w-4 mt-0.5 rounded border-input accent-primary"
-                    />
-                    <span className="text-xs leading-snug flex-1">
-                      <span className="inline-flex items-center gap-1.5 font-medium">
-                        <Target className="h-3.5 w-3.5 text-primary" />
-                        Usar intenção da Análise Corporal
-                      </span>
-                      <span className="block text-[10px] text-muted-foreground mt-0.5">
-                        {planInfo.plan.training_intent?.focus
-                          ? `Foco: ${planInfo.plan.training_intent.focus}${planInfo.plan.training_intent.frequency_per_week ? ` · ${planInfo.plan.training_intent.frequency_per_week}x/sem` : ''}${planInfo.plan.training_intent.intensity ? ` · ${planInfo.plan.training_intent.intensity}` : ''}`
-                          : 'A IA seguirá a periodização e foco do seu plano atual.'}
-                      </span>
-                    </span>
-                  </label>
-                </div>
-              )}
             </div>
           )}
 
