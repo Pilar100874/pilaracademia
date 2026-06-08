@@ -42,6 +42,12 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { useWakeLock } from "@/hooks/useWakeLock";
+
+function KeepScreenAwake() {
+  useWakeLock(true);
+  return null;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -297,6 +303,7 @@ const App = () => {
                     <AppRoutes />
                   </div>
                   <LibraryBackgroundRunner />
+                  <KeepScreenAwake />
                   <GlobalBackgroundProgressBar />
                   <InstallPrompt />
                   <UpdatePrompt />

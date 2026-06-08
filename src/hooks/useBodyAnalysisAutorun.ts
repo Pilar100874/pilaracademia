@@ -69,7 +69,9 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
 
   useEffect(() => {
     if (!user) return;
-    if (typeof document !== 'undefined' && document.hidden) return;
+    // NOTE: não cancelamos quando a aba fica oculta. O processamento
+    // continua em background (sujeito a throttling do navegador) para
+    // que o usuário não tenha que recomeçar ao voltar para o app.
 
     let cancelled = false;
     const failed = readFailed();
@@ -120,7 +122,6 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
       let done = 0;
       for (const ex of queue) {
         if (cancelled) return;
-        if (typeof document !== 'undefined' && document.hidden) return;
         setProgress({ done, total: queue.length, current: ex.name });
         try {
           const { data, error } = await supabase.functions.invoke('analyze-exercise-video', {
@@ -186,15 +187,9 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
       if (!cancelled) void run();
     }, 4000);
 
-    const onVis = () => {
-      if (document.hidden) cancelled = true;
-    };
-    document.addEventListener('visibilitychange', onVis);
-
     return () => {
       cancelled = true;
       window.clearTimeout(startTimer);
-      document.removeEventListener('visibilitychange', onVis);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, exercises.map((e) => `${e.id}:${e.body_analyzed_at ?? ''}:${e.mobility_analysis ? '1' : '0'}:${e.video_url ?? ''}`).join('|')]);
