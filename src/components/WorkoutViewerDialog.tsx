@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorkoutPlan, useWorkoutPlans } from '@/hooks/useWorkoutPlans';
@@ -165,6 +165,39 @@ export function WorkoutViewerDialog({
     if (e.key === 'ArrowDown') handleNextExercise();
   };
 
+  // Swipe navigation (mobile/tablet): horizontal swipe to change exercise/photo
+  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    if (!t) return;
+    touchStartRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start) return;
+    // Ignore swipes that start on interactive elements (buttons/links/inputs)
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('button, a, input, textarea, select, [role="slider"]')) return;
+    const end = e.changedTouches[0];
+    if (!end) return;
+    const dx = end.clientX - start.x;
+    const dy = end.clientY - start.y;
+    const dt = Date.now() - start.t;
+    if (dt > 800) return;
+    if (Math.abs(dx) < 60) return;
+    if (Math.abs(dx) < Math.abs(dy) * 1.2) return;
+    if (dx < 0) {
+      // swipe left → next
+      if (hasMultiplePhotos && currentPhotoIndex < currentImages.length - 1) handleNextPhoto();
+      else handleNextExercise();
+    } else {
+      // swipe right → previous
+      if (hasMultiplePhotos && currentPhotoIndex > 0) handlePreviousPhoto();
+      else handlePreviousExercise();
+    }
+  };
+
   if (!currentExercise) return null;
 
   // Tela inicial: seletor de "Modo de Hoje" (autorregulação por estado).
@@ -240,6 +273,8 @@ export function WorkoutViewerDialog({
       <DialogContent
         className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 border-none bg-black [&>button]:top-5 [&>button]:right-5 [&>button]:z-50 [&>button]:h-12 [&>button]:w-12 [&>button]:p-0 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button]:bg-black/50 [&>button]:backdrop-blur-2xl [&>button]:border [&>button]:border-white/25 [&>button]:text-white [&>button]:opacity-100 [&>button]:shadow-[0_4px_20px_rgba(0,0,0,0.6)] [&>button]:transition-all [&>button]:hover:bg-black/70 [&>button]:hover:scale-110 [&>button]:hover:border-white/40 [&>button]:active:scale-95 [&>button>svg]:h-6 [&>button>svg]:w-6 [&>button>svg]:stroke-[2.5]"
         onKeyDown={handleKeyDown}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Fullscreen media area */}
         <div className="absolute inset-0 flex items-center justify-center bg-black overflow-hidden">
