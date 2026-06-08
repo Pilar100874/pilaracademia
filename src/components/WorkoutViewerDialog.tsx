@@ -165,6 +165,39 @@ export function WorkoutViewerDialog({
     if (e.key === 'ArrowDown') handleNextExercise();
   };
 
+  // Swipe navigation (mobile/tablet): horizontal swipe to change exercise/photo
+  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    if (!t) return;
+    touchStartRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start) return;
+    // Ignore swipes that start on interactive elements (buttons/links/inputs)
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('button, a, input, textarea, select, [role="slider"]')) return;
+    const end = e.changedTouches[0];
+    if (!end) return;
+    const dx = end.clientX - start.x;
+    const dy = end.clientY - start.y;
+    const dt = Date.now() - start.t;
+    if (dt > 800) return;
+    if (Math.abs(dx) < 60) return;
+    if (Math.abs(dx) < Math.abs(dy) * 1.2) return;
+    if (dx < 0) {
+      // swipe left → next
+      if (hasMultiplePhotos && currentPhotoIndex < currentImages.length - 1) handleNextPhoto();
+      else handleNextExercise();
+    } else {
+      // swipe right → previous
+      if (hasMultiplePhotos && currentPhotoIndex > 0) handlePreviousPhoto();
+      else handlePreviousExercise();
+    }
+  };
+
   if (!currentExercise) return null;
 
   // Tela inicial: seletor de "Modo de Hoje" (autorregulação por estado).
