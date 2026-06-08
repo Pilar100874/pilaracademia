@@ -443,7 +443,9 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 </button>
               )}
 
+              <div className="space-y-1.5">
                 <Label htmlFor="ai-name" className="text-xs font-medium">Nome do treino</Label>
+
                 <Input
                   id="ai-name"
                   ref={nameRef}
