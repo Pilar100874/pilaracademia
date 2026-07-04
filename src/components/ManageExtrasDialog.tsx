@@ -25,10 +25,12 @@ interface ManageExtrasDialogProps {
 
 export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogProps) {
   const { user } = useAuth();
+  const { isMaster } = useIsMaster();
   const { extras, isLoading, createExtra, updateExtra, deleteExtra } = useExerciseExtras();
   const { exercises: libraryExercises } = useExerciseLibrary();
 
   const [newName, setNewName] = useState('');
+  const [newGlobal, setNewGlobal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [toDelete, setToDelete] = useState<ExerciseExtra | null>(null);
