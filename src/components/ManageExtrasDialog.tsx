@@ -14,7 +14,9 @@ import { Plus, Pencil, Trash2, Check, X, Loader2, Globe } from 'lucide-react';
 import { useExerciseExtras, type ExerciseExtra } from '@/hooks/useExerciseExtras';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMaster } from '@/hooks/useIsMaster';
 
 interface ManageExtrasDialogProps {
   open: boolean;
