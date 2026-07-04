@@ -87,10 +87,11 @@ export function useExerciseCategories() {
   });
 
   const updateCategory = useMutation({
-    mutationFn: async (data: { id: string; name?: string; parent_id?: string | null }) => {
+    mutationFn: async (data: { id: string; name?: string; parent_id?: string | null; is_global?: boolean }) => {
       const update: Record<string, any> = {};
       if (data.name !== undefined) update.name = data.name.trim();
       if (data.parent_id !== undefined) update.parent_id = data.parent_id;
+      if (data.is_global !== undefined) update.is_global = data.is_global;
       const { error } = await supabase
         .from('exercise_categories')
         .update(update)

@@ -63,10 +63,11 @@ export function useExerciseExtras() {
   });
 
   const updateExtra = useMutation({
-    mutationFn: async (vars: { id: string; name?: string; icon?: string | null }) => {
+    mutationFn: async (vars: { id: string; name?: string; icon?: string | null; is_global?: boolean }) => {
       const update: Record<string, any> = {};
       if (vars.name !== undefined) update.name = vars.name.trim();
       if (vars.icon !== undefined) update.icon = vars.icon;
+      if (vars.is_global !== undefined) update.is_global = vars.is_global;
       const { error } = await supabase
         .from('exercise_extras')
         .update(update)
