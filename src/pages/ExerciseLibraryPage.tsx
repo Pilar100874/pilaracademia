@@ -143,6 +143,7 @@ export default function ExerciseLibraryPage() {
   const [renameCategory, setRenameCategory] = useState<{ id: string; name: string } | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [renameParentId, setRenameParentId] = useState<string | null>(null);
+  const [renameGlobal, setRenameGlobal] = useState(false);
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
   const [manageExtrasOpen, setManageExtrasOpen] = useState(false);
   const [newCategoryValue, setNewCategoryValue] = useState('');
@@ -1367,6 +1368,7 @@ export default function ExerciseLibraryPage() {
                     if (cat) {
                       setRenameValue(cat.name);
                       setRenameParentId(cat.parent_id ?? null);
+                      setRenameGlobal(!!cat.is_global);
                       setRenameCategory({ id: cat.id, name: cat.name });
                     }
                   }}
@@ -2051,6 +2053,16 @@ export default function ExerciseLibraryPage() {
                 </SelectContent>
               </Select>
             </div>
+            {isMaster && (
+              <label className="flex items-center gap-2 rounded-md border border-dashed border-border/70 bg-muted/30 px-3 py-2 text-xs cursor-pointer">
+                <Checkbox
+                  checked={renameGlobal}
+                  onCheckedChange={(v) => setRenameGlobal(v === true)}
+                />
+                <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>Publicar como <strong>global</strong> (visível a todos os usuários)</span>
+              </label>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRenameCategory(null)}>
@@ -2064,23 +2076,28 @@ export default function ExerciseLibraryPage() {
                 const nameUnchanged = renameValue.trim() === cat?.name;
                 const parentUnchanged =
                   (renameParentId ?? null) === (cat?.parent_id ?? null);
-                return nameUnchanged && parentUnchanged;
+                const globalUnchanged = renameGlobal === !!cat?.is_global;
+                return nameUnchanged && parentUnchanged && globalUnchanged;
               })()}
               onClick={async () => {
                 if (!renameCategory) return;
                 const cat = categories.find((c) => c.id === renameCategory.id);
-                const update: { id: string; name?: string; parent_id?: string | null } = {
+                const update: { id: string; name?: string; parent_id?: string | null; is_global?: boolean } = {
                   id: renameCategory.id,
                 };
                 if (renameValue.trim() !== cat?.name) update.name = renameValue.trim();
                 if ((renameParentId ?? null) !== (cat?.parent_id ?? null)) {
                   update.parent_id = renameParentId;
                 }
+                if (isMaster && renameGlobal !== !!cat?.is_global) {
+                  update.is_global = renameGlobal;
+                }
                 try {
                   await updateCategory.mutateAsync(update);
                   setRenameCategory(null);
                   setRenameValue('');
                   setRenameParentId(null);
+                  setRenameGlobal(false);
                 } catch {
                   // toast handled in hook
                 }
