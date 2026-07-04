@@ -147,6 +147,7 @@ export default function ExerciseLibraryPage() {
   const [manageExtrasOpen, setManageExtrasOpen] = useState(false);
   const [newCategoryValue, setNewCategoryValue] = useState('');
   const [newCategoryParentId, setNewCategoryParentId] = useState<string | null>(null);
+  const [newCategoryGlobal, setNewCategoryGlobal] = useState(false);
   const [igDialogOpen, setIgDialogOpen] = useState(false);
   const [igUrl, setIgUrl] = useState('');
   const [igNamePrefix, setIgNamePrefix] = useState('');
