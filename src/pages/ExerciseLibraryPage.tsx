@@ -2102,6 +2102,7 @@ export default function ExerciseLibraryPage() {
           if (!open) {
             setNewCategoryValue('');
             setNewCategoryParentId(null);
+            setNewCategoryGlobal(false);
           }
         }}
       >
