@@ -1368,6 +1368,7 @@ export default function ExerciseLibraryPage() {
                     if (cat) {
                       setRenameValue(cat.name);
                       setRenameParentId(cat.parent_id ?? null);
+                      setRenameGlobal(!!cat.is_global);
                       setRenameCategory({ id: cat.id, name: cat.name });
                     }
                   }}
