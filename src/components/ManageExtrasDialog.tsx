@@ -112,7 +112,18 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
                 )}
               </Button>
             </div>
+            {isMaster && (
+              <label className="flex items-center gap-2 text-[11px] cursor-pointer">
+                <Checkbox
+                  checked={newGlobal}
+                  onCheckedChange={(v) => setNewGlobal(v === true)}
+                />
+                <Globe className="h-3 w-3 text-muted-foreground" />
+                <span>Publicar como <strong>global</strong> (visível a todos)</span>
+              </label>
+            )}
           </div>
+
 
           {/* Lista */}
           <div className="max-h-[50vh] overflow-y-auto -mx-1 px-1">
