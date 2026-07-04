@@ -2149,6 +2149,16 @@ export default function ExerciseLibraryPage() {
               />
             </div>
           </div>
+          {isMaster && (
+            <label className="flex items-center gap-2 rounded-md border border-dashed border-border/70 bg-muted/30 px-3 py-2 text-xs cursor-pointer">
+              <Checkbox
+                checked={newCategoryGlobal}
+                onCheckedChange={(v) => setNewCategoryGlobal(v === true)}
+              />
+              <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>Publicar como <strong>global</strong> (visível a todos os usuários)</span>
+            </label>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateCategoryOpen(false)}>
               Cancelar
@@ -2160,10 +2170,12 @@ export default function ExerciseLibraryPage() {
                   const created = await createCategory.mutateAsync({
                     name: newCategoryValue.trim(),
                     parent_id: newCategoryParentId,
+                    is_global: isMaster && newCategoryGlobal,
                   });
                   setCreateCategoryOpen(false);
                   setNewCategoryValue('');
                   setNewCategoryParentId(null);
+                  setNewCategoryGlobal(false);
                   setFilterCategory(created.id);
                 } catch {
                   // toast handled in hook
