@@ -140,6 +140,7 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
                 {extras.map((ex) => {
                   const isEditing = editingId === ex.id;
                   const isOwn = ex.user_id === user?.id && !ex.is_global;
+                  const canManage = isMaster || isOwn;
                   return (
                     <li key={ex.id} className="py-2 flex items-center gap-2">
                       {isEditing ? (
@@ -184,7 +185,22 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
                               <Globe className="h-3 w-3 text-muted-foreground" aria-label="Global" />
                             )}
                           </span>
-                          {isOwn && (
+                          {isMaster && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className={`h-8 w-8 ${ex.is_global ? 'text-primary' : 'text-muted-foreground'}`}
+                              onClick={async () => {
+                                try {
+                                  await updateExtra.mutateAsync({ id: ex.id, is_global: !ex.is_global } as any);
+                                } catch { /* toast tratado */ }
+                              }}
+                              title={ex.is_global ? 'Tornar privado' : 'Publicar como global'}
+                            >
+                              <Globe className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          {canManage && (
                             <>
                               <Button
                                 size="icon"
