@@ -43,8 +43,9 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
     const name = newName.trim();
     if (!name) return;
     try {
-      await createExtra.mutateAsync({ name, icon: null });
+      await createExtra.mutateAsync({ name, icon: null, is_global: isMaster && newGlobal });
       setNewName('');
+      setNewGlobal(false);
     } catch {
       /* toast tratado */
     }
