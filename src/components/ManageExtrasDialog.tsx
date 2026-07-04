@@ -14,7 +14,9 @@ import { Plus, Pencil, Trash2, Check, X, Loader2, Globe } from 'lucide-react';
 import { useExerciseExtras, type ExerciseExtra } from '@/hooks/useExerciseExtras';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMaster } from '@/hooks/useIsMaster';
 
 interface ManageExtrasDialogProps {
   open: boolean;
@@ -23,10 +25,12 @@ interface ManageExtrasDialogProps {
 
 export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogProps) {
   const { user } = useAuth();
+  const { isMaster } = useIsMaster();
   const { extras, isLoading, createExtra, updateExtra, deleteExtra } = useExerciseExtras();
   const { exercises: libraryExercises } = useExerciseLibrary();
 
   const [newName, setNewName] = useState('');
+  const [newGlobal, setNewGlobal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [toDelete, setToDelete] = useState<ExerciseExtra | null>(null);
@@ -39,8 +43,9 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
     const name = newName.trim();
     if (!name) return;
     try {
-      await createExtra.mutateAsync({ name, icon: null });
+      await createExtra.mutateAsync({ name, icon: null, is_global: isMaster && newGlobal });
       setNewName('');
+      setNewGlobal(false);
     } catch {
       /* toast tratado */
     }
@@ -107,7 +112,18 @@ export function ManageExtrasDialog({ open, onOpenChange }: ManageExtrasDialogPro
                 )}
               </Button>
             </div>
+            {isMaster && (
+              <label className="flex items-center gap-2 text-[11px] cursor-pointer">
+                <Checkbox
+                  checked={newGlobal}
+                  onCheckedChange={(v) => setNewGlobal(v === true)}
+                />
+                <Globe className="h-3 w-3 text-muted-foreground" />
+                <span>Publicar como <strong>global</strong> (visível a todos)</span>
+              </label>
+            )}
           </div>
+
 
           {/* Lista */}
           <div className="max-h-[50vh] overflow-y-auto -mx-1 px-1">

@@ -8,6 +8,7 @@ export interface ExerciseCategory {
   user_id: string;
   name: string;
   parent_id: string | null;
+  is_global?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -35,11 +36,11 @@ export function useExerciseCategories() {
   });
 
   const createCategory = useMutation({
-    mutationFn: async (input: string | { name: string; parent_id?: string | null }) => {
+    mutationFn: async (input: string | { name: string; parent_id?: string | null; is_global?: boolean }) => {
       if (!user) throw new Error('User not authenticated');
       const payload = typeof input === 'string'
-        ? { name: input.trim(), parent_id: null }
-        : { name: input.name.trim(), parent_id: input.parent_id ?? null };
+        ? { name: input.trim(), parent_id: null, is_global: false }
+        : { name: input.name.trim(), parent_id: input.parent_id ?? null, is_global: !!input.is_global };
       const { data, error } = await supabase
         .from('exercise_categories')
         .insert({ user_id: user.id, ...payload })
