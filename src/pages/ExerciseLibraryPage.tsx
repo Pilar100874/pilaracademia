@@ -143,6 +143,7 @@ export default function ExerciseLibraryPage() {
   const [renameCategory, setRenameCategory] = useState<{ id: string; name: string } | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [renameParentId, setRenameParentId] = useState<string | null>(null);
+  const [renameGlobal, setRenameGlobal] = useState(false);
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
   const [manageExtrasOpen, setManageExtrasOpen] = useState(false);
   const [newCategoryValue, setNewCategoryValue] = useState('');
