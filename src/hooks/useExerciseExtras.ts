@@ -36,7 +36,7 @@ export function useExerciseExtras() {
   });
 
   const createExtra = useMutation({
-    mutationFn: async (input: { name: string; icon?: string | null }) => {
+    mutationFn: async (input: { name: string; icon?: string | null; is_global?: boolean }) => {
       if (!user) throw new Error('User not authenticated');
       const { data, error } = await supabase
         .from('exercise_extras')
@@ -44,7 +44,7 @@ export function useExerciseExtras() {
           user_id: user.id,
           name: input.name.trim(),
           icon: input.icon ?? null,
-          is_global: false,
+          is_global: !!input.is_global,
           clinic_id: null,
         })
         .select()
