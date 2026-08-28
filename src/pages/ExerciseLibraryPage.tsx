@@ -769,7 +769,9 @@ export default function ExerciseLibraryPage() {
         return parentId;
       };
 
+      let failedZip = 0;
       // --- Nomes dos exercícios (traduzidos em lotes) ---
+
       setZipStatus('Traduzindo nomes...');
       const rawNames = entries.map((en) => exerciseNameFromFilename(en.name) || en.name);
       const finalNames: string[] = [...rawNames];
