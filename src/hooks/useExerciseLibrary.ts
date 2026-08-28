@@ -150,6 +150,8 @@ export function useExerciseLibrary() {
       category_id?: string | null;
       /** Master-only: create in the shared global library. */
       is_global?: boolean;
+      /** Marca o item como pertencente à biblioteca global de GIFs. */
+      is_gif?: boolean;
       /** Suppress success toast — used during bulk operations. */
       _silent?: boolean;
     }) => {
@@ -173,6 +175,7 @@ export function useExerciseLibrary() {
         video_end_seconds: data.video_end_seconds ?? null,
         category_id: data.category_id ?? null,
         is_global: wantsGlobal,
+        is_gif: data.is_gif ?? false,
         clinic_id: null as string | null,
       };
 
@@ -409,6 +412,8 @@ export function useExerciseLibrary() {
     allExercises: rows,
     /** Read-only: items shared via the global library. */
     globalExercises,
+    /** Read-only: items shared via the global GIF library. */
+    gifExercises,
     isLoading,
     isMaster,
     createExercise,
