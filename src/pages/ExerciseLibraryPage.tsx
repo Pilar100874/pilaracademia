@@ -128,6 +128,8 @@ export default function ExerciseLibraryPage() {
   const [newBulkCategoryName, setNewBulkCategoryName] = useState('');
   const [bulkExtras, setBulkExtras] = useState<string[]>([]);
   const bulkInputRef = useRef<HTMLInputElement>(null);
+  const gifInputRef = useRef<HTMLInputElement>(null);
+  const [gifConverting, setGifConverting] = useState<{ done: number; total: number } | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
