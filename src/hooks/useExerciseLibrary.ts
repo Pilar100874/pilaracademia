@@ -129,7 +129,9 @@ export function useExerciseLibrary() {
 
   // Split for convenience in the UI
   const exercises = rows.filter((ex) => !ex.is_global || ex.user_id === user?.id);
-  const globalExercises = rows.filter((ex) => ex.is_global);
+  const globalExercises = rows.filter((ex) => ex.is_global && !ex.is_gif);
+  /** Biblioteca global de GIFs (importados como vídeo). */
+  const gifExercises = rows.filter((ex) => ex.is_global && ex.is_gif);
   // Personal-only (excluding own global ones authored by master)
   const personalExercises = rows.filter((ex) => !ex.is_global);
 
