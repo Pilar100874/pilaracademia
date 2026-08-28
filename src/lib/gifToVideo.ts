@@ -168,7 +168,7 @@ async function convertWithImgTag(file: File): Promise<File> {
     img.src = url;
     await img.decode();
 
-    const { width, height } = scaleSize(img.naturalWidth, img.naturalHeight);
+    const { width, height, upscaled } = scaleSize(img.naturalWidth, img.naturalHeight);
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -180,11 +180,13 @@ async function convertWithImgTag(file: File): Promise<File> {
         while (performance.now() - started < FALLBACK_DURATION_MS) {
           ctx.clearRect(0, 0, width, height);
           ctx.drawImage(img, 0, 0, width, height);
-          await sleep(1000 / 15);
+          await sleep(1000 / 25);
         }
       },
       file.name,
+      !upscaled,
     );
+
   } finally {
     URL.revokeObjectURL(url);
   }
