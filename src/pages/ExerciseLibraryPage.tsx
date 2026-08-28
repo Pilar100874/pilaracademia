@@ -33,7 +33,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, ChevronDown, Globe, Copy } from 'lucide-react';
+import { Settings, ChevronDown, Globe, Copy, Film } from 'lucide-react';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
@@ -275,7 +275,7 @@ export default function ExerciseLibraryPage() {
   const exportSelectedVideos = async () => {
     if (selectedIds.size === 0) return;
     const pool = new Map<string, LibraryExercise>();
-    for (const ex of [...exercises, ...(globalExercises ?? [])]) pool.set(ex.id, ex);
+    for (const ex of [...exercises, ...(globalExercises ?? []), ...(gifExercises ?? [])]) pool.set(ex.id, ex);
 
     // Qualquer mídia baixável: vídeo enviado, vídeo do Instagram já convertido
     // para o storage, ou (na ausência de vídeo) a primeira imagem do exercício.
@@ -1984,7 +1984,7 @@ export default function ExerciseLibraryPage() {
               // biblioteca (pelo menos 1 exercício referencia) + os já
               // marcados no exercício atual (para permitir desmarcar).
               const usedIds = new Set<string>();
-              for (const ex of [...exercises, ...(globalExercises ?? [])]) {
+              for (const ex of [...exercises, ...(globalExercises ?? []), ...(gifExercises ?? [])]) {
                 for (const id of ex.extra_ids ?? []) usedIds.add(id);
               }
               for (const id of currentLib?.extra_ids ?? []) usedIds.add(id);
