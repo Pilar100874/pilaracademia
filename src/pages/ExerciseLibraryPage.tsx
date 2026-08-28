@@ -1447,6 +1447,14 @@ export default function ExerciseLibraryPage() {
             className="sr-only"
             onChange={handleBulkUpload}
           />
+          <input
+            ref={gifInputRef}
+            type="file"
+            accept="image/gif,.gif"
+            multiple
+            className="sr-only"
+            onChange={handleGifImport}
+          />
           </div>
         </div>
 
