@@ -270,11 +270,27 @@ export default function ExerciseLibraryPage() {
 
   const exportSelectedVideos = async () => {
     if (selectedIds.size === 0) return;
-    const targets = exercises.filter(
-      (e) => selectedIds.has(e.id) && e.video_url && e.video_type !== 'youtube' && e.video_type !== 'instagram'
-    );
+    const pool = new Map<string, LibraryExercise>();
+    for (const ex of [...exercises, ...(globalExercises ?? [])]) pool.set(ex.id, ex);
+
+    // Qualquer mídia baixável: vídeo enviado, vídeo do Instagram já convertido
+    // para o storage, ou (na ausência de vídeo) a primeira imagem do exercício.
+    const isDownloadable = (u?: string | null) =>
+      !!u && /^https?:\/\//i.test(u) && !/youtu\.?be|youtube\.com|instagram\.com/i.test(u);
+
+    const targets = Array.from(pool.values())
+      .filter((e) => selectedIds.has(e.id))
+      .map((e) => {
+        if (e.video_type !== 'youtube' && isDownloadable(e.video_url)) {
+          return { ex: e, url: e.video_url as string };
+        }
+        const img = e.image_urls?.find((u) => isDownloadable(u));
+        return img ? { ex: e, url: img } : null;
+      })
+      .filter(Boolean) as { ex: LibraryExercise; url: string }[];
+
     if (targets.length === 0) {
-      toast.error('Nenhum vídeo exportável na seleção (apenas vídeos enviados podem ser baixados).');
+      toast.error('Nenhuma mídia exportável na seleção (links do YouTube/Instagram não podem ser baixados).');
       return;
     }
     setExporting({ done: 0, total: targets.length });
@@ -285,13 +301,13 @@ export default function ExerciseLibraryPage() {
       let failed = 0;
 
       for (let i = 0; i < targets.length; i++) {
-        const ex = targets[i];
+        const { ex, url: srcUrl } = targets[i];
         try {
-          const url = await getFreshMediaUrl(ex.video_url!);
+          const url = await getFreshMediaUrl(srcUrl);
           const res = await fetch(url);
           if (!res.ok) throw new Error('fetch failed');
           const blob = await res.blob();
-          const ext = lowerNoQuery(ex.video_url!).split('.').pop() || 'mp4';
+          const ext = (lowerNoQuery(srcUrl).split('.').pop() || '').slice(0, 5) || 'mp4';
           const base = (ex.name || 'exercicio').replace(/[^\p{L}\p{N} _-]/gu, '').trim() || 'exercicio';
           let fileName = `${base}.${ext}`;
           let n = 2;
@@ -303,6 +319,7 @@ export default function ExerciseLibraryPage() {
         }
         setExporting({ done: i + 1, total: targets.length });
       }
+
 
       const content = await zip.generateAsync({ type: 'blob' });
       const a = document.createElement('a');
