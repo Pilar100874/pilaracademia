@@ -122,7 +122,8 @@ async function convertWithImageDecoder(file: File): Promise<File> {
   }
 
   const first: any = frames[0].bitmap;
-  const { width, height } = scaleSize(
+  const { width, height, upscaled } = scaleSize(
+
     first.displayWidth ?? first.width,
     first.displayHeight ?? first.height,
   );
