@@ -72,7 +72,7 @@ async function recordCanvas(
   ctx.imageSmoothingEnabled = smoothing;
   ctx.imageSmoothingQuality = 'high';
 
-  const stream = canvas.captureStream(30);
+  const stream = canvas.captureStream(60);
   const mimeType = pickMimeType();
   const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: VIDEO_BITRATE });
 
