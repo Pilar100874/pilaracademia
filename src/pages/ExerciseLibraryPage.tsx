@@ -769,54 +769,115 @@ export default function ExerciseLibraryPage() {
         return parentId;
       };
 
-      // --- Conversão dos GIFs ---
-      const converted: File[] = [];
-      let failed = 0;
-      setGifConverting({ done: 0, total: entries.length });
-      for (const en of entries) {
+      // --- Nomes dos exercícios (traduzidos em lotes) ---
+      setZipStatus('Traduzindo nomes...');
+      const rawNames = entries.map((en) => exerciseNameFromFilename(en.name) || en.name);
+      const finalNames: string[] = [...rawNames];
+      const CHUNK = 80;
+      for (let i = 0; i < rawNames.length; i += CHUNK) {
+        const slice = rawNames.slice(i, i + CHUNK);
+        try {
+          const out = await translateExerciseNames(slice);
+          out.forEach((n, j) => {
+            if (n && n.trim()) finalNames[i + j] = n.trim();
+          });
+        } catch {
+          /* mantém original */
+        }
+      }
+
+      // --- Conversão + upload, um GIF por vez (streaming) ---
+      setZipStatus(null);
+      setBulkUploading({ done: 0, total: entries.length });
+      beginImport();
+      const usedNames = new Set<string>();
+      const sessionHashes = new Set<string>();
+      let successCount = 0;
+      let duplicateCount = 0;
+
+      for (let i = 0; i < entries.length; i++) {
+        const en = entries[i];
         try {
           const categoryId = await ensureCategory(en.path);
           const blob: Blob = await en.obj.getData(new BlobWriter('image/gif'));
           const gifFile = new File([blob], en.name, { type: 'image/gif' });
-          const out = await gifToVideoFile(gifFile);
-          (out as any).__noRecompress = true;
-          (out as any).__sourceName = exerciseNameFromFilename(en.name);
-          (out as any).__isGif = true;
-          (out as any).__categoryId = categoryId;
-          converted.push(out);
+          const toUpload = await gifToVideoFile(gifFile);
+
+          let videoHash: string | null = null;
+          try { videoHash = await hashBlob(toUpload); } catch { /* ignore */ }
+
+          if (videoHash) {
+            if (sessionHashes.has(videoHash)) {
+              duplicateCount++;
+              continue;
+            }
+            const { data: existing } = await supabase
+              .from('exercise_library')
+              .select('id')
+              .eq('video_hash', videoHash)
+              .or(`user_id.eq.${user.id},is_global.eq.true`)
+              .limit(1)
+              .maybeSingle();
+            if (existing) {
+              duplicateCount++;
+              continue;
+            }
+            sessionHashes.add(videoHash);
+          }
+
+          const ext = (toUpload.name.split('.').pop() || 'webm').toLowerCase();
+          const path = `${user.id}/${Date.now()}-${i}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from('exercise-videos')
+            .upload(path, toUpload, { contentType: toUpload.type || 'video/webm', upsert: false });
+          if (upErr) throw upErr;
+
+          const { data: pub } = supabase.storage.from('exercise-videos').getPublicUrl(path);
+
+          const desired = finalNames[i];
+          let candidate = desired;
+          let n = 2;
+          while (usedNames.has(candidate)) candidate = `${desired} ${n++}`;
+          usedNames.add(candidate);
+
+          await createExercise.mutateAsync({
+            name: candidate,
+            default_sets: 1,
+            default_reps: 10,
+            image_urls: [],
+            video_type: 'upload',
+            video_url: pub.publicUrl,
+            video_optimized_at: new Date().toISOString(),
+            video_hash: videoHash,
+            video_start_seconds: 0,
+            video_end_seconds: null,
+            category_id: categoryId,
+            is_gif: true,
+            is_global: true,
+            _silent: true,
+          });
+          successCount++;
         } catch (err) {
-          console.error('ZIP gif conversion failed', en.name, err);
-          failed++;
+          console.error('ZIP gif import failed', en.name, err);
+          failedZip++;
         } finally {
-          setGifConverting((prev) => prev && { ...prev, done: prev.done + 1 });
+          setBulkUploading((prev) => prev && { ...prev, done: prev.done + 1 });
         }
       }
-      setGifConverting(null);
-      setZipStatus(null);
 
-      if (failed > 0) toast.warning(`${failed} GIF(s) não puderam ser convertidos.`);
-      if (!converted.length) return;
-
-      // Traduz os nomes dos exercícios.
-      const withNames = converted.filter((f) => (f as any).__sourceName);
-      if (withNames.length) {
-        const translated = await translateExerciseNames(
-          withNames.map((f) => (f as any).__sourceName as string),
-        );
-        withNames.forEach((f, i) => {
-          (f as any).__desiredName = translated[i];
-        });
-      }
-
-      setBulkCategoryChoice(NO_CATEGORY);
-      setNewBulkCategoryName('');
-      setBulkExtras([]);
-      setPendingFiles(converted);
+      setBulkUploading(null);
+      endImport();
+      if (successCount > 0) toast.success(`${successCount} exercício(s) importado(s) do ZIP`);
+      if (duplicateCount > 0) toast.warning(`${duplicateCount} GIF(s) ignorado(s) por já existirem.`);
+      if (failedZip > 0) toast.warning(`${failedZip} GIF(s) não puderam ser importados.`);
+      if (!successCount && !duplicateCount) toast.error('Nenhum GIF pôde ser importado do ZIP');
     } catch (err) {
       console.error('ZIP import failed', err);
       toast.error('Erro ao ler o arquivo zip');
       setZipStatus(null);
       setGifConverting(null);
+      setBulkUploading(null);
+      endImport();
     } finally {
       try {
         await zipReader?.close();
@@ -825,6 +886,7 @@ export default function ExerciseLibraryPage() {
       }
     }
   };
+
 
 
   const runInstagramImport = async () => {
