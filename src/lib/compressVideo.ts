@@ -107,30 +107,15 @@ export async function compressVideoFile(
       const ctx = canvas.getContext('2d', { alpha: false });
       if (!ctx) return fallback();
 
-      // Capture canvas + original audio track
-      const canvasStream = (canvas as HTMLCanvasElement).captureStream(30);
-      let combined: MediaStream = canvasStream;
-      try {
-        const elStream = (video as any).captureStream
-          ? (video as any).captureStream()
-          : null;
-        const audioTrack = elStream?.getAudioTracks?.()[0];
-        if (audioTrack) {
-          combined = new MediaStream([
-            ...canvasStream.getVideoTracks(),
-            audioTrack,
-          ]);
-        }
-      } catch {
-        // proceed without audio if not available
-      }
+      // Captura apenas o vídeo — o áudio é descartado de propósito
+      // (arquivos ficam bem mais leves e o app sempre reproduz mudo).
+      const combined: MediaStream = (canvas as HTMLCanvasElement).captureStream(30);
 
       let recorder: MediaRecorder;
       try {
         recorder = new MediaRecorder(combined, {
           mimeType,
           videoBitsPerSecond: cfg.videoBitsPerSecond,
-          audioBitsPerSecond: cfg.audioBitsPerSecond,
         });
       } catch {
         return fallback();
