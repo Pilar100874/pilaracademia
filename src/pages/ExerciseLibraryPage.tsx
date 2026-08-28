@@ -131,6 +131,8 @@ export default function ExerciseLibraryPage() {
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const gifInputRef = useRef<HTMLInputElement>(null);
   const [gifConverting, setGifConverting] = useState<{ done: number; total: number } | null>(null);
+  const zipInputRef = useRef<HTMLInputElement>(null);
+  const [zipStatus, setZipStatus] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
@@ -415,11 +417,21 @@ export default function ExerciseLibraryPage() {
     return m;
   }, [categories]);
 
+  /**
+   * Categorias visíveis na aba atual. A aba "Global Gif" tem o seu próprio
+   * conjunto de categorias/subcategorias (`is_gif`), que não aparece em
+   * "Meus" nem em "Global" — e vice-versa.
+   */
+  const scopedCategories = useMemo(
+    () => categories.filter((c) => (activeTab === 'gif' ? !!c.is_gif : !c.is_gif)),
+    [categories, activeTab],
+  );
+
   // Build hierarchical list (root first, then children indented).
   // Also map descendants for filtering.
   const { orderedCategories, descendantsMap } = useMemo(() => {
     const childrenOf = new Map<string | null, typeof categories>();
-    categories.forEach((c) => {
+    scopedCategories.forEach((c) => {
       const key = c.parent_id ?? null;
       const arr = childrenOf.get(key) ?? [];
       arr.push(c);
@@ -447,9 +459,9 @@ export default function ExerciseLibraryPage() {
       descendants.set(id, set);
       return set;
     };
-    categories.forEach((c) => collect(c.id));
+    scopedCategories.forEach((c) => collect(c.id));
     return { orderedCategories: ordered, descendantsMap: descendants };
-  }, [categories]);
+  }, [scopedCategories]);
 
   const sourceList =
     activeTab === 'global' ? globalExercises : activeTab === 'gif' ? gifExercises : exercises;
@@ -658,6 +670,149 @@ export default function ExerciseLibraryPage() {
     setPendingFiles(converted);
   };
 
+
+  /**
+   * Importa um .zip com GIFs animados. Cada pasta do zip vira uma categoria
+   * (e subpastas viram subcategorias) da biblioteca **Global Gif**, com o
+   * nome traduzido para português do Brasil.
+   */
+  const handleZipImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!user) {
+      toast.error('Faça login para importar');
+      return;
+    }
+
+    try {
+      setZipStatus('Lendo arquivo...');
+      const JSZip = (await import('jszip')).default;
+      const zip = await JSZip.loadAsync(file);
+
+      type Entry = { path: string[]; name: string; obj: any };
+      const entries: Entry[] = [];
+      zip.forEach((relPath: string, entry: any) => {
+        if (entry.dir) return;
+        const parts = relPath.split('/').filter(Boolean);
+        const fileName = parts.pop() as string;
+        if (!fileName || fileName.startsWith('.')) return;
+        if (!/\.gif$/i.test(fileName)) return;
+        entries.push({ path: parts, name: fileName, obj: entry });
+      });
+
+      if (!entries.length) {
+        toast.error('Nenhum GIF encontrado no zip');
+        setZipStatus(null);
+        return;
+      }
+
+      // Se o zip tiver uma única pasta raiz envolvendo tudo, ignora-a.
+      const roots = new Set(entries.map((en) => en.path[0] ?? ''));
+      if (roots.size === 1 && !roots.has('')) {
+        entries.forEach((en) => en.path.shift());
+      }
+
+      // --- Categorias a partir das pastas (traduzidas) ---
+      setZipStatus('Traduzindo categorias...');
+      const folderNames = Array.from(
+        new Set(entries.flatMap((en) => en.path).filter(Boolean)),
+      );
+      let translatedFolders: string[] = folderNames;
+      if (folderNames.length) {
+        translatedFolders = await translateExerciseNames(
+          folderNames.map((f) => f.replace(/[-_]+/g, ' ').trim()),
+        );
+      }
+      const folderLabel = new Map<string, string>();
+      folderNames.forEach((f, i) => folderLabel.set(f, (translatedFolders[i] || f).trim()));
+
+      // Cria/reaproveita as categorias GIF por caminho.
+      const catByPath = new Map<string, string>();
+      const findExisting = (name: string, parentId: string | null) =>
+        categories.find(
+          (c) =>
+            !!c.is_gif &&
+            (c.parent_id ?? null) === parentId &&
+            c.name.toLowerCase() === name.toLowerCase(),
+        )?.id ?? null;
+
+      const ensureCategory = async (path: string[]): Promise<string | null> => {
+        let parentId: string | null = null;
+        for (let i = 0; i < path.length; i++) {
+          const key = path.slice(0, i + 1).join('/');
+          const cached = catByPath.get(key);
+          if (cached) {
+            parentId = cached;
+            continue;
+          }
+          const label = folderLabel.get(path[i]) || path[i];
+          let id = findExisting(label, parentId);
+          if (!id) {
+            const created = await createCategory.mutateAsync({
+              name: label,
+              parent_id: parentId,
+              is_gif: true,
+              is_global: isMaster,
+            });
+            id = created.id;
+          }
+          catByPath.set(key, id);
+          parentId = id;
+        }
+        return parentId;
+      };
+
+      // --- Conversão dos GIFs ---
+      const converted: File[] = [];
+      let failed = 0;
+      setGifConverting({ done: 0, total: entries.length });
+      for (const en of entries) {
+        try {
+          const categoryId = await ensureCategory(en.path);
+          const blob: Blob = await en.obj.async('blob');
+          const gifFile = new File([blob], en.name, { type: 'image/gif' });
+          const out = await gifToVideoFile(gifFile);
+          (out as any).__noRecompress = true;
+          (out as any).__sourceName = exerciseNameFromFilename(en.name);
+          (out as any).__isGif = true;
+          (out as any).__categoryId = categoryId;
+          converted.push(out);
+        } catch (err) {
+          console.error('ZIP gif conversion failed', en.name, err);
+          failed++;
+        } finally {
+          setGifConverting((prev) => prev && { ...prev, done: prev.done + 1 });
+        }
+      }
+      setGifConverting(null);
+      setZipStatus(null);
+
+      if (failed > 0) toast.warning(`${failed} GIF(s) não puderam ser convertidos.`);
+      if (!converted.length) return;
+
+      // Traduz os nomes dos exercícios.
+      const withNames = converted.filter((f) => (f as any).__sourceName);
+      if (withNames.length) {
+        const translated = await translateExerciseNames(
+          withNames.map((f) => (f as any).__sourceName as string),
+        );
+        withNames.forEach((f, i) => {
+          (f as any).__desiredName = translated[i];
+        });
+      }
+
+      setBulkCategoryChoice(NO_CATEGORY);
+      setNewBulkCategoryName('');
+      setBulkExtras([]);
+      setPendingFiles(converted);
+    } catch (err) {
+      console.error('ZIP import failed', err);
+      toast.error('Erro ao ler o arquivo zip');
+      setZipStatus(null);
+      setGifConverting(null);
+    }
+  };
 
   const runInstagramImport = async () => {
     if (!user) return;
@@ -899,7 +1054,11 @@ export default function ExerciseLibraryPage() {
         return;
       }
       try {
-        const created = await createCategory.mutateAsync(name);
+        const created = await createCategory.mutateAsync({
+          name,
+          is_gif: activeTab === 'gif',
+          is_global: isMaster && activeTab === 'gif',
+        });
         targetCategoryId = created.id;
       } catch {
         return;
@@ -1010,7 +1169,7 @@ export default function ExerciseLibraryPage() {
           video_hash: videoHash,
           video_start_seconds: 0,
           video_end_seconds: null,
-          category_id: targetCategoryId,
+          category_id: ((file as any).__categoryId as string | undefined) ?? targetCategoryId,
           is_gif: !!(file as any).__isGif,
           is_global: (file as any).__isGif ? true : undefined,
           _silent: true,
@@ -1442,6 +1601,25 @@ export default function ExerciseLibraryPage() {
               <Button
                 variant="outline"
                 size="sm"
+                disabled={!!gifConverting || !!bulkUploading || !!zipStatus}
+                onClick={() => zipInputRef.current?.click()}
+                title="Importar um .zip com GIFs — as pastas viram categorias"
+              >
+                {zipStatus ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    {zipStatus}
+                  </>
+                ) : (
+                  <>
+                    <FolderInput className="h-4 w-4 mr-1" />
+                    ZIP de GIFs
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   setIgUrl('');
                   setIgNamePrefix('');
@@ -1489,6 +1667,13 @@ export default function ExerciseLibraryPage() {
             multiple
             className="sr-only"
             onChange={handleGifImport}
+          />
+          <input
+            ref={zipInputRef}
+            type="file"
+            accept=".zip,application/zip"
+            className="sr-only"
+            onChange={handleZipImport}
           />
           </div>
         </div>
@@ -2408,6 +2593,7 @@ export default function ExerciseLibraryPage() {
                     name: newCategoryValue.trim(),
                     parent_id: newCategoryParentId,
                     is_global: isMaster && newCategoryGlobal,
+                    is_gif: activeTab === 'gif',
                   });
                   setCreateCategoryOpen(false);
                   setNewCategoryValue('');
