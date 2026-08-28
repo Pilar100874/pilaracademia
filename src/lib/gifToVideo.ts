@@ -65,13 +65,17 @@ async function recordCanvas(
   canvas: HTMLCanvasElement,
   drawLoop: (ctx: CanvasRenderingContext2D) => Promise<void>,
   originalName: string,
+  smoothing = true,
 ): Promise<File> {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false });
   if (!ctx) throw new Error('Canvas indisponível');
+  ctx.imageSmoothingEnabled = smoothing;
+  ctx.imageSmoothingQuality = 'high';
 
   const stream = canvas.captureStream(30);
   const mimeType = pickMimeType();
-  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2_500_000 });
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: VIDEO_BITRATE });
+
   const chunks: BlobPart[] = [];
   recorder.ondataavailable = (e) => {
     if (e.data && e.data.size > 0) chunks.push(e.data);
