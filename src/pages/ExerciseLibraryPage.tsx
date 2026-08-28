@@ -817,8 +817,15 @@ export default function ExerciseLibraryPage() {
       toast.error('Erro ao ler o arquivo zip');
       setZipStatus(null);
       setGifConverting(null);
+    } finally {
+      try {
+        await zipReader?.close();
+      } catch {
+        /* ignore */
+      }
     }
   };
+
 
   const runInstagramImport = async () => {
     if (!user) return;
