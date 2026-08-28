@@ -20,6 +20,8 @@ export interface LibraryExercise {
   video_end_seconds: number | null;
   /** True when this exercise belongs to the shared global library (managed by master). */
   is_global: boolean;
+  /** True when this exercise came from the global GIF library. */
+  is_gif: boolean;
   /** @deprecated Use category_ids — mantido por compatibilidade com código antigo */
   category_id: string | null;
   /** Todas as categorias atribuídas ao exercício (multi). */
