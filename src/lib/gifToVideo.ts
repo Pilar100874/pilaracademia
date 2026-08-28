@@ -152,6 +152,8 @@ async function convertWithImageDecoder(file: File): Promise<File> {
       }
     },
     file.name,
+    !upscaled,
+
   );
 
   frames.forEach((f) => (f.bitmap as any).close?.());
