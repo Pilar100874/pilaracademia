@@ -844,10 +844,12 @@ export default function ExerciseLibraryPage() {
           failedZip++;
         } finally {
           setBulkUploading((prev) => prev && { ...prev, done: prev.done + 1 });
+          tick(LIB_IMPORT_JOB_ID, en.name);
         }
       }
 
       setBulkUploading(null);
+      removeBgJob(LIB_IMPORT_JOB_ID);
       endImport();
       if (successCount > 0) toast.success(`${successCount} exercício(s) importado(s) do ZIP`);
       if (duplicateCount > 0) toast.warning(`${duplicateCount} GIF(s) ignorado(s) por já existirem.`);
