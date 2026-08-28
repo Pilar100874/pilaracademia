@@ -415,11 +415,21 @@ export default function ExerciseLibraryPage() {
     return m;
   }, [categories]);
 
+  /**
+   * Categorias visíveis na aba atual. A aba "Global Gif" tem o seu próprio
+   * conjunto de categorias/subcategorias (`is_gif`), que não aparece em
+   * "Meus" nem em "Global" — e vice-versa.
+   */
+  const scopedCategories = useMemo(
+    () => categories.filter((c) => (activeTab === 'gif' ? !!c.is_gif : !c.is_gif)),
+    [categories, activeTab],
+  );
+
   // Build hierarchical list (root first, then children indented).
   // Also map descendants for filtering.
   const { orderedCategories, descendantsMap } = useMemo(() => {
     const childrenOf = new Map<string | null, typeof categories>();
-    categories.forEach((c) => {
+    scopedCategories.forEach((c) => {
       const key = c.parent_id ?? null;
       const arr = childrenOf.get(key) ?? [];
       arr.push(c);
@@ -447,9 +457,9 @@ export default function ExerciseLibraryPage() {
       descendants.set(id, set);
       return set;
     };
-    categories.forEach((c) => collect(c.id));
+    scopedCategories.forEach((c) => collect(c.id));
     return { orderedCategories: ordered, descendantsMap: descendants };
-  }, [categories]);
+  }, [scopedCategories]);
 
   const sourceList =
     activeTab === 'global' ? globalExercises : activeTab === 'gif' ? gifExercises : exercises;
@@ -2408,6 +2418,7 @@ export default function ExerciseLibraryPage() {
                     name: newCategoryValue.trim(),
                     parent_id: newCategoryParentId,
                     is_global: isMaster && newCategoryGlobal,
+                    is_gif: activeTab === 'gif',
                   });
                   setCreateCategoryOpen(false);
                   setNewCategoryValue('');
