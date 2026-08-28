@@ -268,7 +268,65 @@ export default function ExerciseLibraryPage() {
     return usage;
   };
 
+  const exportSelectedVideos = async () => {
+    if (selectedIds.size === 0) return;
+    const targets = exercises.filter(
+      (e) => selectedIds.has(e.id) && e.video_url && e.video_type !== 'youtube' && e.video_type !== 'instagram'
+    );
+    if (targets.length === 0) {
+      toast.error('Nenhum vídeo exportável na seleção (apenas vídeos enviados podem ser baixados).');
+      return;
+    }
+    setExporting({ done: 0, total: targets.length });
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      const used = new Set<string>();
+      let failed = 0;
+
+      for (let i = 0; i < targets.length; i++) {
+        const ex = targets[i];
+        try {
+          const url = await getFreshMediaUrl(ex.video_url!);
+          const res = await fetch(url);
+          if (!res.ok) throw new Error('fetch failed');
+          const blob = await res.blob();
+          const ext = lowerNoQuery(ex.video_url!).split('.').pop() || 'mp4';
+          const base = (ex.name || 'exercicio').replace(/[^\p{L}\p{N} _-]/gu, '').trim() || 'exercicio';
+          let fileName = `${base}.${ext}`;
+          let n = 2;
+          while (used.has(fileName)) fileName = `${base} (${n++}).${ext}`;
+          used.add(fileName);
+          zip.file(fileName, blob);
+        } catch {
+          failed++;
+        }
+        setExporting({ done: i + 1, total: targets.length });
+      }
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a');
+      const objUrl = URL.createObjectURL(content);
+      a.href = objUrl;
+      a.download = `videos-biblioteca-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
+
+      toast.success(
+        `${targets.length - failed} vídeo(s) exportado(s)${failed ? ` — ${failed} falharam` : ''}`
+      );
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao exportar vídeos');
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const openBulkDelete = async () => {
+
     if (selectedIds.size === 0) return;
     setBulkDeleteChecking(true);
     try {
