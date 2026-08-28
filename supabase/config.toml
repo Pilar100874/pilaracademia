@@ -19,3 +19,6 @@ verify_jwt = false
 verify_jwt = false
 [functions.share-summary]
 verify_jwt = false
+
+[functions.translate-exercise-names]
+verify_jwt = false

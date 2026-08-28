@@ -45,6 +45,7 @@ import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { compressVideoFile } from '@/lib/compressVideo';
 import { hashBlob, hashUrl } from '@/lib/videoHash';
 import { gifToVideoFile, isGifFile } from '@/lib/gifToVideo';
+import { exerciseNameFromFilename, translateExerciseNames } from '@/lib/gifNameToExercise';
 import {
   Dialog,
   DialogContent,
@@ -614,6 +615,8 @@ export default function ExerciseLibraryPage() {
         const out = await gifToVideoFile(gif);
         // Já sai otimizado da conversão — evita recompressão que degrada.
         (out as any).__noRecompress = true;
+        // Nome derivado do arquivo original (antes de "(female)"/"(male)").
+        (out as any).__sourceName = exerciseNameFromFilename(gif.name);
         converted.push(out);
 
       } catch (err) {
@@ -629,6 +632,18 @@ export default function ExerciseLibraryPage() {
       toast.warning(`${failed} GIF(s) não puderam ser convertidos.`);
     }
     if (!converted.length) return;
+
+    // Traduz os nomes extraídos dos arquivos para português (IA).
+    const withNames = converted.filter((f) => (f as any).__sourceName);
+    if (withNames.length) {
+      const translated = await translateExerciseNames(
+        withNames.map((f) => (f as any).__sourceName as string),
+      );
+      withNames.forEach((f, i) => {
+        (f as any).__desiredName = translated[i];
+      });
+    }
+
 
     const initial =
       filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY
@@ -974,7 +989,15 @@ export default function ExerciseLibraryPage() {
         const optimizedAt = hasWebmUrl(pub.publicUrl) || toUpload === file ? new Date().toISOString() : null;
 
         const created = await createExercise.mutateAsync({
-          name: generateUniqueName(baseName, usedNames),
+          name: (() => {
+            const desired = ((file as any).__desiredName as string | undefined)?.trim();
+            if (!desired) return generateUniqueName(baseName, usedNames);
+            let candidate = desired;
+            let n = 2;
+            while (usedNames.has(candidate)) candidate = `${desired} ${n++}`;
+            usedNames.add(candidate);
+            return candidate;
+          })(),
           default_sets: 1,
           default_reps: 10,
           image_urls: [],
