@@ -38,13 +38,20 @@ function pickMimeType(): string {
 
 function scaleSize(w: number, h: number) {
   const largest = Math.max(w, h);
-  if (largest <= MAX_DIMENSION) return { width: Math.max(2, w), height: Math.max(2, h) };
-  const ratio = MAX_DIMENSION / largest;
+  let ratio = 1;
+  if (largest > MAX_DIMENSION) {
+    ratio = MAX_DIMENSION / largest;
+  } else if (largest < MIN_DIMENSION) {
+    // fator inteiro (2x, 3x...) para upscale limpo
+    ratio = Math.min(4, Math.max(1, Math.floor(MIN_DIMENSION / largest)));
+  }
   return {
-    width: Math.max(2, Math.round(w * ratio)),
-    height: Math.max(2, Math.round(h * ratio)),
+    width: Math.max(2, Math.round((w * ratio) / 2) * 2),
+    height: Math.max(2, Math.round((h * ratio) / 2) * 2),
+    upscaled: ratio > 1,
   };
 }
+
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, Math.max(0, ms)));
 
