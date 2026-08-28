@@ -861,6 +861,7 @@ export default function ExerciseLibraryPage() {
       setZipStatus(null);
       setGifConverting(null);
       setBulkUploading(null);
+      removeBgJob(LIB_IMPORT_JOB_ID);
       endImport();
     } finally {
       try {
