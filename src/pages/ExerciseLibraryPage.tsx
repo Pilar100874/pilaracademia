@@ -781,7 +781,8 @@ export default function ExerciseLibraryPage() {
           const categoryId = await ensureCategory(en.path);
           const blob: Blob = await en.obj.getData(new BlobWriter('image/gif'));
           const gifFile = new File([blob], en.name, { type: 'image/gif' });
-          const toUpload = await gifToVideoFile(gifFile);
+          // Importa o GIF diretamente, sem conversão para vídeo.
+          const toUpload = gifFile;
 
           let videoHash: string | null = null;
           try { videoHash = await hashBlob(toUpload); } catch { /* ignore */ }
