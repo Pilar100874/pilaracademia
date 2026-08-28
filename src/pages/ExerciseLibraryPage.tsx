@@ -44,7 +44,7 @@ import { getStorageStatus } from '@/lib/videoCache';
 import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { compressVideoFile } from '@/lib/compressVideo';
 import { hashBlob, hashUrl } from '@/lib/videoHash';
-import { gifToVideoFile, isGifFile } from '@/lib/gifToVideo';
+import { isGifFile } from '@/lib/gifToVideo';
 import { exerciseNameFromFilename, translateExerciseNames } from '@/lib/gifNameToExercise';
 import {
   Dialog,
