@@ -35,8 +35,8 @@ const DEFAULTS: Required<Omit<CompressOptions, 'onProgress'>> = {
 
 function pickMimeType(): string | null {
   const candidates = [
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
     'video/webm',
   ];
   if (typeof MediaRecorder === 'undefined') return null;
