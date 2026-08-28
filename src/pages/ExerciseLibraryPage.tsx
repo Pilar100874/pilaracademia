@@ -80,7 +80,7 @@ export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { exercises, globalExercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise, toggleExerciseCategory, copyGlobalToPersonal, isMaster } = useExerciseLibrary();
+  const { exercises, globalExercises, gifExercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise, toggleExerciseCategory, copyGlobalToPersonal, isMaster } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
   const { extras, bulkAssignExtra } = useExerciseExtras();
 
@@ -108,7 +108,7 @@ export default function ExerciseLibraryPage() {
   const analysisProgress: { done: number; total: number; current?: string } | null = null;
   const { addWork, tick, remove: removeBgJob } = useBackgroundProgress();
 
-  const [activeTab, setActiveTab] = useState<'mine' | 'global'>('mine');
+  const [activeTab, setActiveTab] = useState<'mine' | 'global' | 'gif'>('mine');
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [bodyFilter, setBodyFilter] = useState<BodyAnalysisFilterValue>(EMPTY_BODY_FILTER);
@@ -451,7 +451,8 @@ export default function ExerciseLibraryPage() {
     return { orderedCategories: ordered, descendantsMap: descendants };
   }, [categories]);
 
-  const sourceList = activeTab === 'global' ? globalExercises : exercises;
+  const sourceList =
+    activeTab === 'global' ? globalExercises : activeTab === 'gif' ? gifExercises : exercises;
   const filteredExercises = sourceList.filter((ex) => {
     const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase());
     const primaryCategoryIds = ex.category_id
@@ -617,6 +618,8 @@ export default function ExerciseLibraryPage() {
         (out as any).__noRecompress = true;
         // Nome derivado do arquivo original (antes de "(female)"/"(male)").
         (out as any).__sourceName = exerciseNameFromFilename(gif.name);
+        // Vai para a biblioteca global de GIFs.
+        (out as any).__isGif = true;
         converted.push(out);
 
       } catch (err) {
@@ -1008,6 +1011,8 @@ export default function ExerciseLibraryPage() {
           video_start_seconds: 0,
           video_end_seconds: null,
           category_id: targetCategoryId,
+          is_gif: !!(file as any).__isGif,
+          is_global: (file as any).__isGif ? true : undefined,
           _silent: true,
         });
         // Apply selected extras to the new exercise
@@ -1282,8 +1287,10 @@ export default function ExerciseLibraryPage() {
             <p className="text-sm text-muted-foreground">
               {activeTab === 'global'
                 ? `${globalExercises.length} global${globalExercises.length !== 1 ? 'is' : ''}`
-                : `${exercises.length} exercício${exercises.length !== 1 ? 's' : ''}`}
-              {isMaster && activeTab === 'global' && ' • você é o curador'}
+                : activeTab === 'gif'
+                  ? `${gifExercises.length} GIF${gifExercises.length !== 1 ? 's' : ''} global${gifExercises.length !== 1 ? 'is' : ''}`
+                  : `${exercises.length} exercício${exercises.length !== 1 ? 's' : ''}`}
+              {isMaster && activeTab !== 'mine' && ' • você é o curador'}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end ml-auto">
@@ -1486,14 +1493,18 @@ export default function ExerciseLibraryPage() {
           </div>
         </div>
 
-        {/* Tabs: Mine / Global */}
+        {/* Tabs: Mine / Global / Global GIF */}
         <div className="px-4 pb-2">
-          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'mine' | 'global'); setFilterCategory(ALL_CATEGORIES); exitSelectionMode(); }}>
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'mine' | 'global' | 'gif'); setFilterCategory(ALL_CATEGORIES); exitSelectionMode(); }}>
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="mine">Meus ({exercises.length})</TabsTrigger>
               <TabsTrigger value="global" className="flex items-center gap-1.5">
                 <Globe className="h-3.5 w-3.5" />
                 Global ({globalExercises.length})
+              </TabsTrigger>
+              <TabsTrigger value="gif" className="flex items-center gap-1.5">
+                <Film className="h-3.5 w-3.5" />
+                Global Gif ({gifExercises.length})
               </TabsTrigger>
             </TabsList>
           </Tabs>
