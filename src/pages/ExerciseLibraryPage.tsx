@@ -63,6 +63,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
 import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL, LIB_IMPORT_JOB_ID, LIB_IMPORT_JOB_LABEL, beginImport, endImport } from '@/lib/libraryBgJob';
+import { enqueueUploads } from '@/lib/pendingUploads';
 
 const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
@@ -766,16 +767,11 @@ export default function ExerciseLibraryPage() {
         }
       }
 
-      // --- Conversão + upload, um GIF por vez (streaming) ---
-      setZipStatus(null);
-      setBulkUploading({ done: 0, total: entries.length });
-      addWork(LIB_IMPORT_JOB_ID, LIB_IMPORT_JOB_LABEL, entries.length);
-      toast.info('Importação em segundo plano — você pode navegar pelo app. Mantenha o aplicativo aberto até terminar.');
-      beginImport();
-      const usedNames = new Set<string>();
-      const sessionHashes = new Set<string>();
-      let successCount = 0;
-      let duplicateCount = 0;
+      // --- Extração + enfileiramento persistente (um GIF por vez) ---
+      // Os GIFs são gravados no IndexedDB; o `PendingUploadRunner` envia em
+      // segundo plano e retoma sozinho mesmo se o app for fechado.
+      setZipStatus('Extraindo GIFs...');
+      let queued = 0;
 
       for (let i = 0; i < entries.length; i++) {
         const en = entries[i];
@@ -783,78 +779,37 @@ export default function ExerciseLibraryPage() {
           const categoryId = await ensureCategory(en.path);
           const blob: Blob = await en.obj.getData(new BlobWriter('image/gif'));
           const gifFile = new File([blob], en.name, { type: 'image/gif' });
-          // Importa o GIF diretamente, sem conversão para vídeo.
-          const toUpload = gifFile;
-
-          let videoHash: string | null = null;
-          try { videoHash = await hashBlob(toUpload); } catch { /* ignore */ }
-
-          if (videoHash) {
-            if (sessionHashes.has(videoHash)) {
-              duplicateCount++;
-              continue;
-            }
-            const { data: existing } = await supabase
-              .from('exercise_library')
-              .select('id')
-              .eq('video_hash', videoHash)
-              .or(`user_id.eq.${user.id},is_global.eq.true`)
-              .limit(1)
-              .maybeSingle();
-            if (existing) {
-              duplicateCount++;
-              continue;
-            }
-            sessionHashes.add(videoHash);
-          }
-
-          const path = `${user.id}/${Date.now()}-${i}.gif`;
-          const { error: upErr } = await supabase.storage
-            .from('exercise-videos')
-            .upload(path, toUpload, { contentType: 'image/gif', upsert: false });
-          if (upErr) throw upErr;
-
-          const { data: pub } = supabase.storage.from('exercise-videos').getPublicUrl(path);
-
-          const desired = finalNames[i];
-          let candidate = desired;
-          let n = 2;
-          while (usedNames.has(candidate)) candidate = `${desired} ${n++}`;
-          usedNames.add(candidate);
-
-          await createExercise.mutateAsync({
-            name: candidate,
-            default_sets: 1,
-            default_reps: 10,
-            image_urls: [],
-            video_type: 'upload',
-            video_url: pub.publicUrl,
-            video_optimized_at: new Date().toISOString(),
-            video_hash: videoHash,
-            video_start_seconds: 0,
-            video_end_seconds: null,
-            category_id: categoryId,
-            is_gif: true,
-            is_global: true,
-            _silent: true,
-          });
-          successCount++;
+          await enqueueUploads([
+            {
+              file: gifFile,
+              name: en.name,
+              meta: {
+                userId: user.id,
+                desiredName: finalNames[i],
+                categoryId,
+                isGif: true,
+                isGlobal: true,
+                noRecompress: true,
+              },
+            },
+          ]);
+          queued++;
         } catch (err) {
           console.error('ZIP gif import failed', en.name, err);
           failedZip++;
         } finally {
-          setBulkUploading((prev) => prev && { ...prev, done: prev.done + 1 });
-          tick(LIB_IMPORT_JOB_ID, en.name);
+          setZipStatus(`Extraindo GIFs... ${i + 1}/${entries.length}`);
         }
       }
 
-      setBulkUploading(null);
-      removeBgJob(LIB_IMPORT_JOB_ID);
-      endImport();
-      if (successCount > 0) toast.success(`${successCount} exercício(s) importado(s) do ZIP`);
-      if (duplicateCount > 0) toast.warning(`${duplicateCount} GIF(s) ignorado(s) por já existirem.`);
-      if (failedZip > 0) toast.warning(`${failedZip} GIF(s) não puderam ser importados.`);
-      if (!successCount && !duplicateCount) toast.error('Nenhum GIF pôde ser importado do ZIP');
+      setZipStatus(null);
+      if (queued > 0) {
+        toast.success(
+          `${queued} GIF(s) na fila — pode fechar o app: a importação continua ao reabrir.`,
+        );
+      }
+      if (failedZip > 0) toast.warning(`${failedZip} GIF(s) não puderam ser extraídos.`);
+      if (!queued) toast.error('Nenhum GIF pôde ser importado do ZIP');
     } catch (err) {
       console.error('ZIP import failed', err);
       toast.error('Erro ao ler o arquivo zip');
@@ -1133,140 +1088,45 @@ export default function ExerciseLibraryPage() {
       : 'Exercício';
 
     setPendingFiles(null);
-    setBulkUploading({ done: 0, total: files.length });
-    addWork(LIB_IMPORT_JOB_ID, LIB_IMPORT_JOB_LABEL, files.length);
-    toast.info('Importação em segundo plano — você pode navegar pelo app. Mantenha o aplicativo aberto até terminar.');
-    beginImport();
-    const usedNames = new Set<string>();
-    let successCount = 0;
-    let duplicateCount = 0;
-    const sessionHashes = new Set<string>();
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      try {
-        if (!file.type.startsWith('video/') && !isGifFile(file)) {
-          toast.error(`${file.name}: não é um vídeo`);
-          continue;
-        }
-        if (file.size > 50 * 1024 * 1024) {
-          toast.error(`${file.name}: maior que 50 MB`);
-          continue;
-        }
+    const invalid = files.filter(
+      (f) => !f.type.startsWith('video/') && !isGifFile(f),
+    );
+    invalid.forEach((f) => toast.error(`${f.name}: não é um vídeo`));
+    const tooBig = files.filter((f) => f.size > 50 * 1024 * 1024);
+    tooBig.forEach((f) => toast.error(`${f.name}: maior que 50 MB`));
 
-        // Compress to ~720p WebM in the browser before upload. Falls back
-        // to the original file if the browser can't transcode.
-        let toUpload: File = file;
-        try {
-          toUpload = (file as any).__noRecompress ? file : await compressVideoFile(file);
-        } catch {
-          toUpload = file;
-        }
+    const valid = files.filter(
+      (f) =>
+        (f.type.startsWith('video/') || isGifFile(f)) &&
+        f.size <= 50 * 1024 * 1024,
+    );
+    if (!valid.length) return;
 
-
-        // Hashea os bytes que SERÃO armazenados (pós-compressão) — assim
-        // bate com o hash dos vídeos já otimizados na biblioteca.
-        // Também tenta um hash do arquivo bruto como fallback (caso o
-        // mesmo arquivo já tenha sido importado anteriormente quando a
-        // compressão ainda não estava ativa).
-        let videoHash: string | null = null;
-        let rawHash: string | null = null;
-        try { videoHash = await hashBlob(toUpload); } catch { /* ignore */ }
-        try { if (toUpload !== file) rawHash = await hashBlob(file); } catch { /* ignore */ }
-
-        const candidateHashes = [videoHash, rawHash].filter(Boolean) as string[];
-        if (candidateHashes.length > 0) {
-          // Já importado nesta mesma sessão?
-          if (candidateHashes.some((h) => sessionHashes.has(h))) {
-            toast.warning(`${file.name}: vídeo duplicado — não importado.`);
-            duplicateCount++;
-            continue;
-          }
-          // Já existe no banco? (próprios + globais visíveis)
-          const { data: existing } = await supabase
-            .from('exercise_library')
-            .select('id, name')
-            .in('video_hash', candidateHashes)
-            .or(`user_id.eq.${user.id},is_global.eq.true`)
-            .limit(1)
-            .maybeSingle();
-          if (existing) {
-            toast.warning(
-              `${file.name}: já existe como "${(existing as any).name}" — não importado.`,
-            );
-            duplicateCount++;
-            continue;
-          }
-          for (const h of candidateHashes) sessionHashes.add(h);
-        }
-
-        const ext = (toUpload.name.split('.').pop() || 'mp4').toLowerCase();
-        const path = `${user.id}/${Date.now()}-${i}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from('exercise-videos')
-          .upload(path, toUpload, { contentType: toUpload.type || file.type, upsert: false });
-        if (upErr) throw upErr;
-
-        const { data: pub } = supabase.storage
-          .from('exercise-videos')
-          .getPublicUrl(path);
-        const optimizedAt = hasWebmUrl(pub.publicUrl) || toUpload === file ? new Date().toISOString() : null;
-
-        const created = await createExercise.mutateAsync({
-          name: (() => {
-            const desired = ((file as any).__desiredName as string | undefined)?.trim();
-            if (!desired) return generateUniqueName(baseName, usedNames);
-            let candidate = desired;
-            let n = 2;
-            while (usedNames.has(candidate)) candidate = `${desired} ${n++}`;
-            usedNames.add(candidate);
-            return candidate;
-          })(),
-          default_sets: 1,
-          default_reps: 10,
-          image_urls: [],
-          video_type: 'upload',
-          video_url: pub.publicUrl,
-          video_optimized_at: optimizedAt,
-          video_hash: videoHash,
-          video_start_seconds: 0,
-          video_end_seconds: null,
-          category_id: ((file as any).__categoryId as string | undefined) ?? targetCategoryId,
-          is_gif: !!(file as any).__isGif,
-          is_global: (file as any).__isGif ? true : undefined,
-          _silent: true,
-        });
-        // Apply selected extras to the new exercise
-        const newId = (created as any)?.id;
-        if (newId && bulkExtras.length) {
-          await Promise.all(
-            bulkExtras.map((extraId) =>
-              bulkAssignExtra.mutateAsync({ extraId, exerciseIds: [newId], mode: 'add', silent: true })
-            )
-          );
-        }
-        successCount++;
-      } catch (err) {
-        console.error('Bulk upload error', err);
-        toast.error(`Erro ao enviar ${file.name}`);
-      } finally {
-        setBulkUploading((prev) => prev && { ...prev, done: prev.done + 1 });
-        tick(LIB_IMPORT_JOB_ID, file.name);
-      }
-    }
-
-    setBulkUploading(null);
-    removeBgJob(LIB_IMPORT_JOB_ID);
-    endImport();
+    const extras = [...bulkExtras];
+    await enqueueUploads(
+      valid.map((file) => {
+        const isGif = !!(file as any).__isGif;
+        return {
+          file,
+          name: file.name,
+          meta: {
+            userId: user.id,
+            desiredName: ((file as any).__desiredName as string | undefined) ?? null,
+            baseName,
+            categoryId: ((file as any).__categoryId as string | undefined) ?? targetCategoryId,
+            extraIds: extras,
+            isGif,
+            isGlobal: isGif ? true : isMaster,
+            noRecompress: !!(file as any).__noRecompress,
+          },
+        };
+      }),
+    );
     setBulkExtras([]);
-    if (successCount > 0) {
-      toast.success(`${successCount} exercício(s) criado(s)`);
-    }
-    if (duplicateCount > 0) {
-      toast.warning(
-        `${duplicateCount} vídeo(s) ignorado(s) por já existirem na biblioteca.`,
-      );
-    }
+    toast.info(
+      'Arquivos na fila — pode fechar o app: a importação continua ao reabrir.',
+    );
   };
 
   /**

@@ -30,6 +30,7 @@ import WeeklyMenuPage from "@/pages/WeeklyMenuPage";
 import { BackgroundAnalysisProvider } from "@/contexts/BackgroundAnalysisContext";
 import { BackgroundProgressProvider } from "@/contexts/BackgroundProgressContext";
 import { LibraryBackgroundRunner } from "@/components/LibraryBackgroundRunner";
+import { PendingUploadRunner } from "@/components/PendingUploadRunner";
 import { GlobalBackgroundProgressBar } from "@/components/GlobalBackgroundProgressBar";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
 import { PublicWorkoutPage } from "@/pages/PublicWorkoutPage";
@@ -303,6 +304,7 @@ const App = () => {
                     <AppRoutes />
                   </div>
                   <LibraryBackgroundRunner />
+                  <PendingUploadRunner />
                   <KeepScreenAwake />
                   <GlobalBackgroundProgressBar />
                   <InstallPrompt />
