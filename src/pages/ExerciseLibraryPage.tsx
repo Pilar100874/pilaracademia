@@ -685,21 +685,27 @@ export default function ExerciseLibraryPage() {
       return;
     }
 
+    let zipReader: any = null;
     try {
       setZipStatus('Lendo arquivo...');
-      const JSZip = (await import('jszip')).default;
-      const zip = await JSZip.loadAsync(file);
+      // Leitura em streaming (random access no File) — suporta zips de vários GB
+      // sem carregar tudo na memória, ao contrário do JSZip.
+      const { ZipReader, BlobReader, BlobWriter, configure } = await import('@zip.js/zip.js');
+      configure({ useWebWorkers: true });
+      zipReader = new ZipReader(new BlobReader(file));
+      const zipEntries = await zipReader.getEntries();
 
       type Entry = { path: string[]; name: string; obj: any };
       const entries: Entry[] = [];
-      zip.forEach((relPath: string, entry: any) => {
-        if (entry.dir) return;
-        const parts = relPath.split('/').filter(Boolean);
+      for (const entry of zipEntries) {
+        if (entry.directory) continue;
+        const parts = entry.filename.split('/').filter(Boolean);
         const fileName = parts.pop() as string;
-        if (!fileName || fileName.startsWith('.')) return;
-        if (!/\.gif$/i.test(fileName)) return;
+        if (!fileName || fileName.startsWith('.')) continue;
+        if (!/\.gif$/i.test(fileName)) continue;
         entries.push({ path: parts, name: fileName, obj: entry });
-      });
+      }
+
 
       if (!entries.length) {
         toast.error('Nenhum GIF encontrado no zip');
@@ -770,7 +776,7 @@ export default function ExerciseLibraryPage() {
       for (const en of entries) {
         try {
           const categoryId = await ensureCategory(en.path);
-          const blob: Blob = await en.obj.async('blob');
+          const blob: Blob = await en.obj.getData(new BlobWriter('image/gif'));
           const gifFile = new File([blob], en.name, { type: 'image/gif' });
           const out = await gifToVideoFile(gifFile);
           (out as any).__noRecompress = true;
@@ -811,8 +817,15 @@ export default function ExerciseLibraryPage() {
       toast.error('Erro ao ler o arquivo zip');
       setZipStatus(null);
       setGifConverting(null);
+    } finally {
+      try {
+        await zipReader?.close();
+      } catch {
+        /* ignore */
+      }
     }
   };
+
 
   const runInstagramImport = async () => {
     if (!user) return;
