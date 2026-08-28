@@ -685,21 +685,27 @@ export default function ExerciseLibraryPage() {
       return;
     }
 
+    let zipReader: any = null;
     try {
       setZipStatus('Lendo arquivo...');
-      const JSZip = (await import('jszip')).default;
-      const zip = await JSZip.loadAsync(file);
+      // Leitura em streaming (random access no File) — suporta zips de vários GB
+      // sem carregar tudo na memória, ao contrário do JSZip.
+      const { ZipReader, BlobReader, BlobWriter, configure } = await import('@zip.js/zip.js');
+      configure({ useWebWorkers: true });
+      zipReader = new ZipReader(new BlobReader(file));
+      const zipEntries = await zipReader.getEntries();
 
       type Entry = { path: string[]; name: string; obj: any };
       const entries: Entry[] = [];
-      zip.forEach((relPath: string, entry: any) => {
-        if (entry.dir) return;
-        const parts = relPath.split('/').filter(Boolean);
+      for (const entry of zipEntries) {
+        if (entry.directory) continue;
+        const parts = entry.filename.split('/').filter(Boolean);
         const fileName = parts.pop() as string;
-        if (!fileName || fileName.startsWith('.')) return;
-        if (!/\.gif$/i.test(fileName)) return;
+        if (!fileName || fileName.startsWith('.')) continue;
+        if (!/\.gif$/i.test(fileName)) continue;
         entries.push({ path: parts, name: fileName, obj: entry });
-      });
+      }
+
 
       if (!entries.length) {
         toast.error('Nenhum GIF encontrado no zip');
