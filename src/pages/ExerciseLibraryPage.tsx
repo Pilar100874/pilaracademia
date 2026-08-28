@@ -62,7 +62,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useBackgroundProgress } from '@/contexts/BackgroundProgressContext';
-import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL, beginImport, endImport } from '@/lib/libraryBgJob';
+import { LIB_BG_JOB_ID, LIB_BG_JOB_LABEL, LIB_IMPORT_JOB_ID, LIB_IMPORT_JOB_LABEL, beginImport, endImport } from '@/lib/libraryBgJob';
 
 const ALL_CATEGORIES = '__all__';
 const NO_CATEGORY = '__none__';
@@ -769,6 +769,8 @@ export default function ExerciseLibraryPage() {
       // --- Conversão + upload, um GIF por vez (streaming) ---
       setZipStatus(null);
       setBulkUploading({ done: 0, total: entries.length });
+      addWork(LIB_IMPORT_JOB_ID, LIB_IMPORT_JOB_LABEL, entries.length);
+      toast.info('Importação em segundo plano — você pode navegar pelo app. Mantenha o aplicativo aberto até terminar.');
       beginImport();
       const usedNames = new Set<string>();
       const sessionHashes = new Set<string>();
@@ -842,10 +844,12 @@ export default function ExerciseLibraryPage() {
           failedZip++;
         } finally {
           setBulkUploading((prev) => prev && { ...prev, done: prev.done + 1 });
+          tick(LIB_IMPORT_JOB_ID, en.name);
         }
       }
 
       setBulkUploading(null);
+      removeBgJob(LIB_IMPORT_JOB_ID);
       endImport();
       if (successCount > 0) toast.success(`${successCount} exercício(s) importado(s) do ZIP`);
       if (duplicateCount > 0) toast.warning(`${duplicateCount} GIF(s) ignorado(s) por já existirem.`);
@@ -857,6 +861,7 @@ export default function ExerciseLibraryPage() {
       setZipStatus(null);
       setGifConverting(null);
       setBulkUploading(null);
+      removeBgJob(LIB_IMPORT_JOB_ID);
       endImport();
     } finally {
       try {
@@ -1129,6 +1134,8 @@ export default function ExerciseLibraryPage() {
 
     setPendingFiles(null);
     setBulkUploading({ done: 0, total: files.length });
+    addWork(LIB_IMPORT_JOB_ID, LIB_IMPORT_JOB_LABEL, files.length);
+    toast.info('Importação em segundo plano — você pode navegar pelo app. Mantenha o aplicativo aberto até terminar.');
     beginImport();
     const usedNames = new Set<string>();
     let successCount = 0;
@@ -1244,10 +1251,12 @@ export default function ExerciseLibraryPage() {
         toast.error(`Erro ao enviar ${file.name}`);
       } finally {
         setBulkUploading((prev) => prev && { ...prev, done: prev.done + 1 });
+        tick(LIB_IMPORT_JOB_ID, file.name);
       }
     }
 
     setBulkUploading(null);
+    removeBgJob(LIB_IMPORT_JOB_ID);
     endImport();
     setBulkExtras([]);
     if (successCount > 0) {

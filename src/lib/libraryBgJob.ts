@@ -33,3 +33,7 @@ export function subscribeImportBusy(cb: () => void) {
   listeners.add(cb);
   return () => listeners.delete(cb);
 }
+
+/** Barra de progresso global para importações (vídeos, GIFs, ZIP). */
+export const LIB_IMPORT_JOB_ID = 'lib-import';
+export const LIB_IMPORT_JOB_LABEL = 'Importando arquivos';
