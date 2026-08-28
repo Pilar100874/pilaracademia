@@ -9,6 +9,8 @@ export interface ExerciseCategory {
   name: string;
   parent_id: string | null;
   is_global?: boolean;
+  /** Categoria pertencente à biblioteca Global Gif. */
+  is_gif?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -36,11 +38,16 @@ export function useExerciseCategories() {
   });
 
   const createCategory = useMutation({
-    mutationFn: async (input: string | { name: string; parent_id?: string | null; is_global?: boolean }) => {
+    mutationFn: async (input: string | { name: string; parent_id?: string | null; is_global?: boolean; is_gif?: boolean }) => {
       if (!user) throw new Error('User not authenticated');
       const payload = typeof input === 'string'
-        ? { name: input.trim(), parent_id: null, is_global: false }
-        : { name: input.name.trim(), parent_id: input.parent_id ?? null, is_global: !!input.is_global };
+        ? { name: input.trim(), parent_id: null, is_global: false, is_gif: false }
+        : {
+            name: input.name.trim(),
+            parent_id: input.parent_id ?? null,
+            is_global: !!input.is_global,
+            is_gif: !!input.is_gif,
+          };
       const { data, error } = await supabase
         .from('exercise_categories')
         .insert({ user_id: user.id, ...payload })
@@ -55,14 +62,15 @@ export function useExerciseCategories() {
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData<ExerciseCategory[]>(queryKey);
       const payload = typeof input === 'string'
-        ? { name: input.trim(), parent_id: null }
-        : { name: input.name.trim(), parent_id: input.parent_id ?? null };
+        ? { name: input.trim(), parent_id: null, is_gif: false }
+        : { name: input.name.trim(), parent_id: input.parent_id ?? null, is_gif: !!input.is_gif };
       const tempId = `temp-${Date.now()}`;
       const optimistic: ExerciseCategory = {
         id: tempId,
         user_id: user.id,
         name: payload.name,
         parent_id: payload.parent_id,
+        is_gif: payload.is_gif,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
