@@ -222,6 +222,21 @@ export function ExerciseVideoPlayer({
 
   if (!freshVideoUrl || !videoType) return null;
 
+  // GIF animado importado diretamente — renderiza como imagem (anima sozinho).
+  if (videoType === 'upload' && isGifUrl(freshVideoUrl)) {
+    return (
+      <div className={`${frameClassName} bg-black overflow-hidden`}>
+        <img
+          src={freshVideoUrl}
+          alt="Demonstração do exercício"
+          className="w-full h-full object-contain bg-black"
+          onContextMenu={(e) => e.preventDefault()}
+        />
+      </div>
+    );
+  }
+
+
   if (videoType === 'youtube') {
     const id = parseYouTubeId(freshVideoUrl);
     if (!id) return null;
