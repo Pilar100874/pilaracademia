@@ -1668,6 +1668,13 @@ export default function ExerciseLibraryPage() {
             className="sr-only"
             onChange={handleGifImport}
           />
+          <input
+            ref={zipInputRef}
+            type="file"
+            accept=".zip,application/zip"
+            className="sr-only"
+            onChange={handleZipImport}
+          />
           </div>
         </div>
 
