@@ -1388,6 +1388,25 @@ export default function ExerciseLibraryPage() {
               <Button
                 variant="outline"
                 size="sm"
+                disabled={!!gifConverting || !!bulkUploading}
+                onClick={() => gifInputRef.current?.click()}
+                title="Importar vários GIFs animados como vídeo"
+              >
+                {gifConverting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    {gifConverting.done}/{gifConverting.total}
+                  </>
+                ) : (
+                  <>
+                    <FileImage className="h-4 w-4 mr-1" />
+                    GIFs
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   setIgUrl('');
                   setIgNamePrefix('');
