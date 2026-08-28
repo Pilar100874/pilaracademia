@@ -611,7 +611,11 @@ export default function ExerciseLibraryPage() {
     let failed = 0;
     for (const gif of gifs) {
       try {
-        converted.push(await gifToVideoFile(gif));
+        const out = await gifToVideoFile(gif);
+        // Já sai otimizado da conversão — evita recompressão que degrada.
+        (out as any).__noRecompress = true;
+        converted.push(out);
+
       } catch (err) {
         console.error('GIF conversion failed', err);
         failed++;
