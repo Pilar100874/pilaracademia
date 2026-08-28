@@ -714,7 +714,7 @@ export default function ExerciseLibraryPage() {
       }
 
       // --- Categorias a partir das pastas (traduzidas) ---
-      setZimStatusSafe(setZipStatus, 'Traduzindo categorias...');
+      setZipStatus('Traduzindo categorias...');
       const folderNames = Array.from(
         new Set(entries.flatMap((en) => en.path).filter(Boolean)),
       );
