@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Play, Instagram } from 'lucide-react';
 import { parseYouTubeId } from '@/lib/youtubeUtils';
-import { getFreshMediaUrl } from '@/lib/mediaUrl';
+import { getFreshMediaUrl, isGifUrl } from '@/lib/mediaUrl';
 
 interface Props {
   videoType: 'youtube' | 'upload' | 'instagram' | string | null;
