@@ -1138,7 +1138,7 @@ export default function ExerciseLibraryPage() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       try {
-        if (!file.type.startsWith('video/')) {
+        if (!file.type.startsWith('video/') && !isGifFile(file)) {
           toast.error(`${file.name}: não é um vídeo`);
           continue;
         }
