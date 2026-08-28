@@ -1601,6 +1601,25 @@ export default function ExerciseLibraryPage() {
               <Button
                 variant="outline"
                 size="sm"
+                disabled={!!gifConverting || !!bulkUploading || !!zipStatus}
+                onClick={() => zipInputRef.current?.click()}
+                title="Importar um .zip com GIFs — as pastas viram categorias"
+              >
+                {zipStatus ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    {zipStatus}
+                  </>
+                ) : (
+                  <>
+                    <FolderInput className="h-4 w-4 mr-1" />
+                    ZIP de GIFs
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   setIgUrl('');
                   setIgNamePrefix('');
