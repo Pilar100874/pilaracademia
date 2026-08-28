@@ -18,3 +18,13 @@ export function getFreshMediaUrl(url: string | null | undefined, retryKey?: numb
 
   return url;
 }
+
+/** Verdadeiro quando a mídia armazenada é um GIF animado (importado direto). */
+export function isGifUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    return /\.gif$/i.test(new URL(url).pathname);
+  } catch {
+    return /\.gif(\?|$)/i.test(url);
+  }
+}

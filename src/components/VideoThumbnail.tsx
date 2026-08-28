@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Play, Instagram } from 'lucide-react';
 import { parseYouTubeId } from '@/lib/youtubeUtils';
-import { getFreshMediaUrl } from '@/lib/mediaUrl';
+import { getFreshMediaUrl, isGifUrl } from '@/lib/mediaUrl';
 
 interface Props {
   videoType: 'youtube' | 'upload' | 'instagram' | string | null;
@@ -112,6 +112,20 @@ export function VideoThumbnail({
   const badgeSize = iconSize === 'sm' ? 'h-6 w-6' : 'h-8 w-8';
 
   const isInstagram = videoType === 'instagram';
+
+  if (videoType === 'upload' && isGifUrl(freshVideoUrl)) {
+    return (
+      <div className={`relative bg-muted ${className ?? ''}`}>
+        <img
+          src={freshVideoUrl}
+          alt="Pré-visualização do exercício"
+          loading="lazy"
+          decoding="async"
+          className={`w-full h-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'}`}
+        />
+      </div>
+    );
+  }
 
   if (videoType === 'upload') {
     return (
