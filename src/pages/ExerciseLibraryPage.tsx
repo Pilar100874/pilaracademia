@@ -1246,10 +1246,12 @@ export default function ExerciseLibraryPage() {
         toast.error(`Erro ao enviar ${file.name}`);
       } finally {
         setBulkUploading((prev) => prev && { ...prev, done: prev.done + 1 });
+        tick(LIB_IMPORT_JOB_ID, file.name);
       }
     }
 
     setBulkUploading(null);
+    removeBgJob(LIB_IMPORT_JOB_ID);
     endImport();
     setBulkExtras([]);
     if (successCount > 0) {
