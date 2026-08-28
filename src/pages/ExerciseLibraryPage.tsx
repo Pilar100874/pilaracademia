@@ -604,7 +604,7 @@ export default function ExerciseLibraryPage() {
     setPendingFiles(files);
   };
 
-  /** Importa GIFs animados convertendo-os em vídeo antes do fluxo normal. */
+  /** Importa GIFs animados diretamente (sem converter para vídeo). */
   const handleGifImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = '';
@@ -620,36 +620,15 @@ export default function ExerciseLibraryPage() {
       return;
     }
 
-    setGifConverting({ done: 0, total: gifs.length });
-    const converted: File[] = [];
-    let failed = 0;
-    for (const gif of gifs) {
-      try {
-        const out = await gifToVideoFile(gif);
-        // Já sai otimizado da conversão — evita recompressão que degrada.
-        (out as any).__noRecompress = true;
-        // Nome derivado do arquivo original (antes de "(female)"/"(male)").
-        (out as any).__sourceName = exerciseNameFromFilename(gif.name);
-        // Vai para a biblioteca global de GIFs.
-        (out as any).__isGif = true;
-        converted.push(out);
-
-      } catch (err) {
-        console.error('GIF conversion failed', err);
-        failed++;
-      } finally {
-        setGifConverting((prev) => prev && { ...prev, done: prev.done + 1 });
-      }
-    }
-    setGifConverting(null);
-
-    if (failed > 0) {
-      toast.warning(`${failed} GIF(s) não puderam ser convertidos.`);
-    }
-    if (!converted.length) return;
+    // Sem conversão: o GIF vai como está para o storage.
+    gifs.forEach((gif) => {
+      (gif as any).__noRecompress = true;
+      (gif as any).__sourceName = exerciseNameFromFilename(gif.name);
+      (gif as any).__isGif = true;
+    });
 
     // Traduz os nomes extraídos dos arquivos para português (IA).
-    const withNames = converted.filter((f) => (f as any).__sourceName);
+    const withNames = gifs.filter((f) => (f as any).__sourceName);
     if (withNames.length) {
       const translated = await translateExerciseNames(
         withNames.map((f) => (f as any).__sourceName as string),
@@ -659,7 +638,6 @@ export default function ExerciseLibraryPage() {
       });
     }
 
-
     const initial =
       filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY
         ? filterCategory
@@ -667,7 +645,7 @@ export default function ExerciseLibraryPage() {
     setBulkCategoryChoice(initial);
     setNewBulkCategoryName('');
     setBulkExtras([]);
-    setPendingFiles(converted);
+    setPendingFiles(gifs);
   };
 
 
