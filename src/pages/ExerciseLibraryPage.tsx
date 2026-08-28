@@ -590,6 +590,53 @@ export default function ExerciseLibraryPage() {
     setPendingFiles(files);
   };
 
+  /** Importa GIFs animados convertendo-os em vídeo antes do fluxo normal. */
+  const handleGifImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (!files.length) return;
+    if (!user) {
+      toast.error('Faça login para enviar GIFs');
+      return;
+    }
+
+    const gifs = files.filter(isGifFile);
+    if (!gifs.length) {
+      toast.error('Selecione arquivos .gif');
+      return;
+    }
+
+    setGifConverting({ done: 0, total: gifs.length });
+    const converted: File[] = [];
+    let failed = 0;
+    for (const gif of gifs) {
+      try {
+        converted.push(await gifToVideoFile(gif));
+      } catch (err) {
+        console.error('GIF conversion failed', err);
+        failed++;
+      } finally {
+        setGifConverting((prev) => prev && { ...prev, done: prev.done + 1 });
+      }
+    }
+    setGifConverting(null);
+
+    if (failed > 0) {
+      toast.warning(`${failed} GIF(s) não puderam ser convertidos.`);
+    }
+    if (!converted.length) return;
+
+    const initial =
+      filterCategory !== ALL_CATEGORIES && filterCategory !== NO_CATEGORY
+        ? filterCategory
+        : NO_CATEGORY;
+    setBulkCategoryChoice(initial);
+    setNewBulkCategoryName('');
+    setBulkExtras([]);
+    setPendingFiles(converted);
+  };
+
+
   const runInstagramImport = async () => {
     if (!user) return;
     const url = igUrl.trim();
