@@ -11,10 +11,15 @@
  *    canvas por alguns segundos a 15fps.
  */
 
-const MAX_DIMENSION = 720;
+const MAX_DIMENSION = 1280;
+// GIFs costumam ser pequenos (240-480px). Ampliar por fator inteiro antes de
+// codificar evita o borrão do encoder e mantém as linhas nítidas.
+const MIN_DIMENSION = 720;
+const VIDEO_BITRATE = 12_000_000;
 const MIN_DURATION_MS = 2000;
 const MAX_DURATION_MS = 12000;
 const FALLBACK_DURATION_MS = 4000;
+
 
 function pickMimeType(): string {
   const candidates = [
@@ -33,13 +38,20 @@ function pickMimeType(): string {
 
 function scaleSize(w: number, h: number) {
   const largest = Math.max(w, h);
-  if (largest <= MAX_DIMENSION) return { width: Math.max(2, w), height: Math.max(2, h) };
-  const ratio = MAX_DIMENSION / largest;
+  let ratio = 1;
+  if (largest > MAX_DIMENSION) {
+    ratio = MAX_DIMENSION / largest;
+  } else if (largest < MIN_DIMENSION) {
+    // fator inteiro (2x, 3x...) para upscale limpo
+    ratio = Math.min(4, Math.max(1, Math.floor(MIN_DIMENSION / largest)));
+  }
   return {
-    width: Math.max(2, Math.round(w * ratio)),
-    height: Math.max(2, Math.round(h * ratio)),
+    width: Math.max(2, Math.round((w * ratio) / 2) * 2),
+    height: Math.max(2, Math.round((h * ratio) / 2) * 2),
+    upscaled: ratio > 1,
   };
 }
+
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, Math.max(0, ms)));
 
@@ -53,13 +65,17 @@ async function recordCanvas(
   canvas: HTMLCanvasElement,
   drawLoop: (ctx: CanvasRenderingContext2D) => Promise<void>,
   originalName: string,
+  smoothing = true,
 ): Promise<File> {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false });
   if (!ctx) throw new Error('Canvas indisponível');
+  ctx.imageSmoothingEnabled = smoothing;
+  ctx.imageSmoothingQuality = 'high';
 
   const stream = canvas.captureStream(30);
   const mimeType = pickMimeType();
-  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2_500_000 });
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: VIDEO_BITRATE });
+
   const chunks: BlobPart[] = [];
   recorder.ondataavailable = (e) => {
     if (e.data && e.data.size > 0) chunks.push(e.data);
@@ -106,7 +122,8 @@ async function convertWithImageDecoder(file: File): Promise<File> {
   }
 
   const first: any = frames[0].bitmap;
-  const { width, height } = scaleSize(
+  const { width, height, upscaled } = scaleSize(
+
     first.displayWidth ?? first.width,
     first.displayHeight ?? first.height,
   );
@@ -135,6 +152,8 @@ async function convertWithImageDecoder(file: File): Promise<File> {
       }
     },
     file.name,
+    !upscaled,
+
   );
 
   frames.forEach((f) => (f.bitmap as any).close?.());
@@ -149,7 +168,7 @@ async function convertWithImgTag(file: File): Promise<File> {
     img.src = url;
     await img.decode();
 
-    const { width, height } = scaleSize(img.naturalWidth, img.naturalHeight);
+    const { width, height, upscaled } = scaleSize(img.naturalWidth, img.naturalHeight);
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -161,11 +180,13 @@ async function convertWithImgTag(file: File): Promise<File> {
         while (performance.now() - started < FALLBACK_DURATION_MS) {
           ctx.clearRect(0, 0, width, height);
           ctx.drawImage(img, 0, 0, width, height);
-          await sleep(1000 / 15);
+          await sleep(1000 / 25);
         }
       },
       file.name,
+      !upscaled,
     );
+
   } finally {
     URL.revokeObjectURL(url);
   }
