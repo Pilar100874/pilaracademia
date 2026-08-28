@@ -11,10 +11,15 @@
  *    canvas por alguns segundos a 15fps.
  */
 
-const MAX_DIMENSION = 720;
+const MAX_DIMENSION = 1280;
+// GIFs costumam ser pequenos (240-480px). Ampliar por fator inteiro antes de
+// codificar evita o borrão do encoder e mantém as linhas nítidas.
+const MIN_DIMENSION = 720;
+const VIDEO_BITRATE = 12_000_000;
 const MIN_DURATION_MS = 2000;
 const MAX_DURATION_MS = 12000;
 const FALLBACK_DURATION_MS = 4000;
+
 
 function pickMimeType(): string {
   const candidates = [
