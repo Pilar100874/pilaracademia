@@ -1066,6 +1066,7 @@ export type Database = {
           clinic_id: string | null
           created_at: string
           id: string
+          is_gif: boolean
           is_global: boolean
           name: string
           parent_id: string | null
@@ -1076,6 +1077,7 @@ export type Database = {
           clinic_id?: string | null
           created_at?: string
           id?: string
+          is_gif?: boolean
           is_global?: boolean
           name: string
           parent_id?: string | null
@@ -1086,6 +1088,7 @@ export type Database = {
           clinic_id?: string | null
           created_at?: string
           id?: string
+          is_gif?: boolean
           is_global?: boolean
           name?: string
           parent_id?: string | null
