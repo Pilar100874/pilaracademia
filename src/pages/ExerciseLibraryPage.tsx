@@ -300,14 +300,24 @@ export default function ExerciseLibraryPage() {
       const used = new Set<string>();
       let failed = 0;
 
+      const { stripAudioFromBlob } = await import('@/lib/stripAudio');
+
       for (let i = 0; i < targets.length; i++) {
         const { ex, url: srcUrl } = targets[i];
         try {
           const url = await getFreshMediaUrl(srcUrl);
           const res = await fetch(url);
           if (!res.ok) throw new Error('fetch failed');
-          const blob = await res.blob();
-          const ext = (lowerNoQuery(srcUrl).split('.').pop() || '').slice(0, 5) || 'mp4';
+          let blob = await res.blob();
+          let ext = (lowerNoQuery(srcUrl).split('.').pop() || '').slice(0, 5) || 'mp4';
+          const isVideo =
+            (blob.type || '').startsWith('video/') ||
+            ['mp4', 'webm', 'mov', 'm4v', 'ogg'].includes(ext);
+          if (isVideo) {
+            const stripped = await stripAudioFromBlob(blob, `video.${ext}`);
+            blob = stripped.blob;
+            if (stripped.ext) ext = stripped.ext;
+          }
           const base = (ex.name || 'exercicio').replace(/[^\p{L}\p{N} _-]/gu, '').trim() || 'exercicio';
           let fileName = `${base}.${ext}`;
           let n = 2;
