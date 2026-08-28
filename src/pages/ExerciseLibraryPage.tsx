@@ -140,6 +140,8 @@ export default function ExerciseLibraryPage() {
   } | null>(null);
   const [bulkDeleteChecking, setBulkDeleteChecking] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [exporting, setExporting] = useState<{ done: number; total: number } | null>(null);
+
   const [renameCategory, setRenameCategory] = useState<{ id: string; name: string } | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [renameParentId, setRenameParentId] = useState<string | null>(null);
