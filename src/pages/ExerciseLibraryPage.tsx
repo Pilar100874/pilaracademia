@@ -769,6 +769,8 @@ export default function ExerciseLibraryPage() {
       // --- Conversão + upload, um GIF por vez (streaming) ---
       setZipStatus(null);
       setBulkUploading({ done: 0, total: entries.length });
+      addWork(LIB_IMPORT_JOB_ID, LIB_IMPORT_JOB_LABEL, entries.length);
+      toast.info('Importação em segundo plano — você pode navegar pelo app. Mantenha o aplicativo aberto até terminar.');
       beginImport();
       const usedNames = new Set<string>();
       const sessionHashes = new Set<string>();
