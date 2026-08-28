@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { parseYouTubeId, parseInstagramShortcode, buildInstagramEmbedUrl, isInstagramReel } from '@/lib/youtubeUtils';
-import { getFreshMediaUrl } from '@/lib/mediaUrl';
+import { getFreshMediaUrl, isGifUrl } from '@/lib/mediaUrl';
 
 interface Props {
   videoType: 'youtube' | 'upload' | 'instagram' | string | null;
