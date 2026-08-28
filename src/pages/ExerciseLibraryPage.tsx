@@ -919,10 +919,11 @@ export default function ExerciseLibraryPage() {
         // to the original file if the browser can't transcode.
         let toUpload: File = file;
         try {
-          toUpload = await compressVideoFile(file);
+          toUpload = (file as any).__noRecompress ? file : await compressVideoFile(file);
         } catch {
           toUpload = file;
         }
+
 
         // Hashea os bytes que SERÃO armazenados (pós-compressão) — assim
         // bate com o hash dos vídeos já otimizados na biblioteca.
