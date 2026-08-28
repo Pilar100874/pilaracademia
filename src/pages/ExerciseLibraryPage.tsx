@@ -1249,6 +1249,23 @@ export default function ExerciseLibraryPage() {
               </Button>
               <Button
                 size="sm"
+                variant="outline"
+                disabled={selectedIds.size === 0 || exporting !== null}
+                onClick={exportSelectedVideos}
+                title="Baixar os vídeos selecionados em um arquivo .zip"
+              >
+                {exporting ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-1" />
+                )}
+                {exporting
+                  ? `Exportando ${exporting.done}/${exporting.total}`
+                  : `Exportar (${selectedIds.size})`}
+              </Button>
+
+              <Button
+                size="sm"
                 variant="destructive"
                 disabled={selectedIds.size === 0 || bulkDeleteChecking}
                 onClick={openBulkDelete}
