@@ -332,11 +332,11 @@ export default function ExerciseLibraryPage() {
       setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
 
       toast.success(
-        `${targets.length - failed} vídeo(s) exportado(s)${failed ? ` — ${failed} falharam` : ''}`
+        `${targets.length - failed} arquivo(s) exportado(s)${failed ? ` — ${failed} falharam` : ''}`
       );
     } catch (e) {
       console.error(e);
-      toast.error('Erro ao exportar vídeos');
+      toast.error("Erro ao exportar arquivos");
     } finally {
       setExporting(null);
     }
