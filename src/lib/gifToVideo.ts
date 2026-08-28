@@ -117,8 +117,10 @@ async function convertWithImageDecoder(file: File): Promise<File> {
   const frames: { bitmap: ImageBitmap | VideoFrame; durationMs: number }[] = [];
   for (let i = 0; i < frameCount; i++) {
     const { image } = await decoder.decode({ frameIndex: i, completeFramesOnly: true });
-    const durationMs = image.duration ? image.duration / 1000 : 100;
-    frames.push({ bitmap: image, durationMs: Math.max(20, durationMs) });
+    const raw = image.duration ? image.duration / 1000 : 100;
+    // GIFs com delay 0/1 (<=10ms) são renderizados a ~100ms pelos navegadores.
+    const durationMs = raw <= 10 ? 100 : raw;
+    frames.push({ bitmap: image, durationMs });
   }
 
   const first: any = frames[0].bitmap;
@@ -142,11 +144,16 @@ async function convertWithImageDecoder(file: File): Promise<File> {
     canvas,
     async (ctx) => {
       const started = performance.now();
+      // Agenda por deadline absoluto: sem isso o custo de desenhar + o atraso
+      // mínimo do setTimeout acumulam e o vídeo sai mais lento que o GIF.
+      let deadline = started;
       for (let l = 0; l < loops; l++) {
         for (const f of frames) {
           ctx.clearRect(0, 0, width, height);
           ctx.drawImage(f.bitmap as any, 0, 0, width, height);
-          await sleep(f.durationMs);
+          deadline += f.durationMs;
+          const wait = deadline - performance.now();
+          if (wait > 0) await sleep(wait);
           if (performance.now() - started > MAX_DURATION_MS) return;
         }
       }
@@ -155,6 +162,7 @@ async function convertWithImageDecoder(file: File): Promise<File> {
     !upscaled,
 
   );
+
 
   frames.forEach((f) => (f.bitmap as any).close?.());
   decoder.close?.();
@@ -177,12 +185,17 @@ async function convertWithImgTag(file: File): Promise<File> {
       canvas,
       async (ctx) => {
         const started = performance.now();
+        const frameMs = 1000 / 25;
+        let deadline = started;
         while (performance.now() - started < FALLBACK_DURATION_MS) {
           ctx.clearRect(0, 0, width, height);
           ctx.drawImage(img, 0, 0, width, height);
-          await sleep(1000 / 25);
+          deadline += frameMs;
+          const wait = deadline - performance.now();
+          if (wait > 0) await sleep(wait);
         }
       },
+
       file.name,
       !upscaled,
     );
