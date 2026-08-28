@@ -806,11 +806,10 @@ export default function ExerciseLibraryPage() {
             sessionHashes.add(videoHash);
           }
 
-          const ext = (toUpload.name.split('.').pop() || 'webm').toLowerCase();
-          const path = `${user.id}/${Date.now()}-${i}.${ext}`;
+          const path = `${user.id}/${Date.now()}-${i}.gif`;
           const { error: upErr } = await supabase.storage
             .from('exercise-videos')
-            .upload(path, toUpload, { contentType: toUpload.type || 'video/webm', upsert: false });
+            .upload(path, toUpload, { contentType: 'image/gif', upsert: false });
           if (upErr) throw upErr;
 
           const { data: pub } = supabase.storage.from('exercise-videos').getPublicUrl(path);
