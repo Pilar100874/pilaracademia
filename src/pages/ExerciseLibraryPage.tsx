@@ -989,7 +989,15 @@ export default function ExerciseLibraryPage() {
         const optimizedAt = hasWebmUrl(pub.publicUrl) || toUpload === file ? new Date().toISOString() : null;
 
         const created = await createExercise.mutateAsync({
-          name: generateUniqueName(baseName, usedNames),
+          name: (() => {
+            const desired = ((file as any).__desiredName as string | undefined)?.trim();
+            if (!desired) return generateUniqueName(baseName, usedNames);
+            let candidate = desired;
+            let n = 2;
+            while (usedNames.has(candidate)) candidate = `${desired} ${n++}`;
+            usedNames.add(candidate);
+            return candidate;
+          })(),
           default_sets: 1,
           default_reps: 10,
           image_urls: [],
