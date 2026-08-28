@@ -776,7 +776,7 @@ export default function ExerciseLibraryPage() {
       for (const en of entries) {
         try {
           const categoryId = await ensureCategory(en.path);
-          const blob: Blob = await en.obj.async('blob');
+          const blob: Blob = await en.obj.getData(new BlobWriter('image/gif'));
           const gifFile = new File([blob], en.name, { type: 'image/gif' });
           const out = await gifToVideoFile(gifFile);
           (out as any).__noRecompress = true;
