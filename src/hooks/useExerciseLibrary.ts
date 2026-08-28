@@ -20,6 +20,8 @@ export interface LibraryExercise {
   video_end_seconds: number | null;
   /** True when this exercise belongs to the shared global library (managed by master). */
   is_global: boolean;
+  /** True when this exercise came from the global GIF library. */
+  is_gif: boolean;
   /** @deprecated Use category_ids — mantido por compatibilidade com código antigo */
   category_id: string | null;
   /** Todas as categorias atribuídas ao exercício (multi). */
@@ -127,7 +129,9 @@ export function useExerciseLibrary() {
 
   // Split for convenience in the UI
   const exercises = rows.filter((ex) => !ex.is_global || ex.user_id === user?.id);
-  const globalExercises = rows.filter((ex) => ex.is_global);
+  const globalExercises = rows.filter((ex) => ex.is_global && !ex.is_gif);
+  /** Biblioteca global de GIFs (importados como vídeo). */
+  const gifExercises = rows.filter((ex) => ex.is_global && ex.is_gif);
   // Personal-only (excluding own global ones authored by master)
   const personalExercises = rows.filter((ex) => !ex.is_global);
 
@@ -146,6 +150,8 @@ export function useExerciseLibrary() {
       category_id?: string | null;
       /** Master-only: create in the shared global library. */
       is_global?: boolean;
+      /** Marca o item como pertencente à biblioteca global de GIFs. */
+      is_gif?: boolean;
       /** Suppress success toast — used during bulk operations. */
       _silent?: boolean;
     }) => {
@@ -169,6 +175,7 @@ export function useExerciseLibrary() {
         video_end_seconds: data.video_end_seconds ?? null,
         category_id: data.category_id ?? null,
         is_global: wantsGlobal,
+        is_gif: data.is_gif ?? false,
         clinic_id: null as string | null,
       };
 
@@ -405,6 +412,8 @@ export function useExerciseLibrary() {
     allExercises: rows,
     /** Read-only: items shared via the global library. */
     globalExercises,
+    /** Read-only: items shared via the global GIF library. */
+    gifExercises,
     isLoading,
     isMaster,
     createExercise,

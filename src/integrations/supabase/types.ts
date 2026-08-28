@@ -1187,6 +1187,7 @@ export type Database = {
           default_sets: number
           id: string
           image_urls: string[] | null
+          is_gif: boolean
           is_global: boolean
           mobility_analysis: Json | null
           name: string
@@ -1211,6 +1212,7 @@ export type Database = {
           default_sets?: number
           id?: string
           image_urls?: string[] | null
+          is_gif?: boolean
           is_global?: boolean
           mobility_analysis?: Json | null
           name: string
@@ -1235,6 +1237,7 @@ export type Database = {
           default_sets?: number
           id?: string
           image_urls?: string[] | null
+          is_gif?: boolean
           is_global?: boolean
           mobility_analysis?: Json | null
           name?: string
