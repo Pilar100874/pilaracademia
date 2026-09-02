@@ -246,6 +246,43 @@ export function useExerciseLibrary() {
     },
   });
 
+  /**
+   * Exclusão em massa: remove vínculos e apaga os exercícios em lotes,
+   * evitando URLs gigantes e timeouts quando há centenas de itens.
+   */
+  const deleteExercisesBulk = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (!ids.length) return 0;
+      const chunkSize = 100;
+      let deleted = 0;
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize);
+
+        await supabase.from('exercise_library_categories').delete().in('exercise_id', chunk);
+        await supabase.from('exercise_library_extras').delete().in('exercise_id', chunk);
+
+        const { data, error } = await supabase
+          .from('exercise_library')
+          .delete()
+          .in('id', chunk)
+          .select('id');
+        if (error) throw error;
+        deleted += data?.length ?? 0;
+      }
+      return deleted;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
+      if (count && count > 0) toast.success(`${count} exercício(s) excluído(s)!`);
+      else toast.error('Nenhum exercício foi excluído (sem permissão?)');
+    },
+    onError: () => {
+      toast.error('Erro ao excluir exercícios');
+    },
+  });
+
+
+
   const moveExercises = useMutation({
     mutationFn: async (data: { ids: string[]; category_id: string | null }) => {
       if (!data.ids.length) return;
