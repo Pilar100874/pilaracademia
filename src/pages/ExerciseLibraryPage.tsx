@@ -398,9 +398,8 @@ export default function ExerciseLibraryPage() {
         const toCascade = exercises.filter((e) => inUseSet.has(e.id));
         await Promise.all(toCascade.map((e) => cascadeRemoveFromWorkouts(e)));
       }
-      for (const id of ids) {
-        await deleteExercise.mutateAsync(id);
-      }
+      await deleteExercisesBulk.mutateAsync(ids);
+
       await queryClient.invalidateQueries({ queryKey: ['workout-plans'] });
       setBulkDeleteOpen(false);
       setBulkDeleteBlocked(null);
