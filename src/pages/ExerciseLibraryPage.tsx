@@ -81,7 +81,7 @@ export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { exercises, globalExercises, gifExercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise, toggleExerciseCategory, copyGlobalToPersonal, isMaster } = useExerciseLibrary();
+  const { exercises, globalExercises, gifExercises, isLoading, deleteExercise, deleteExercisesBulk, createExercise, moveExercises, updateExercise, toggleExerciseCategory, copyGlobalToPersonal, isMaster } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
   const { extras, bulkAssignExtra } = useExerciseExtras();
 
@@ -398,9 +398,8 @@ export default function ExerciseLibraryPage() {
         const toCascade = exercises.filter((e) => inUseSet.has(e.id));
         await Promise.all(toCascade.map((e) => cascadeRemoveFromWorkouts(e)));
       }
-      for (const id of ids) {
-        await deleteExercise.mutateAsync(id);
-      }
+      await deleteExercisesBulk.mutateAsync(ids);
+
       await queryClient.invalidateQueries({ queryKey: ['workout-plans'] });
       setBulkDeleteOpen(false);
       setBulkDeleteBlocked(null);
