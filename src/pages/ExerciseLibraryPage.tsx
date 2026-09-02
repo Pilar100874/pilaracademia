@@ -81,7 +81,7 @@ export default function ExerciseLibraryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { exercises, globalExercises, gifExercises, isLoading, deleteExercise, createExercise, moveExercises, updateExercise, toggleExerciseCategory, copyGlobalToPersonal, isMaster } = useExerciseLibrary();
+  const { exercises, globalExercises, gifExercises, isLoading, deleteExercise, deleteExercisesBulk, createExercise, moveExercises, updateExercise, toggleExerciseCategory, copyGlobalToPersonal, isMaster } = useExerciseLibrary();
   const { categories, deleteCategory, createCategory, updateCategory } = useExerciseCategories();
   const { extras, bulkAssignExtra } = useExerciseExtras();
 
