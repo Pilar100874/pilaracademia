@@ -456,6 +456,8 @@ export function useExerciseLibrary() {
     createExercise,
     updateExercise,
     deleteExercise,
+    deleteExercisesBulk,
+
     moveExercises,
     toggleExerciseCategory,
     copyGlobalToPersonal,
