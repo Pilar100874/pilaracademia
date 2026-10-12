@@ -262,7 +262,7 @@ export function WorkoutPlanDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+        <DialogContent className="max-w-lg w-[calc(100vw-1rem)] sm:w-full min-w-0 max-h-[92vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>
               {editingPlan ? 'Editar Treino' : 'Novo Treino'}
@@ -335,11 +335,14 @@ export function WorkoutPlanDialog({
             
 
             <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Exercícios (arraste para reordenar)</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="min-w-0 flex-1 leading-snug">
+                    Exercícios <span className="font-normal text-muted-foreground">(arraste para reordenar)</span>
+                  </Label>
                   <Button
                     size="sm"
                     variant="outline"
+                    className="shrink-0"
                     onClick={() => openAddExercise()}
                   >
                     <Plus className="h-4 w-4 mr-1" />
@@ -364,9 +367,14 @@ export function WorkoutPlanDialog({
                 ) : (
                   <div className="space-y-2">
                     {currentPlan && (
-                      <Button size="sm" variant="secondary" className="w-full" onClick={() => setMoreOpen(true)}>
-                        <Sparkles className="h-4 w-4 mr-1" />
-                        Adicionar mais (de outro treino ou novo objetivo)
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="w-full h-auto whitespace-normal text-center leading-snug py-2.5"
+                        onClick={() => setMoreOpen(true)}
+                      >
+                        <Sparkles className="h-4 w-4 shrink-0" />
+                        <span className="min-w-0">Adicionar mais (de outro treino ou novo objetivo)</span>
                       </Button>
                     )}
                     {localExercises.map((exercise, index) => (
