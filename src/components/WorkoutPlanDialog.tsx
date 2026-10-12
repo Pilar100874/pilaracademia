@@ -76,6 +76,7 @@ export function WorkoutPlanDialog({
   const [moreOpen, setMoreOpen] = useState(false);
 
   const nameRef = useRef<HTMLInputElement>(null);
+  const objectiveRef = useRef<HTMLTextAreaElement>(null);
   const { errorOf, setError, clearError, clearIf } = useFieldError();
 
   // Get the current plan from workoutPlans (this updates when query is invalidated)
@@ -102,6 +103,14 @@ export function WorkoutPlanDialog({
   useEffect(() => {
     setLocalExercises((prev) => (prev === exercises ? prev : exercises));
   }, [exercises]);
+
+  // O campo de objetivo cresce com o texto (até um limite) para não cortar a leitura.
+  useEffect(() => {
+    const el = objectiveRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+  }, [objective, open]);
 
   const handleDayToggle = (day: number) => {
     setSelectedDays((prev) =>
@@ -262,13 +271,16 @@ export function WorkoutPlanDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle>
-              {editingPlan ? 'Editar Treino' : 'Novo Treino'}
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-lg w-[calc(100vw-1rem)] sm:w-full min-w-0 max-h-[92vh] flex flex-col overflow-hidden p-0">
+          <div className="shrink-0 px-4 pt-4 pr-12 sm:px-6 sm:pt-6 sm:pr-14">
+            <DialogHeader>
+              <DialogTitle>
+                {editingPlan ? 'Editar Treino' : 'Novo Treino'}
+              </DialogTitle>
+            </DialogHeader>
+          </div>
 
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pt-3 pb-6 sm:px-6">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome do Treino</Label>
@@ -287,6 +299,7 @@ export function WorkoutPlanDialog({
               <Label htmlFor="objective">Objetivo do treino <span className="text-muted-foreground font-normal">(opcional)</span></Label>
               <Textarea
                 id="objective"
+                ref={objectiveRef}
                 value={objective}
                 onChange={(e) => setObjective(e.target.value)}
                 placeholder="Ex.: Foco em hipertrofia de membros inferiores e mobilidade de quadril"
@@ -335,11 +348,14 @@ export function WorkoutPlanDialog({
             
 
             <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Exercícios (arraste para reordenar)</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="min-w-0 flex-1 leading-snug">
+                    Exercícios <span className="font-normal text-muted-foreground">(arraste para reordenar)</span>
+                  </Label>
                   <Button
                     size="sm"
                     variant="outline"
+                    className="shrink-0"
                     onClick={() => openAddExercise()}
                   >
                     <Plus className="h-4 w-4 mr-1" />
@@ -364,9 +380,14 @@ export function WorkoutPlanDialog({
                 ) : (
                   <div className="space-y-2">
                     {currentPlan && (
-                      <Button size="sm" variant="secondary" className="w-full" onClick={() => setMoreOpen(true)}>
-                        <Sparkles className="h-4 w-4 mr-1" />
-                        Adicionar mais (de outro treino ou novo objetivo)
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="w-full h-auto whitespace-normal text-center leading-snug py-2.5"
+                        onClick={() => setMoreOpen(true)}
+                      >
+                        <Sparkles className="h-4 w-4 shrink-0" />
+                        <span className="min-w-0">Adicionar mais (de outro treino ou novo objetivo)</span>
                       </Button>
                     )}
                     {localExercises.map((exercise, index) => (
@@ -392,7 +413,10 @@ export function WorkoutPlanDialog({
                 )}
               </div>
 
-            <div className="flex gap-2 pt-4">
+            </div>
+          </div>
+
+          <div className="shrink-0 flex gap-2 border-t border-border bg-background px-4 py-3 sm:px-6">
               {editingPlan && (
                 <Button
                   variant="destructive"
@@ -411,7 +435,6 @@ export function WorkoutPlanDialog({
                 <Save className="h-4 w-4 mr-1" />
                 Salvar
               </Button>
-            </div>
           </div>
         </DialogContent>
       </Dialog>

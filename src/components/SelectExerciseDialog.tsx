@@ -258,7 +258,7 @@ export function SelectExerciseDialog({
           )}
 
           {/* Exercise grid */}
-          <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
+          <ScrollArea className="flex-1 min-h-0 -mx-4 px-4 sm:-mx-6 sm:px-6">
             {isLoading ? (
               <div className="py-4">
                 <div className="flex items-center justify-center gap-2 mb-4 text-muted-foreground">
