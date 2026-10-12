@@ -73,6 +73,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [reviewMode, setReviewMode] = useState(false);
   const [groups, setGroups] = useState<{ name: string; reason?: string; exercise_ids: string[] }[] | null>(null);
   const [groupsRationale, setGroupsRationale] = useState('');
+  const [reasons, setReasons] = useState<Record<string, string>>({});
   const [picked, setPicked] = useState<string[]>([]);
 
   // Assinatura de tudo que alimenta a geração de sugestões. Se qualquer dado
@@ -381,6 +382,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         // Pre-pin extras: pick EXACTLY the requested count for each chosen extra (consecutive at start).
         const pinned: typeof exercises = [];
         const pinnedIds = new Set<string>();
+        const itemInfo = new Map<string, { id: string; group: string; reason: string }>();
         const shortages: { name: string; want: number; have: number }[] = [];
 
         for (const extraId of selectedExtraIds) {
