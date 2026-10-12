@@ -3707,6 +3707,7 @@ export type Database = {
         Returns: string
       }
       dispatch_exercise_naming: { Args: never; Returns: undefined }
+      exercise_naming_progress: { Args: never; Returns: Json }
       has_clinic_permission: {
         Args: { _clinic_id: string; _permission: string; _user_id: string }
         Returns: boolean

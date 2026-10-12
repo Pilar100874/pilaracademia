@@ -29,6 +29,13 @@
       "when": 1791834726615,
       "tag": "0003_exercise_visual_naming_queue",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791834798093,
+      "tag": "0004_exercise_naming_progress",
+      "breakpoints": true
     }
   ]
 }
