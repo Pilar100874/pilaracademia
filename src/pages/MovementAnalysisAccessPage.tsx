@@ -45,6 +45,17 @@ export default function MovementAnalysisAccessPage() {
   const [reanalyzeBusy, setReanalyzeBusy] = useState(false);
   const [reanalyzeProgress, setReanalyzeProgress] = useState<{ done: number; total: number } | null>(null);
 
+  const { data: namingProgress } = useQuery({
+    queryKey: ['admin', 'exercise-naming-progress'],
+    enabled: isMaster,
+    refetchInterval: 30000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('exercise_naming_progress');
+      if (error) throw error;
+      return data as { status: string; reason: string | null; done: number; pending: number; failed: number } | null;
+    },
+  });
+
   const { data: settings } = useQuery({
     queryKey: ['admin', 'master-settings'],
     queryFn: async (): Promise<MasterSettings> => {
@@ -238,6 +249,13 @@ export default function MovementAnalysisAccessPage() {
       </header>
 
       <div className="px-4 py-4 space-y-5">
+        {namingProgress && (
+          <section className="space-y-2 border-b border-border pb-4">
+            <h2 className="text-sm font-semibold">Nomes pelo vídeo</h2>
+            <p className="text-sm text-muted-foreground">{namingProgress.done} atualizados · {namingProgress.pending} pendentes · {namingProgress.failed} não identificados</p>
+            {namingProgress.reason && <p role="alert" className="text-sm text-destructive">Atualização pausada: {namingProgress.reason}</p>}
+          </section>
+        )}
         {/* Configuração global de modelos */}
         <section className="rounded-md border border-border bg-card p-4 space-y-4">
           <h2 className="text-sm font-semibold">Modelo de IA</h2>

@@ -101,7 +101,7 @@ export function ExerciseListItem({
         </button>
 
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm leading-tight line-clamp-2 break-words">
+          <p className="font-medium text-sm leading-tight truncate" title={exercise.name}>
             {exercise.name}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">

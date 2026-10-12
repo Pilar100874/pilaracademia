@@ -125,6 +125,7 @@ export function useExerciseLibrary() {
       })) as LibraryExercise[];
     },
     enabled: !!user,
+    refetchInterval: 60000,
   });
 
   // Split for convenience in the UI

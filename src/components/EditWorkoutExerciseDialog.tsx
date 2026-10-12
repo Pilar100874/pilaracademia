@@ -63,7 +63,7 @@ export function EditWorkoutExerciseDialog({
 
         <div className="space-y-4">
           <div className="text-center p-3 bg-muted rounded-lg">
-            <p className="font-medium">{exercise.name}</p>
+            <p className="font-medium truncate" title={exercise.name}>{exercise.name}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -1199,6 +1199,7 @@ export type Database = {
           user_id: string
           video_end_seconds: number | null
           video_hash: string | null
+          video_named_url: string | null
           video_optimized_at: string | null
           video_start_seconds: number | null
           video_type: string | null
@@ -1224,6 +1225,7 @@ export type Database = {
           user_id: string
           video_end_seconds?: number | null
           video_hash?: string | null
+          video_named_url?: string | null
           video_optimized_at?: string | null
           video_start_seconds?: number | null
           video_type?: string | null
@@ -1249,6 +1251,7 @@ export type Database = {
           user_id?: string
           video_end_seconds?: number | null
           video_hash?: string | null
+          video_named_url?: string | null
           video_optimized_at?: string | null
           video_start_seconds?: number | null
           video_type?: string | null
@@ -1333,6 +1336,83 @@ export type Database = {
             columns: ["extra_id"]
             isOneToOne: false
             referencedRelation: "exercise_extras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercise_naming_control: {
+        Row: {
+          function_url: string | null
+          id: number
+          lease_id: string | null
+          lease_until: string | null
+          owner_id: string | null
+          pause_reason: string | null
+          status: string
+          worker_token: string
+        }
+        Insert: {
+          function_url?: string | null
+          id?: number
+          lease_id?: string | null
+          lease_until?: string | null
+          owner_id?: string | null
+          pause_reason?: string | null
+          status?: string
+          worker_token?: string
+        }
+        Update: {
+          function_url?: string | null
+          id?: number
+          lease_id?: string | null
+          lease_until?: string | null
+          owner_id?: string | null
+          pause_reason?: string | null
+          status?: string
+          worker_token?: string
+        }
+        Relationships: []
+      }
+      exercise_naming_jobs: {
+        Row: {
+          attempts: number
+          exercise_id: string
+          identified_name: string | null
+          last_error: string | null
+          next_attempt_at: string
+          original_name: string | null
+          status: string
+          updated_at: string
+          video_url: string
+        }
+        Insert: {
+          attempts?: number
+          exercise_id: string
+          identified_name?: string | null
+          last_error?: string | null
+          next_attempt_at?: string
+          original_name?: string | null
+          status?: string
+          updated_at?: string
+          video_url: string
+        }
+        Update: {
+          attempts?: number
+          exercise_id?: string
+          identified_name?: string | null
+          last_error?: string | null
+          next_attempt_at?: string
+          original_name?: string | null
+          status?: string
+          updated_at?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_naming_jobs_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: true
+            referencedRelation: "exercise_library"
             referencedColumns: ["id"]
           },
         ]
@@ -3616,11 +3696,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_exercise_naming: { Args: { _lease: string }; Returns: boolean }
       clinic_has_access: { Args: { _clinic_id: string }; Returns: boolean }
+      complete_exercise_name: {
+        Args: { _id: string; _name: string; _url: string }
+        Returns: boolean
+      }
       copy_global_sequence_to_clinic: {
         Args: { _clinic_id: string; _sequence_id: string }
         Returns: string
       }
+      dispatch_exercise_naming: { Args: never; Returns: undefined }
+      exercise_naming_progress: { Args: never; Returns: Json }
       has_clinic_permission: {
         Args: { _clinic_id: string; _permission: string; _user_id: string }
         Returns: boolean
@@ -3658,6 +3745,7 @@ export type Database = {
         Args: { _token: string }
         Returns: undefined
       }
+      wake_exercise_naming: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role:
