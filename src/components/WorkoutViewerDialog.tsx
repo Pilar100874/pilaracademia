@@ -542,6 +542,24 @@ export function WorkoutViewerDialog({
             {/* Mobile-only spacer to push controls apart */}
             <div className="sm:hidden flex-1" />
 
+            {/* Mostrar/ocultar motivo do exercício (desktop) */}
+            {hasReason && (
+              <button
+                type="button"
+                onClick={() => setShowReason(!showReason)}
+                aria-label={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
+                aria-pressed={showReason}
+                title={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
+                className={`hidden sm:flex h-12 w-12 shrink-0 rounded-full items-center justify-center transition-all active:scale-95 ${
+                  showReason
+                    ? 'bg-gradient-to-br from-primary to-primary/70 text-primary-foreground ring-2 ring-white/40 shadow-lg'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/15'
+                }`}
+              >
+                <Info className="h-6 w-6" strokeWidth={2.3} />
+              </button>
+            )}
+
             {/* Analysis (icon-only, sits next to Next) */}
             <AnalysisOverlay
               body={(currentExercise as any).body_analysis}
