@@ -36,6 +36,13 @@
       "when": 1791834798093,
       "tag": "0004_exercise_naming_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791834851369,
+      "tag": "0005_wake_updated_visual_names",
+      "breakpoints": true
     }
   ]
 }

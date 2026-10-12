@@ -1,0 +1,1 @@
+CREATE OR REPLACE TRIGGER wake_visual_names AFTER INSERT OR UPDATE OF video_url ON public.exercise_naming_jobs FOR EACH STATEMENT EXECUTE FUNCTION public.wake_naming_trigger(); CREATE INDEX IF NOT EXISTS exercise_naming_pending_idx ON public.exercise_naming_jobs(next_attempt_at,updated_at) WHERE status='pending';
