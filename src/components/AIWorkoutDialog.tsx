@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -75,6 +75,37 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [groupsRationale, setGroupsRationale] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
 
+  // Assinatura de tudo que alimenta a geração de sugestões. Se qualquer dado
+  // mudar depois que as sugestões apareceram, elas são descartadas.
+  const suggestionKey = useMemo(() => JSON.stringify({
+    prompt: prompt.trim(),
+    count,
+    source,
+    useBodyPlan,
+    useBloodExam,
+    filterNoExtras,
+    cats: selectedCategoryIds,
+    extras: selectedExtraIds,
+    extraCounts,
+    reviewMode,
+  }), [prompt, count, source, useBodyPlan, useBloodExam, filterNoExtras, selectedCategoryIds, selectedExtraIds, extraCounts, reviewMode]);
+
+  const suggestionKeyRef = useRef<string | null>(null);
+
+  const clearSuggestions = () => {
+    suggestionKeyRef.current = null;
+    setGroups(null);
+    setPicked([]);
+    setGroupsRationale('');
+  };
+
+  useEffect(() => {
+    if (suggestionKeyRef.current !== null && suggestionKeyRef.current !== suggestionKey) {
+      clearSuggestions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestionKey]);
+
   const nameRef = useRef<HTMLInputElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const countRef = useRef<HTMLInputElement>(null);
@@ -95,9 +126,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
   const reset = () => {
     setStep(0);
-    setGroups(null);
-    setPicked([]);
-    setGroupsRationale('');
+    clearSuggestions();
     setName('');
     setPrompt('');
     setCount('8');
@@ -209,9 +238,11 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         toast.error((data as { error?: string } | null)?.error || error?.message || 'Erro ao gerar sugestões');
         return;
       }
-      setGroups(Array.isArray(data?.groups) ? data.groups : []);
+      const nextGroups = Array.isArray(data?.groups) ? data.groups : [];
+      setGroups(nextGroups);
       setGroupsRationale(data?.rationale || '');
       setPicked([]);
+      suggestionKeyRef.current = nextGroups.length ? suggestionKey : null;
     } catch (e) {
       console.error(e);
       toast.error('Erro ao gerar sugestões');
@@ -739,7 +770,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 <input
                   type="checkbox"
                   checked={reviewMode}
-                  onChange={(e) => { setReviewMode(e.target.checked); if (e.target.checked) setSelectedDays((p) => p.slice(0, 1)); setGroups(null); setPicked([]); }}
+                  onChange={(e) => { setReviewMode(e.target.checked); if (e.target.checked) setSelectedDays((p) => p.slice(0, 1)); clearSuggestions(); }}
                   className="h-4 w-4 mt-0.5 rounded border-input accent-primary"
                 />
                 <span className="text-xs leading-snug">
@@ -830,7 +861,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                     <input
                       type="checkbox"
                       checked={useBloodExam}
-                      onChange={(e) => setUseBloodExam(e.target.checked)}
+                      onChange={(e) => { setUseBloodExam(e.target.checked); clearSuggestions(); }}
                       className="h-4 w-4 mt-0.5 rounded border-input accent-primary"
                     />
                     <span className="text-xs leading-snug">
