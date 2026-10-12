@@ -147,7 +147,7 @@ Responda CHAMANDO a função build_groups.`;
 
     const userPrompt = `Objetivo: ${prompt}
 ${body.body_plan_context ? `\n${body.body_plan_context}\n` : ''}${body.health_context ? `\n${body.health_context}\n` : ''}
-Biblioteca disponível (${library.length} exercícios):
+Biblioteca disponível (${pool.length} exercícios):
 ${libSummary}`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
