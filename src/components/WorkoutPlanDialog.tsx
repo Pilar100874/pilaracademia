@@ -262,14 +262,15 @@ export function WorkoutPlanDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg w-[calc(100vw-1rem)] sm:w-full min-w-0 max-h-[92vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+        <DialogContent className="max-w-lg w-[calc(100vw-1rem)] sm:w-full min-w-0 max-h-[92vh] flex flex-col overflow-hidden p-0">
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 pb-2 sm:px-6 sm:pt-6">
           <DialogHeader>
             <DialogTitle>
               {editingPlan ? 'Editar Treino' : 'Novo Treino'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 mt-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome do Treino</Label>
               <Input
@@ -400,7 +401,10 @@ export function WorkoutPlanDialog({
                 )}
               </div>
 
-            <div className="flex gap-2 pt-4">
+            </div>
+          </div>
+
+          <div className="shrink-0 flex gap-2 border-t border-border bg-background px-4 py-3 sm:px-6">
               {editingPlan && (
                 <Button
                   variant="destructive"
@@ -419,7 +423,6 @@ export function WorkoutPlanDialog({
                 <Save className="h-4 w-4 mr-1" />
                 Salvar
               </Button>
-            </div>
           </div>
         </DialogContent>
       </Dialog>
