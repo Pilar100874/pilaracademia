@@ -61,8 +61,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [prompt, setPrompt] = useState(initialPrompt || '');
   const [count, setCount] = useState(initialCount ? String(initialCount) : '8');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
-  const [allowRepeat, setAllowRepeat] = useState(true);
-  const [varyCategories, setVaryCategories] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
   const [filterNoExtras, setFilterNoExtras] = useState(false);
@@ -103,8 +101,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setPrompt('');
     setCount('8');
     setSelectedDays([]);
-    setAllowRepeat(true);
-    setVaryCategories(false);
     setSelectedCategoryIds([]);
     setSelectedExtraIds([]);
     setFilterNoExtras(false);
@@ -147,9 +143,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   });
 
   const toggleDay = (idx: number) => {
-    setSelectedDays((prev) =>
-      prev.includes(idx) ? prev.filter((d) => d !== idx) : [...prev, idx]
-    );
+    setSelectedDays((prev) => (prev[0] === idx ? [] : [idx]));
   };
 
   const validateStep = (s: number): boolean => {
@@ -165,10 +159,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       return true;
     }
     if (s === 1) {
-      if (varyCategories && selectedCategoryIds.length < 2) {
-        toast.error('Selecione pelo menos 2 categorias para variar entre os dias.');
-        return false;
-      }
       if (!filteredExercises.length) {
         toast.error(selectedCategoryIds.length
           ? 'Nenhum exercício na biblioteca para as categorias selecionadas.'
@@ -225,6 +215,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   };
 
   const handleCreateFromPicked = async () => {
+    if (!selectedDays.length) { toast.error('Escolha um dia da semana.'); return; }
     if (!picked.length) { toast.error('Selecione ao menos 1 exercício.'); return; }
     const byId = new Map(exercises.map((ex) => [ex.id, ex] as const));
     setGenerating(true);
@@ -261,12 +252,10 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       return handleSuggestGroups();
     }
     if (!validateStep(0) || !validateStep(1)) { setStep(0); return; }
+    if (!selectedDays.length) { toast.error('Escolha um dia da semana.'); return; }
     const n = parseInt(count, 10);
 
-    if (varyCategories && selectedDays.length > 1 && selectedCategoryIds.length < 2) {
-      toast.error('Variar categorias entre dias exige pelo menos 2 categorias.');
-      return;
-    }
+
 
     setGenerating(true);
     try {
@@ -290,38 +279,24 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       }
       const byId = new Map(exercises.map((ex) => [ex.id, ex] as const));
 
-      const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-      const sortedDays = [...selectedDays].sort();
-      const dayBuckets: { days: number[]; suffix: string; categoryId?: string }[] =
-        sortedDays.length > 1
-          ? sortedDays.map((d, i) => ({
-              days: [d],
-              suffix: ` (${dayLabels[d]})`,
-              categoryId: varyCategories
-                ? selectedCategoryIds[i % selectedCategoryIds.length]
-                : undefined,
-            }))
-          : [{ days: selectedDays, suffix: '' }];
+      const dayBuckets: { days: number[]; suffix: string; categoryId?: string }[] = [
+        { days: selectedDays, suffix: '' },
+      ];
 
-      const usedIds = new Set<string>();
       let totalCreated = 0;
       let lastRationale: string | undefined;
 
       for (const bucket of dayBuckets) {
-        let pool = filteredExercises;
-        if (bucket.categoryId) {
-          pool = pool.filter((ex) => (ex.category_ids || []).includes(bucket.categoryId!));
-        }
-        const available = allowRepeat ? pool : pool.filter((ex) => !usedIds.has(ex.id));
+        const pool = filteredExercises;
+        const available = pool;
 
         if (!available.length) {
-          toast.message(`Sem exercícios para ${bucket.suffix.trim() || 'os dias seguintes'}`, {
-            description: varyCategories
-              ? 'Adicione mais exercícios à categoria selecionada.'
-              : 'Ative "Repetir" ou amplie as categorias.',
+          toast.message('Sem exercícios disponíveis', {
+            description: 'Amplie as categorias selecionadas.',
           });
           continue;
         }
+
 
         // Pre-pin extras: pick EXACTLY the requested count for each chosen extra (consecutive at start).
         const pinned: typeof exercises = [];
@@ -427,8 +402,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           )
         );
 
-        if (!allowRepeat) picked.forEach((ex) => usedIds.add(ex.id));
         totalCreated++;
+
       }
 
       if (totalCreated === 0) {
@@ -446,8 +421,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       setGenerating(false);
     }
   };
-
-  const totalDays = selectedDays.length;
 
   return (
     <Dialog
@@ -729,9 +702,9 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           {step === 2 && (
             <div className="space-y-5">
               <div className="space-y-1">
-                <p className="font-serif text-lg leading-tight">Em quais dias?</p>
+                <p className="font-serif text-lg leading-tight">Qual dia da semana?</p>
                 <p className="text-xs text-muted-foreground leading-snug">
-                  Selecionar mais de um dia cria <strong>um treino para cada</strong>.
+                  Escolha <strong>um dia</strong> para o treino. Para outros dias, gere um treino novo depois.
                 </p>
               </div>
 
@@ -752,48 +725,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 ))}
               </div>
 
-              {totalDays > 1 && (
-                <div className="space-y-2 p-3 rounded-md border border-border bg-muted/20">
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={allowRepeat}
-                      onChange={(e) => setAllowRepeat(e.target.checked)}
-                      className="h-4 w-4 mt-0.5 rounded border-input accent-primary"
-                    />
-                    <span className="text-xs leading-snug">
-                      Permitir repetir exercícios entre os dias
-                    </span>
-                  </label>
-
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={varyCategories}
-                      onChange={(e) => {
-                        setVaryCategories(e.target.checked);
-                        if (e.target.checked && step === 2) {
-                          // user must have selected categories — if not, push them back
-                          if (selectedCategoryIds.length < 2) {
-                            toast.message('Volte ao passo Categorias e selecione ao menos 2.', { duration: 3000 });
-                          }
-                        }
-                      }}
-                      className="h-4 w-4 mt-0.5 rounded border-input accent-primary"
-                    />
-                    <span className="text-xs leading-snug">
-                      Variar categoria por dia (não repetir a do dia anterior)
-                      {varyCategories && (
-                        <span className="block text-[10px] text-muted-foreground mt-0.5">
-                          {selectedCategoryIds.length >= 2
-                            ? `Rotação entre ${selectedCategoryIds.length} categorias selecionadas.`
-                            : 'Selecione ao menos 2 categorias no passo anterior.'}
-                        </span>
-                      )}
-                    </span>
-                  </label>
-                </div>
-              )}
 
               <label className="flex items-start gap-2 cursor-pointer p-2.5 rounded-md bg-muted/30 border border-border/60">
                 <input
