@@ -215,6 +215,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   };
 
   const handleCreateFromPicked = async () => {
+    if (!selectedDays.length) { toast.error('Escolha um dia da semana.'); return; }
     if (!picked.length) { toast.error('Selecione ao menos 1 exercício.'); return; }
     const byId = new Map(exercises.map((ex) => [ex.id, ex] as const));
     setGenerating(true);
@@ -251,7 +252,9 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       return handleSuggestGroups();
     }
     if (!validateStep(0) || !validateStep(1)) { setStep(0); return; }
+    if (!selectedDays.length) { toast.error('Escolha um dia da semana.'); return; }
     const n = parseInt(count, 10);
+
 
 
     setGenerating(true);
