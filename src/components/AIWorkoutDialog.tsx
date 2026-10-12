@@ -91,9 +91,12 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   }), [prompt, count, source, useBodyPlan, useBloodExam, filterNoExtras, selectedCategoryIds, selectedExtraIds, extraCounts, reviewMode]);
 
   const suggestionKeyRef = useRef<string | null>(null);
+  // IDs já mostrados nas sugestões — usados para pedir MAIS opções sem repetir.
+  const suggestedIdsRef = useRef<Set<string>>(new Set());
 
   const clearSuggestions = () => {
     suggestionKeyRef.current = null;
+    suggestedIdsRef.current = new Set();
     setGroups(null);
     setPicked([]);
     setGroupsRationale('');
@@ -219,8 +222,15 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   };
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
-  const handleSuggestGroups = async () => {
+  const handleSuggestGroups = async (more = false) => {
     if (!validateStep(0) || !validateStep(1)) { setStep(0); return; }
+    if (more && groups) {
+      // Já mostramos tudo que a biblioteca tem com esses filtros?
+      if (filteredExercises.length <= suggestedIdsRef.current.size) {
+        toast.info('Todas as opções com esses filtros já foram sugeridas.');
+        return;
+      }
+    }
     const n = parseInt(count, 10);
     if (!filteredExercises.length) { toast.error('Nenhum exercício disponível com esses filtros.'); return; }
     setGenerating(true);
@@ -232,17 +242,45 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         is_global: !!ex.is_global,
       }));
       const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
-        body: { prompt: prompt.trim(), count: Math.min(50, Math.max(n * 2, 6)), library, health_context: healthContext, mode: 'groups' },
+        body: {
+          prompt: prompt.trim(),
+          count: Math.min(50, Math.max(n * 2, 6)),
+          library,
+          health_context: healthContext,
+          mode: 'groups',
+          ...(more && groups ? { exclude_ids: [...suggestedIdsRef.current] } : {}),
+        },
       });
       if (error || data?.error) {
         toast.error((data as { error?: string } | null)?.error || error?.message || 'Erro ao gerar sugestões');
         return;
       }
       const nextGroups = Array.isArray(data?.groups) ? data.groups : [];
-      setGroups(nextGroups);
-      setGroupsRationale(data?.rationale || '');
-      setPicked([]);
-      suggestionKeyRef.current = nextGroups.length ? suggestionKey : null;
+      if (more && groups) {
+        // Junta as novas sugestões aos grupos atuais, preservando o que está selecionado.
+        const merged = groups.map((g) => ({ ...g, exercise_ids: [...g.exercise_ids] }));
+        let added = 0;
+        for (const ng of nextGroups) {
+          const existing = merged.find((g) => g.name === ng.name);
+          if (existing) {
+            const fresh = ng.exercise_ids.filter((id) => !existing.exercise_ids.includes(id));
+            existing.exercise_ids.push(...fresh);
+            added += fresh.length;
+          } else {
+            merged.push(ng);
+            added += ng.exercise_ids.length;
+          }
+        }
+        nextGroups.forEach((g) => g.exercise_ids.forEach((id) => suggestedIdsRef.current.add(id)));
+        setGroups(merged.filter((g) => g.exercise_ids.length > 0));
+        if (added === 0) toast.info('Nenhuma opção nova foi encontrada. Tente ajustar os filtros.');
+      } else {
+        setGroups(nextGroups);
+        setGroupsRationale(data?.rationale || '');
+        setPicked([]);
+        suggestedIdsRef.current = new Set(nextGroups.flatMap((g) => g.exercise_ids));
+      }
+      suggestionKeyRef.current = suggestionKey;
     } catch (e) {
       console.error(e);
       toast.error('Erro ao gerar sugestões');
@@ -847,9 +885,14 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                       </div>
                     );
                   })}
-                  <button type="button" className="text-xs text-muted-foreground underline" onClick={handleSuggestGroups} disabled={generating}>
-                    Gerar outras sugestões
-                  </button>
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <button type="button" className="text-xs text-primary underline" onClick={() => handleSuggestGroups(true)} disabled={generating}>
+                      Gerar mais sugestões
+                    </button>
+                    <button type="button" className="text-xs text-muted-foreground underline" onClick={() => handleSuggestGroups(false)} disabled={generating}>
+                      Gerar outras sugestões
+                    </button>
+                  </div>
                 </div>
               )}
 

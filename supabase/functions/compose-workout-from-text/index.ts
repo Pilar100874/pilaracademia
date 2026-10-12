@@ -25,6 +25,8 @@ interface RequestBody {
   health_context?: string;
   body_plan_context?: string;
   mode?: 'single' | 'groups';
+  /** Exercícios já sugeridos anteriormente — devem ser ignorados (pedido de MAIS sugestões). */
+  exclude_ids?: string[];
 }
 
 Deno.serve(async (req) => {
@@ -115,8 +117,9 @@ async function handle(req: Request): Promise<Response> {
       scored.sort((a, b) => b.s - a.s || a.i - b.i);
       return scored.slice(0, MAX_PER_SOURCE).map((x) => x.ex);
     };
-    const mine = library.filter((ex) => !ex.is_global);
-    const globals = library.filter((ex) => ex.is_global);
+    const exclude = new Set((Array.isArray(body.exclude_ids) ? body.exclude_ids : []).map(String));
+    const mine = library.filter((ex) => !ex.is_global && !exclude.has(ex.id));
+    const globals = library.filter((ex) => ex.is_global && !exclude.has(ex.id));
     const pool = [...takeTop(mine), ...takeTop(globals)];
     count = Math.max(1, Math.min(count, pool.length));
 
@@ -151,6 +154,9 @@ Tarefas:
 Responda CHAMANDO a função build_workout com a lista ordenada de IDs e uma breve justificativa.`;
 
     const groupsMode = body.mode === 'groups';
+    const moreHint = exclude.size > 0
+      ? `\n- IMPORTANTE: o usuário já recebeu sugestões anteriores e pediu MAIS opções. Sugira APENAS exercícios diferentes dos já sugeridos antes, mantendo o mesmo critério/grupos.\n- Reaproveite os MESMOS NOMES de grupos anteriores quando eles continuarem existindo (o cliente agrupa pelo nome).`
+      : '';
     const groupsPrompt = `Você é um personal trainer experiente. O usuário vai ESCOLHER manualmente os exercícios, então você deve sugerir opções organizadas em GRUPOS.
 
 Tarefas:
@@ -159,7 +165,7 @@ Tarefas:
 - Use APENAS IDs da lista. Não repita o mesmo ID em grupos diferentes.
 - Em cada grupo, preencha "reason" explicando em 1-2 frases por que esse grupo e esses exercícios foram escolhidos.
 - Se o usuário citar dor/lesão, evite exercícios de alto impacto na região.
-- Se houver CONTEXTO DE SAÚDE, priorize segurança.
+- Se houver CONTEXTO DE SAÚDE, priorize segurança.${moreHint}
 
 Responda CHAMANDO a função build_groups.`;
 
@@ -283,7 +289,7 @@ ${libSummary}`;
     const validIds = new Set(library.map((l) => l.id));
     const mapId = (v: unknown): string | null => {
       const k = String(v ?? '').trim();
-      return shortToId.get(k) ?? (validIds.has(k) ? k : null);
+      return shortToId.get(k) ?? (validIds.has(k) && !exclude.has(k) ? k : null);
     };
 
     if (groupsMode) {
