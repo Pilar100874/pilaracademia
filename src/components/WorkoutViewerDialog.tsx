@@ -378,6 +378,22 @@ export function WorkoutViewerDialog({
               )}
             </Button>
           )}
+          {hasReason && (
+            <button
+              type="button"
+              onClick={() => setShowReason(!showReason)}
+              aria-label={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
+              aria-pressed={showReason}
+              title={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
+              className={`hidden sm:flex h-9 w-9 shrink-0 rounded-full items-center justify-center transition-all active:scale-95 ${
+                showReason
+                  ? 'bg-primary text-primary-foreground ring-2 ring-white/40 shadow-lg'
+                  : 'bg-white/10 text-white hover:bg-white/20 border border-white/15'
+              }`}
+            >
+              <Info className="h-5 w-5" strokeWidth={2.3} />
+            </button>
+          )}
         </div>
 
         {/* Finish workout prompt */}
