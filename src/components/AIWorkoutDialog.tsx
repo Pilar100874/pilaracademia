@@ -699,9 +699,9 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           {step === 2 && (
             <div className="space-y-5">
               <div className="space-y-1">
-                <p className="font-serif text-lg leading-tight">Em quais dias?</p>
+                <p className="font-serif text-lg leading-tight">Qual dia da semana?</p>
                 <p className="text-xs text-muted-foreground leading-snug">
-                  Selecionar mais de um dia cria <strong>um treino para cada</strong>.
+                  Escolha <strong>um dia</strong> para o treino. Para outros dias, gere um treino novo depois.
                 </p>
               </div>
 
@@ -722,48 +722,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 ))}
               </div>
 
-              {totalDays > 1 && (
-                <div className="space-y-2 p-3 rounded-md border border-border bg-muted/20">
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={allowRepeat}
-                      onChange={(e) => setAllowRepeat(e.target.checked)}
-                      className="h-4 w-4 mt-0.5 rounded border-input accent-primary"
-                    />
-                    <span className="text-xs leading-snug">
-                      Permitir repetir exercícios entre os dias
-                    </span>
-                  </label>
-
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={varyCategories}
-                      onChange={(e) => {
-                        setVaryCategories(e.target.checked);
-                        if (e.target.checked && step === 2) {
-                          // user must have selected categories — if not, push them back
-                          if (selectedCategoryIds.length < 2) {
-                            toast.message('Volte ao passo Categorias e selecione ao menos 2.', { duration: 3000 });
-                          }
-                        }
-                      }}
-                      className="h-4 w-4 mt-0.5 rounded border-input accent-primary"
-                    />
-                    <span className="text-xs leading-snug">
-                      Variar categoria por dia (não repetir a do dia anterior)
-                      {varyCategories && (
-                        <span className="block text-[10px] text-muted-foreground mt-0.5">
-                          {selectedCategoryIds.length >= 2
-                            ? `Rotação entre ${selectedCategoryIds.length} categorias selecionadas.`
-                            : 'Selecione ao menos 2 categorias no passo anterior.'}
-                        </span>
-                      )}
-                    </span>
-                  </label>
-                </div>
-              )}
 
               <label className="flex items-start gap-2 cursor-pointer p-2.5 rounded-md bg-muted/30 border border-border/60">
                 <input
