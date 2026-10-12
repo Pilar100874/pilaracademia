@@ -76,6 +76,7 @@ export function WorkoutPlanDialog({
   const [moreOpen, setMoreOpen] = useState(false);
 
   const nameRef = useRef<HTMLInputElement>(null);
+  const objectiveRef = useRef<HTMLTextAreaElement>(null);
   const { errorOf, setError, clearError, clearIf } = useFieldError();
 
   // Get the current plan from workoutPlans (this updates when query is invalidated)
@@ -102,6 +103,14 @@ export function WorkoutPlanDialog({
   useEffect(() => {
     setLocalExercises((prev) => (prev === exercises ? prev : exercises));
   }, [exercises]);
+
+  // O campo de objetivo cresce com o texto (até um limite) para não cortar a leitura.
+  useEffect(() => {
+    const el = objectiveRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+  }, [objective, open]);
 
   const handleDayToggle = (day: number) => {
     setSelectedDays((prev) =>
