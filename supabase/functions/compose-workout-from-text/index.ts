@@ -157,6 +157,7 @@ Tarefas:
 - Identifique no objetivo os diferentes focos pedidos (ex: "alongamento e glúteos" => grupo "Alongamento" e grupo "Glúteos"). Se houver só um foco, crie 1 grupo (ou divida em subfocos úteis).
 - Para CADA grupo, sugira até ${count} exercícios da biblioteca adequados, ordenados do mais para o menos indicado.
 - Use APENAS IDs da lista. Não repita o mesmo ID em grupos diferentes.
+- Em cada grupo, preencha "reason" explicando em 1-2 frases por que esse grupo e esses exercícios foram escolhidos.
 - Se o usuário citar dor/lesão, evite exercícios de alto impacto na região.
 - Se houver CONTEXTO DE SAÚDE, priorize segurança.
 
@@ -194,9 +195,10 @@ ${libSummary}`;
                       type: 'object',
                       properties: {
                         name: { type: 'string', description: 'Nome curto do grupo, ex: Alongamento' },
+                        reason: { type: 'string', description: 'Motivo da seleção deste grupo e de seus exercícios (1-2 frases, pt-BR)' },
                         exercise_ids: { type: 'array', items: { type: 'string' } },
                       },
-                      required: ['name', 'exercise_ids'],
+                      required: ['name', 'reason', 'exercise_ids'],
                       additionalProperties: false,
                     },
                   },
@@ -286,7 +288,7 @@ ${libSummary}`;
 
     if (groupsMode) {
       const used = new Set<string>();
-      const rawGroups = Array.isArray(parsed.groups) ? (parsed.groups as { name?: unknown; exercise_ids?: unknown }[]) : [];
+      const rawGroups = Array.isArray(parsed.groups) ? (parsed.groups as { name?: unknown; reason?: unknown; exercise_ids?: unknown }[]) : [];
       const groups = rawGroups.map((g) => {
         const ids: string[] = [];
         for (const raw of Array.isArray(g.exercise_ids) ? g.exercise_ids : []) {
@@ -295,7 +297,11 @@ ${libSummary}`;
           used.add(id); ids.push(id);
           if (ids.length >= count) break;
         }
-        return { name: typeof g.name === 'string' && g.name.trim() ? g.name.trim() : 'Grupo', exercise_ids: ids };
+        return {
+          name: typeof g.name === 'string' && g.name.trim() ? g.name.trim() : 'Grupo',
+          reason: typeof g.reason === 'string' ? g.reason.trim() : '',
+          exercise_ids: ids,
+        };
       }).filter((g) => g.exercise_ids.length > 0);
       if (groups.length === 0) {
         return new Response(JSON.stringify({ error: 'A IA não conseguiu sugerir exercícios da sua biblioteca.' }), { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
