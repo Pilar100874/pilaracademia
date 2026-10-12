@@ -263,14 +263,16 @@ export function WorkoutPlanDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-lg w-[calc(100vw-1rem)] sm:w-full min-w-0 max-h-[92vh] flex flex-col overflow-hidden p-0">
-          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 pb-2 sm:px-6 sm:pt-6">
-          <DialogHeader>
-            <DialogTitle>
-              {editingPlan ? 'Editar Treino' : 'Novo Treino'}
-            </DialogTitle>
-          </DialogHeader>
+          <div className="shrink-0 px-4 pt-4 pr-12 sm:px-6 sm:pt-6 sm:pr-14">
+            <DialogHeader>
+              <DialogTitle>
+                {editingPlan ? 'Editar Treino' : 'Novo Treino'}
+              </DialogTitle>
+            </DialogHeader>
+          </div>
 
-          <div className="space-y-4 mt-4">
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 sm:px-6">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome do Treino</Label>
               <Input
@@ -288,6 +290,7 @@ export function WorkoutPlanDialog({
               <Label htmlFor="objective">Objetivo do treino <span className="text-muted-foreground font-normal">(opcional)</span></Label>
               <Textarea
                 id="objective"
+                ref={objectiveRef}
                 value={objective}
                 onChange={(e) => setObjective(e.target.value)}
                 placeholder="Ex.: Foco em hipertrofia de membros inferiores e mobilidade de quadril"
