@@ -209,8 +209,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
         body: { prompt: prompt.trim(), count: Math.min(50, Math.max(n * 2, 6)), library, health_context: healthContext, mode: 'groups' },
       });
-      if (error) {
-        toast.error((data as { error?: string } | null)?.error || error.message || 'Erro ao gerar sugestões');
+      if (error || data?.error) {
+        toast.error((data as { error?: string } | null)?.error || error?.message || 'Erro ao gerar sugestões');
         return;
       }
       setGroups(Array.isArray(data?.groups) ? data.groups : []);
@@ -382,8 +382,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
             body: { prompt: prompt.trim(), count: remainingCount, library, health_context: healthContext, body_plan_context: bodyPlanContext },
           });
 
-          if (error) {
-            const msg = (data as { error?: string } | null)?.error || error.message;
+          if (error || data?.error) {
+            const msg = (data as { error?: string } | null)?.error || error?.message;
             toast.error(msg || 'Erro ao gerar treino com IA');
             continue;
           }
