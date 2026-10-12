@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorkoutPlan, useWorkoutPlans } from '@/hooks/useWorkoutPlans';
-import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon, Sparkles, Flame, Battery, BatteryLow, Zap, Leaf, CheckCircle2, Mic, MicOff, AudioLines, Headphones } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon, Sparkles, Flame, Battery, BatteryLow, Zap, Leaf, CheckCircle2, Mic, MicOff, AudioLines, Headphones, Info } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { AnalysisOverlay } from '@/components/AnalysisOverlay';
 import { WorkoutFormCoach } from '@/components/WorkoutFormCoach';
@@ -10,6 +10,7 @@ import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { applyEnergyMode, ENERGY_MODE_LABEL, type EnergyMode } from '@/lib/workoutEnergyMode';
 import { useCooldownPromptEnabled } from '@/lib/cooldownPreference';
 import { useVoiceCommandsEnabled, useVoiceWorkoutCommands } from '@/lib/voiceCommands';
+import { useShowExerciseReason } from '@/lib/exerciseReasonPreference';
 
 interface WorkoutViewerDialogProps {
   open: boolean;
@@ -32,6 +33,7 @@ export function WorkoutViewerDialog({
 
   const { cooldownPlan } = useWorkoutPlans();
   const [cooldownPromptEnabled] = useCooldownPromptEnabled();
+  const [showReason, setShowReason] = useShowExerciseReason();
   const allExercises = plan.exercises || [];
   const mainBase = useMemo(() => allExercises.filter((e: any) => !e.is_cooldown), [allExercises]);
   const cooldownBase = useMemo(() => cooldownPlan?.exercises ?? [], [cooldownPlan]);
