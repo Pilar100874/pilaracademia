@@ -22,6 +22,8 @@ import { FieldError } from '@/components/FieldError';
 import { useFieldError, validateRequired } from '@/lib/formValidation';
 import { Switch } from '@/components/ui/switch';
 import { useVoiceCommandsEnabled } from '@/lib/voiceCommands';
+import { AddMoreExercisesDialog } from '@/components/AddMoreExercisesDialog';
+import { Sparkles } from 'lucide-react';
 
 const DAYS_OF_WEEK = [
   { label: 'Dom', value: 0 },
@@ -71,6 +73,7 @@ export function WorkoutPlanDialog({
   const [editingExercise, setEditingExercise] = useState<WorkoutExercise | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<WorkoutExercise | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const nameRef = useRef<HTMLInputElement>(null);
   const { errorOf, setError, clearError, clearIf } = useFieldError();
@@ -360,6 +363,12 @@ export function WorkoutPlanDialog({
                   </div>
                 ) : (
                   <div className="space-y-2">
+                    {currentPlan && (
+                      <Button size="sm" variant="secondary" className="w-full" onClick={() => setMoreOpen(true)}>
+                        <Sparkles className="h-4 w-4 mr-1" />
+                        Adicionar mais (de outro treino ou novo objetivo)
+                      </Button>
+                    )}
                     {localExercises.map((exercise, index) => (
                       <div
                         key={exercise.id}
@@ -428,6 +437,10 @@ export function WorkoutPlanDialog({
         }}
         editingExercise={null}
       />
+
+      {currentPlan && (
+        <AddMoreExercisesDialog open={moreOpen} onOpenChange={setMoreOpen} plan={currentPlan} exercises={localExercises} />
+      )}
 
       <ConfirmDeleteDialog
         open={deleteDialogOpen}
