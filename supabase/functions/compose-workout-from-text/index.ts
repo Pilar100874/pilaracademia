@@ -58,7 +58,7 @@ async function handle(req: Request): Promise<Response> {
 
     const body = (await req.json()) as RequestBody;
     const prompt = (body.prompt ?? '').toString().trim();
-    const count = Math.max(1, Math.min(50, Number(body.count) || 0));
+    let count = Math.max(1, Math.min(50, Number(body.count) || 0));
     const library = Array.isArray(body.library) ? body.library : [];
 
     if (!prompt) {
@@ -91,19 +91,24 @@ async function handle(req: Request): Promise<Response> {
     const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const words = norm(String(prompt)).split(/[^a-z0-9]+/).filter((w) => w.length > 3)
       .map((w) => w.slice(0, Math.max(4, w.length - 2)));
-    const MAX_LIB = 250;
-    let pool = library;
-    if (library.length > MAX_LIB && words.length) {
-      const scored = library.map((ex, i) => {
+    // Manda ~40 de cada biblioteca (a do usuário e a global): os que mais combinam com o pedido.
+    const MAX_PER_SOURCE = 40;
+    const takeTop = (arr: LibraryItem[]) => {
+      if (arr.length <= MAX_PER_SOURCE) return arr;
+      const scored = arr.map((ex, i) => {
         const hay = norm(`${ex.name} ${Object.keys(ex.body || {}).join(' ')} ${Object.keys(ex.aesthetic || {}).join(' ')} ${Object.keys(ex.mobility || {}).join(' ')}`);
-        const s = words.reduce((acc, w) => acc + (hay.includes(w) ? 1 : 0), 0);
+        const s = words.length
+          ? words.reduce((acc, w) => acc + (hay.includes(w) ? 1 : 0), 0)
+          : 0;
         return { ex, s, i };
       });
       scored.sort((a, b) => b.s - a.s || a.i - b.i);
-      pool = scored.slice(0, MAX_LIB).map((x) => x.ex);
-    } else if (library.length > MAX_LIB) {
-      pool = library.slice(0, MAX_LIB);
-    }
+      return scored.slice(0, MAX_PER_SOURCE).map((x) => x.ex);
+    };
+    const mine = library.filter((ex) => !ex.is_global);
+    const globals = library.filter((ex) => ex.is_global);
+    const pool = [...takeTop(mine), ...takeTop(globals)];
+    count = Math.max(1, Math.min(count, pool.length));
 
     // IDs curtos (índices) reduzem muito o tamanho do prompt e da resposta.
     const shortToId = new Map<string, string>();

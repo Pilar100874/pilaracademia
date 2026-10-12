@@ -199,6 +199,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       const library = filteredExercises.map((ex) => ({
         id: ex.id, name: ex.name,
         body: ex.body_analysis ?? null, aesthetic: ex.aesthetic_analysis ?? null, mobility: ex.mobility_analysis ?? null,
+        is_global: !!ex.is_global,
       }));
       const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
         body: { prompt: prompt.trim(), count: Math.min(50, Math.max(n * 2, 6)), library, health_context: healthContext, mode: 'groups' },
@@ -355,6 +356,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
             body: ex.body_analysis ?? null,
             aesthetic: ex.aesthetic_analysis ?? null,
             mobility: ex.mobility_analysis ?? null,
+            is_global: !!ex.is_global,
           }));
 
           const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
