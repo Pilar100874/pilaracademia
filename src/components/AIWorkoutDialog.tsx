@@ -71,6 +71,10 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [useBodyPlan, setUseBodyPlan] = useState(false);
   const [useBloodExam, setUseBloodExam] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
+  const [groups, setGroups] = useState<{ name: string; exercise_ids: string[] }[] | null>(null);
+  const [groupsRationale, setGroupsRationale] = useState('');
+  const [picked, setPicked] = useState<string[]>([]);
 
   const nameRef = useRef<HTMLInputElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
@@ -188,7 +192,71 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   };
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
+  const handleSuggestGroups = async () => {
+    if (!validateStep(0) || !validateStep(1)) { setStep(0); return; }
+    const n = parseInt(count, 10);
+    if (!filteredExercises.length) { toast.error('Nenhum exercício disponível com esses filtros.'); return; }
+    setGenerating(true);
+    try {
+      const healthContext = useBloodExam ? (buildBloodExamHealthContext(bloodExamsQ.data) || undefined) : undefined;
+      const library = filteredExercises.map((ex) => ({
+        id: ex.id, name: ex.name,
+        body: ex.body_analysis ?? null, aesthetic: ex.aesthetic_analysis ?? null, mobility: ex.mobility_analysis ?? null,
+      }));
+      const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
+        body: { prompt: prompt.trim(), count: Math.min(50, Math.max(n * 2, 6)), library, health_context: healthContext, mode: 'groups' },
+      });
+      if (error) {
+        toast.error((data as { error?: string } | null)?.error || error.message || 'Erro ao gerar sugestões');
+        return;
+      }
+      setGroups(Array.isArray(data?.groups) ? data.groups : []);
+      setGroupsRationale(data?.rationale || '');
+      setPicked([]);
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao gerar sugestões');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleCreateFromPicked = async () => {
+    if (!picked.length) { toast.error('Selecione ao menos 1 exercício.'); return; }
+    const byId = new Map(exercises.map((ex) => [ex.id, ex] as const));
+    setGenerating(true);
+    try {
+      const plan = await createPlan.mutateAsync({
+        name: name.trim().slice(0, 80),
+        days_of_week: selectedDays,
+        objective: prompt.trim() || null,
+        ai_rationale: groupsRationale || null,
+        _silent: true,
+      });
+      const list = picked.map((id) => byId.get(id)).filter(Boolean) as typeof exercises;
+      await Promise.all(list.map((ex, idx) => addExercise.mutateAsync({
+        workout_plan_id: plan.id, name: ex.name, image_urls: ex.image_urls || [],
+        sets: ex.default_sets || 3, reps: ex.default_reps || 12, order_index: idx,
+        video_type: ex.video_type, video_url: ex.video_url,
+        video_start_seconds: ex.video_start_seconds, video_end_seconds: ex.video_end_seconds,
+        exercise_library_id: ex.id, _silent: true,
+      })));
+      toast.success('Treino criado!');
+      reset();
+      onOpenChange(false);
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao criar treino');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const handleGenerate = async () => {
+    if (reviewMode) {
+      if (groups) return handleCreateFromPicked();
+      return handleSuggestGroups();
+    }
     if (!validateStep(0) || !validateStep(1)) { setStep(0); return; }
     const n = parseInt(count, 10);
 
@@ -724,6 +792,76 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 </div>
               )}
 
+              <label className="flex items-start gap-2 cursor-pointer p-2.5 rounded-md bg-muted/30 border border-border/60">
+                <input
+                  type="checkbox"
+                  checked={reviewMode}
+                  onChange={(e) => { setReviewMode(e.target.checked); setGroups(null); setPicked([]); }}
+                  className="h-4 w-4 mt-0.5 rounded border-input accent-primary"
+                />
+                <span className="text-xs leading-snug">
+                  <span className="font-semibold">Quero escolher os exercícios</span>
+                  <span className="block text-[10px] text-muted-foreground mt-0.5">
+                    A IA mostra uma lista separada por grupos (ex: Alongamento, Glúteos) e você marca quais entram no treino.
+                  </span>
+                </span>
+              </label>
+
+              {reviewMode && groups && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="font-serif text-lg leading-tight">Escolha os exercícios</p>
+                    <span className="text-xs text-muted-foreground">{picked.length} selecionados</span>
+                  </div>
+                  {groupsRationale && <p className="text-[11px] text-muted-foreground italic">{groupsRationale}</p>}
+                  {groups.map((g) => {
+                    const allOn = g.exercise_ids.every((id) => picked.includes(id));
+                    return (
+                      <div key={g.name} className="rounded-md border border-border">
+                        <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30">
+                          <span className="text-sm font-semibold break-words min-w-0">{g.name}</span>
+                          <button
+                            type="button"
+                            className="text-[11px] text-primary shrink-0 ml-2"
+                            onClick={() => setPicked((p) => allOn
+                              ? p.filter((id) => !g.exercise_ids.includes(id))
+                              : [...p, ...g.exercise_ids.filter((id) => !p.includes(id))])}
+                          >
+                            {allOn ? 'Desmarcar todos' : 'Marcar todos'}
+                          </button>
+                        </div>
+                        <ul className="divide-y divide-border">
+                          {g.exercise_ids.map((id) => {
+                            const ex = exercises.find((e) => e.id === id);
+                            if (!ex) return null;
+                            const on = picked.includes(id);
+                            return (
+                              <li key={id}>
+                                <label className="flex items-center gap-2 px-3 py-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={on}
+                                    onChange={() => setPicked((p) => on ? p.filter((x) => x !== id) : [...p, id])}
+                                    className="h-4 w-4 rounded border-input accent-primary shrink-0"
+                                  />
+                                  {ex.image_urls?.[0] && (
+                                    <img src={ex.image_urls[0]} alt="" className="h-9 w-9 rounded object-cover shrink-0" loading="lazy" />
+                                  )}
+                                  <span className="text-xs break-words min-w-0">{ex.name}</span>
+                                </label>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                  <button type="button" className="text-xs text-muted-foreground underline" onClick={handleSuggestGroups} disabled={generating}>
+                    Gerar outras sugestões
+                  </button>
+                </div>
+              )}
+
               {(() => {
                 const ctx = buildBloodExamHealthContext(bloodExamsQ.data);
                 if (!ctx) return null;
@@ -767,7 +905,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
             ) : (
               <>
                 <Sparkles className="h-4 w-4 mr-2" />
-                Gerar treino
+                {reviewMode ? (groups ? `Criar treino (${picked.length})` : 'Ver sugestões') : 'Gerar treino'}
               </>
             )
           }
