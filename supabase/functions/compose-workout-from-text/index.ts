@@ -14,6 +14,8 @@ interface LibraryItem {
   body?: Record<string, number> | null;
   aesthetic?: Record<string, number> | null;
   mobility?: Record<string, number> | null;
+  /** Exercício da biblioteca global (vs. biblioteca própria do usuário). */
+  is_global?: boolean;
 }
 
 interface RequestBody {
