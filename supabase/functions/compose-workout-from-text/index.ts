@@ -24,7 +24,9 @@ interface RequestBody {
   library: LibraryItem[];
   health_context?: string;
   body_plan_context?: string;
-  mode?: 'single' | 'groups';
+  mode?: 'single' | 'groups' | 'explain';
+  /** mode 'explain': exercícios já escolhidos (em ordem) para gerar os motivos. */
+  items?: { name: string; group?: string | null }[];
   /** Exercícios já sugeridos anteriormente — devem ser ignorados (pedido de MAIS sugestões). */
   exclude_ids?: string[];
 }
@@ -79,6 +81,7 @@ async function handle(req: Request): Promise<Response> {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    if (body.mode === 'explain') return await explain(LOVABLE_API_KEY, prompt, body);
     if (library.length === 0) {
       return new Response(
         JSON.stringify({ error: 'Sua biblioteca está vazia. Adicione exercícios antes.' }),
@@ -151,7 +154,9 @@ Tarefas:
 - Se o usuário citar dor/lesão (ex: "lombar"), evite exercícios de alto impacto na região afetada.
 - Se houver CONTEXTO DE SAÚDE: ajuste cargas/intensidade e priorize segurança. Cite na justificativa se algum marcador influenciou suas escolhas.
 
-Responda CHAMANDO a função build_workout com a lista ordenada de IDs e uma breve justificativa.`;
+- Para cada exercício informe "group" (bloco/foco, ex: Aquecimento, Glúteos, Alongamento) e "reason": 1 frase curta em pt-BR explicando por que ele está NESSA posição da sequência.
+
+Responda CHAMANDO a função build_workout com a lista ordenada e uma breve justificativa geral.`;
 
     const groupsMode = body.mode === 'groups';
     const moreHint = exclude.size > 0
@@ -163,6 +168,7 @@ Tarefas:
 - Identifique no objetivo os diferentes focos pedidos (ex: "alongamento e glúteos" => grupo "Alongamento" e grupo "Glúteos"). Se houver só um foco, crie 1 grupo (ou divida em subfocos úteis).
 - Para CADA grupo, sugira até ${count} exercícios da biblioteca adequados, ordenados do mais para o menos indicado.
 - Use APENAS IDs da lista. Não repita o mesmo ID em grupos diferentes.
+- Em cada exercício preencha "reason": 1 frase curta explicando por que ele foi escolhido e sua posição.
 - Em cada grupo, preencha "reason" explicando em 1-2 frases por que esse grupo e esses exercícios foram escolhidos.
 - Se o usuário citar dor/lesão, evite exercícios de alto impacto na região.
 - Se houver CONTEXTO DE SAÚDE, priorize segurança.${moreHint}
@@ -202,9 +208,9 @@ ${libSummary}`;
                       properties: {
                         name: { type: 'string', description: 'Nome curto do grupo, ex: Alongamento' },
                         reason: { type: 'string', description: 'Motivo da seleção deste grupo e de seus exercícios (1-2 frases, pt-BR)' },
-                        exercise_ids: { type: 'array', items: { type: 'string' } },
+                        exercises: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, reason: { type: 'string' } }, required: ['id', 'reason'], additionalProperties: false } },
                       },
-                      required: ['name', 'reason', 'exercise_ids'],
+                      required: ['name', 'reason', 'exercises'],
                       additionalProperties: false,
                     },
                   },
@@ -224,17 +230,17 @@ ${libSummary}`;
               parameters: {
                 type: 'object',
                 properties: {
-                  exercise_ids: {
+                  exercises: {
                     type: 'array',
-                    description: 'IDs dos exercícios na ordem de execução.',
-                    items: { type: 'string' },
+                    description: 'Exercícios na ordem de execução.',
+                    items: { type: 'object', properties: { id: { type: 'string' }, group: { type: 'string' }, reason: { type: 'string' } }, required: ['id', 'group', 'reason'], additionalProperties: false },
                   },
                   rationale: {
                     type: 'string',
                     description: 'Breve justificativa (1-2 frases) da escolha e ordem.',
                   },
                 },
-                required: ['exercise_ids', 'rationale'],
+                required: ['exercises', 'rationale'],
                 additionalProperties: false,
               },
             },
@@ -275,7 +281,7 @@ ${libSummary}`;
       });
     }
 
-    let parsed: { exercise_ids?: unknown; rationale?: unknown; groups?: unknown };
+    let parsed: { exercise_ids?: unknown; exercises?: unknown; rationale?: unknown; groups?: unknown };
     try {
       parsed = JSON.parse(toolCall.function.arguments);
     } catch (e) {
@@ -294,11 +300,14 @@ ${libSummary}`;
 
     if (groupsMode) {
       const used = new Set<string>();
-      const rawGroups = Array.isArray(parsed.groups) ? (parsed.groups as { name?: unknown; reason?: unknown; exercise_ids?: unknown }[]) : [];
+      const reasons: Record<string, string> = {};
+      const rawGroups = Array.isArray(parsed.groups) ? (parsed.groups as { name?: unknown; reason?: unknown; exercises?: { id?: unknown; reason?: unknown }[]; exercise_ids?: unknown }[]) : [];
       const groups = rawGroups.map((g) => {
         const ids: string[] = [];
-        for (const raw of Array.isArray(g.exercise_ids) ? g.exercise_ids : []) {
-          const id = mapId(raw);
+        const list = Array.isArray(g.exercises) ? g.exercises : (Array.isArray(g.exercise_ids) ? (g.exercise_ids as unknown[]).map((id) => ({ id })) : []);
+        for (const it of list as { id?: unknown; reason?: unknown }[]) {
+          const id = mapId(it?.id);
+          if (id && typeof it.reason === 'string') reasons[id] = it.reason.trim();
           if (!id || used.has(id)) continue;
           used.add(id); ids.push(id);
           if (ids.length >= count) break;
@@ -312,17 +321,21 @@ ${libSummary}`;
       if (groups.length === 0) {
         return new Response(JSON.stringify({ error: 'A IA não conseguiu sugerir exercícios da sua biblioteca.' }), { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-      return new Response(JSON.stringify({ groups, rationale: typeof parsed.rationale === 'string' ? parsed.rationale : '' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ groups, reasons, rationale: typeof parsed.rationale === 'string' ? parsed.rationale : '' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    const rawIds = Array.isArray(parsed.exercise_ids) ? (parsed.exercise_ids as unknown[]) : [];
+    const rawItems = Array.isArray(parsed.exercises)
+      ? (parsed.exercises as { id?: unknown; group?: unknown; reason?: unknown }[])
+      : (Array.isArray(parsed.exercise_ids) ? (parsed.exercise_ids as unknown[]).map((id) => ({ id })) : []);
     const seen = new Set<string>();
     const exercise_ids: string[] = [];
-    for (const raw of rawIds) {
-      const id = mapId(raw);
+    const items: { id: string; group: string; reason: string }[] = [];
+    for (const raw of rawItems as { id?: unknown; group?: unknown; reason?: unknown }[]) {
+      const id = mapId(raw?.id);
       if (!id) continue;
       if (seen.has(id)) continue;
       seen.add(id);
       exercise_ids.push(id);
+      items.push({ id, group: typeof raw.group === 'string' ? raw.group.trim() : '', reason: typeof raw.reason === 'string' ? raw.reason.trim() : '' });
       if (exercise_ids.length >= count) break;
     }
 
@@ -336,6 +349,7 @@ ${libSummary}`;
     return new Response(
       JSON.stringify({
         exercise_ids,
+        items,
         rationale: typeof parsed.rationale === 'string' ? parsed.rationale : '',
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -346,5 +360,38 @@ ${libSummary}`;
       JSON.stringify({ error: err instanceof Error ? err.message : 'Erro desconhecido' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+  }
+}
+
+async function explain(key: string, prompt: string, body: RequestBody): Promise<Response> {
+  const items = (Array.isArray(body.items) ? body.items : []).slice(0, 80);
+  const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  if (!items.length) return json({ error: 'Nenhum exercício informado' }, 400);
+  const list = items.map((it, i) => `${i + 1}. ${String(it.name).slice(0, 120)}${it.group ? ` [grupo: ${String(it.group).slice(0, 60)}]` : ''}`).join('\n');
+  const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'google/gemini-2.5-flash',
+      messages: [
+        { role: 'system', content: 'Você é um personal trainer. Para a sequência de exercícios dada (na ordem), escreva para CADA exercício 1 frase curta em pt-BR explicando por que ele está nessa posição da sequência, e uma justificativa geral (2-3 frases) do treino. Responda chamando explain_workout.' },
+        { role: 'user', content: `Objetivo: ${prompt}\n${body.health_context ? body.health_context + '\n' : ''}Sequência:\n${list}` },
+      ],
+      tools: [{ type: 'function', function: { name: 'explain_workout', description: 'Motivos por exercício', parameters: { type: 'object', properties: { reasons: { type: 'array', items: { type: 'string' }, description: 'Um motivo por exercício, na mesma ordem' }, rationale: { type: 'string' } }, required: ['reasons', 'rationale'], additionalProperties: false } } }],
+      tool_choice: { type: 'function', function: { name: 'explain_workout' } },
+    }),
+  });
+  if (!res.ok) {
+    const status = res.status;
+    console.error('explain error', status, await res.text());
+    return json({ error: status === 429 ? 'Limite de uso temporário atingido. Tente novamente em instantes.' : status === 402 ? 'Créditos de IA esgotados. Adicione créditos no workspace.' : `Erro da IA: ${status}` }, status === 429 || status === 402 ? status : 500);
+  }
+  const data = await res.json();
+  try {
+    const p = JSON.parse(data?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments || '{}');
+    const reasons = (Array.isArray(p.reasons) ? p.reasons : []).map((r: unknown) => String(r ?? '').trim());
+    return json({ reasons, rationale: typeof p.rationale === 'string' ? p.rationale : '' });
+  } catch {
+    return json({ error: 'Resposta da IA inválida.' }, 500);
   }
 }
