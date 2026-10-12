@@ -253,10 +253,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     if (!validateStep(0) || !validateStep(1)) { setStep(0); return; }
     const n = parseInt(count, 10);
 
-    if (varyCategories && selectedDays.length > 1 && selectedCategoryIds.length < 2) {
-      toast.error('Variar categorias entre dias exige pelo menos 2 categorias.');
-      return;
-    }
 
     setGenerating(true);
     try {
@@ -280,38 +276,24 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       }
       const byId = new Map(exercises.map((ex) => [ex.id, ex] as const));
 
-      const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-      const sortedDays = [...selectedDays].sort();
-      const dayBuckets: { days: number[]; suffix: string; categoryId?: string }[] =
-        sortedDays.length > 1
-          ? sortedDays.map((d, i) => ({
-              days: [d],
-              suffix: ` (${dayLabels[d]})`,
-              categoryId: varyCategories
-                ? selectedCategoryIds[i % selectedCategoryIds.length]
-                : undefined,
-            }))
-          : [{ days: selectedDays, suffix: '' }];
+      const dayBuckets: { days: number[]; suffix: string; categoryId?: string }[] = [
+        { days: selectedDays, suffix: '' },
+      ];
 
-      const usedIds = new Set<string>();
       let totalCreated = 0;
       let lastRationale: string | undefined;
 
       for (const bucket of dayBuckets) {
-        let pool = filteredExercises;
-        if (bucket.categoryId) {
-          pool = pool.filter((ex) => (ex.category_ids || []).includes(bucket.categoryId!));
-        }
-        const available = allowRepeat ? pool : pool.filter((ex) => !usedIds.has(ex.id));
+        const pool = filteredExercises;
+        const available = pool;
 
         if (!available.length) {
-          toast.message(`Sem exercícios para ${bucket.suffix.trim() || 'os dias seguintes'}`, {
-            description: varyCategories
-              ? 'Adicione mais exercícios à categoria selecionada.'
-              : 'Ative "Repetir" ou amplie as categorias.',
+          toast.message('Sem exercícios disponíveis', {
+            description: 'Amplie as categorias selecionadas.',
           });
           continue;
         }
+
 
         // Pre-pin extras: pick EXACTLY the requested count for each chosen extra (consecutive at start).
         const pinned: typeof exercises = [];
@@ -417,8 +399,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           )
         );
 
-        if (!allowRepeat) picked.forEach((ex) => usedIds.add(ex.id));
         totalCreated++;
+
       }
 
       if (totalCreated === 0) {
@@ -436,8 +418,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       setGenerating(false);
     }
   };
-
-  const totalDays = selectedDays.length;
 
   return (
     <Dialog
