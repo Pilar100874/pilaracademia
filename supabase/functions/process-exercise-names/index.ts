@@ -71,6 +71,5 @@ Deno.serve(async (req) => {
     return json({ error: reason }, 500);
   } finally {
     await db.from('exercise_naming_control').update({ lease_until: null, lease_id: null }).eq('id', 1).eq('lease_id', lease);
-    await db.rpc('dispatch_exercise_naming');
   }
 });
