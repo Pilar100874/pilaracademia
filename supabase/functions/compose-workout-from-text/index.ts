@@ -85,10 +85,28 @@ async function handle(req: Request): Promise<Response> {
         .map(([k, v]) => ({ k, v: v as number }));
     };
 
+    // Pré-filtro: envia só os exercícios mais relevantes ao objetivo (acelera muito).
+    const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const words = norm(String(prompt)).split(/[^a-z0-9]+/).filter((w) => w.length > 3)
+      .map((w) => w.slice(0, Math.max(4, w.length - 2)));
+    const MAX_LIB = 250;
+    let pool = library;
+    if (library.length > MAX_LIB && words.length) {
+      const scored = library.map((ex, i) => {
+        const hay = norm(`${ex.name} ${Object.keys(ex.body || {}).join(' ')} ${Object.keys(ex.aesthetic || {}).join(' ')} ${Object.keys(ex.mobility || {}).join(' ')}`);
+        const s = words.reduce((acc, w) => acc + (hay.includes(w) ? 1 : 0), 0);
+        return { ex, s, i };
+      });
+      scored.sort((a, b) => b.s - a.s || a.i - b.i);
+      pool = scored.slice(0, MAX_LIB).map((x) => x.ex);
+    } else if (library.length > MAX_LIB) {
+      pool = library.slice(0, MAX_LIB);
+    }
+
     // IDs curtos (índices) reduzem muito o tamanho do prompt e da resposta.
     const shortToId = new Map<string, string>();
-    library.forEach((ex, i) => shortToId.set(String(i + 1), ex.id));
-    const libSummary = library.map((ex, i) => {
+    pool.forEach((ex, i) => shortToId.set(String(i + 1), ex.id));
+    const libSummary = pool.map((ex, i) => {
       const b = top(ex.body).map((t) => `${t.k}:${t.v}`).join(',');
       const a = top(ex.aesthetic).map((t) => `${t.k}:${t.v}`).join(',');
       const m = top(ex.mobility).map((t) => `${t.k}:${t.v}`).join(',');
@@ -129,7 +147,7 @@ Responda CHAMANDO a função build_groups.`;
 
     const userPrompt = `Objetivo: ${prompt}
 ${body.body_plan_context ? `\n${body.body_plan_context}\n` : ''}${body.health_context ? `\n${body.health_context}\n` : ''}
-Biblioteca disponível (${library.length} exercícios):
+Biblioteca disponível (${pool.length} exercícios):
 ${libSummary}`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
