@@ -143,7 +143,11 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   });
 
   const toggleDay = (idx: number) => {
-    setSelectedDays((prev) => (prev[0] === idx ? [] : [idx]));
+    if (reviewMode) {
+      setSelectedDays((prev) => (prev[0] === idx && prev.length === 1 ? [] : [idx]));
+    } else {
+      setSelectedDays((prev) => (prev.includes(idx) ? prev.filter((d) => d !== idx) : [...prev, idx].sort()));
+    }
   };
 
   const validateStep = (s: number): boolean => {
@@ -702,9 +706,11 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           {step === 2 && (
             <div className="space-y-5">
               <div className="space-y-1">
-                <p className="font-serif text-lg leading-tight">Qual dia da semana?</p>
+                <p className="font-serif text-lg leading-tight">Quais dias da semana?</p>
                 <p className="text-xs text-muted-foreground leading-snug">
-                  Escolha <strong>um dia</strong> para o treino. Para outros dias, gere um treino novo depois.
+                  {reviewMode
+                    ? <>Ao escolher os exercícios, selecione <strong>um dia</strong>.</>
+                    : <>Selecione um ou mais dias — o mesmo treino será agendado para todos.</>}
                 </p>
               </div>
 
