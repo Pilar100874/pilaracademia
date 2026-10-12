@@ -25,10 +25,30 @@ interface RequestBody {
   mode?: 'single' | 'groups';
 }
 
-Deno.serve(async (req) => {
+Deno.serve((req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+  // Envia espaços periodicamente para evitar o idle timeout (150s) enquanto a IA pensa.
+  const enc = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const ping = setInterval(() => controller.enqueue(enc.encode(' ')), 10000);
+      try {
+        const res = await handle(req);
+        controller.enqueue(enc.encode(await res.text()));
+      } catch (e) {
+        controller.enqueue(enc.encode(JSON.stringify({ error: e instanceof Error ? e.message : 'Erro' })));
+      } finally {
+        clearInterval(ping);
+        controller.close();
+      }
+    },
+  });
+  return new Response(stream, { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+});
+
+async function handle(req: Request): Promise<Response> {
 
   try {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -65,14 +85,17 @@ Deno.serve(async (req) => {
         .map(([k, v]) => ({ k, v: v as number }));
     };
 
-    const libSummary = library.map((ex) => {
+    // IDs curtos (índices) reduzem muito o tamanho do prompt e da resposta.
+    const shortToId = new Map<string, string>();
+    library.forEach((ex, i) => shortToId.set(String(i + 1), ex.id));
+    const libSummary = library.map((ex, i) => {
       const b = top(ex.body).map((t) => `${t.k}:${t.v}`).join(',');
       const a = top(ex.aesthetic).map((t) => `${t.k}:${t.v}`).join(',');
       const m = top(ex.mobility).map((t) => `${t.k}:${t.v}`).join(',');
       const tags = [b && `corpo[${b}]`, a && `estetica[${a}]`, m && `mobilidade[${m}]`]
         .filter(Boolean)
         .join(' ');
-      return `- ${ex.id} | ${ex.name}${tags ? ` | ${tags}` : ''}`;
+      return `- ${i + 1} | ${ex.name}${tags ? ` | ${tags}` : ''}`;
     }).join('\n');
 
     const systemPrompt = `Você é um personal trainer experiente que monta sequências de treino personalizadas e SEGURAS.
@@ -221,14 +244,19 @@ ${libSummary}`;
     }
 
     const validIds = new Set(library.map((l) => l.id));
+    const mapId = (v: unknown): string | null => {
+      const k = String(v ?? '').trim();
+      return shortToId.get(k) ?? (validIds.has(k) ? k : null);
+    };
 
     if (groupsMode) {
       const used = new Set<string>();
       const rawGroups = Array.isArray(parsed.groups) ? (parsed.groups as { name?: unknown; exercise_ids?: unknown }[]) : [];
       const groups = rawGroups.map((g) => {
         const ids: string[] = [];
-        for (const id of Array.isArray(g.exercise_ids) ? g.exercise_ids : []) {
-          if (typeof id !== 'string' || !validIds.has(id) || used.has(id)) continue;
+        for (const raw of Array.isArray(g.exercise_ids) ? g.exercise_ids : []) {
+          const id = mapId(raw);
+          if (!id || used.has(id)) continue;
           used.add(id); ids.push(id);
           if (ids.length >= count) break;
         }
@@ -242,9 +270,9 @@ ${libSummary}`;
     const rawIds = Array.isArray(parsed.exercise_ids) ? (parsed.exercise_ids as unknown[]) : [];
     const seen = new Set<string>();
     const exercise_ids: string[] = [];
-    for (const id of rawIds) {
-      if (typeof id !== 'string') continue;
-      if (!validIds.has(id)) continue;
+    for (const raw of rawIds) {
+      const id = mapId(raw);
+      if (!id) continue;
       if (seen.has(id)) continue;
       seen.add(id);
       exercise_ids.push(id);
@@ -272,4 +300,4 @@ ${libSummary}`;
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-});
+}
