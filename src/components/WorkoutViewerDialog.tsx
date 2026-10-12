@@ -498,6 +498,22 @@ export function WorkoutViewerDialog({
                 </span>
               </div>
             </div>
+            {hasReason && (
+              <button
+                type="button"
+                onClick={() => setShowReason(!showReason)}
+                aria-label={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
+                aria-pressed={showReason}
+                title={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
+                className={`shrink-0 h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+                  showReason
+                    ? 'bg-white/25 text-white border border-white/30'
+                    : 'bg-white/10 text-white/60 border border-white/15'
+                }`}
+              >
+                <Info className="h-5 w-5" strokeWidth={2.3} />
+              </button>
+            )}
           </div>
         </div>
 
