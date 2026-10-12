@@ -289,7 +289,7 @@ ${libSummary}`;
     const validIds = new Set(library.map((l) => l.id));
     const mapId = (v: unknown): string | null => {
       const k = String(v ?? '').trim();
-      return shortToId.get(k) ?? (validIds.has(k) ? k : null);
+      return shortToId.get(k) ?? (validIds.has(k) && !exclude.has(k) ? k : null);
     };
 
     if (groupsMode) {
