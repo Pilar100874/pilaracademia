@@ -22,6 +22,8 @@ export interface WorkoutExercise {
   aesthetic_analysis?: Record<string, number> | null;
   mobility_analysis?: Record<string, number> | null;
   is_cooldown?: boolean;
+  group_name?: string | null;
+  ai_reason?: string | null;
 }
 
 export interface WorkoutPlan {
@@ -180,6 +182,8 @@ export function useWorkoutPlans() {
       video_end_seconds?: number | null;
       exercise_library_id?: string | null;
       is_cooldown?: boolean;
+      group_name?: string | null;
+      ai_reason?: string | null;
       _silent?: boolean;
     }) => {
       const { _silent, ...payload } = data;
@@ -216,6 +220,8 @@ export function useWorkoutPlans() {
       video_url?: string | null;
       video_start_seconds?: number | null;
       video_end_seconds?: number | null;
+      ai_reason?: string | null;
+      group_name?: string | null;
     }) => {
       const { id, image_urls, ...rest } = data;
       const updateData: Record<string, unknown> = { ...rest };

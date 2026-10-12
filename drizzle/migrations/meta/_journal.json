@@ -15,6 +15,13 @@
       "when": 1787930644577,
       "tag": "0001_add_is_gif_exercise_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791817324053,
+      "tag": "0002_workout_exercise_group_reason",
+      "breakpoints": true
     }
   ]
 }

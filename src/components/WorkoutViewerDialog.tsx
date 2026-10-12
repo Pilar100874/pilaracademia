@@ -454,6 +454,23 @@ export function WorkoutViewerDialog({
           </div>
         )}
 
+        {/* Motivo do exercício na sequência (criado pela IA) */}
+        {(currentExercise.ai_reason || currentExercise.group_name) && (
+          <div key={`why-${currentExerciseIndex}`} className="absolute bottom-[10.5rem] sm:bottom-24 left-4 right-4 z-40 pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="pointer-events-auto bg-black/45 backdrop-blur-md rounded-2xl border border-white/10 px-4 py-2.5 shadow-2xl mx-auto max-w-lg">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[10px] uppercase tracking-wider text-white/60 font-semibold">Por que este exercício</span>
+                {currentExercise.group_name && (
+                  <span className="text-[10px] font-semibold text-white bg-white/15 px-2 py-0.5 rounded-full">{currentExercise.group_name}</span>
+                )}
+              </div>
+              {currentExercise.ai_reason && (
+                <p className="text-white/90 text-sm leading-snug line-clamp-3">{currentExercise.ai_reason}</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Mobile-only: exercise name + sets×reps card above the bottom bar */}
         <div className="sm:hidden absolute bottom-24 left-4 right-4 z-40 pointer-events-none">
           <div className="pointer-events-auto bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 px-4 py-2.5 shadow-2xl mx-auto max-w-lg flex items-center gap-3">
