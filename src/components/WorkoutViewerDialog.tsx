@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorkoutPlan, useWorkoutPlans } from '@/hooks/useWorkoutPlans';
-import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon, Sparkles, Flame, Battery, BatteryLow, Zap, Leaf, CheckCircle2, Mic, MicOff, AudioLines, Headphones } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, ChevronUp, ChevronDown, Play, ImageIcon, Sparkles, Flame, Battery, BatteryLow, Zap, Leaf, CheckCircle2, Mic, MicOff, AudioLines, Headphones, Info } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/ExerciseVideoPlayer';
 import { AnalysisOverlay } from '@/components/AnalysisOverlay';
 import { WorkoutFormCoach } from '@/components/WorkoutFormCoach';
@@ -10,6 +10,7 @@ import { getFreshMediaUrl } from '@/lib/mediaUrl';
 import { applyEnergyMode, ENERGY_MODE_LABEL, type EnergyMode } from '@/lib/workoutEnergyMode';
 import { useCooldownPromptEnabled } from '@/lib/cooldownPreference';
 import { useVoiceCommandsEnabled, useVoiceWorkoutCommands } from '@/lib/voiceCommands';
+import { useShowExerciseReason } from '@/lib/exerciseReasonPreference';
 
 interface WorkoutViewerDialogProps {
   open: boolean;
@@ -32,6 +33,7 @@ export function WorkoutViewerDialog({
 
   const { cooldownPlan } = useWorkoutPlans();
   const [cooldownPromptEnabled] = useCooldownPromptEnabled();
+  const [showReason, setShowReason] = useShowExerciseReason();
   const allExercises = plan.exercises || [];
   const mainBase = useMemo(() => allExercises.filter((e: any) => !e.is_cooldown), [allExercises]);
   const cooldownBase = useMemo(() => cooldownPlan?.exercises ?? [], [cooldownPlan]);
@@ -55,6 +57,7 @@ export function WorkoutViewerDialog({
     : [];
 
   const hasVideo = !!(currentExercise?.video_type && currentExercise?.video_url);
+  const hasReason = !!(currentExercise?.ai_reason || currentExercise?.group_name);
   const isFirstExercise = currentExerciseIndex === 0;
   const isLastExercise = currentExerciseIndex === exercises.length - 1;
   const hasMultiplePhotos = currentImages.length > 1;
@@ -455,7 +458,7 @@ export function WorkoutViewerDialog({
         )}
 
         {/* Motivo do exercício na sequência (criado pela IA) */}
-        {(currentExercise.ai_reason || currentExercise.group_name) && (
+        {hasReason && showReason && (
           <div key={`why-${currentExerciseIndex}`} className="absolute bottom-[10.5rem] sm:bottom-24 left-4 right-4 z-40 pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="pointer-events-auto bg-black/45 backdrop-blur-md rounded-2xl border border-white/10 px-4 py-2.5 shadow-2xl mx-auto max-w-lg">
               <div className="flex items-center gap-2 mb-0.5">
@@ -495,6 +498,22 @@ export function WorkoutViewerDialog({
                 </span>
               </div>
             </div>
+            {hasReason && (
+              <button
+                type="button"
+                onClick={() => setShowReason(!showReason)}
+                aria-label={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
+                aria-pressed={showReason}
+                title={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
+                className={`shrink-0 h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+                  showReason
+                    ? 'bg-white/25 text-white border border-white/30'
+                    : 'bg-white/10 text-white/60 border border-white/15'
+                }`}
+              >
+                <Info className="h-5 w-5" strokeWidth={2.3} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -538,6 +557,24 @@ export function WorkoutViewerDialog({
 
             {/* Mobile-only spacer to push controls apart */}
             <div className="sm:hidden flex-1" />
+
+            {/* Mostrar/ocultar motivo do exercício (desktop) */}
+            {hasReason && (
+              <button
+                type="button"
+                onClick={() => setShowReason(!showReason)}
+                aria-label={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
+                aria-pressed={showReason}
+                title={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
+                className={`hidden sm:flex h-12 w-12 shrink-0 rounded-full items-center justify-center transition-all active:scale-95 ${
+                  showReason
+                    ? 'bg-gradient-to-br from-primary to-primary/70 text-primary-foreground ring-2 ring-white/40 shadow-lg'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/15'
+                }`}
+              >
+                <Info className="h-6 w-6" strokeWidth={2.3} />
+              </button>
+            )}
 
             {/* Analysis (icon-only, sits next to Next) */}
             <AnalysisOverlay
