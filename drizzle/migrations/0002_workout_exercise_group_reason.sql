@@ -1,0 +1,1 @@
+ALTER TABLE public.workout_exercises ADD COLUMN IF NOT EXISTS group_name text, ADD COLUMN IF NOT EXISTS ai_reason text;

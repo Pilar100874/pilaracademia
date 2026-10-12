@@ -3460,8 +3460,10 @@ export type Database = {
       }
       workout_exercises: {
         Row: {
+          ai_reason: string | null
           created_at: string
           exercise_library_id: string | null
+          group_name: string | null
           id: string
           image_url: string | null
           image_urls: string[] | null
@@ -3477,8 +3479,10 @@ export type Database = {
           workout_plan_id: string
         }
         Insert: {
+          ai_reason?: string | null
           created_at?: string
           exercise_library_id?: string | null
+          group_name?: string | null
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
@@ -3494,8 +3498,10 @@ export type Database = {
           workout_plan_id: string
         }
         Update: {
+          ai_reason?: string | null
           created_at?: string
           exercise_library_id?: string | null
+          group_name?: string | null
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
