@@ -458,7 +458,7 @@ export function WorkoutViewerDialog({
         )}
 
         {/* Motivo do exercício na sequência (criado pela IA) */}
-        {(currentExercise.ai_reason || currentExercise.group_name) && (
+        {hasReason && showReason && (
           <div key={`why-${currentExerciseIndex}`} className="absolute bottom-[10.5rem] sm:bottom-24 left-4 right-4 z-40 pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="pointer-events-auto bg-black/45 backdrop-blur-md rounded-2xl border border-white/10 px-4 py-2.5 shadow-2xl mx-auto max-w-lg">
               <div className="flex items-center gap-2 mb-0.5">
