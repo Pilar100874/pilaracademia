@@ -57,6 +57,7 @@ export function WorkoutViewerDialog({
     : [];
 
   const hasVideo = !!(currentExercise?.video_type && currentExercise?.video_url);
+  const hasReason = !!(currentExercise?.ai_reason || currentExercise?.group_name);
   const isFirstExercise = currentExerciseIndex === 0;
   const isLastExercise = currentExerciseIndex === exercises.length - 1;
   const hasMultiplePhotos = currentImages.length > 1;
