@@ -89,17 +89,27 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    const workerToken = req.headers.get('x-naming-worker-token');
+    let workerOwner: string | undefined;
+    if (workerToken) {
+      const controlRes = await fetch(`${SUPABASE_URL}/rest/v1/exercise_naming_control?id=eq.1&select=worker_token,owner_id,status`, {
+        headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+      });
+      const controls = controlRes.ok ? await controlRes.json() : [];
+      if (controls[0]?.worker_token === workerToken && controls[0]?.status === 'running') workerOwner = controls[0]?.owner_id;
+      if (!workerOwner) return new Response(JSON.stringify({ error: 'Worker não autorizado.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const userRes = workerOwner ? null : await fetch(`${SUPABASE_URL}/auth/v1/user`, {
       headers: { Authorization: `Bearer ${token}`, apikey: SERVICE_KEY },
     });
-    if (!userRes.ok) {
+    if (!workerOwner && !userRes?.ok) {
       return new Response(JSON.stringify({ error: 'Sessão inválida.' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const userJson = await userRes.json();
-    const userId: string | undefined = userJson?.id;
+    const userJson = userRes ? await userRes.json() : null;
+    const userId: string | undefined = workerOwner || userJson?.id;
     if (!userId) {
       return new Response(JSON.stringify({ error: 'Sessão inválida.' }), {
         status: 401,
@@ -151,7 +161,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { videoUrl, exerciseName, categories, model: requestedModel, mode } = await req.json();
+    const { videoUrl, model: requestedModel, mode, nameOnly } = await req.json();
     const settings = settingsRows[0] || {};
     // Resolução do modelo:
     //  - se cliente passar `model`, usa diretamente (admin re-analyze)
@@ -190,7 +200,8 @@ Deno.serve(async (req) => {
     }
     const base64 = btoa(binary);
 
-    const systemPrompt = `Você é um especialista em fisiologia do exercício, biomecânica e estética corporal. Sua tarefa é analisar um vídeo de exercício e classificar em TRÊS dimensões:
+    const namingPrompt = 'Identifique o exercício exclusivamente pelo movimento visível no vídeo, nunca pela URL ou nome do arquivo. Retorne exercise_name: um nome convencional, curto, em português brasileiro, de 2 a 6 palavras, sem números de arquivo, quebras de linha, gênero ou explicações. Preserve a variação importante do movimento. Se não conseguir identificar com segurança, retorne exercise_name como null; não invente.';
+    const systemPrompt = nameOnly ? namingPrompt : `${namingPrompt}\nVocê é um especialista em fisiologia do exercício, biomecânica e estética corporal. Sua tarefa é analisar um vídeo de exercício e classificar em TRÊS dimensões:
 
 1) "body_analysis": para CADA grupo muscular/área da lista, atribua uma intensidade de trabalho de 0 a 100 (em %). 0 = não trabalha aquela área. 100 = trabalho muito intenso/principal. As áreas NÃO precisam somar 100 — cada uma é independente.
 
@@ -200,9 +211,7 @@ Deno.serve(async (req) => {
 
 Seja conservador: só atribua valores altos (>60) para aspectos que são claramente o foco principal do movimento. Sempre retorne TODAS as chaves de TODAS as dimensões (use 0 quando não se aplica).`;
 
-    const userText = `Analise este vídeo de exercício${exerciseName ? ` chamado "${exerciseName}"` : ''}${
-      Array.isArray(categories) && categories.length ? ` (categorias: ${categories.join(', ')})` : ''
-    } e retorne as classificações em porcentagem.`;
+    const userText = nameOnly ? 'Qual exercício é demonstrado neste vídeo?' : 'Identifique o movimento demonstrado e retorne o nome e as classificações em porcentagem.';
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -231,6 +240,8 @@ Seja conservador: só atribua valores altos (>60) para aspectos que são clarame
               parameters: {
                 type: 'object',
                 properties: {
+                  exercise_name: { type: ['string', 'null'], description: 'Nome curto do movimento visível, em português brasileiro; null se inconclusivo.' },
+                  ...(!nameOnly ? {
                   body_analysis: {
                     type: 'object',
                     description: 'Áreas trabalhadas pelo exercício (0-100 em cada uma).',
@@ -252,8 +263,9 @@ Seja conservador: só atribua valores altos (>60) para aspectos que são clarame
                     required: MOBILITY_KEYS as unknown as string[],
                     additionalProperties: false,
                   },
+                  } : {}),
                 },
-                required: ['body_analysis', 'aesthetic_analysis', 'mobility_analysis'],
+                required: nameOnly ? ['exercise_name'] : ['exercise_name', 'body_analysis', 'aesthetic_analysis', 'mobility_analysis'],
                 additionalProperties: false,
               },
             },
@@ -274,6 +286,10 @@ Seja conservador: só atribua valores altos (>60) para aspectos que são clarame
         status: 402,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+    if (response.status === 403) {
+      const denied = await response.json().catch(() => ({}));
+      return new Response(JSON.stringify({ error: 'AI_ACCESS_DENIED', message: denied.message || denied.error?.message || 'Acesso à IA negado.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     if (!response.ok) {
       const text = await response.text();
@@ -297,6 +313,7 @@ Seja conservador: só atribua valores altos (>60) para aspectos que são clarame
     }
 
     const data = await response.json();
+    if (data?.choices?.[0]?.message?.refusal) return new Response(JSON.stringify({ error: 'AI_REFUSAL', message: data.choices[0].message.refusal }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall?.function?.arguments) {
       console.error('No tool call in response', JSON.stringify(data).slice(0, 500));
@@ -306,6 +323,7 @@ Seja conservador: só atribua valores altos (>60) para aspectos que são clarame
 
     return new Response(
       JSON.stringify({
+        exercise_name: typeof parsed.exercise_name === 'string' ? parsed.exercise_name.replace(/\s+/g, ' ').trim() : null,
         body_analysis: parsed.body_analysis,
         aesthetic_analysis: parsed.aesthetic_analysis,
         mobility_analysis: parsed.mobility_analysis,

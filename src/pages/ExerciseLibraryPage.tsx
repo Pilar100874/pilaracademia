@@ -1880,7 +1880,7 @@ export default function ExerciseLibraryPage() {
 
                   <div className="p-2.5 flex items-start gap-2">
                     <div className="flex-1 min-w-0 space-y-1">
-                      <p className="font-semibold text-sm leading-tight line-clamp-2">{exercise.name}</p>
+                      <p className="font-semibold text-sm leading-tight truncate" title={exercise.name}>{exercise.name}</p>
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-xs text-muted-foreground">
                           {exercise.default_sets}×{exercise.default_reps}
