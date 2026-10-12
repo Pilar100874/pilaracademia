@@ -22,6 +22,13 @@
       "when": 1791817324053,
       "tag": "0002_workout_exercise_group_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791834726615,
+      "tag": "0003_exercise_visual_naming_queue",
+      "breakpoints": true
     }
   ]
 }
