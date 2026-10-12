@@ -159,10 +159,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       return true;
     }
     if (s === 1) {
-      if (varyCategories && selectedCategoryIds.length < 2) {
-        toast.error('Selecione pelo menos 2 categorias para variar entre os dias.');
-        return false;
-      }
       if (!filteredExercises.length) {
         toast.error(selectedCategoryIds.length
           ? 'Nenhum exercício na biblioteca para as categorias selecionadas.'
