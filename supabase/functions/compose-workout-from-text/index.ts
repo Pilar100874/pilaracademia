@@ -22,6 +22,7 @@ interface RequestBody {
   library: LibraryItem[];
   health_context?: string;
   body_plan_context?: string;
+  mode?: 'single' | 'groups';
 }
 
 Deno.serve(async (req) => {
@@ -91,6 +92,18 @@ Tarefas:
 
 Responda CHAMANDO a função build_workout com a lista ordenada de IDs e uma breve justificativa.`;
 
+    const groupsMode = body.mode === 'groups';
+    const groupsPrompt = `Você é um personal trainer experiente. O usuário vai ESCOLHER manualmente os exercícios, então você deve sugerir opções organizadas em GRUPOS.
+
+Tarefas:
+- Identifique no objetivo os diferentes focos pedidos (ex: "alongamento e glúteos" => grupo "Alongamento" e grupo "Glúteos"). Se houver só um foco, crie 1 grupo (ou divida em subfocos úteis).
+- Para CADA grupo, sugira até ${count} exercícios da biblioteca adequados, ordenados do mais para o menos indicado.
+- Use APENAS IDs da lista. Não repita o mesmo ID em grupos diferentes.
+- Se o usuário citar dor/lesão, evite exercícios de alto impacto na região.
+- Se houver CONTEXTO DE SAÚDE, priorize segurança.
+
+Responda CHAMANDO a função build_groups.`;
+
     const userPrompt = `Objetivo: ${prompt}
 ${body.body_plan_context ? `\n${body.body_plan_context}\n` : ''}${body.health_context ? `\n${body.health_context}\n` : ''}
 Biblioteca disponível (${library.length} exercícios):
@@ -105,10 +118,38 @@ ${libSummary}`;
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: groupsMode ? groupsPrompt : systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        tools: [
+        tools: groupsMode ? [
+          {
+            type: 'function',
+            function: {
+              name: 'build_groups',
+              description: 'Retorna grupos de exercícios sugeridos.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  groups: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string', description: 'Nome curto do grupo, ex: Alongamento' },
+                        exercise_ids: { type: 'array', items: { type: 'string' } },
+                      },
+                      required: ['name', 'exercise_ids'],
+                      additionalProperties: false,
+                    },
+                  },
+                  rationale: { type: 'string' },
+                },
+                required: ['groups', 'rationale'],
+                additionalProperties: false,
+              },
+            },
+          },
+        ] : [
           {
             type: 'function',
             function: {
@@ -133,7 +174,7 @@ ${libSummary}`;
             },
           },
         ],
-        tool_choice: { type: 'function', function: { name: 'build_workout' } },
+        tool_choice: { type: 'function', function: { name: groupsMode ? 'build_groups' : 'build_workout' } },
       }),
     });
 
@@ -168,7 +209,7 @@ ${libSummary}`;
       });
     }
 
-    let parsed: { exercise_ids?: unknown; rationale?: unknown };
+    let parsed: { exercise_ids?: unknown; rationale?: unknown; groups?: unknown };
     try {
       parsed = JSON.parse(toolCall.function.arguments);
     } catch (e) {
@@ -180,6 +221,24 @@ ${libSummary}`;
     }
 
     const validIds = new Set(library.map((l) => l.id));
+
+    if (groupsMode) {
+      const used = new Set<string>();
+      const rawGroups = Array.isArray(parsed.groups) ? (parsed.groups as { name?: unknown; exercise_ids?: unknown }[]) : [];
+      const groups = rawGroups.map((g) => {
+        const ids: string[] = [];
+        for (const id of Array.isArray(g.exercise_ids) ? g.exercise_ids : []) {
+          if (typeof id !== 'string' || !validIds.has(id) || used.has(id)) continue;
+          used.add(id); ids.push(id);
+          if (ids.length >= count) break;
+        }
+        return { name: typeof g.name === 'string' && g.name.trim() ? g.name.trim() : 'Grupo', exercise_ids: ids };
+      }).filter((g) => g.exercise_ids.length > 0);
+      if (groups.length === 0) {
+        return new Response(JSON.stringify({ error: 'A IA não conseguiu sugerir exercícios da sua biblioteca.' }), { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      return new Response(JSON.stringify({ groups, rationale: typeof parsed.rationale === 'string' ? parsed.rationale : '' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     const rawIds = Array.isArray(parsed.exercise_ids) ? (parsed.exercise_ids as unknown[]) : [];
     const seen = new Set<string>();
     const exercise_ids: string[] = [];
