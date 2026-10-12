@@ -256,6 +256,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         return;
       }
       const nextGroups = Array.isArray(data?.groups) ? data.groups : [];
+      const nextReasons = (data?.reasons && typeof data.reasons === 'object') ? data.reasons as Record<string, string> : {};
+      setReasons((prev) => (more ? { ...prev, ...nextReasons } : nextReasons));
       if (more && groups) {
         // Junta as novas sugestões aos grupos atuais, preservando o que está selecionado.
         const merged = groups.map((g) => ({ ...g, exercise_ids: [...g.exercise_ids] }));
@@ -303,7 +305,10 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         _silent: true,
       });
       const list = picked.map((id) => byId.get(id)).filter(Boolean) as typeof exercises;
+      const groupOf = (id: string) => groups?.find((g) => g.exercise_ids.includes(id));
       await Promise.all(list.map((ex, idx) => addExercise.mutateAsync({
+        group_name: groupOf(ex.id)?.name ?? null,
+        ai_reason: reasons[ex.id] || groupOf(ex.id)?.reason || null,
         workout_plan_id: plan.id, name: ex.name, image_urls: ex.image_urls || [],
         sets: ex.default_sets || 3, reps: ex.default_reps || 12, order_index: idx,
         video_type: ex.video_type, video_url: ex.video_url,
@@ -441,6 +446,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
           const ids: string[] = Array.isArray(data?.exercise_ids) ? data.exercise_ids : [];
           aiPicked = ids.map((id) => byId.get(id)).filter(Boolean) as typeof exercises;
+          if (Array.isArray(data?.items)) for (const it of data.items as { id: string; group: string; reason: string }[]) itemInfo.set(it.id, it);
           if (data?.rationale) lastRationale = data.rationale;
         }
 
@@ -473,6 +479,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
               video_start_seconds: ex.video_start_seconds,
               video_end_seconds: ex.video_end_seconds,
               exercise_library_id: ex.id,
+              group_name: itemInfo.get(ex.id)?.group || (pinnedIds.has(ex.id) ? 'Equipamentos' : null),
+              ai_reason: itemInfo.get(ex.id)?.reason || (pinnedIds.has(ex.id) ? 'Incluído para atender a quantidade de equipamento solicitada.' : null),
               _silent: true,
             })
           )
