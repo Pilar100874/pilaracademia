@@ -736,7 +736,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 <input
                   type="checkbox"
                   checked={reviewMode}
-                  onChange={(e) => { setReviewMode(e.target.checked); setGroups(null); setPicked([]); }}
+                  onChange={(e) => { setReviewMode(e.target.checked); if (e.target.checked) setSelectedDays((p) => p.slice(0, 1)); setGroups(null); setPicked([]); }}
                   className="h-4 w-4 mt-0.5 rounded border-input accent-primary"
                 />
                 <span className="text-xs leading-snug">
