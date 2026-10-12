@@ -61,8 +61,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [prompt, setPrompt] = useState(initialPrompt || '');
   const [count, setCount] = useState(initialCount ? String(initialCount) : '8');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
-  const [allowRepeat, setAllowRepeat] = useState(true);
-  const [varyCategories, setVaryCategories] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
   const [filterNoExtras, setFilterNoExtras] = useState(false);
@@ -103,8 +101,6 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setPrompt('');
     setCount('8');
     setSelectedDays([]);
-    setAllowRepeat(true);
-    setVaryCategories(false);
     setSelectedCategoryIds([]);
     setSelectedExtraIds([]);
     setFilterNoExtras(false);
@@ -147,9 +143,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   });
 
   const toggleDay = (idx: number) => {
-    setSelectedDays((prev) =>
-      prev.includes(idx) ? prev.filter((d) => d !== idx) : [...prev, idx]
-    );
+    setSelectedDays((prev) => (prev[0] === idx ? [] : [idx]));
   };
 
   const validateStep = (s: number): boolean => {
