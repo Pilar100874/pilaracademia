@@ -354,6 +354,22 @@ export function WorkoutViewerDialog({
                 )}
               </div>
             </div>
+            {hasReason && (
+              <button
+                type="button"
+                onClick={() => setShowReason(!showReason)}
+                aria-label={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
+                aria-pressed={showReason}
+                title={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
+                className={`hidden sm:flex pointer-events-auto shrink-0 self-center h-9 w-9 rounded-full items-center justify-center transition-all active:scale-95 ${
+                  showReason
+                    ? 'bg-primary text-primary-foreground ring-2 ring-white/40 shadow-lg'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/15'
+                }`}
+              >
+                <Info className="h-5 w-5" strokeWidth={2.3} />
+              </button>
+            )}
           </div>
         </div>
         {/* Top-right action stack: toggle media + finish */}
@@ -377,22 +393,6 @@ export function WorkoutViewerDialog({
                 </>
               )}
             </Button>
-          )}
-          {hasReason && (
-            <button
-              type="button"
-              onClick={() => setShowReason(!showReason)}
-              aria-label={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
-              aria-pressed={showReason}
-              title={showReason ? 'Ocultar motivo do exercício' : 'Mostrar motivo do exercício'}
-              className={`hidden sm:flex h-9 w-9 shrink-0 rounded-full items-center justify-center transition-all active:scale-95 ${
-                showReason
-                  ? 'bg-primary text-primary-foreground ring-2 ring-white/40 shadow-lg'
-                  : 'bg-white/10 text-white hover:bg-white/20 border border-white/15'
-              }`}
-            >
-              <Info className="h-5 w-5" strokeWidth={2.3} />
-            </button>
           )}
         </div>
 
@@ -475,7 +475,7 @@ export function WorkoutViewerDialog({
 
         {/* Motivo do exercício na sequência (criado pela IA) */}
         {hasReason && showReason && (
-          <div key={`why-${currentExerciseIndex}`} className="absolute bottom-[10.5rem] sm:bottom-24 left-4 right-4 z-40 pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div key={`why-${currentExerciseIndex}`} className="absolute bottom-[10.5rem] sm:bottom-32 left-4 right-4 z-40 pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="pointer-events-auto bg-black/45 backdrop-blur-md rounded-2xl border border-white/10 px-4 py-2.5 shadow-2xl mx-auto max-w-lg">
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-[10px] uppercase tracking-wider text-white/60 font-semibold">Por que este exercício</span>
