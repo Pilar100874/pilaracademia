@@ -96,6 +96,9 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
   const reset = () => {
     setStep(0);
+    setGroups(null);
+    setPicked([]);
+    setGroupsRationale('');
     setName('');
     setPrompt('');
     setCount('8');
