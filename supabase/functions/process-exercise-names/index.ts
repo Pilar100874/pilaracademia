@@ -37,6 +37,7 @@ Deno.serve(async (req) => {
       }
       const response = await fetch(`${url}/functions/v1/analyze-exercise-video`, {
         method: 'POST',
+        signal: AbortSignal.timeout(60000),
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${control.worker_token}`, 'x-naming-worker-token': control.worker_token },
         body: JSON.stringify({ videoUrl: job.video_url, mode: exercise.is_global ? 'library' : 'user', nameOnly: true }),
       });

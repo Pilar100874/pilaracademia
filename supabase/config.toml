@@ -10,7 +10,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.analyze-exercise-video]
-verify_jwt = true
+verify_jwt = false
+
+[functions.process-exercise-names]
+verify_jwt = false
 
 [functions.analyze-bioimpedance]
 verify_jwt = false
