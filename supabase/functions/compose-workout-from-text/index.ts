@@ -27,17 +27,27 @@ interface RequestBody {
   mode?: 'single' | 'groups';
 }
 
-Deno.serve((req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+  // Lê o corpo inteiro ANTES de iniciar a resposta em stream.
+  let raw = '';
+  try {
+    raw = await req.text();
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'Falha ao ler requisição' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  const bufferedReq = new Request(req.url, { method: 'POST', headers: req.headers, body: raw });
   // Envia espaços periodicamente para evitar o idle timeout (150s) enquanto a IA pensa.
   const enc = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       const ping = setInterval(() => controller.enqueue(enc.encode(' ')), 10000);
       try {
-        const res = await handle(req);
+        const res = await handle(bufferedReq);
         controller.enqueue(enc.encode(await res.text()));
       } catch (e) {
         controller.enqueue(enc.encode(JSON.stringify({ error: e instanceof Error ? e.message : 'Erro' })));
