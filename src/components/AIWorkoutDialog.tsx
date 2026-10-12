@@ -24,6 +24,7 @@ import { buildBloodExamHealthContext } from '@/lib/bloodExamContext';
 import { Sparkles, Loader2, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { VideoThumbnail } from '@/components/VideoThumbnail';
 
 interface AIWorkoutDialogProps {
   open: boolean;
@@ -70,7 +71,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [useBloodExam, setUseBloodExam] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
-  const [groups, setGroups] = useState<{ name: string; exercise_ids: string[] }[] | null>(null);
+  const [groups, setGroups] = useState<{ name: string; reason?: string; exercise_ids: string[] }[] | null>(null);
   const [groupsRationale, setGroupsRationale] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
 
@@ -772,6 +773,11 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                             {allOn ? 'Desmarcar todos' : 'Marcar todos'}
                           </button>
                         </div>
+                        {g.reason && (
+                          <p className="px-3 py-2 text-[11px] text-muted-foreground border-b border-border break-words">
+                            <span className="font-semibold">Por que este grupo: </span>{g.reason}
+                          </p>
+                        )}
                         <ul className="divide-y divide-border">
                           {g.exercise_ids.map((id) => {
                             const ex = exercises.find((e) => e.id === id);
@@ -786,9 +792,21 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                                     onChange={() => setPicked((p) => on ? p.filter((x) => x !== id) : [...p, id])}
                                     className="h-4 w-4 rounded border-input accent-primary shrink-0"
                                   />
-                                  {ex.image_urls?.[0] && (
-                                    <img src={ex.image_urls[0]} alt="" className="h-9 w-9 rounded object-cover shrink-0" loading="lazy" />
-                                  )}
+                                  <div className="h-20 w-20 rounded overflow-hidden bg-muted shrink-0">
+                                    {ex.video_url ? (
+                                      <VideoThumbnail
+                                        videoType={ex.video_type}
+                                        videoUrl={ex.video_url}
+                                        startSeconds={ex.video_start_seconds}
+                                        endSeconds={ex.video_end_seconds}
+                                        className="h-full w-full"
+                                        iconSize="sm"
+                                        autoplayPreview
+                                      />
+                                    ) : ex.image_urls?.[0] ? (
+                                      <img src={ex.image_urls[0]} alt="" className="h-full w-full object-cover" loading="lazy" />
+                                    ) : null}
+                                  </div>
                                   <span className="text-xs break-words min-w-0">{ex.name}</span>
                                 </label>
                               </li>
