@@ -11,6 +11,7 @@ import { DataExportSection } from '@/components/DataExportSection';
 import { ShareSummaryDialog } from '@/components/ShareSummaryDialog';
 import { RemindersSection } from '@/components/RemindersSection';
 import { DeleteAccountDialog } from '@/components/DeleteAccountDialog';
+import { ChangePasswordDialog } from '@/components/ChangePasswordDialog';
 import { useIsMaster } from '@/hooks/useIsMaster';
 
 
@@ -22,6 +23,7 @@ export function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
 
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('');
