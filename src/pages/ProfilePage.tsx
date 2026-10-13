@@ -11,6 +11,7 @@ import { DataExportSection } from '@/components/DataExportSection';
 import { ShareSummaryDialog } from '@/components/ShareSummaryDialog';
 import { RemindersSection } from '@/components/RemindersSection';
 import { DeleteAccountDialog } from '@/components/DeleteAccountDialog';
+import { ChangePasswordDialog } from '@/components/ChangePasswordDialog';
 import { useIsMaster } from '@/hooks/useIsMaster';
 
 
@@ -22,6 +23,7 @@ export function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
 
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('');
@@ -357,6 +359,21 @@ export function ProfilePage() {
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </button>
+
+          <button
+            type="button"
+            onClick={() => setPasswordOpen(true)}
+            className="w-full flex items-center gap-3 py-3 text-left"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <KeyRound className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm">Alterar senha</p>
+              <p className="text-xs text-muted-foreground">Troque a senha da sua conta</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+          </button>
         </div>
 
         <RemindersSection />
@@ -443,6 +460,7 @@ export function ProfilePage() {
         </Button>
 
         <DeleteAccountDialog open={deleteOpen} onOpenChange={setDeleteOpen} />
+        <ChangePasswordDialog open={passwordOpen} onOpenChange={setPasswordOpen} />
       </div>
 
       <BottomNav />
