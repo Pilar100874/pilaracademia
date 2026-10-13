@@ -50,18 +50,26 @@ export function ChangePasswordDialog({ open, onOpenChange }: Props) {
     }
     setLoading(true);
     try {
-      const { error: updErr } = await supabase.auth.updateUser({
-        password: next,
-        current_password: current,
-      });
+      // O servidor não valida a senha atual, então conferimos aqui: se a
+      // senha atual não abre a sessão, não deixamos trocar.
+      const { data: userData } = await supabase.auth.getUser();
+      const email = userData?.user?.email;
+      if (!email) {
+        setError('Sessão expirada. Entre novamente para alterar a senha.');
+        return;
+      }
+      const { error: checkErr } = await supabase.auth.signInWithPassword({ email, password: current });
+      if (checkErr) {
+        setError('A senha atual está incorreta.');
+        return;
+      }
+      const { error: updErr } = await supabase.auth.updateUser({ password: next });
       if (updErr) throw updErr;
       toast.success('Senha alterada com sucesso.');
       onOpenChange(false);
     } catch (e: any) {
       const msg: string = e?.message || '';
-      if (/current password/i.test(msg) && /required|necess/i.test(msg)) {
-        setError('A senha atual está incorreta.');
-      } else if (/same as the old|identical/i.test(msg)) {
+      if (/same as the old|identical/i.test(msg)) {
         setError('A nova senha deve ser diferente da atual.');
       } else if (/at least|6 char|mínimo/i.test(msg)) {
         setError('A nova senha deve ter pelo menos 6 caracteres.');
