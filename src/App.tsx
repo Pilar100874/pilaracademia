@@ -32,6 +32,7 @@ import { BackgroundProgressProvider } from "@/contexts/BackgroundProgressContext
 import { LibraryBackgroundRunner } from "@/components/LibraryBackgroundRunner";
 import { PendingUploadRunner } from "@/components/PendingUploadRunner";
 import { GlobalBackgroundProgressBar } from "@/components/GlobalBackgroundProgressBar";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
 import { PublicWorkoutPage } from "@/pages/PublicWorkoutPage";
 import { ImportWorkoutPage } from "@/pages/ImportWorkoutPage";
@@ -299,6 +300,7 @@ const App = () => {
             <AuthProvider>
               <BackgroundProgressProvider>
                 <BackgroundAnalysisProvider>
+                  <ImpersonationBanner />
                   <DesktopSidebar />
                   <div className="lg:pl-60">
                     <AppRoutes />
