@@ -18,8 +18,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Users, Search, ArrowLeft, Check, X, Trash2 } from 'lucide-react';
+import { Loader2, Users, Search, ArrowLeft, Check, X, Trash2, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
+import { startImpersonation } from '@/lib/impersonation';
 
 type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 
@@ -189,6 +190,22 @@ export default function AdminUsersPage() {
         </div>
       )}
       {p.user_id !== user?.id && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              toast.loading('Entrando na conta…', { id: 'imp' });
+              await startImpersonation(p.user_id);
+            } catch (e) {
+              toast.error((e as Error).message || 'Falha ao entrar na conta', { id: 'imp' });
+            }
+          }}
+          className="text-[11px] text-primary hover:underline inline-flex items-center gap-1"
+        >
+          <LogIn className="h-3 w-3" />
+          Entrar como usuário
+        </button>
         <button
           type="button"
           onClick={() => setConfirmDelete(p)}
@@ -197,6 +214,7 @@ export default function AdminUsersPage() {
           <Trash2 className="h-3 w-3" />
           Excluir usuário
         </button>
+        </div>
       )}
     </li>
   );
