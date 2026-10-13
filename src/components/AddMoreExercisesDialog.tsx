@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkoutPlans, WorkoutPlan, WorkoutExercise } from '@/hooks/useWorkoutPlans';
 import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
+import { LazyVideoPreview } from '@/components/LazyVideoPreview';
 
 interface Props {
   open: boolean;
@@ -204,9 +205,17 @@ export function AddMoreExercisesDialog({ open, onOpenChange, plan, exercises }: 
                     </div>
                     <div className="space-y-1 max-h-56 overflow-y-auto rounded-md border border-border p-2">
                       {source.exercises!.map((e) => (
-                        <label key={e.id} className="flex items-center gap-2 py-1 cursor-pointer">
+                        <label key={e.id} className="flex items-center gap-2.5 py-1.5 cursor-pointer">
                           <Checkbox checked={picked.includes(e.id)}
                             onCheckedChange={(c) => setPicked((prev) => c ? [...prev, e.id] : prev.filter((x) => x !== e.id))} />
+                          <LazyVideoPreview
+                            videoType={e.video_type}
+                            videoUrl={e.video_url}
+                            startSeconds={e.video_start_seconds}
+                            endSeconds={e.video_end_seconds}
+                            className="w-10 h-14 rounded-md overflow-hidden bg-muted shrink-0"
+                            iconSize="sm"
+                          />
                           <span className="text-sm break-words min-w-0">{e.name}</span>
                         </label>
                       ))}
