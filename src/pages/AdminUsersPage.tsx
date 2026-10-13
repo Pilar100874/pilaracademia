@@ -18,8 +18,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Users, Search, ArrowLeft, Check, X, Trash2, LogIn } from 'lucide-react';
+import { Loader2, Users, Search, ArrowLeft, Check, X, Trash2, LogIn, Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { AdminCopyWorkoutDialog } from '@/components/AdminCopyWorkoutDialog';
 import { startImpersonation } from '@/lib/impersonation';
 
 type ApprovalStatus = 'pending' | 'approved' | 'rejected';
@@ -109,6 +110,7 @@ export default function AdminUsersPage() {
   });
 
   const [confirmDelete, setConfirmDelete] = useState<ProfileRow | null>(null);
+  const [copyTarget, setCopyTarget] = useState<ProfileRow | null>(null);
 
   if (roleLoading) {
     return (
@@ -208,6 +210,14 @@ export default function AdminUsersPage() {
         </button>
         <button
           type="button"
+          onClick={() => setCopyTarget(p)}
+          className="text-[11px] text-primary hover:underline inline-flex items-center gap-1"
+        >
+          <Copy className="h-3 w-3" />
+          Copiar treino
+        </button>
+        <button
+          type="button"
           onClick={() => setConfirmDelete(p)}
           className="text-[11px] text-destructive hover:underline inline-flex items-center gap-1"
         >
@@ -282,6 +292,8 @@ export default function AdminUsersPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <AdminCopyWorkoutDialog target={copyTarget} onClose={() => setCopyTarget(null)} />
 
       <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
         <AlertDialogContent>
