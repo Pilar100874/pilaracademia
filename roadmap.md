@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Resumo completo de evolução dos usuários para o gestor, com gráficos e leitura segura dos dados.
+
 - [ ] Nomes dos exercícios em uma linha.
 - [ ] Identificação visual automática nos novos vídeos e atualização dos vídeos existentes.
 
