@@ -230,7 +230,7 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
         <p className="text-xs text-muted-foreground">{q.hint || (q.multi ? 'Marque quantas quiser' : 'Escolha uma opção')}</p>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-        {q.options.map((opt) => {
+        {(q.key === 'estilo' && styleCategories ? Object.keys(styleCategories) : q.options).map((opt) => {
           const on = (answers[q.key] || []).includes(opt);
           return (
             <button
@@ -388,7 +388,7 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                 <p className="text-xs text-muted-foreground">{q.hint || (q.multi ? 'Marque quantas quiser' : 'Escolha uma opção')}</p>
               </div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                {q.options.map((opt) => {
+                {(q.key === 'estilo' && styleCategories ? Object.keys(styleCategories) : q.options).map((opt) => {
                   const on = (answers[q.key] || []).includes(opt);
                   return (
                     <button
@@ -407,30 +407,11 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                 })}
               </div>
               {q.key === 'estilo' && styleCategories && (
-                <div className="space-y-1 rounded-md border border-border/70 bg-muted/30 px-3 py-2">
-                  <p className="text-xs font-semibold text-muted-foreground">
-                    Categorias que cada estilo usa na sua biblioteca
-                  </p>
-                  {(answers.estilo || []).map((s) => {
-                    const cats = styleCategories[s] || [];
-                    return (
-                      <p key={s} className="min-w-0 break-words text-xs leading-snug">
-                        <span className="font-semibold text-foreground">{s}</span>
-                        {cats.length ? (
-                          <span className="text-muted-foreground"> → {cats.join(', ')}</span>
-                        ) : (
-                          <span className="text-muted-foreground">
-                            {' '}→ nenhuma categoria com esse nome; a IA prioriza pelo seu pedido
-                          </span>
-                        )}
-                      </p>
-                    );
-                  })}
-                  <p className="text-[11px] leading-snug text-muted-foreground">
-                    Essas categorias já entram marcadas na etapa “Escolha as categorias” — você pode
-                    tirar ou acrescentar outras lá.
-                  </p>
-                </div>
+                <p className="text-[11px] leading-snug text-muted-foreground">
+                  {Object.keys(styleCategories).length
+                    ? 'Os estilos são as categorias marcadas como “estilo de treino” na Biblioteca. O estilo escolhido já entra marcado na etapa “Escolha as categorias”.'
+                    : 'Nenhuma categoria marcada como “estilo de treino” ainda. Marque na Biblioteca ao editar uma categoria.'}
+                </p>
               )}
             </section>
           ))}
