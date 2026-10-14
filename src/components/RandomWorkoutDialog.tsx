@@ -13,6 +13,7 @@ import { ExtrasPicker } from '@/components/ExtrasPicker';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { Shuffle, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { DURATION_OPTIONS, COUNT_BY_DURATION, SETS_OPTIONS, REPS_OPTIONS, setsFromOption, repsFromOption } from '@/lib/workoutFormat';
 import {
   BODY_GROUPS,
   AESTHETIC_ITEMS,
@@ -44,6 +45,10 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [count, setCount] = useState('10');
+  const [duration, setDuration] = useState<string | null>(null);
+  const [countManual, setCountManual] = useState(false);
+  const [setsOpt, setSetsOpt] = useState<string | null>(null);
+  const [repsOpt, setRepsOpt] = useState<string | null>(null);
   const [minPercent, setMinPercent] = useState('20');
   const [bodyKeys, setBodyKeys] = useState<Set<BodyAnalysisKey>>(new Set());
   const [aestheticKeys, setAestheticKeys] = useState<Set<AestheticAnalysisKey>>(new Set());
