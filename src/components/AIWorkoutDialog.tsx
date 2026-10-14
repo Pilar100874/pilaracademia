@@ -563,7 +563,11 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         {wizardOpen ? (
           <WorkoutWizardContent
             onCancel={() => setWizardOpen(false)}
-            onDone={({ prompt: p, name: n, count: c, days: d }) => {
+            hasBloodExams={!!bloodExamsQ.data?.length}
+            hasBodyPlan={!!planInfo?.plan}
+            onDone={({ prompt: p, name: n, count: c, days: d, useBloodExam: ub, useBodyPlan: ubp }) => {
+              setUseBloodExam(ub);
+              setUseBodyPlan(ubp);
               setPrompt(p);
               setName(n);
               setCount(String(c));

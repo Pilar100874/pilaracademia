@@ -241,7 +241,8 @@ export function WorkoutWizardContent({ onCancel, onDone, hasBloodExams = false, 
                 })}
               </div>
             </section>
-          ))
+          ))}
+          </>
         ) : (
           <>
             <section className="rounded-md border border-border bg-card p-4 space-y-3">
