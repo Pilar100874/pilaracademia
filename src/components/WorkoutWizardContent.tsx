@@ -54,16 +54,13 @@ const STEPS: Step[] = [
       { key: 'restricoes', title: 'Restrições de movimento', multi: true, options: ['Sem impacto', 'Sem saltos', 'Sem deitar de bruços', 'Sem ficar de joelhos', 'Sem peso nas mãos', 'Nenhuma'] },
     ],
   },
-  {
-    key: 'formato',
-    label: 'Formato',
-    questions: [
-      { key: 'duracao', title: 'Quanto tempo por treino?', multi: false, options: ['15 min', '30 min', '45 min', '60 min', '90 min'] },
-      { key: 'intensidade', title: 'Intensidade desejada', multi: false, options: ['Leve', 'Moderada', 'Intensa'] },
-      { key: 'local', title: 'Onde vai treinar?', multi: false, options: ['Estúdio', 'Academia', 'Casa', 'Ao ar livre'] },
-      { key: 'estrutura', title: 'Estrutura da aula', multi: true, options: ['Aquecimento', 'Parte principal', 'Final com alongamento', 'Respiração'] },
-    ],
-  },
+];
+
+const FORMAT_QUESTIONS: Question[] = [
+  { key: 'duracao', title: 'Quanto tempo por treino?', multi: false, options: ['15 min', '30 min', '45 min', '60 min', '90 min'] },
+  { key: 'intensidade', title: 'Intensidade desejada', multi: false, options: ['Leve', 'Moderada', 'Intensa'] },
+  { key: 'local', title: 'Onde vai treinar?', multi: false, options: ['Estúdio', 'Academia', 'Casa', 'Ao ar livre'] },
+  { key: 'estrutura', title: 'Estrutura da aula', multi: true, options: ['Aquecimento', 'Parte principal', 'Final com alongamento', 'Respiração'] },
 ];
 
 const ALL_STEPS = [
@@ -95,9 +92,13 @@ interface WorkoutWizardContentProps {
   hasBodyPlan?: boolean;
   /** Whether the categories step already has at least one category or equipment picked. */
   hasCategorySelection?: boolean;
+  /** Nomes das categorias da biblioteca que cada estilo de treino usa. */
+  styleCategories?: Record<string, string[]>;
+  /** Avisa o container quais estilos foram marcados, para vincular as categorias. */
+  onStylesChange?: (styles: string[]) => void;
 }
 
-export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generating = false, hasBloodExams = false, hasBodyPlan = false, hasCategorySelection = true }: WorkoutWizardContentProps) {
+export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generating = false, hasBloodExams = false, hasBodyPlan = false, hasCategorySelection = true, styleCategories, onStylesChange }: WorkoutWizardContentProps) {
   const { profile } = useProfile();
   const [useBlood, setUseBlood] = useState(hasBloodExams);
   const [useBody, setUseBody] = useState(hasBodyPlan);
@@ -110,6 +111,13 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
   const [name, setName] = useState('');
   const [count, setCount] = useState(8);
   const [days, setDays] = useState<number[]>([]);
+
+  // Estilo escolhido → categorias da biblioteca (o container aplica a seleção).
+  const stylesKey = (answers.estilo || []).join('|');
+  useEffect(() => {
+    onStylesChange?.(stylesKey ? stylesKey.split('|') : []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stylesKey]);
 
   useEffect(() => {
     if (ageSeeded.current || !profile?.birth_date) return;
@@ -146,9 +154,15 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
         if (a?.length) lines.push(`- ${q.title.replace(/\?$/, '')}: ${a.join(', ')}`);
       })
     );
+    FORMAT_QUESTIONS.forEach((q) => {
+      const a = answers[q.key];
+      if (a?.length) lines.push(`- ${q.title.replace(/\?$/, '')}: ${a.join(', ')}`);
+    });
+    const styleCats = Array.from(new Set((answers.estilo || []).flatMap((s) => styleCategories?.[s] || [])));
+    if (styleCats.length) lines.push(`- Categorias do estilo escolhido: ${styleCats.join(', ')}`);
     if (freeText.trim()) lines.push(`- Pedido do aluno: ${freeText.trim()}`);
     return lines.length ? `Monte um treino considerando:\n${lines.join('\n')}` : '';
-  }, [answers, freeText]);
+  }, [answers, freeText, styleCategories]);
 
   const [showStepError, setShowStepError] = useState(false);
 
@@ -318,6 +332,32 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                   );
                 })}
               </div>
+              {q.key === 'estilo' && styleCategories && (
+                <div className="space-y-1 rounded-md border border-border/70 bg-muted/30 px-3 py-2">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    Categorias que cada estilo usa na sua biblioteca
+                  </p>
+                  {(answers.estilo || []).map((s) => {
+                    const cats = styleCategories[s] || [];
+                    return (
+                      <p key={s} className="min-w-0 break-words text-xs leading-snug">
+                        <span className="font-semibold text-foreground">{s}</span>
+                        {cats.length ? (
+                          <span className="text-muted-foreground"> → {cats.join(', ')}</span>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            {' '}→ nenhuma categoria com esse nome; a IA prioriza pelo seu pedido
+                          </span>
+                        )}
+                      </p>
+                    );
+                  })}
+                  <p className="text-[11px] leading-snug text-muted-foreground">
+                    Essas categorias já entram marcadas na etapa “Escolha as categorias” — você pode
+                    tirar ou acrescentar outras lá.
+                  </p>
+                </div>
+              )}
             </section>
           ))}
           </>
@@ -360,6 +400,38 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                   </button>
                 ))}
               </div>
+            </section>
+            <section className="rounded-md border border-border bg-card p-4 space-y-4">
+              <div>
+                <h2 className="font-semibold text-base">Formato do treino</h2>
+                <p className="text-xs text-muted-foreground">
+                  Opcional — ajuda a IA a ajustar duração, intensidade e estrutura da aula.
+                </p>
+              </div>
+              {FORMAT_QUESTIONS.map((q) => (
+                <div key={q.key} className="space-y-2">
+                  <p className="text-sm font-medium">{q.title}</p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                    {q.options.map((opt) => {
+                      const on = (answers[q.key] || []).includes(opt);
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => toggle(q, opt)}
+                          className={cn(
+                            'flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-2.5 py-2 text-center text-sm leading-snug transition-colors',
+                            on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/60'
+                          )}
+                        >
+                          {on && <Check className="h-3.5 w-3.5 shrink-0" />}
+                          <span className="min-w-0 whitespace-normal break-words">{opt}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </section>
             <section className="rounded-md border border-border bg-card p-4 space-y-3">
               <Label htmlFor="wiz-free">Quer acrescentar algo? Escreva o que deseja no treino</Label>
