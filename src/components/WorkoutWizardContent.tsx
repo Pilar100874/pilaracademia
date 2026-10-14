@@ -308,9 +308,10 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
             </section>
           </>
         )}
+        </div>
       </div>
 
-      <div className="shrink-0 border-t border-border px-5 py-3 lg:px-8 flex items-center gap-2">
+      <div className="shrink-0 border-t border-border px-4 py-3 sm:px-5 lg:px-8 flex items-center gap-2">
         <Button variant="outline" onClick={() => (step === 0 ? onCancel() : setStep(step - 1))}>
           <ChevronLeft className="h-4 w-4 mr-1" />
           {step === 0 ? 'Voltar' : 'Anterior'}
