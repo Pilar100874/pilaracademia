@@ -101,6 +101,14 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     reviewMode,
   }), [prompt, count, duration, source, useBodyPlan, useBloodExam, filterNoExtras, selectedCategoryIds, selectedExtraIds, extraCounts, reviewMode]);
 
+  // Pedido enviado à IA: texto do usuário + duração alvo (quando escolhida).
+  const promptWithDuration = useMemo(() => {
+    const base = prompt.trim();
+    if (!duration) return base;
+    const line = `Duração alvo: ${duration} por treino (o treino deve caber nesse tempo, contando séries e descanso).`;
+    return base ? `${base}\n${line}` : line;
+  }, [prompt, duration]);
+
   const suggestionKeyRef = useRef<string | null>(null);
   // IDs já mostrados nas sugestões — usados para pedir MAIS opções sem repetir.
   const suggestedIdsRef = useRef<Set<string>>(new Set());
@@ -154,6 +162,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setName('');
     setPrompt('');
     setCount('8');
+    setDuration(null);
+    setCountManual(false);
     setSelectedDays([]);
     setSelectedCategoryIds([]);
     manualCatsRef.current = new Set();
@@ -296,7 +306,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       }));
       const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
         body: {
-          prompt: prompt.trim(),
+          prompt: promptWithDuration,
           count: Math.min(50, Math.max(n * 2, 6)),
           library,
           health_context: healthContext,
@@ -500,7 +510,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           }));
 
           const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
-            body: { prompt: prompt.trim(), count: remainingCount, library, health_context: healthContext, body_plan_context: bodyPlanContext },
+            body: { prompt: promptWithDuration, count: remainingCount, library, health_context: healthContext, body_plan_context: bodyPlanContext },
           });
 
           if (error || data?.error) {
@@ -521,7 +531,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
         const planObjective = useBodyPlan
           ? (bodyPlanContext || 'Treino sugerido a partir da análise corporal')
-          : prompt.trim();
+          : promptWithDuration;
 
         const plan = await createPlan.mutateAsync({
           name: (name.trim() + bucket.suffix).slice(0, 80),
