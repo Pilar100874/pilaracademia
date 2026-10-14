@@ -1068,6 +1068,7 @@ export type Database = {
           id: string
           is_gif: boolean
           is_global: boolean
+          is_style: boolean
           name: string
           parent_id: string | null
           updated_at: string
@@ -1079,6 +1080,7 @@ export type Database = {
           id?: string
           is_gif?: boolean
           is_global?: boolean
+          is_style?: boolean
           name: string
           parent_id?: string | null
           updated_at?: string
@@ -1090,6 +1092,7 @@ export type Database = {
           id?: string
           is_gif?: boolean
           is_global?: boolean
+          is_style?: boolean
           name?: string
           parent_id?: string | null
           updated_at?: string

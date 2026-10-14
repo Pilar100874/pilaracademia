@@ -1,0 +1,2 @@
+ALTER TABLE public.exercise_categories ADD COLUMN IF NOT EXISTS is_style boolean NOT NULL DEFAULT false;
+UPDATE public.exercise_categories SET is_style = true WHERE is_global AND parent_id IS NULL AND name IN ('Barre','Cadillac','Final de Aula','Reformer','Solo');
