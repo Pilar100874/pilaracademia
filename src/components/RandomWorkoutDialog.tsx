@@ -430,6 +430,50 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                   />
                 </div>
               </div>
+
+              <div className="space-y-3 rounded-md border border-border/70 bg-muted/20 p-3">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Séries e repetições <span className="normal-case font-normal">(opcional — sem escolha, usa o padrão de cada exercício)</span>
+                </p>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium">Séries por exercício</Label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {SETS_OPTIONS.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setSetsOpt(setsOpt === s ? null : s)}
+                        className={`rounded-md border px-2 py-2 text-xs font-medium transition-colors ${
+                          setsOpt === s
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background border-border hover:border-primary/60'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium">Repetições</Label>
+                  <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+                    {REPS_OPTIONS.map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setRepsOpt(repsOpt === r ? null : r)}
+                        className={`rounded-md border px-2 py-2 text-xs font-medium transition-colors ${
+                          repsOpt === r
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background border-border hover:border-primary/60'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
