@@ -863,6 +863,33 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
               )}
 
               <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Tempo do treino</Label>
+                <p className="text-[10px] text-muted-foreground leading-snug">
+                  Define quantos exercícios cabem — você pode ajustar a quantidade abaixo.
+                </p>
+                <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6">
+                  {DURATION_OPTIONS.map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => {
+                        const next = duration === d ? null : d;
+                        setDuration(next);
+                        if (next) { setCount(String(COUNT_BY_DURATION[next])); setCountManual(false); }
+                      }}
+                      className={`rounded-md border px-2 py-2 text-xs font-medium transition-colors ${
+                        duration === d
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border hover:border-primary/60'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
                 <Label htmlFor="ai-count" className="text-xs font-medium">
                   Quantidade de exercícios por treino
                 </Label>
@@ -871,10 +898,13 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                   ref={countRef}
                   inputMode="numeric"
                   value={count}
-                  onChange={(e) => { setCount(e.target.value.replace(/\D/g, '')); clearIf('count'); }}
+                  onChange={(e) => { setCount(e.target.value.replace(/\D/g, '')); setCountManual(true); clearIf('count'); }}
                   placeholder="8"
                   aria-invalid={!!errorOf('count')}
                 />
+                {duration && !countManual && (
+                  <p className="text-[10px] text-muted-foreground">Sugerido para {duration}.</p>
+                )}
                 <FieldError message={errorOf('count')} />
               </div>
 
