@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useProfile } from '@/hooks/useProfile';
 import { calculateAge } from '@/types/profile';
-import { Check, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -69,6 +69,7 @@ const STEPS: Step[] = [
 
 const ALL_STEPS = [
   ...STEPS.map((s) => ({ key: s.key, label: s.label })),
+  { key: 'categorias', label: 'Categorias' },
   { key: 'agenda', label: 'Agenda' },
   { key: 'final', label: 'Detalhes' },
 ];
@@ -90,10 +91,12 @@ interface WorkoutWizardContentProps {
   onCancel: () => void;
   onDone: (result: WorkoutWizardResult) => void;
   hasBloodExams?: boolean;
+  categoriesSlot?: React.ReactNode;
+  generating?: boolean;
   hasBodyPlan?: boolean;
 }
 
-export function WorkoutWizardContent({ onCancel, onDone, hasBloodExams = false, hasBodyPlan = false }: WorkoutWizardContentProps) {
+export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generating = false, hasBloodExams = false, hasBodyPlan = false }: WorkoutWizardContentProps) {
   const { profile } = useProfile();
   const [useBlood, setUseBlood] = useState(hasBloodExams);
   const [useBody, setUseBody] = useState(hasBodyPlan);
@@ -174,7 +177,9 @@ export function WorkoutWizardContent({ onCancel, onDone, hasBloodExams = false, 
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 lg:px-8 lg:py-6 space-y-4">
-        {ALL_STEPS[step]?.key === 'agenda' ? (
+        {ALL_STEPS[step]?.key === 'categorias' ? (
+          <section className="rounded-md border border-border bg-card p-4 space-y-4">{categoriesSlot}</section>
+        ) : ALL_STEPS[step]?.key === 'agenda' ? (
           <section className="rounded-md border border-border bg-card p-4 space-y-3">
             <div>
               <h2 className="font-semibold text-base">Em quais dias da semana?</h2>
@@ -299,11 +304,11 @@ export function WorkoutWizardContent({ onCancel, onDone, hasBloodExams = false, 
         </span>
         {isLast ? (
           <Button
-            disabled={!composedPrompt || !days.length}
+            disabled={!composedPrompt || !days.length || generating}
             onClick={() => onDone({ prompt: composedPrompt, name: name.trim() || 'Treino do assistente', count, days, useBloodExam: useBlood, useBodyPlan: useBody })}
           >
-            <Sparkles className="h-4 w-4 mr-1" />
-            Montar treino
+            {generating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
+            {generating ? 'Gerando...' : 'Montar treino'}
           </Button>
         ) : (
           <Button onClick={() => setStep(step + 1)}>
