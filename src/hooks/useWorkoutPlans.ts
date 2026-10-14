@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useAccountKind } from './useAccountKind';
 import { toast } from 'sonner';
+import { isImpersonating } from '@/lib/impersonation';
 
 export interface WorkoutExercise {
   id: string;
@@ -46,7 +47,7 @@ export interface WorkoutPlan {
 
 export function useWorkoutPlans() {
   const { user } = useAuth();
-  const { restricted } = useAccountKind();
+  const { restricted, isMember } = useAccountKind();
   const queryClient = useQueryClient();
 
   const { data: workoutPlans = [], isLoading } = useQuery({
@@ -101,6 +102,14 @@ export function useWorkoutPlans() {
     enabled: !!user,
   });
 
+  // Avisa o usuário vinculado quando o gestor (dentro da conta dele) cria/edita treino.
+  const notifyMember = (title: string, body: string, planId?: string) => {
+    if (!user || !isMember || !isImpersonating()) return;
+    void supabase.from('member_notifications').insert({
+      user_id: user.id, title, body, workout_plan_id: planId ?? null,
+    });
+  };
+
   const createPlan = useMutation({
     mutationFn: async (data: { name: string; days_of_week: number[]; cooldown_enabled?: boolean; is_cooldown_plan?: boolean; objective?: string | null; ai_rationale?: string | null; sets?: number; reps?: number; _silent?: boolean }) => {
       if (!user) throw new Error('User not authenticated');
@@ -127,6 +136,7 @@ export function useWorkoutPlans() {
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['workout-plans'] });
       if (!vars.is_cooldown_plan && !vars._silent) toast.success('Treino criado!');
+      if (!vars.is_cooldown_plan) notifyMember('Seu gestor criou um novo treino', vars.name, (_data as any)?.id);
     },
     onError: () => {
       toast.error('Erro ao criar treino');
@@ -150,9 +160,10 @@ export function useWorkoutPlans() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ['workout-plans'] });
       toast.success('Treino atualizado!');
+      notifyMember('Seu gestor atualizou um treino', vars.name, vars.id);
     },
     onError: () => {
       toast.error('Erro ao atualizar treino');

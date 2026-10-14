@@ -34,6 +34,7 @@ import { LibraryBackgroundRunner } from "@/components/LibraryBackgroundRunner";
 import { PendingUploadRunner } from "@/components/PendingUploadRunner";
 import { GlobalBackgroundProgressBar } from "@/components/GlobalBackgroundProgressBar";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { MemberNotifications } from "@/components/MemberNotifications";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
 import ManagerUsersPage from "@/pages/ManagerUsersPage";
 import { useAccountKind } from "@/hooks/useAccountKind";
@@ -324,6 +325,7 @@ const App = () => {
               <BackgroundProgressProvider>
                 <BackgroundAnalysisProvider>
                   <ImpersonationBanner />
+                  <MemberNotifications />
                   <DesktopSidebar />
                   <div className="lg:pl-60">
                     <AppRoutes />
