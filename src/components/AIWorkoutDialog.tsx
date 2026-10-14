@@ -33,6 +33,7 @@ interface AIWorkoutDialogProps {
   initialPrompt?: string;
   initialName?: string;
   initialCount?: number;
+  initialDays?: number[];
 }
 
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -50,7 +51,7 @@ const STEPS = [
   { key: 'schedule', label: 'Agenda' },
 ];
 
-export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName, initialCount }: AIWorkoutDialogProps) {
+export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName, initialCount, initialDays }: AIWorkoutDialogProps) {
   const { allExercises: exercises, globalExercises, exercises: personalOnly } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
@@ -62,7 +63,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [name, setName] = useState(initialName || '');
   const [prompt, setPrompt] = useState(initialPrompt || '');
   const [count, setCount] = useState(initialCount ? String(initialCount) : '8');
-  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [selectedDays, setSelectedDays] = useState<number[]>(initialDays || []);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
   const [filterNoExtras, setFilterNoExtras] = useState(false);
@@ -517,6 +518,16 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     }
   };
 
+  // Quando o assistente guiado termina, gera o treino direto, sem voltar ao início.
+  const autoGenRef = useRef(false);
+  useEffect(() => {
+    if (autoGenRef.current && !wizardOpen && selectedDays.length > 0) {
+      autoGenRef.current = false;
+      handleGenerate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wizardOpen, selectedDays]);
+
   return (
     <Dialog
       open={open}
@@ -552,12 +563,13 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         {wizardOpen ? (
           <WorkoutWizardContent
             onCancel={() => setWizardOpen(false)}
-            onDone={({ prompt: p, name: n, count: c }) => {
+            onDone={({ prompt: p, name: n, count: c, days: d }) => {
               setPrompt(p);
               setName(n);
               setCount(String(c));
+              setSelectedDays(d);
               setWizardOpen(false);
-              setStep(0);
+              autoGenRef.current = true;
             }}
           />
         ) : (

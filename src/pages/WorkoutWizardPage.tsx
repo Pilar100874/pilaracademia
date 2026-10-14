@@ -39,6 +39,7 @@ export function WorkoutWizardPage() {
         initialPrompt={result?.prompt}
         initialName={result?.name}
         initialCount={result?.count}
+        initialDays={result?.days}
       />
 
       <BottomNav />
