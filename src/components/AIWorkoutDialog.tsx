@@ -133,6 +133,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const nameRef = useRef<HTMLInputElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const countRef = useRef<HTMLInputElement>(null);
+  const validatedRef = useRef(false);
   const { errorOf, setError, clearError, clearIf } = useFieldError();
 
   // Vínculo estilo de treino → categorias da biblioteca.
@@ -287,8 +288,29 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   };
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
+  // Valida as etapas 0 e 1 garantindo que os campos estejam montados:
+  // se a etapa atual não for a 0, volta para ela primeiro e só então valida,
+  // para que o campo com erro receba foco e scroll.
+  const validateFromStart = (onValid: () => void) => {
+    const run = () => {
+      if (!validateStep(0)) return;
+      if (!validateStep(1)) { setStep(1); return; }
+      onValid();
+    };
+    if (step !== 0) {
+      setStep(0);
+      setTimeout(run, 60);
+    } else {
+      run();
+    }
+  };
+
   const handleSuggestGroups = async (more = false) => {
-    if (!validateStep(0) || !validateStep(1)) { setStep(0); return; }
+    if (!validatedRef.current) {
+      validateFromStart(() => { validatedRef.current = true; handleSuggestGroups(more); });
+      return;
+    }
+    validatedRef.current = false;
     if (more && groups) {
       // Já mostramos tudo que a biblioteca tem com esses filtros?
       if (filteredExercises.length <= suggestedIdsRef.current.size) {
@@ -407,7 +429,12 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       if (groups) return handleCreateFromPicked();
       return handleSuggestGroups();
     }
-    if (!validateStep(0) || !validateStep(1)) { if (wizardOpen) { setWizardOpen(false); toast.error('Revise os dados do treino.'); } setStep(0); return; }
+    if (wizardOpen) setWizardOpen(false);
+    if (!validatedRef.current) {
+      validateFromStart(() => { validatedRef.current = true; handleGenerate(); });
+      return;
+    }
+    validatedRef.current = false;
     if (!selectedDays.length) { toast.error('Escolha um dia da semana.'); return; }
     const n = parseInt(count, 10);
 
