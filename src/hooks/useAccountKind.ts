@@ -17,7 +17,7 @@ export function useAccountKind() {
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const [roles, link] = await Promise.all([
-        supabase.from('user_roles').select('role').eq('user_id', user!.id).eq('role', 'gestor' as never).limit(1),
+        supabase.from('user_roles').select('role').eq('user_id', user!.id).in('role', ['gestor', 'master_admin'] as never[]).limit(1),
         supabase.from('managed_users').select('manager_id').eq('member_id', user!.id).maybeSingle(),
       ]);
       return { isGestor: !!roles.data?.length, isMember: !!link.data };
