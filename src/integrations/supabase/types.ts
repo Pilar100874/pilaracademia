@@ -3575,6 +3575,7 @@ export type Database = {
           name: string
           order_index: number
           reps: number
+          rest_seconds: number | null
           sets: number
           video_end_seconds: number | null
           video_start_seconds: number | null
@@ -3594,6 +3595,7 @@ export type Database = {
           name: string
           order_index?: number
           reps?: number
+          rest_seconds?: number | null
           sets?: number
           video_end_seconds?: number | null
           video_start_seconds?: number | null
@@ -3613,6 +3615,7 @@ export type Database = {
           name?: string
           order_index?: number
           reps?: number
+          rest_seconds?: number | null
           sets?: number
           video_end_seconds?: number | null
           video_start_seconds?: number | null
