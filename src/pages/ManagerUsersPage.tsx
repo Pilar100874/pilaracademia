@@ -47,7 +47,15 @@ export default function ManagerUsersPage() {
   const call = async (body: Record<string, unknown>) => {
     const { data, error } = await supabase.functions.invoke('manager-users', { body });
     if (data?.error) throw new Error(data.error);
-    if (error) throw error;
+    if (error) {
+      let msg = error.message;
+      try {
+        const ctx = (error as { context?: Response }).context;
+        const j = ctx ? await ctx.clone().json() : null;
+        if (j?.error) msg = j.error;
+      } catch { /* ignore */ }
+      throw new Error(msg);
+    }
     return data;
   };
 

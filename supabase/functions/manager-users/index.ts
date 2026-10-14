@@ -57,9 +57,12 @@ Deno.serve(async (req) => {
         email, password, email_confirm: true, user_metadata: { name },
       });
       if (cErr || !created?.user) {
-        const msg = /already|registered|exists/i.test(cErr?.message ?? '')
+        const raw = cErr?.message ?? '';
+        const msg = /already|registered|exists/i.test(raw)
           ? 'Já existe uma conta com este e-mail.'
-          : cErr?.message ?? 'Falha ao criar usuário.';
+          : /weak|easy to guess|pwned|leaked/i.test(raw)
+          ? 'Essa senha é muito fácil ou já apareceu em vazamentos. Escolha uma senha mais forte (misture letras, números e símbolos).'
+          : raw || 'Falha ao criar usuário.';
         return json({ error: msg }, 400);
       }
       const memberId = created.user.id;
