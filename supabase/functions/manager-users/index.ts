@@ -89,6 +89,26 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    if (body.action === 'set_password') {
+      if (!isUuid(body.userId)) return json({ error: 'Usuário inválido.' }, 200);
+      const password = String(body.password ?? '');
+      if (password.length < 8) return json({ error: 'A senha precisa ter ao menos 8 caracteres.' }, 200);
+      if (!roles.has('master_admin')) {
+        const { data: link } = await admin.from('managed_users').select('id')
+          .eq('manager_id', callerId).eq('member_id', body.userId).maybeSingle();
+        if (!link) return json({ error: 'Usuário não vinculado a você.' }, 403);
+      }
+      const { error } = await admin.auth.admin.updateUserById(body.userId, { password });
+      if (error) {
+        const raw = error.message ?? '';
+        const msg = /weak|easy to guess|pwned|leaked/i.test(raw)
+          ? 'Essa senha é muito fácil ou já apareceu em vazamentos. Escolha uma senha mais forte (misture letras, números e símbolos).'
+          : raw || 'Falha ao alterar a senha.';
+        return json({ error: msg }, 200);
+      }
+      return json({ ok: true });
+    }
+
     return json({ error: 'Ação inválida.' }, 400);
   } catch (e) {
     return json({ error: (e as Error).message }, 500);
