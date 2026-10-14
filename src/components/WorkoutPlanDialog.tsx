@@ -408,6 +408,7 @@ export function WorkoutPlanDialog({
                           index={index}
                           onDelete={() => setDeletingExercise(exercise)}
                           onChangeSetsReps={(sets, reps) => updateExercise.mutate({ id: exercise.id, sets, reps })}
+                          onChangeRest={(rest_seconds) => updateExercise.mutate({ id: exercise.id, rest_seconds })}
                         />
                       </div>
                     ))}

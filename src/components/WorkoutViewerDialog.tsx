@@ -30,6 +30,8 @@ export function WorkoutViewerDialog({
   const [energyMode, setEnergyMode] = useState<EnergyMode | null>(null);
   const [inCooldown, setInCooldown] = useState(false);
   const [showFinishPrompt, setShowFinishPrompt] = useState(false);
+  const [restEnabled, setRestEnabled] = useState(true);
+  const [restLeft, setRestLeft] = useState<number | null>(null);
 
   const { cooldownPlan } = useWorkoutPlans();
   const [cooldownPromptEnabled] = useCooldownPromptEnabled();
@@ -80,6 +82,7 @@ export function WorkoutViewerDialog({
       setEnergyMode(isCooldownOnlyPlan ? 'normal' : null);
       setInCooldown(false);
       setShowFinishPrompt(false);
+      setRestLeft(null);
     }
   }, [open, isCooldownOnlyPlan]);
 
@@ -95,6 +98,7 @@ export function WorkoutViewerDialog({
   };
 
   const handlePreviousExercise = () => {
+    if (restLeft !== null) { setRestLeft(null); return; }
     if (!isFirstExercise) {
       setCurrentExerciseIndex((prev) => prev - 1);
     }
@@ -102,6 +106,12 @@ export function WorkoutViewerDialog({
 
   const handleNextExercise = () => {
     if (!isLastExercise) {
+      const rest = Number((currentExercise as any)?.rest_seconds ?? 30);
+      if (restEnabled && restLeft === null && rest > 0) {
+        setRestLeft(rest);
+        return;
+      }
+      setRestLeft(null);
       setCurrentExerciseIndex((prev) => prev + 1);
     } else {
       // No último exercício (treino normal ou alongamento), abre o prompt
@@ -109,6 +119,19 @@ export function WorkoutViewerDialog({
       setShowFinishPrompt(true);
     }
   };
+
+  const skipRest = () => {
+    setRestLeft(null);
+    setCurrentExerciseIndex((prev) => Math.min(prev + 1, exercises.length - 1));
+  };
+
+  useEffect(() => {
+    if (restLeft === null) return;
+    if (restLeft <= 0) { skipRest(); return; }
+    const t = setTimeout(() => setRestLeft((v) => (v === null ? null : v - 1)), 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restLeft]);
 
   const handlePreviousPhoto = () => {
     if (currentPhotoIndex > 0) {
@@ -216,6 +239,14 @@ export function WorkoutViewerDialog({
               <p className="text-sm text-muted-foreground">
                 A sessão se adapta ao seu nível de energia. O treino salvo não muda.
               </p>
+            </div>
+
+            <div className="rounded-md border border-border bg-card p-3 space-y-2">
+              <p className="text-sm font-medium text-foreground">Mostrar tela de descanso entre os exercícios?</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" size="sm" variant={restEnabled ? 'default' : 'outline'} onClick={() => setRestEnabled(true)}>Sim</Button>
+                <Button type="button" size="sm" variant={!restEnabled ? 'default' : 'outline'} onClick={() => setRestEnabled(false)}>Não</Button>
+              </div>
             </div>
 
             <div className="space-y-2.5">
@@ -395,6 +426,25 @@ export function WorkoutViewerDialog({
             </Button>
           )}
         </div>
+
+        {/* Tela de descanso entre exercícios */}
+        {restLeft !== null && (
+          <div className="absolute inset-0 z-[45] flex flex-col items-center justify-center bg-background p-6 text-center animate-in fade-in duration-200">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Descanse</p>
+            <p className="mt-2 font-serif text-7xl sm:text-8xl text-foreground tabular-nums">
+              {Math.floor(restLeft / 60)}:{String(restLeft % 60).padStart(2, '0')}
+            </p>
+            {exercises[currentExerciseIndex + 1] && (
+              <p className="mt-6 text-sm text-muted-foreground max-w-sm">
+                Próximo: <span className="text-foreground font-medium">{exercises[currentExerciseIndex + 1].name}</span>
+              </p>
+            )}
+            <div className="mt-8 flex gap-2">
+              <Button variant="outline" onClick={() => setRestLeft((v) => (v ?? 0) + 15)}>+15s</Button>
+              <Button onClick={skipRest} className="gap-1.5">Pular descanso <ChevronRight className="h-4 w-4" /></Button>
+            </div>
+          </div>
+        )}
 
         {/* Finish workout prompt */}
         {showFinishPrompt && (

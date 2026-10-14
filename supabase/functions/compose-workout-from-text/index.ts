@@ -208,7 +208,7 @@ ${libSummary}`;
                       properties: {
                         name: { type: 'string', description: 'Nome curto do grupo, ex: Alongamento' },
                         reason: { type: 'string', description: 'Motivo da seleção deste grupo e de seus exercícios (1-2 frases, pt-BR)' },
-                        exercises: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, reason: { type: 'string' }, sets: { type: 'integer', description: 'Séries sugeridas para ESTE exercício (1-6)' }, reps: { type: 'integer', description: 'Repetições sugeridas para ESTE exercício (1-30), adequadas ao tipo de movimento' } }, required: ['id', 'reason', 'sets', 'reps'], additionalProperties: false } },
+                        exercises: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, reason: { type: 'string' }, sets: { type: 'integer', description: 'Séries sugeridas para ESTE exercício (1-6)' }, reps: { type: 'integer', description: 'Repetições sugeridas para ESTE exercício (1-30), adequadas ao tipo de movimento' }, rest_seconds: { type: 'integer', description: 'Descanso em segundos DEPOIS deste exercício antes do próximo (10-180), conforme intensidade' } }, required: ['id', 'reason', 'sets', 'reps', 'rest_seconds'], additionalProperties: false } },
                       },
                       required: ['name', 'reason', 'exercises'],
                       additionalProperties: false,
@@ -236,7 +236,7 @@ ${libSummary}`;
                   exercises: {
                     type: 'array',
                     description: 'Exercícios na ordem de execução.',
-                    items: { type: 'object', properties: { id: { type: 'string' }, group: { type: 'string' }, reason: { type: 'string' }, sets: { type: 'integer', description: 'Séries sugeridas para ESTE exercício (1-6)' }, reps: { type: 'integer', description: 'Repetições sugeridas para ESTE exercício (1-30), adequadas ao tipo de movimento' } }, required: ['id', 'group', 'reason', 'sets', 'reps'], additionalProperties: false },
+                    items: { type: 'object', properties: { id: { type: 'string' }, group: { type: 'string' }, reason: { type: 'string' }, sets: { type: 'integer', description: 'Séries sugeridas para ESTE exercício (1-6)' }, reps: { type: 'integer', description: 'Repetições sugeridas para ESTE exercício (1-30), adequadas ao tipo de movimento' }, rest_seconds: { type: 'integer', description: 'Descanso em segundos DEPOIS deste exercício antes do próximo (10-180), conforme intensidade' } }, required: ['id', 'group', 'reason', 'sets', 'reps', 'rest_seconds'], additionalProperties: false },
                   },
                   sets: { type: 'integer', description: 'Séries padrão do treino (1-6); cada exercício tem as suas próprias' },
                   reps: { type: 'integer', description: 'Repetições padrão do treino (4-30)' },
@@ -304,7 +304,7 @@ ${libSummary}`;
     };
 
     const clampN = (v: unknown, max: number): number | null => Number.isFinite(Number(v)) ? Math.min(max, Math.max(1, Math.round(Number(v)))) : null;
-    const exerciseSets: Record<string, { sets: number | null; reps: number | null }> = {};
+    const exerciseSets: Record<string, { sets: number | null; reps: number | null; rest_seconds: number | null }> = {};
     if (groupsMode) {
       const used = new Set<string>();
       const reasons: Record<string, string> = {};
@@ -315,7 +315,7 @@ ${libSummary}`;
         for (const it of list as { id?: unknown; reason?: unknown }[]) {
           const id = mapId(it?.id);
           if (id && typeof it.reason === 'string') reasons[id] = it.reason.trim();
-          if (id) exerciseSets[id] = { sets: clampN((it as { sets?: unknown }).sets, 6), reps: clampN((it as { reps?: unknown }).reps, 30) };
+          if (id) exerciseSets[id] = { sets: clampN((it as { sets?: unknown }).sets, 6), reps: clampN((it as { reps?: unknown }).reps, 30), rest_seconds: clampN((it as { rest_seconds?: unknown }).rest_seconds, 180) };
           if (!id || used.has(id)) continue;
           used.add(id); ids.push(id);
           if (ids.length >= count) break;
@@ -336,14 +336,14 @@ ${libSummary}`;
       : (Array.isArray(parsed.exercise_ids) ? (parsed.exercise_ids as unknown[]).map((id) => ({ id })) : []);
     const seen = new Set<string>();
     const exercise_ids: string[] = [];
-    const items: { id: string; group: string; reason: string; sets: number | null; reps: number | null }[] = [];
+    const items: { id: string; group: string; reason: string; sets: number | null; reps: number | null; rest_seconds: number | null }[] = [];
     for (const raw of rawItems as { id?: unknown; group?: unknown; reason?: unknown }[]) {
       const id = mapId(raw?.id);
       if (!id) continue;
       if (seen.has(id)) continue;
       seen.add(id);
       exercise_ids.push(id);
-      items.push({ id, group: typeof raw.group === 'string' ? raw.group.trim() : '', reason: typeof raw.reason === 'string' ? raw.reason.trim() : '', sets: clampN((raw as { sets?: unknown }).sets, 6), reps: clampN((raw as { reps?: unknown }).reps, 30) });
+      items.push({ id, group: typeof raw.group === 'string' ? raw.group.trim() : '', reason: typeof raw.reason === 'string' ? raw.reason.trim() : '', sets: clampN((raw as { sets?: unknown }).sets, 6), reps: clampN((raw as { reps?: unknown }).reps, 30), rest_seconds: clampN((raw as { rest_seconds?: unknown }).rest_seconds, 180) });
       if (exercise_ids.length >= count) break;
     }
 
