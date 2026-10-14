@@ -71,6 +71,13 @@
       "when": 1791990160031,
       "tag": "0009_add_gestor_role",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791990175652,
+      "tag": "0010_managed_users",
+      "breakpoints": true
     }
   ]
 }

@@ -2216,6 +2216,27 @@ export type Database = {
           },
         ]
       }
+      managed_users: {
+        Row: {
+          created_at: string
+          id: string
+          manager_id: string
+          member_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          manager_id: string
+          member_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          manager_id?: string
+          member_id?: string
+        }
+        Relationships: []
+      }
       marketing_ai_api_keys: {
         Row: {
           api_key: string | null
@@ -3748,7 +3769,12 @@ export type Database = {
         Args: { _student_id: string; _user_id: string }
         Returns: boolean
       }
+      is_manager_of: {
+        Args: { _manager: string; _member: string }
+        Returns: boolean
+      }
       is_master_admin: { Args: { _user_id: string }; Returns: boolean }
+      manager_of: { Args: { _member: string }; Returns: string }
       register_share_link_view: { Args: { _token: string }; Returns: undefined }
       register_workout_share_view: {
         Args: { _token: string }
