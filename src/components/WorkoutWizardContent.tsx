@@ -174,7 +174,7 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
               </span>
               <span
                 className={cn(
-                  'hidden sm:block w-full truncate text-center text-[11px] leading-tight',
+                  'hidden sm:block w-full text-center text-[10px] leading-tight break-words',
                   i === step ? 'font-semibold text-foreground' : 'text-muted-foreground'
                 )}
               >
@@ -251,12 +251,12 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                       type="button"
                       onClick={() => toggle(q, opt)}
                       className={cn(
-                        'flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-3 py-2.5 text-center text-sm transition-colors',
+                        'flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-2.5 py-2.5 text-center text-sm leading-snug transition-colors',
                         on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/60'
                       )}
                     >
                       {on && <Check className="h-3.5 w-3.5 shrink-0" />}
-                      <span className="truncate">{opt}</span>
+                      <span className="min-w-0 whitespace-normal break-words">{opt}</span>
                     </button>
                   );
                 })}
@@ -312,23 +312,24 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
       </div>
 
       <div className="shrink-0 border-t border-border px-4 py-3 sm:px-5 lg:px-8 flex items-center gap-2">
-        <Button variant="outline" onClick={() => (step === 0 ? onCancel() : setStep(step - 1))}>
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          {step === 0 ? 'Voltar' : 'Anterior'}
+        <Button variant="outline" className="shrink-0 px-3 sm:px-4" onClick={() => (step === 0 ? onCancel() : setStep(step - 1))}>
+          <ChevronLeft className="h-4 w-4 sm:mr-1" />
+          <span className="hidden sm:inline">{step === 0 ? 'Voltar' : 'Anterior'}</span>
         </Button>
-        <span className="flex-1 text-center text-xs text-muted-foreground truncate">
+        <span className="hidden sm:block flex-1 text-center text-xs text-muted-foreground truncate">
           {totalAnswered} respostas
         </span>
         {isLast ? (
           <Button
+            className="shrink-0 min-w-0 px-3 sm:px-4"
             disabled={!composedPrompt || !days.length || generating}
             onClick={() => onDone({ prompt: composedPrompt, name: name.trim() || 'Treino do assistente', count, days, useBloodExam: useBlood, useBodyPlan: useBody })}
           >
-            {generating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
-            {generating ? 'Gerando...' : 'Montar treino'}
+            {generating ? <Loader2 className="h-4 w-4 sm:mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 sm:mr-1" />}
+            <span className="hidden sm:inline">{generating ? 'Gerando...' : 'Montar treino'}</span>
           </Button>
         ) : (
-          <Button onClick={() => setStep(step + 1)}>
+          <Button className="shrink-0" onClick={() => setStep(step + 1)}>
             Próximo
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
