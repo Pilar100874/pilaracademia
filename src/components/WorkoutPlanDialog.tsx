@@ -320,7 +320,7 @@ export function WorkoutPlanDialog({
                   <Input inputMode="numeric" value={planReps} onChange={(e) => setPlanReps(e.target.value.replace(/\D/g, '').slice(0, 3))} aria-label="Repetições" />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">Vale para todos os exercícios deste treino.</p>
+              <p className="text-xs text-muted-foreground">Ao mudar aqui e salvar, vale para todos os exercícios. Depois você pode ajustar cada exercício na lista abaixo.</p>
             </div>
 
             <div className="space-y-2">
@@ -406,6 +406,7 @@ export function WorkoutPlanDialog({
                           exercise={exercise}
                           index={index}
                           onDelete={() => setDeletingExercise(exercise)}
+                          onChangeSetsReps={(sets, reps) => updateExercise.mutate({ id: exercise.id, sets, reps })}
                         />
                       </div>
                     ))}

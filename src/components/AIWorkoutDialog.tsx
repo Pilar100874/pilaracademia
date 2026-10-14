@@ -464,7 +464,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         // Pre-pin extras: pick EXACTLY the requested count for each chosen extra (consecutive at start).
         const pinned: typeof exercises = [];
         const pinnedIds = new Set<string>();
-        const itemInfo = new Map<string, { id: string; group: string; reason: string }>();
+        const itemInfo = new Map<string, { id: string; group: string; reason: string; sets?: number | null; reps?: number | null }>();
         const shortages: { name: string; want: number; have: number }[] = [];
 
         for (const extraId of selectedExtraIds) {
