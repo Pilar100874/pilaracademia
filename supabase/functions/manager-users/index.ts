@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
-    if (!roles.has('gestor')) return json({ error: 'Apenas gestores podem fazer isso.' }, 403);
+    if (!roles.has('gestor') && !roles.has('master_admin')) return json({ error: 'Apenas gestores podem fazer isso.' }, 403);
 
     if (body.action === 'create') {
       const email = String(body.email ?? '').trim().toLowerCase();
