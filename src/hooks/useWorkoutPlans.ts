@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useAccountKind } from './useAccountKind';
 import { toast } from 'sonner';
 
 export interface WorkoutExercise {
@@ -45,6 +46,7 @@ export interface WorkoutPlan {
 
 export function useWorkoutPlans() {
   const { user } = useAuth();
+  const { restricted } = useAccountKind();
   const queryClient = useQueryClient();
 
   const { data: workoutPlans = [], isLoading } = useQuery({
@@ -159,6 +161,9 @@ export function useWorkoutPlans() {
 
   const deletePlan = useMutation({
     mutationFn: async (id: string) => {
+      if (restricted) {
+        throw new Error('Somente o gestor pode excluir treinos. Peça ao seu gestor.');
+      }
       const { error } = await supabase
         .from('workout_plans')
         .delete()
@@ -170,8 +175,8 @@ export function useWorkoutPlans() {
       queryClient.invalidateQueries({ queryKey: ['workout-plans'] });
       toast.success('Treino excluído!');
     },
-    onError: () => {
-      toast.error('Erro ao excluir treino');
+    onError: (e) => {
+      toast.error(e instanceof Error && e.message ? e.message : 'Erro ao excluir treino');
     },
   });
 

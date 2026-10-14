@@ -21,6 +21,7 @@ import { FieldError } from '@/components/FieldError';
 import { useFieldError, validateRequired } from '@/lib/formValidation';
 import { Switch } from '@/components/ui/switch';
 import { useVoiceCommandsEnabled } from '@/lib/voiceCommands';
+import { useAccountKind } from '@/hooks/useAccountKind';
 import { AddMoreExercisesDialog } from '@/components/AddMoreExercisesDialog';
 import { Sparkles } from 'lucide-react';
 
@@ -78,6 +79,7 @@ export function WorkoutPlanDialog({
   const nameRef = useRef<HTMLInputElement>(null);
   const objectiveRef = useRef<HTMLTextAreaElement>(null);
   const { errorOf, setError, clearError, clearIf } = useFieldError();
+  const { restricted } = useAccountKind();
 
   // Get the current plan from workoutPlans (this updates when query is invalidated)
   const currentPlan = useMemo(() => {
@@ -420,7 +422,7 @@ export function WorkoutPlanDialog({
           </div>
 
           <div className="shrink-0 flex gap-2 border-t border-border bg-background px-4 py-3 sm:px-6">
-              {editingPlan && (
+              {editingPlan && !restricted && (
                 <Button
                   variant="destructive"
                   onClick={() => setDeleteDialogOpen(true)}
