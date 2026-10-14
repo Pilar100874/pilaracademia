@@ -13,7 +13,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Copy, Loader2, LogIn, Plus, Trash2, UsersRound } from 'lucide-react';
+import { ArrowLeft, Copy, KeyRound, Loader2, LogIn, Plus, Trash2, UsersRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { AdminCopyWorkoutDialog } from '@/components/AdminCopyWorkoutDialog';
 
@@ -29,6 +29,8 @@ export default function ManagerUsersPage() {
   const [busy, setBusy] = useState(false);
   const [copyTarget, setCopyTarget] = useState<Member | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Member | null>(null);
+  const [pwTarget, setPwTarget] = useState<Member | null>(null);
+  const [newPw, setNewPw] = useState('');
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ['manager', 'members', user?.id],
@@ -82,6 +84,20 @@ export default function ManagerUsersPage() {
       toast.success('Usuário excluído');
       setConfirmDelete(null);
       qc.invalidateQueries({ queryKey: ['manager', 'members'] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const changePw = async () => {
+    if (!pwTarget) return;
+    setBusy(true);
+    try {
+      await call({ action: 'set_password', userId: pwTarget.user_id, password: newPw });
+      toast.success('Senha alterada. Repasse a nova senha para a pessoa.');
+      setPwTarget(null);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -152,6 +168,10 @@ export default function ManagerUsersPage() {
                     className="text-[11px] text-primary hover:underline inline-flex items-center gap-1">
                     <Copy className="h-3 w-3" /> Copiar treino para este usuário
                   </button>
+                  <button type="button" onClick={() => { setPwTarget(m); setNewPw(''); }}
+                    className="text-[11px] text-primary hover:underline inline-flex items-center gap-1">
+                    <KeyRound className="h-3 w-3" /> Mudar senha
+                  </button>
                   <button type="button" onClick={() => setConfirmDelete(m)}
                     className="text-[11px] text-destructive hover:underline inline-flex items-center gap-1">
                     <Trash2 className="h-3 w-3" /> Excluir
@@ -187,6 +207,27 @@ export default function ManagerUsersPage() {
       </Dialog>
 
       <AdminCopyWorkoutDialog target={copyTarget} onClose={() => setCopyTarget(null)} sources={sources} />
+
+      <Dialog open={!!pwTarget} onOpenChange={(o) => !busy && !o && setPwTarget(null)}>
+        <DialogContent className="flex max-h-[90vh] min-w-0 flex-col overflow-hidden p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <DialogHeader className="shrink-0 px-5 pt-5">
+            <DialogTitle>Mudar senha</DialogTitle>
+            <DialogDescription className="break-words">
+              Nova senha para {pwTarget?.name || pwTarget?.email}. Repasse a senha para a pessoa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3 space-y-1">
+            <Label>Nova senha (mín. 8 caracteres)</Label>
+            <Input type="text" autoComplete="new-password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+          </div>
+          <div className="shrink-0 border-t border-border px-5 py-3 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setPwTarget(null)} disabled={busy}>Cancelar</Button>
+            <Button onClick={changePw} disabled={busy || newPw.length < 8}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salvar senha'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
