@@ -386,6 +386,23 @@ export function WorkoutViewerDialog({
                     {removedCount > 0 && <span className="opacity-80">· −{removedCount}</span>}
                   </button>
                 )}
+                {hasPlanReason && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPlanReason(!showPlanReason)}
+                    aria-pressed={showPlanReason}
+                    aria-label={showPlanReason ? 'Ocultar motivo do treino' : 'Mostrar motivo do treino'}
+                    title={showPlanReason ? 'Ocultar motivo do treino' : 'Mostrar motivo do treino'}
+                    className={`inline-flex items-center gap-1 pointer-events-auto text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full backdrop-blur-sm border transition-colors active:scale-95 ${
+                      showPlanReason
+                        ? 'bg-primary text-primary-foreground border-primary/60'
+                        : 'bg-white/10 text-white hover:bg-white/20 border-white/15'
+                    }`}
+                  >
+                    <Sparkles className="h-3 w-3" strokeWidth={2.5} />
+                    Motivo do treino
+                  </button>
+                )}
               </div>
             </div>
             {hasReason && (
