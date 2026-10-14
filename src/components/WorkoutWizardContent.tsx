@@ -356,7 +356,7 @@ export function WorkoutWizardContent({ onCancel, onDone, extrasSlot, generating 
         {steps[step]?.key === 'agenda' && (
           <>{AGENDA_QUESTIONS.filter((q) => q.key !== 'divisao' || days.length > 1).map(renderQuestion)}</>
         )}
-        {steps[step]?.key === 'categorias' || steps[step]?.key === 'agenda' ? null : current ? (
+        {steps[step]?.key === 'agenda' ? null : current ? (
           <>
           {current.key === 'saude' && (
             <section className="rounded-md border border-border bg-card p-4 space-y-3">
@@ -399,12 +399,13 @@ export function WorkoutWizardContent({ onCancel, onDone, extrasSlot, generating 
               {q.key === 'estilo' && styleCategories && (
                 <p className="text-[11px] leading-snug text-muted-foreground">
                   {Object.keys(styleCategories).length
-                    ? 'Os estilos são as categorias marcadas como “estilo de treino” na Biblioteca. O estilo escolhido já entra marcado na etapa “Escolha as categorias”.'
+                    ? 'Os estilos são as categorias marcadas como “estilo de treino” na Biblioteca. O estilo escolhido define as categorias usadas no treino.'
                     : 'Nenhuma categoria marcada como “estilo de treino” ainda. Marque na Biblioteca ao editar uma categoria.'}
                 </p>
               )}
             </section>
           ))}
+          {current.key === 'objetivo' && extrasSlot}
           </>
         ) : steps[step]?.key === 'final' ? (
           <>
