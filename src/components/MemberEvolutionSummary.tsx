@@ -80,12 +80,12 @@ function SummaryContent({ data, tab, setTab }: { data: Summary; tab: string; set
   const activeDays = data.daily.filter(d => d.sessions != null).length;
   const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   const age = p.birth_date ? (() => { const birth = new Date(`${p.birth_date}T12:00:00`); const today = new Date(); return today.getFullYear() - birth.getFullYear() - (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate()) ? 1 : 0); })() : null;
-  const goals: Record<string, string> = { lose_weight: 'Emagrecimento', gain_muscle: 'Ganho muscular', maintain: 'Manutenção', cutting: 'Emagrecimento', hipertrofia: 'Hipertrofia', recomposicao: 'Recomposição', manutencao: 'Manutenção' };
+  const goals: Record<string, string> = { lose: 'Emagrecimento', gain: 'Ganho muscular', lose_weight: 'Emagrecimento', gain_muscle: 'Ganho muscular', maintain: 'Manutenção', cutting: 'Emagrecimento', hipertrofia: 'Hipertrofia', recomposicao: 'Recomposição', manutencao: 'Manutenção' };
   const chart = (title: string, unit: string, rows: Record<string, unknown>[], key: string, target?: number | null, note?: string) => <EvolutionChart title={title} unit={unit} data={rows} series={[{ key, name: title }]} target={target} note={note} />;
   const weightRows = data.weights.map(w => ({ date: w.recorded_at, value: w.weight_kg }));
   return <div className="space-y-5">
     <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-      <span>{age != null ? `${age} anos` : 'Idade não informada'}</span><span>{p.height_cm ? `${number(p.height_cm)} cm` : 'Altura não informada'}</span>
+      <span>{age != null && age > 0 ? `${age} anos` : 'Idade não informada'}</span><span>{p.height_cm ? `${number(p.height_cm)} cm` : 'Altura não informada'}</span>
       <span>Objetivo: {p.goal ? goals[p.goal] || p.goal : 'não informado'}</span><span>Cadastro: {new Date(p.created_at).toLocaleDateString('pt-BR')}</span>
     </div>
     <Tabs value={tab} onValueChange={setTab}>
