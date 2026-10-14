@@ -119,6 +119,8 @@ export function useExerciseCategories() {
                 ...c,
                 ...(data.name !== undefined ? { name: data.name.trim() } : {}),
                 ...(data.parent_id !== undefined ? { parent_id: data.parent_id } : {}),
+                ...(data.is_global !== undefined ? { is_global: data.is_global } : {}),
+                ...(data.is_style !== undefined ? { is_style: data.is_style } : {}),
                 updated_at: new Date().toISOString(),
               }
             : c
@@ -132,6 +134,9 @@ export function useExerciseCategories() {
     onError: (_e, _vars, context) => {
       if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
       toast.error('Erro ao atualizar categoria');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['exercise-categories'] });
     },
   });
 
