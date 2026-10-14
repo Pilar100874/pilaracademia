@@ -702,6 +702,9 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           <WorkoutWizardContent
             onCancel={() => setWizardOpen(false)}
             categoriesSlot={categoriesPanel}
+            hasCategorySelection={
+              selectedCategoryIds.length > 0 || selectedExtraIds.length > 0 || filterNoExtras
+            }
             generating={generating}
             hasBloodExams={!!bloodExamsQ.data?.length}
             hasBodyPlan={!!planInfo?.plan}

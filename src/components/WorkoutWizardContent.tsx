@@ -93,9 +93,11 @@ interface WorkoutWizardContentProps {
   categoriesSlot?: React.ReactNode;
   generating?: boolean;
   hasBodyPlan?: boolean;
+  /** Whether the categories step already has at least one category or equipment picked. */
+  hasCategorySelection?: boolean;
 }
 
-export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generating = false, hasBloodExams = false, hasBodyPlan = false }: WorkoutWizardContentProps) {
+export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generating = false, hasBloodExams = false, hasBodyPlan = false, hasCategorySelection = true }: WorkoutWizardContentProps) {
   const { profile } = useProfile();
   const [useBlood, setUseBlood] = useState(hasBloodExams);
   const [useBody, setUseBody] = useState(hasBodyPlan);
@@ -118,10 +120,13 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
     setAnswers((prev) => (prev.idade?.length ? prev : { ...prev, idade: [opt] }));
   }, [profile?.birth_date]);
 
-  const toggleDay = (idx: number) =>
+  const toggleDay = (idx: number) => {
+    setShowStepError(false);
     setDays((prev) => (prev.includes(idx) ? prev.filter((d) => d !== idx) : [...prev, idx].sort()));
+  };
 
   const toggle = (q: Question, opt: string) => {
+    setShowStepError(false);
     setAnswers((prev) => {
       const cur = prev[q.key] || [];
       if (!q.multi) return { ...prev, [q.key]: cur[0] === opt ? [] : [opt] };
@@ -145,31 +150,78 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
     return lines.length ? `Monte um treino considerando:\n${lines.join('\n')}` : '';
   }, [answers, freeText]);
 
-  const isLast = step === ALL_STEPS.length - 1;
+  const [showStepError, setShowStepError] = useState(false);
+
+  const steps = useMemo(
+    () => ALL_STEPS.filter((s) => s.key !== 'categorias' || !!categoriesSlot),
+    [categoriesSlot]
+  );
+  const isLast = step === steps.length - 1;
   const current = STEPS[step];
   const totalAnswered = Object.values(answers).filter((a) => a.length).length;
+
+  const missingIn = (i: number) => (STEPS[i]?.questions ?? []).filter((q) => !(answers[q.key]?.length));
+
+  const stepComplete = (i: number): boolean => {
+    const key = steps[i]?.key;
+    if (!key) return false;
+    if (key === 'final') return !!name.trim();
+    if (key === 'agenda') return days.length > 0;
+    if (key === 'categorias') return hasCategorySelection;
+    const qs = STEPS[i]?.questions ?? [];
+    return qs.length > 0 && missingIn(i).length === 0;
+  };
+
+  const stepError = (i: number) => {
+    const key = steps[i]?.key;
+    if (key === 'agenda') return 'Escolha ao menos um dia da semana.';
+    if (key === 'categorias') return 'Escolha ao menos uma categoria ou equipamento.';
+    if (key === 'final') return 'Dê um nome ao treino para continuar.';
+    const miss = missingIn(i).map((q) => q.title.replace(/\?$/, ''));
+    return miss.length ? `Falta responder: ${miss.join(' · ')}.` : '';
+  };
+
+  const missingSteps = steps.filter((_, i) => !stepComplete(i)).map((s) => s.label);
+  const allComplete = missingSteps.length === 0;
+
+  const goTo = (i: number) => {
+    setShowStepError(false);
+    if (i <= step) { setStep(i); return; }
+    for (let j = step; j < i; j++) {
+      if (!stepComplete(j)) { setStep(j); setShowStepError(true); return; }
+    }
+    setStep(i);
+  };
+
+  const goNext = () => {
+    if (!stepComplete(step)) { setShowStepError(true); return; }
+    setShowStepError(false);
+    setStep((s) => Math.min(steps.length - 1, s + 1));
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="px-5 pt-4 lg:px-8">
         <div className="flex items-center justify-between gap-1">
-          {ALL_STEPS.map((s, i) => (
+          {steps.map((s, i) => {
+            const done = stepComplete(i) && i !== step;
+            return (
             <button
               key={s.key}
               type="button"
-              onClick={() => setStep(i)}
-              title={s.label}
+              onClick={() => goTo(i)}
+              title={done ? `${s.label} — respondido` : `${s.label} — incompleto`}
               className="flex min-w-0 flex-1 flex-col items-center gap-1"
             >
               <span
                 className={cn(
                   'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors',
                   i === step && 'bg-primary text-primary-foreground border-primary',
-                  i < step && 'bg-primary/10 text-primary border-primary/40',
-                  i > step && 'bg-background text-muted-foreground border-border'
+                  done && 'bg-primary/10 text-primary border-primary/40',
+                  !done && i !== step && 'bg-background text-muted-foreground border-border'
                 )}
               >
-                {i < step ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                {done ? <Check className="h-3.5 w-3.5" /> : i + 1}
               </span>
               <span
                 className={cn(
@@ -180,22 +232,28 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                 {s.label}
               </span>
             </button>
-          ))}
+            );
+          })}
         </div>
         <p className="mt-1.5 text-center text-xs font-medium sm:hidden">
-          Etapa {step + 1} de {ALL_STEPS.length} · {ALL_STEPS[step]?.label}
+          Etapa {step + 1} de {steps.length} · {steps[step]?.label}
         </p>
         <div className="h-1 rounded-full bg-muted overflow-hidden mt-2">
-          <div className="h-full bg-primary transition-all" style={{ width: `${((step + 1) / ALL_STEPS.length) * 100}%` }} />
+          <div className="h-full bg-primary transition-all" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
         </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5 lg:px-8 lg:py-6">
         <div className="mx-auto w-full max-w-3xl space-y-4">
-        {ALL_STEPS[step]?.key === 'categorias' ? (
-          <section className="rounded-md border border-border bg-card p-4 space-y-4">{categoriesSlot}</section>
-        ) : ALL_STEPS[step]?.key === 'agenda' ? (
-          <section className="rounded-md border border-border bg-card p-4 space-y-3">
+        {showStepError && !stepComplete(step) && (
+          <p className="min-w-0 break-words rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive">
+            {stepError(step)}
+          </p>
+        )}
+        {steps[step]?.key === 'categorias' ? (
+          <section className={cn('rounded-md border bg-card p-4 space-y-4', showStepError ? 'border-destructive/50' : 'border-border')}>{categoriesSlot}</section>
+        ) : steps[step]?.key === 'agenda' ? (
+          <section className={cn('rounded-md border bg-card p-4 space-y-3', showStepError ? 'border-destructive/50' : 'border-border')}>
             <div>
               <h2 className="font-semibold text-base">Em quais dias da semana?</h2>
               <p className="text-xs text-muted-foreground">Marque um ou mais dias — um treino é criado para cada dia.</p>
@@ -236,7 +294,7 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
             </section>
           )}
           {current.questions.map((q) => (
-            <section key={q.key} className="rounded-md border border-border bg-card p-4 space-y-3">
+            <section key={q.key} className={cn('rounded-md border bg-card p-4 space-y-3', showStepError && !(answers[q.key]?.length) ? 'border-destructive/50' : 'border-border')}>
               <div>
                 <h2 className="font-semibold text-base">{q.title}</h2>
                 <p className="text-xs text-muted-foreground">{q.hint || (q.multi ? 'Marque quantas quiser' : 'Escolha uma opção')}</p>
@@ -265,6 +323,11 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
           </>
         ) : (
           <>
+            {missingSteps.length > 0 && (
+              <p className="min-w-0 break-words rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive">
+                Falta responder: {missingSteps.join(', ')}.
+              </p>
+            )}
             <section className="rounded-md border border-border bg-card p-4 space-y-3">
               <Label htmlFor="wiz-name">Nome do treino <span className="text-destructive">*</span></Label>
               <Input
@@ -332,14 +395,14 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
         {isLast ? (
           <Button
             className="shrink-0 min-w-0 px-3 sm:px-4"
-            disabled={!composedPrompt || !days.length || !name.trim() || generating}
+            disabled={!allComplete || !composedPrompt || generating}
             onClick={() => onDone({ prompt: composedPrompt, name: name.trim(), count, days, useBloodExam: useBlood, useBodyPlan: useBody })}
           >
             {generating ? <Loader2 className="h-4 w-4 sm:mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 sm:mr-1" />}
             <span className="whitespace-nowrap">{generating ? 'Gerando...' : 'Montar treino'}</span>
           </Button>
         ) : (
-          <Button className="shrink-0 min-w-0 px-3 sm:px-4" onClick={() => setStep(step + 1)}>
+          <Button className="shrink-0 min-w-0 px-3 sm:px-4" onClick={goNext}>
             <span className="whitespace-nowrap">Próximo</span>
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
