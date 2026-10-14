@@ -531,14 +531,14 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
   const categoriesPanel = (
     <>
-              <div className="space-y-1">
-                <p className="font-serif text-lg leading-tight">Escolha as categorias</p>
+              <div className="space-y-0.5">
+                <h2 className="font-semibold text-base">Escolha as categorias</h2>
                 <p className="text-xs text-muted-foreground leading-snug">
                   A IA usará apenas exercícios das categorias selecionadas. Deixe vazio para usar toda a biblioteca.
                 </p>
               </div>
 
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>{filteredExercises.length} exercícios disponíveis</span>
                 {selectedCategoryIds.length > 0 && (
                   <button
@@ -562,11 +562,11 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                         key={c.id}
                         type="button"
                         onClick={() => toggleCategory(c.id)}
-                        className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
-                          active
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-background border-border/70 hover:bg-accent hover:border-primary/40 text-foreground/80'
-                        } ${c.isChild ? 'ml-3' : ''}`}
+                    className={`min-w-0 whitespace-normal break-words text-sm px-2.5 py-2 rounded-md border transition-colors ${
+                      active
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background border-border hover:border-primary/60 text-foreground'
+                    } ${c.isChild ? 'ml-3' : ''}`}
                         title={c.isChild && c.parentName ? `${c.parentName} › ${c.name}` : c.name}
                       >
                         {c.isChild ? `↳ ${c.name}` : c.name}
