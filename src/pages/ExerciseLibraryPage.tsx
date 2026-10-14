@@ -153,6 +153,7 @@ export default function ExerciseLibraryPage() {
   const [renameValue, setRenameValue] = useState('');
   const [renameParentId, setRenameParentId] = useState<string | null>(null);
   const [renameGlobal, setRenameGlobal] = useState(false);
+  const [renameStyle, setRenameStyle] = useState(false);
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
   const [manageExtrasOpen, setManageExtrasOpen] = useState(false);
   const [newCategoryValue, setNewCategoryValue] = useState('');
@@ -1697,6 +1698,7 @@ export default function ExerciseLibraryPage() {
                       setRenameValue(cat.name);
                       setRenameParentId(cat.parent_id ?? null);
                       setRenameGlobal(!!cat.is_global);
+                      setRenameStyle(!!cat.is_style);
                       setRenameCategory({ id: cat.id, name: cat.name });
                     }
                   }}
@@ -2391,6 +2393,13 @@ export default function ExerciseLibraryPage() {
                 <span>Publicar como <strong>global</strong> (visível a todos os usuários)</span>
               </label>
             )}
+            <label className="flex items-center gap-2 rounded-md border border-dashed border-border/70 bg-muted/30 px-3 py-2 text-xs cursor-pointer">
+              <Checkbox
+                checked={renameStyle}
+                onCheckedChange={(v) => setRenameStyle(v === true)}
+              />
+              <span>Usar como <strong>estilo de treino</strong> no assistente guiado</span>
+            </label>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRenameCategory(null)}>
@@ -2405,14 +2414,16 @@ export default function ExerciseLibraryPage() {
                 const parentUnchanged =
                   (renameParentId ?? null) === (cat?.parent_id ?? null);
                 const globalUnchanged = renameGlobal === !!cat?.is_global;
-                return nameUnchanged && parentUnchanged && globalUnchanged;
+                const styleUnchanged = renameStyle === !!cat?.is_style;
+                return nameUnchanged && parentUnchanged && globalUnchanged && styleUnchanged;
               })()}
               onClick={async () => {
                 if (!renameCategory) return;
                 const cat = categories.find((c) => c.id === renameCategory.id);
-                const update: { id: string; name?: string; parent_id?: string | null; is_global?: boolean } = {
+                const update: { id: string; name?: string; parent_id?: string | null; is_global?: boolean; is_style?: boolean } = {
                   id: renameCategory.id,
                 };
+                if (renameStyle !== !!cat?.is_style) update.is_style = renameStyle;
                 if (renameValue.trim() !== cat?.name) update.name = renameValue.trim();
                 if ((renameParentId ?? null) !== (cat?.parent_id ?? null)) {
                   update.parent_id = renameParentId;

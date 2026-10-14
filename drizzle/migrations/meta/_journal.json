@@ -43,6 +43,13 @@
       "when": 1791834851369,
       "tag": "0005_wake_updated_visual_names",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791987112462,
+      "tag": "0006_migration",
+      "breakpoints": true
     }
   ]
 }
