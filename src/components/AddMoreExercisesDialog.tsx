@@ -166,7 +166,7 @@ export function AddMoreExercisesDialog({ open, onOpenChange, plan, exercises }: 
   return (
     <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
       <DialogContent
-        className="max-w-lg w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6"
+        className="max-w-lg lg:max-w-3xl w-[calc(100vw-1rem)] sm:w-full min-w-0 max-h-[92vh] overflow-y-auto p-4 sm:p-6 lg:p-8"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader><DialogTitle>Adicionar mais exercícios</DialogTitle></DialogHeader>

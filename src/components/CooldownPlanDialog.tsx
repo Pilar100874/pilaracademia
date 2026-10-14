@@ -125,7 +125,7 @@ export function CooldownPlanDialog({ open, onOpenChange }: CooldownPlanDialogPro
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6">
+        <DialogContent className="max-w-lg lg:max-w-3xl w-[calc(100vw-1rem)] sm:w-full min-w-0 max-h-[92vh] overflow-y-auto p-4 sm:p-6 lg:p-8">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Leaf className="h-5 w-5 text-emerald-600" />

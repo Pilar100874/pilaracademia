@@ -523,10 +523,10 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       }}
     >
       <DialogContent
-        className="max-w-md w-[calc(100vw-1rem)] max-h-[92vh] sm:max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden"
+        className="max-w-md lg:max-w-3xl w-[calc(100vw-1rem)] min-w-0 max-h-[92vh] sm:max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <DialogHeader className="px-5 pt-5 pb-3 border-b border-border/60">
+        <DialogHeader className="px-5 pt-5 pb-3 lg:px-8 lg:pt-6 border-b border-border/60">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
               <Sparkles className="h-4 w-4" />
@@ -540,7 +540,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
         <WizardStepper steps={STEPS} current={step} onJump={(i) => i < step && setStep(i)} />
 
-        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 lg:px-8 lg:py-6">
           {step === 0 && (
             <div className="space-y-5">
               <div className="space-y-1.5">
