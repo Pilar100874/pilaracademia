@@ -219,7 +219,7 @@ export function WorkoutWizardPage() {
         )}
       </main>
 
-      <div className="fixed bottom-16 lg:bottom-0 inset-x-0 z-30 border-t border-border bg-background/95 backdrop-blur lg:pl-64">
+      <div className="fixed bottom-16 lg:bottom-0 inset-x-0 z-30 border-t border-border bg-background/95 backdrop-blur lg:pl-60">
         <div className="mx-auto max-w-4xl px-3 sm:px-4 py-3 flex items-center gap-2">
           <Button variant="outline" onClick={() => (step === 0 ? navigate('/workouts') : setStep(step - 1))}>
             <ChevronLeft className="h-4 w-4 mr-1" />
