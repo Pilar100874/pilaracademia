@@ -180,6 +180,8 @@ export function WorkoutPlanDialog({
       name: name.trim(),
       days_of_week: selectedDays,
       objective: objective.trim() || null,
+      sets: setsNum,
+      reps: repsNum,
     });
     if (created && onCreated) onCreated(created as WorkoutPlan);
     return (created as WorkoutPlan) || null;
