@@ -11,6 +11,7 @@ import { applyEnergyMode, ENERGY_MODE_LABEL, type EnergyMode } from '@/lib/worko
 import { useCooldownPromptEnabled } from '@/lib/cooldownPreference';
 import { useVoiceCommandsEnabled, useVoiceWorkoutCommands } from '@/lib/voiceCommands';
 import { useShowExerciseReason } from '@/lib/exerciseReasonPreference';
+import { useShowPlanRationale } from '@/lib/planRationalePreference';
 
 interface WorkoutViewerDialogProps {
   open: boolean;
