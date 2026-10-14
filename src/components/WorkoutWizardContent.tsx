@@ -187,7 +187,7 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
     if (styleCats.length) lines.push(`- Categorias do estilo escolhido: ${styleCats.join(', ')}`);
     if (freeText.trim()) lines.push(`- Pedido do aluno: ${freeText.trim()}`);
     return lines.length ? `Monte um treino considerando:\n${lines.join('\n')}` : '';
-  }, [answers, freeText, styleCategories]);
+  }, [answers, freeText, styleCategories, days, count, durationAnswer]);
 
   const [showStepError, setShowStepError] = useState(false);
 
