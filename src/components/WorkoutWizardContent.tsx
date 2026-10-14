@@ -112,7 +112,7 @@ interface WorkoutWizardContentProps {
   onStylesChange?: (styles: string[]) => void;
 }
 
-export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generating = false, hasBloodExams = false, hasBodyPlan = false, hasCategorySelection = true, styleCategories, onStylesChange }: WorkoutWizardContentProps) {
+export function WorkoutWizardContent({ onCancel, onDone, extrasSlot, generating = false, hasBloodExams = false, hasBodyPlan = false, styleCategories, onStylesChange }: WorkoutWizardContentProps) {
   const { profile } = useProfile();
   const [useBlood, setUseBlood] = useState(hasBloodExams);
   const [useBody, setUseBody] = useState(hasBodyPlan);
@@ -189,10 +189,7 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
 
   const [showStepError, setShowStepError] = useState(false);
 
-  const steps = useMemo(
-    () => ALL_STEPS.filter((s) => s.key !== 'categorias' || !!categoriesSlot),
-    [categoriesSlot]
-  );
+  const steps = ALL_STEPS;
   const isLast = step === steps.length - 1;
   const current = STEPS[step];
   const totalAnswered = Object.values(answers).filter((a) => a.length).length;
@@ -205,7 +202,6 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
     if (key === 'resumo') return true;
     if (key === 'final') return !!name.trim();
     if (key === 'agenda') return days.length > 0;
-    if (key === 'categorias') return hasCategorySelection;
     const qs = STEPS[i]?.questions ?? [];
     if (!qs.length) return false;
     if (qs.some((q) => q.required)) return missingIn(i).length === 0;
@@ -215,7 +211,6 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
   const stepError = (i: number) => {
     const key = steps[i]?.key;
     if (key === 'agenda') return 'Escolha ao menos um dia da semana.';
-    if (key === 'categorias') return 'Escolha ao menos uma categoria ou equipamento.';
     if (key === 'final') return 'Dê um nome ao treino para continuar.';
     const miss = missingIn(i).map((q) => q.title.replace(/\?$/, ''));
     return miss.length ? `Falta responder: ${miss.join(' · ')}.` : 'Responda ao menos uma pergunta desta etapa.';
@@ -252,7 +247,6 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
   const summaryFor = (i: number): string[] => {
     const key = steps[i]?.key;
     const qa = (qs: Question[]) => qs.filter((q) => answers[q.key]?.length).map((q) => `${q.title.replace(/\?$/, '')}: ${answers[q.key].join(', ')}`);
-    if (key === 'categorias') return [hasCategorySelection ? 'Categorias/equipamentos escolhidos' : 'Nada escolhido'];
     if (key === 'agenda') return [`Dias: ${days.map((d) => DAYS[d]).join(', ') || '—'}`, ...qa(AGENDA_QUESTIONS.filter((q) => q.key !== 'divisao' || days.length > 1))];
     if (key === 'final') return [`Nome: ${name.trim() || '—'}`, `Exercícios: ${count}`, ...(freeText.trim() ? [`Pedido: ${freeText.trim()}`] : [])];
     const lines = qa(STEPS[i]?.questions ?? []);
@@ -332,9 +326,7 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
             {stepError(step)}
           </p>
         )}
-        {steps[step]?.key === 'categorias' ? (
-          <section className={cn('rounded-md border bg-card p-4 space-y-4', showStepError ? 'border-destructive/50' : 'border-border')}>{categoriesSlot}</section>
-        ) : steps[step]?.key === 'agenda' ? (
+        {steps[step]?.key === 'agenda' ? (
           <section className={cn('rounded-md border bg-card p-4 space-y-3', showStepError ? 'border-destructive/50' : 'border-border')}>
             <div>
               <h2 className="font-semibold text-base">Em quais dias da semana?</h2>
