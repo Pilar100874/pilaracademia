@@ -33,6 +33,7 @@ interface AIWorkoutDialogProps {
   initialPrompt?: string;
   initialName?: string;
   initialCount?: number;
+  initialDays?: number[];
 }
 
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -50,7 +51,7 @@ const STEPS = [
   { key: 'schedule', label: 'Agenda' },
 ];
 
-export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName, initialCount }: AIWorkoutDialogProps) {
+export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName, initialCount, initialDays }: AIWorkoutDialogProps) {
   const { allExercises: exercises, globalExercises, exercises: personalOnly } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
@@ -62,7 +63,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [name, setName] = useState(initialName || '');
   const [prompt, setPrompt] = useState(initialPrompt || '');
   const [count, setCount] = useState(initialCount ? String(initialCount) : '8');
-  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [selectedDays, setSelectedDays] = useState<number[]>(initialDays || []);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
   const [filterNoExtras, setFilterNoExtras] = useState(false);
