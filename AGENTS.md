@@ -6,6 +6,8 @@
 
 - Sets/reps are per exercise (`workout_exercises.sets/reps`), editable in the workout editor and suggested per exercise by AI; `workout_plans.sets/reps` is the default copied on insert when missing and pushed to all exercises only when the plan value changes; `exercise_library.default_sets/reps` are deprecated. Why: users tune each exercise while keeping a one-step "apply to all".
 
+- Rest duration is persisted per exercise in `workout_exercises.rest_seconds`, with a default for creators that omit it. Why: AI generation, editing and playback must share a real database field rather than a client-only type.
+
 - Gestor accounts (role `gestor`) own members via `managed_users`; members read the gestor's library through RLS, and member restrictions (no workout/library creation) are UI-only and lifted while the gestor is impersonating. Why: the gestor works inside the member account using the member's own session.
 
 - Manager evolution summaries use the authenticated `manager-users` summary action, authorize ownership or master role before reading, paginate records and aggregate daily entries in America/Sao_Paulo; missing daily records stay null, not zero. Why: clinical data must stay scoped to authorized managers and charts must not imply unrecorded consumption or activity.
