@@ -79,7 +79,6 @@ const AGENDA_QUESTIONS: Question[] = [
 
 const ALL_STEPS = [
   ...STEPS.map((s) => ({ key: s.key, label: s.label })),
-  { key: 'categorias', label: 'Categorias' },
   { key: 'agenda', label: 'Agenda' },
   { key: 'final', label: 'Detalhes' },
   { key: 'resumo', label: 'Resumo' },
@@ -103,11 +102,10 @@ interface WorkoutWizardContentProps {
   onCancel: () => void;
   onDone: (result: WorkoutWizardResult) => void;
   hasBloodExams?: boolean;
-  categoriesSlot?: React.ReactNode;
+  /** Equipamentos extras, renderizados na etapa Objetivo. */
+  extrasSlot?: React.ReactNode;
   generating?: boolean;
   hasBodyPlan?: boolean;
-  /** Whether the categories step already has at least one category or equipment picked. */
-  hasCategorySelection?: boolean;
   /** Nomes das categorias da biblioteca que cada estilo de treino usa. */
   styleCategories?: Record<string, string[]>;
   /** Avisa o container quais estilos foram marcados, para vincular as categorias. */
