@@ -378,12 +378,12 @@ export function WorkoutPlanDialog({
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                     {currentPlan && (
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="w-full h-auto whitespace-normal text-center leading-snug py-2.5"
+                        className="w-full lg:col-span-2 h-auto whitespace-normal text-center leading-snug py-2.5"
                         onClick={() => setMoreOpen(true)}
                       >
                         <Sparkles className="h-4 w-4 shrink-0" />
