@@ -12,6 +12,7 @@ interface ExerciseListItemProps {
   index: number;
   onDelete: () => void;
   onChangeSetsReps?: (sets: number, reps: number) => void;
+  onChangeRest?: (seconds: number) => void;
 }
 
 export function ExerciseListItem({
@@ -19,6 +20,7 @@ export function ExerciseListItem({
   index,
   onDelete,
   onChangeSetsReps,
+  onChangeRest,
 }: ExerciseListItemProps) {
   const [setsTxt, setSetsTxt] = useState(String(exercise.sets));
   const [repsTxt, setRepsTxt] = useState(String(exercise.reps));
@@ -28,6 +30,13 @@ export function ExerciseListItem({
     const r = Math.min(100, Math.max(1, parseInt(repsTxt) || exercise.reps));
     setSetsTxt(String(s)); setRepsTxt(String(r));
     if (s !== exercise.sets || r !== exercise.reps) onChangeSetsReps?.(s, r);
+  };
+  const [restTxt, setRestTxt] = useState(String(exercise.rest_seconds ?? 30));
+  useEffect(() => { setRestTxt(String(exercise.rest_seconds ?? 30)); }, [exercise.rest_seconds]);
+  const commitRest = () => {
+    const v = Math.min(600, Math.max(0, parseInt(restTxt) || 0));
+    setRestTxt(String(v));
+    if (v !== (exercise.rest_seconds ?? 30)) onChangeRest?.(v);
   };
   const [zoomOpen, setZoomOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
@@ -114,7 +123,7 @@ export function ExerciseListItem({
             {exercise.name}
           </p>
           {onChangeSetsReps ? (
-            <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground" onPointerDown={(e) => e.stopPropagation()}>
+            <div className="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted-foreground" onPointerDown={(e) => e.stopPropagation()}>
               <input
                 inputMode="numeric" aria-label="Séries" value={setsTxt} draggable={false}
                 onDragStart={(e) => e.preventDefault()}
@@ -131,6 +140,19 @@ export function ExerciseListItem({
                 className="h-7 w-11 rounded-md border border-border bg-background text-center text-sm text-foreground"
               />
               <span>reps</span>
+              {onChangeRest && (
+                <>
+                  <span className="ml-1">· descanso</span>
+                  <input
+                    inputMode="numeric" aria-label="Descanso em segundos" value={restTxt} draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                    onChange={(e) => setRestTxt(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                    onBlur={commitRest} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    className="h-7 w-11 rounded-md border border-border bg-background text-center text-sm text-foreground"
+                  />
+                  <span>s</span>
+                </>
+              )}
             </div>
           ) : (
             <p className="text-xs text-muted-foreground mt-0.5">
