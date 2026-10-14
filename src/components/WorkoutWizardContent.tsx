@@ -62,9 +62,6 @@ const STEPS: Step[] = [
     questions: [
       { key: 'duracao', required: true, title: 'Quanto tempo por treino?', hint: 'Obrigatório — define quantos exercícios cabem', multi: false, options: ['15 min', '20 min', '30 min', '45 min', '60 min', '90 min'] },
       { key: 'intensidade', required: true, title: 'Intensidade desejada', hint: 'Obrigatório', multi: false, options: ['Leve', 'Moderada', 'Intensa'] },
-      { key: 'series', title: 'Quantas séries por exercício?', hint: 'Opcional', multi: false, options: ['2 séries', '3 séries', '4 séries', 'A IA decide'] },
-      { key: 'repeticoes', title: 'Repetições', hint: 'Opcional', multi: false, options: ['8 a 10', '12 a 15', '20 ou mais', 'Por tempo (30-45 s)', 'A IA decide'] },
-      { key: 'descanso', title: 'Descanso entre séries', hint: 'Opcional', multi: false, options: ['15 s', '30 s', '60 s', '90 s', 'A IA decide'] },
       { key: 'estrutura', title: 'O treino deve ter', hint: 'Opcional — marque quantas quiser', multi: true, options: ['Aquecimento', 'Parte principal', 'Alongamento no final', 'Respiração'] },
       { key: 'local', title: 'Onde vai treinar?', hint: 'Opcional', multi: false, options: ['Estúdio', 'Academia', 'Casa', 'Ao ar livre'] },
     ],
