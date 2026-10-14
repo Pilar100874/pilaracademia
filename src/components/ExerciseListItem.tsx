@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlans';
-import { GripVertical, Edit, Trash2, Dumbbell, ImageIcon, Play } from 'lucide-react';
+import { GripVertical, Trash2, Dumbbell, ImageIcon, Play } from 'lucide-react';
 import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
 import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
@@ -10,14 +10,12 @@ import { getFreshMediaUrl } from '@/lib/mediaUrl';
 interface ExerciseListItemProps {
   exercise: WorkoutExercise;
   index: number;
-  onEdit: () => void;
   onDelete: () => void;
 }
 
 export function ExerciseListItem({
   exercise,
   index,
-  onEdit,
   onDelete,
 }: ExerciseListItemProps) {
   const [zoomOpen, setZoomOpen] = useState(false);
@@ -110,15 +108,6 @@ export function ExerciseListItem({
         </div>
 
         <div className="flex gap-0.5 shrink-0">
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-9 w-9"
-            onClick={onEdit}
-            aria-label="Editar exercício"
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
           <Button
             size="icon"
             variant="ghost"
