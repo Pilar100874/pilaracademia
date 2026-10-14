@@ -172,7 +172,7 @@ Deno.serve(async (req) => {
       (mode === 'library'
         ? settings.library_analysis_model
         : profile?.video_analysis_model || settings.user_video_analysis_model) ||
-      'google/gemini-2.5-flash';
+      'google/gemini-3.8-flash';
     if (!videoUrl || typeof videoUrl !== 'string') {
       return new Response(JSON.stringify({ error: 'videoUrl is required' }), {
         status: 400,

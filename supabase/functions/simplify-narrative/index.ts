@@ -22,7 +22,7 @@ Próximos passos: ${(next_steps || []).join(' / ')}`;
       method: 'POST',
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3.8-flash',
         messages: [
           { role: 'system', content: 'Você simplifica explicações de saúde. Tom carinhoso. Português do Brasil.' },
           { role: 'user', content: prompt },
