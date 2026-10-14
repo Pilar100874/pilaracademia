@@ -12,6 +12,7 @@ import { ProjectionsPage } from "@/pages/ProjectionsPage";
 import { ProductsPage } from "@/pages/ProductsPage";
 import { HealthPage } from "@/pages/HealthPage";
 import { WorkoutsPage } from "@/pages/WorkoutsPage";
+import { WorkoutWizardPage } from "@/pages/WorkoutWizardPage";
 import ExerciseLibraryPage from "@/pages/ExerciseLibraryPage";
 import BodyAnalysisPage from "@/pages/BodyAnalysisPage";
 import BioimpedancePage from "@/pages/BioimpedancePage";
@@ -170,6 +171,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <WorkoutsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/workouts/wizard"
+        element={
+          <ProtectedRoute>
+            <WorkoutWizardPage />
           </ProtectedRoute>
         }
       />
