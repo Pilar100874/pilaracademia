@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelpMenu } from '@/components/HelpMenu';
+import { useAccountKind } from '@/hooks/useAccountKind';
+import { UsersRound } from 'lucide-react';
 
 const primaryNav = [
   { to: '/', icon: Home, label: 'Hoje' },
@@ -76,6 +78,11 @@ function SidebarLink({
 export function DesktopSidebar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { restricted, isGestor } = useAccountKind();
+  const primary = primaryNav.filter((i) => !(restricted && i.to === '/exercises'));
+  const secondary = isGestor
+    ? [{ to: '/gestor', icon: UsersRound as typeof Home, label: 'Meus usuários' }, ...secondaryNav]
+    : secondaryNav;
 
   if (
     pathname.startsWith('/auth') ||
@@ -107,7 +114,7 @@ export function DesktopSidebar() {
           <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
             Plano do dia
           </p>
-          {primaryNav.map((item) => (
+          {primary.map((item) => (
             <SidebarLink key={item.to} {...item} />
           ))}
         </div>
@@ -116,7 +123,7 @@ export function DesktopSidebar() {
           <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
             Conta & dados
           </p>
-          {secondaryNav.map((item) => (
+          {secondary.map((item) => (
             <SidebarLink key={item.to} {...item} />
           ))}
         </div>
