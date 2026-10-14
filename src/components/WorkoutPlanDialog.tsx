@@ -422,7 +422,7 @@ export function WorkoutPlanDialog({
           </div>
 
           <div className="shrink-0 flex gap-2 border-t border-border bg-background px-4 py-3 sm:px-6">
-              {editingPlan && (
+              {editingPlan && !restricted && (
                 <Button
                   variant="destructive"
                   onClick={() => setDeleteDialogOpen(true)}
