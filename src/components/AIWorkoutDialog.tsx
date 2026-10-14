@@ -24,6 +24,7 @@ import { buildBloodExamHealthContext } from '@/lib/bloodExamContext';
 import { Sparkles, Loader2, Target, ListChecks } from 'lucide-react';
 import { WorkoutWizardContent } from '@/components/WorkoutWizardContent';
 import { styleCategoryMap, idsForStyles } from '@/lib/workoutStyles';
+import { DURATION_OPTIONS, COUNT_BY_DURATION } from '@/lib/workoutFormat';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
@@ -98,7 +99,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     extras: selectedExtraIds,
     extraCounts,
     reviewMode,
-  }), [prompt, count, source, useBodyPlan, useBloodExam, filterNoExtras, selectedCategoryIds, selectedExtraIds, extraCounts, reviewMode]);
+  }), [prompt, count, duration, source, useBodyPlan, useBloodExam, filterNoExtras, selectedCategoryIds, selectedExtraIds, extraCounts, reviewMode]);
 
   const suggestionKeyRef = useRef<string | null>(null);
   // IDs já mostrados nas sugestões — usados para pedir MAIS opções sem repetir.
