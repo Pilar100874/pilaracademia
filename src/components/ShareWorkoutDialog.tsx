@@ -29,12 +29,18 @@ interface ShareRow {
  */
 export function ShareWorkoutDialog({ open, onOpenChange, plan }: Props) {
   const { user } = useAuth();
+  const { restricted } = useAccountKind();
   const [share, setShare] = useState<ShareRow | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !user) return;
+    if (restricted) {
+      toast.error('Somente o gestor pode compartilhar treinos. Peça ao seu gestor.');
+      onOpenChange(false);
+      return;
+    }
     void createShare();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
