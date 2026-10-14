@@ -46,6 +46,7 @@ export interface WorkoutPlan {
 
 export function useWorkoutPlans() {
   const { user } = useAuth();
+  const { restricted } = useAccountKind();
   const queryClient = useQueryClient();
 
   const { data: workoutPlans = [], isLoading } = useQuery({
