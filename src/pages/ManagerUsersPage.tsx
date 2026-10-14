@@ -13,11 +13,40 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Copy, KeyRound, Loader2, LogIn, Plus, Trash2, UsersRound } from 'lucide-react';
+import { ArrowLeft, Check, Copy, KeyRound, Loader2, LogIn, Plus, Trash2, UsersRound, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { AdminCopyWorkoutDialog } from '@/components/AdminCopyWorkoutDialog';
 
 interface Member { user_id: string; name: string; email: string | null; created_at: string }
+
+const COMMON_PASSWORDS = ['12345678', 'password', 'senha123', 'qwerty123', '11111111', '00000000', 'abcd1234', 'pilar123'];
+
+function passwordChecks(pw: string) {
+  return [
+    { ok: pw.length >= 8, label: 'Pelo menos 8 caracteres' },
+    { ok: /[a-z]/.test(pw) && /[A-Z]/.test(pw), label: 'Letras maiúsculas e minúsculas' },
+    { ok: /\d/.test(pw), label: 'Pelo menos um número' },
+    { ok: /[^A-Za-z0-9]/.test(pw), label: 'Pelo menos um símbolo (ex.: ! @ # $)' },
+    { ok: pw.length > 0 && !COMMON_PASSWORDS.includes(pw.toLowerCase()), label: 'Não pode ser uma senha comum (ex.: 12345678)' },
+  ];
+}
+
+function PasswordHints({ password }: { password: string }) {
+  const checks = passwordChecks(password);
+  return (
+    <ul className="space-y-1 rounded-md border border-border bg-muted/40 px-3 py-2">
+      {checks.map((c) => (
+        <li key={c.label} className={`flex items-center gap-1.5 text-[11px] ${c.ok ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+          {c.ok ? <Check className="h-3 w-3 shrink-0" /> : <X className="h-3 w-3 shrink-0 opacity-50" />}
+          {c.label}
+        </li>
+      ))}
+      <li className="pt-0.5 text-[11px] text-muted-foreground">
+        Dica: misture palavras com números e símbolos, ex.: <span className="font-medium text-foreground">Pilar#Treino2026</span>
+      </li>
+    </ul>
+  );
+}
 
 export default function ManagerUsersPage() {
   const { user } = useAuth();
