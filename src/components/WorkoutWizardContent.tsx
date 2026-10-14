@@ -200,7 +200,7 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
               <h2 className="font-semibold text-base">Em quais dias da semana?</h2>
               <p className="text-xs text-muted-foreground">Marque um ou mais dias — um treino é criado para cada dia.</p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
               {DAYS.map((d, i) => {
                 const on = days.includes(i);
                 return (
@@ -209,11 +209,11 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                     type="button"
                     onClick={() => toggleDay(i)}
                     className={cn(
-                      'inline-flex items-center gap-1 rounded-full border px-4 py-2 text-sm transition-colors',
+                      'flex items-center justify-center gap-1 rounded-md border px-2 py-2.5 text-sm transition-colors',
                       on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/60'
                     )}
                   >
-                    {on && <Check className="h-3.5 w-3.5" />}
+                    {on && <Check className="h-3.5 w-3.5 shrink-0" />}
                     {d}
                   </button>
                 );
@@ -271,14 +271,14 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
             </section>
             <section className="rounded-md border border-border bg-card p-4 space-y-3">
               <h2 className="font-semibold text-base">Quantos exercícios?</h2>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                 {COUNT_OPTIONS.map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => setCount(c)}
                     className={cn(
-                      'rounded-full border px-4 py-1.5 text-sm',
+                      'rounded-md border px-4 py-2.5 text-sm transition-colors',
                       count === c ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/60'
                     )}
                   >
