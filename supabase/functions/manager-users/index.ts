@@ -3,6 +3,7 @@
 // - create: gestor cria um usuário vinculado a ele (e-mail + senha inicial).
 // - delete: gestor exclui um usuário vinculado a ele.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { memberSummary } from './summary.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -44,6 +45,17 @@ Deno.serve(async (req) => {
     }
 
     if (!roles.has('gestor') && !roles.has('master_admin')) return json({ error: 'Apenas gestores podem fazer isso.' }, 403);
+
+    if (body.action === 'summary') {
+      if (!isUuid(body.userId)) return json({ error: 'Usuário inválido.' }, 400);
+      if (![0, 30, 90, 180, 365].includes(body.days)) return json({ error: 'Período inválido.' }, 400);
+      if (!roles.has('master_admin')) {
+        const { data: link, error } = await admin.from('managed_users').select('id')
+          .eq('manager_id', callerId).eq('member_id', body.userId).maybeSingle();
+        if (error || !link) return json({ error: 'Usuário não vinculado a você.' }, 403);
+      }
+      return json(await memberSummary(admin, body.userId, body.days));
+    }
 
     if (body.action === 'create') {
       const email = String(body.email ?? '').trim().toLowerCase();
