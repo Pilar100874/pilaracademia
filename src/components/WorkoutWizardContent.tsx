@@ -241,7 +241,7 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                 <h2 className="font-semibold text-base">{q.title}</h2>
                 <p className="text-xs text-muted-foreground">{q.hint || (q.multi ? 'Marque quantas quiser' : 'Escolha uma opção')}</p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                 {q.options.map((opt) => {
                   const on = (answers[q.key] || []).includes(opt);
                   return (
@@ -250,12 +250,12 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                       type="button"
                       onClick={() => toggle(q, opt)}
                       className={cn(
-                        'inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm transition-colors',
+                        'flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-3 py-2.5 text-center text-sm transition-colors',
                         on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/60'
                       )}
                     >
-                      {on && <Check className="h-3.5 w-3.5" />}
-                      {opt}
+                      {on && <Check className="h-3.5 w-3.5 shrink-0" />}
+                      <span className="truncate">{opt}</span>
                     </button>
                   );
                 })}
