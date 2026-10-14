@@ -18,7 +18,7 @@ export function ImpersonationBanner() {
       <Button
         size="sm"
         variant="outline"
-        className="h-7 shrink-0 text-xs"
+        className="h-7 shrink-0 border-foreground/30 bg-background text-foreground hover:bg-muted hover:text-foreground text-xs"
         disabled={busy}
         onClick={async () => {
           setBusy(true);
