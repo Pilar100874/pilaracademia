@@ -71,6 +71,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [useBodyPlan, setUseBodyPlan] = useState(false);
   const [useBloodExam, setUseBloodExam] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const navigate = useNavigate();
   const [reviewMode, setReviewMode] = useState(false);
   const [groups, setGroups] = useState<{ name: string; reason?: string; exercise_ids: string[] }[] | null>(null);
   const [groupsRationale, setGroupsRationale] = useState('');
