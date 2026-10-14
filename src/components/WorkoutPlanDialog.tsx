@@ -65,6 +65,8 @@ export function WorkoutPlanDialog({
 
   const [name, setName] = useState('');
   const [objective, setObjective] = useState('');
+  const [planSets, setPlanSets] = useState('3');
+  const [planReps, setPlanReps] = useState('12');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [localExercises, setLocalExercises] = useState<WorkoutExercise[]>([]);
   const [selectExerciseOpen, setSelectExerciseOpen] = useState(false);
@@ -92,10 +94,14 @@ export function WorkoutPlanDialog({
     if (open && editingPlan) {
       setName(editingPlan.name);
       setObjective(editingPlan.objective || '');
+      setPlanSets(String(editingPlan.sets ?? 3));
+      setPlanReps(String(editingPlan.reps ?? 12));
       setSelectedDays(editingPlan.days_of_week);
     } else if (!open) {
       setName('');
       setObjective('');
+      setPlanSets('3');
+      setPlanReps('12');
       setSelectedDays([]);
     }
   }, [editingPlan?.id, open]);
@@ -118,6 +124,9 @@ export function WorkoutPlanDialog({
     );
   };
 
+  const setsNum = Math.min(20, Math.max(1, parseInt(planSets) || 3));
+  const repsNum = Math.min(100, Math.max(1, parseInt(planReps) || 12));
+
   const handleSave = async () => {
     const first = validateRequired([
       { key: 'name', ref: nameRef, valid: !!name.trim(), message: 'Informe o nome do treino' },
@@ -134,6 +143,8 @@ export function WorkoutPlanDialog({
         name: name.trim(),
         days_of_week: selectedDays,
         objective: objective.trim() || null,
+        sets: setsNum,
+        reps: repsNum,
       });
       onOpenChange(false);
     } else {
@@ -141,6 +152,8 @@ export function WorkoutPlanDialog({
         name: name.trim(),
         days_of_week: selectedDays,
         objective: objective.trim() || null,
+        sets: setsNum,
+        reps: repsNum,
       });
       if (created && onCreated) onCreated(created as WorkoutPlan);
       onOpenChange(false);
@@ -258,8 +271,6 @@ export function WorkoutPlanDialog({
     if (!editingExercise) return;
     await updateExercise.mutateAsync({
       id: editingExercise.id,
-      sets: data.sets,
-      reps: data.reps,
       video_type: data.video.video_type,
       video_url: data.video.video_url,
       video_start_seconds: data.video.video_start_seconds,
@@ -321,6 +332,21 @@ export function WorkoutPlanDialog({
                 </div>
               </div>
             )}
+
+            <div className="space-y-2">
+              <Label>Séries e repetições do treino</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">Séries</span>
+                  <Input inputMode="numeric" value={planSets} onChange={(e) => setPlanSets(e.target.value.replace(/\D/g, '').slice(0, 2))} aria-label="Séries" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">Repetições</span>
+                  <Input inputMode="numeric" value={planReps} onChange={(e) => setPlanReps(e.target.value.replace(/\D/g, '').slice(0, 3))} aria-label="Repetições" />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Vale para todos os exercícios deste treino.</p>
+            </div>
 
             <div className="space-y-2">
               <Label>Dias da Semana</Label>

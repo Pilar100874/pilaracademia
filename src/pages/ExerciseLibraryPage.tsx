@@ -1884,9 +1884,7 @@ export default function ExerciseLibraryPage() {
                     <div className="flex-1 min-w-0 space-y-1">
                       <p className="font-semibold text-sm leading-tight truncate" title={exercise.name}>{exercise.name}</p>
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs text-muted-foreground">
-                          {exercise.default_sets}×{exercise.default_reps}
-                        </p>
+                        <span />
                         {categoryName && (
                           <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary truncate max-w-[60%]">
                             {categoryName}

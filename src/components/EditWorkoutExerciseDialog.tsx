@@ -66,31 +66,6 @@ export function EditWorkoutExerciseDialog({
             <p className="font-medium truncate" title={exercise.name}>{exercise.name}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="sets">Séries</Label>
-              <Input
-                id="sets"
-                type="number"
-                min={1}
-                max={20}
-                value={sets}
-                onChange={(e) => setSets(parseInt(e.target.value) || 1)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="reps">Repetições</Label>
-              <Input
-                id="reps"
-                type="number"
-                min={1}
-                max={100}
-                value={reps}
-                onChange={(e) => setReps(parseInt(e.target.value) || 1)}
-              />
-            </div>
-          </div>
-
           <ExerciseVideoEditor value={video} onChange={setVideo} />
 
           <Button onClick={handleSave} className="w-full">
