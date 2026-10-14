@@ -79,6 +79,7 @@ export function WorkoutPlanDialog({
   const nameRef = useRef<HTMLInputElement>(null);
   const objectiveRef = useRef<HTMLTextAreaElement>(null);
   const { errorOf, setError, clearError, clearIf } = useFieldError();
+  const { restricted } = useAccountKind();
 
   // Get the current plan from workoutPlans (this updates when query is invalidated)
   const currentPlan = useMemo(() => {
