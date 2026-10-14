@@ -442,6 +442,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
       let totalCreated = 0;
       let lastRationale: string | undefined;
+      let lastSets: number | undefined;
+      let lastReps: number | undefined;
 
       for (const bucket of dayBuckets) {
         const pool = filteredExercises;
