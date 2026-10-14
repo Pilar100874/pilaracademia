@@ -153,25 +153,40 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="px-5 pt-4 lg:px-8">
-        <div className="flex gap-1.5 overflow-x-auto pb-2">
+        <div className="flex items-center justify-between gap-1">
           {ALL_STEPS.map((s, i) => (
             <button
               key={s.key}
               type="button"
               onClick={() => setStep(i)}
-              className={cn(
-                'shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors',
-                i === step && 'bg-primary text-primary-foreground border-primary',
-                i < step && 'bg-primary/10 text-primary border-primary/40',
-                i > step && 'bg-background text-muted-foreground border-border'
-              )}
+              title={s.label}
+              className="flex min-w-0 flex-1 flex-col items-center gap-1"
             >
-              {i < step ? <Check className="h-3 w-3" /> : <span className="font-semibold">{i + 1}</span>}
-              {s.label}
+              <span
+                className={cn(
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors',
+                  i === step && 'bg-primary text-primary-foreground border-primary',
+                  i < step && 'bg-primary/10 text-primary border-primary/40',
+                  i > step && 'bg-background text-muted-foreground border-border'
+                )}
+              >
+                {i < step ? <Check className="h-3.5 w-3.5" /> : i + 1}
+              </span>
+              <span
+                className={cn(
+                  'hidden sm:block w-full truncate text-center text-[11px] leading-tight',
+                  i === step ? 'font-semibold text-foreground' : 'text-muted-foreground'
+                )}
+              >
+                {s.label}
+              </span>
             </button>
           ))}
         </div>
-        <div className="h-1 rounded-full bg-muted overflow-hidden mt-1">
+        <p className="mt-1.5 text-center text-xs font-medium sm:hidden">
+          Etapa {step + 1} de {ALL_STEPS.length} · {ALL_STEPS[step]?.label}
+        </p>
+        <div className="h-1 rounded-full bg-muted overflow-hidden mt-2">
           <div className="h-full bg-primary transition-all" style={{ width: `${((step + 1) / ALL_STEPS.length) * 100}%` }} />
         </div>
       </div>
