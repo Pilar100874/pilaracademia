@@ -520,13 +520,145 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
   // Quando o assistente guiado termina, gera o treino direto, sem voltar ao início.
   const autoGenRef = useRef(false);
+  const [autoGenTick, setAutoGenTick] = useState(0);
   useEffect(() => {
-    if (autoGenRef.current && !wizardOpen && selectedDays.length > 0) {
+    if (autoGenRef.current && selectedDays.length > 0) {
       autoGenRef.current = false;
       handleGenerate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wizardOpen, selectedDays]);
+  }, [autoGenTick]);
+
+  const categoriesPanel = (
+    <>
+              <div className="space-y-1">
+                <p className="font-serif text-lg leading-tight">Escolha as categorias</p>
+                <p className="text-xs text-muted-foreground leading-snug">
+                  A IA usará apenas exercícios das categorias selecionadas. Deixe vazio para usar toda a biblioteca.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>{filteredExercises.length} exercícios disponíveis</span>
+                {selectedCategoryIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategoryIds([])}
+                    className="text-primary hover:underline"
+                  >
+                    Limpar seleção
+                  </button>
+                )}
+              </div>
+
+              {sortedCategories.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">Nenhuma categoria criada ainda.</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {sortedCategories.map((c) => {
+                    const active = selectedCategoryIds.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => toggleCategory(c.id)}
+                        className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                          active
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background border-border/70 hover:bg-accent hover:border-primary/40 text-foreground/80'
+                        } ${c.isChild ? 'ml-3' : ''}`}
+                        title={c.isChild && c.parentName ? `${c.parentName} › ${c.name}` : c.name}
+                      >
+                        {c.isChild ? `↳ ${c.name}` : c.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="space-y-1.5 pt-3 border-t border-border/60">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Equipamentos extras
+                  </p>
+                  {(selectedExtraIds.length > 0 || filterNoExtras) && (
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedExtraIds([]); setExtraCounts({}); setFilterNoExtras(false); }}
+                      className="text-[10px] text-muted-foreground hover:text-foreground underline"
+                    >
+                      Limpar
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-snug">
+                  Quantos exercícios devem usar cada equipamento? Eles entram em sequência no início do treino.
+                </p>
+                <ExtrasPicker
+                  selectedIds={selectedExtraIds}
+                  onToggle={(id) => {
+                    if (filterNoExtras) return;
+                    setSelectedExtraIds((prev) => {
+                      if (prev.includes(id)) {
+                        setExtraCounts((c) => {
+                          const next = { ...c };
+                          delete next[id];
+                          return next;
+                        });
+                        return prev.filter((x) => x !== id);
+                      }
+                      setExtraCounts((c) => ({ ...c, [id]: c[id] ?? '1' }));
+                      return [...prev, id];
+                    });
+                  }}
+                  noneSelected={filterNoExtras}
+                  onToggleNone={() => {
+                    setFilterNoExtras((v) => {
+                      const next = !v;
+                      if (next) { setSelectedExtraIds([]); setExtraCounts({}); }
+                      return next;
+                    });
+                  }}
+                  allowCreate={false}
+                  compact
+                  emptyHint="Nenhum equipamento cadastrado."
+                  renderAdornment={(extra, active) =>
+                    active ? (
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={extraCounts[extra.id] ?? ''}
+                        onChange={(e) =>
+                          setExtraCounts((c) => ({
+                            ...c,
+                            [extra.id]: e.target.value.replace(/\D/g, '').slice(0, 2),
+                          }))
+                        }
+                        placeholder="qtd"
+                        className="h-6 w-10 rounded border border-border/70 bg-background text-[11px] text-center px-1 focus:outline-none focus:border-primary"
+                        aria-label={`Quantidade de exercícios com ${extra.name}`}
+                      />
+                    ) : null
+                  }
+                />
+                {(() => {
+                  const totalQuota = selectedExtraIds.reduce(
+                    (s, id) => s + (parseInt(extraCounts[id] || '0', 10) || 0),
+                    0
+                  );
+                  const nVal = parseInt(count, 10) || 0;
+                  if (totalQuota > nVal) {
+                    return (
+                      <p className="text-[10px] text-destructive">
+                        A soma dos equipamentos ({totalQuota}) ultrapassa a quantidade de exercícios ({nVal}).
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+    </>
+  );
 
   return (
     <Dialog
@@ -563,6 +695,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         {wizardOpen ? (
           <WorkoutWizardContent
             onCancel={() => setWizardOpen(false)}
+            categoriesSlot={categoriesPanel}
+            generating={generating}
             hasBloodExams={!!bloodExamsQ.data?.length}
             hasBodyPlan={!!planInfo?.plan}
             onDone={({ prompt: p, name: n, count: c, days: d, useBloodExam: ub, useBodyPlan: ubp }) => {
@@ -572,8 +706,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
               setName(n);
               setCount(String(c));
               setSelectedDays(d);
-              setWizardOpen(false);
               autoGenRef.current = true;
+              setAutoGenTick((t) => t + 1);
             }}
           />
         ) : (
@@ -702,132 +836,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
           {step === 1 && (
             <div className="space-y-4">
-              <div className="space-y-1">
-                <p className="font-serif text-lg leading-tight">Escolha as categorias</p>
-                <p className="text-xs text-muted-foreground leading-snug">
-                  A IA usará apenas exercícios das categorias selecionadas. Deixe vazio para usar toda a biblioteca.
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                <span>{filteredExercises.length} exercícios disponíveis</span>
-                {selectedCategoryIds.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCategoryIds([])}
-                    className="text-primary hover:underline"
-                  >
-                    Limpar seleção
-                  </button>
-                )}
-              </div>
-
-              {sortedCategories.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">Nenhuma categoria criada ainda.</p>
-              ) : (
-                <div className="flex flex-wrap gap-1.5">
-                  {sortedCategories.map((c) => {
-                    const active = selectedCategoryIds.includes(c.id);
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => toggleCategory(c.id)}
-                        className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
-                          active
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-background border-border/70 hover:bg-accent hover:border-primary/40 text-foreground/80'
-                        } ${c.isChild ? 'ml-3' : ''}`}
-                        title={c.isChild && c.parentName ? `${c.parentName} › ${c.name}` : c.name}
-                      >
-                        {c.isChild ? `↳ ${c.name}` : c.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="space-y-1.5 pt-3 border-t border-border/60">
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Equipamentos extras
-                  </p>
-                  {(selectedExtraIds.length > 0 || filterNoExtras) && (
-                    <button
-                      type="button"
-                      onClick={() => { setSelectedExtraIds([]); setExtraCounts({}); setFilterNoExtras(false); }}
-                      className="text-[10px] text-muted-foreground hover:text-foreground underline"
-                    >
-                      Limpar
-                    </button>
-                  )}
-                </div>
-                <p className="text-[10px] text-muted-foreground leading-snug">
-                  Quantos exercícios devem usar cada equipamento? Eles entram em sequência no início do treino.
-                </p>
-                <ExtrasPicker
-                  selectedIds={selectedExtraIds}
-                  onToggle={(id) => {
-                    if (filterNoExtras) return;
-                    setSelectedExtraIds((prev) => {
-                      if (prev.includes(id)) {
-                        setExtraCounts((c) => {
-                          const next = { ...c };
-                          delete next[id];
-                          return next;
-                        });
-                        return prev.filter((x) => x !== id);
-                      }
-                      setExtraCounts((c) => ({ ...c, [id]: c[id] ?? '1' }));
-                      return [...prev, id];
-                    });
-                  }}
-                  noneSelected={filterNoExtras}
-                  onToggleNone={() => {
-                    setFilterNoExtras((v) => {
-                      const next = !v;
-                      if (next) { setSelectedExtraIds([]); setExtraCounts({}); }
-                      return next;
-                    });
-                  }}
-                  allowCreate={false}
-                  compact
-                  emptyHint="Nenhum equipamento cadastrado."
-                  renderAdornment={(extra, active) =>
-                    active ? (
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={extraCounts[extra.id] ?? ''}
-                        onChange={(e) =>
-                          setExtraCounts((c) => ({
-                            ...c,
-                            [extra.id]: e.target.value.replace(/\D/g, '').slice(0, 2),
-                          }))
-                        }
-                        placeholder="qtd"
-                        className="h-6 w-10 rounded border border-border/70 bg-background text-[11px] text-center px-1 focus:outline-none focus:border-primary"
-                        aria-label={`Quantidade de exercícios com ${extra.name}`}
-                      />
-                    ) : null
-                  }
-                />
-                {(() => {
-                  const totalQuota = selectedExtraIds.reduce(
-                    (s, id) => s + (parseInt(extraCounts[id] || '0', 10) || 0),
-                    0
-                  );
-                  const nVal = parseInt(count, 10) || 0;
-                  if (totalQuota > nVal) {
-                    return (
-                      <p className="text-[10px] text-destructive">
-                        A soma dos equipamentos ({totalQuota}) ultrapassa a quantidade de exercícios ({nVal}).
-                      </p>
-                    );
-                  }
-                  return null;
-                })()}
-              </div>
+              {categoriesPanel}
             </div>
           )}
 
