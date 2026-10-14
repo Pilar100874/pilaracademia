@@ -223,12 +223,13 @@ export default function ManagerUsersPage() {
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
             <div className="space-y-1"><Label>E-mail</Label>
               <Input type="email" autoComplete="off" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-            <div className="space-y-1"><Label>Senha inicial (mín. 8 caracteres)</Label>
+            <div className="space-y-1"><Label>Senha inicial</Label>
               <Input type="text" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+            <PasswordHints password={form.password} />
           </div>
           <div className="shrink-0 border-t border-border px-5 py-3 flex justify-end gap-2">
             <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={busy}>Cancelar</Button>
-            <Button onClick={create} disabled={busy || !form.name.trim() || !form.email.trim() || form.password.length < 8}>
+            <Button onClick={create} disabled={busy || !form.name.trim() || !form.email.trim() || !passwordChecks(form.password).every((c) => c.ok)}>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar usuário'}
             </Button>
           </div>
@@ -245,13 +246,16 @@ export default function ManagerUsersPage() {
               Nova senha para {pwTarget?.name || pwTarget?.email}. Repasse a senha para a pessoa.
             </DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3 space-y-1">
-            <Label>Nova senha (mín. 8 caracteres)</Label>
-            <Input type="text" autoComplete="new-password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3 space-y-2">
+            <div className="space-y-1">
+              <Label>Nova senha</Label>
+              <Input type="text" autoComplete="new-password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+            </div>
+            <PasswordHints password={newPw} />
           </div>
           <div className="shrink-0 border-t border-border px-5 py-3 flex justify-end gap-2">
             <Button variant="outline" onClick={() => setPwTarget(null)} disabled={busy}>Cancelar</Button>
-            <Button onClick={changePw} disabled={busy || newPw.length < 8}>
+            <Button onClick={changePw} disabled={busy || !passwordChecks(newPw).every((c) => c.ok)}>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salvar senha'}
             </Button>
           </div>
