@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useAccountKind } from './useAccountKind';
 import { toast } from 'sonner';
+import { isImpersonating } from '@/lib/impersonation';
 
 export interface WorkoutExercise {
   id: string;
@@ -46,7 +47,7 @@ export interface WorkoutPlan {
 
 export function useWorkoutPlans() {
   const { user } = useAuth();
-  const { restricted } = useAccountKind();
+  const { restricted, isMember } = useAccountKind();
   const queryClient = useQueryClient();
 
   const { data: workoutPlans = [], isLoading } = useQuery({
