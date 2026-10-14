@@ -24,6 +24,7 @@ export interface WorkoutExercise {
   is_cooldown?: boolean;
   group_name?: string | null;
   ai_reason?: string | null;
+  rest_seconds?: number | null;
 }
 
 export interface WorkoutPlan {
@@ -190,6 +191,7 @@ export function useWorkoutPlans() {
       is_cooldown?: boolean;
       group_name?: string | null;
       ai_reason?: string | null;
+      rest_seconds?: number | null;
       _silent?: boolean;
     }) => {
       const { _silent, ...payload } = data;
@@ -228,6 +230,7 @@ export function useWorkoutPlans() {
       video_end_seconds?: number | null;
       ai_reason?: string | null;
       group_name?: string | null;
+      rest_seconds?: number | null;
     }) => {
       const { id, image_urls, ...rest } = data;
       const updateData: Record<string, unknown> = { ...rest };
