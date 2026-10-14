@@ -297,6 +297,12 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   };
 
   const handleCreateFromPicked = async () => {
+    if (!name.trim()) {
+      setError('name', 'Dê um nome para o treino');
+      toast.error('Dê um nome para o treino');
+      nameRef.current?.focus();
+      return;
+    }
     if (!selectedDays.length) { toast.error('Escolha um dia da semana.'); return; }
     if (!picked.length) { toast.error('Selecione ao menos 1 exercício.'); return; }
     const byId = new Map(exercises.map((ex) => [ex.id, ex] as const));
@@ -719,7 +725,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           {step === 0 && (
             <div className="space-y-5">
               <div className="space-y-1.5">
-                <Label htmlFor="ai-name" className="text-xs font-medium">Nome do treino</Label>
+                <Label htmlFor="ai-name" className="text-xs font-medium">Nome do treino <span className="text-destructive">*</span></Label>
                 <Input
                   id="ai-name"
                   ref={nameRef}

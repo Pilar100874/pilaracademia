@@ -266,8 +266,19 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
         ) : (
           <>
             <section className="rounded-md border border-border bg-card p-4 space-y-3">
-              <Label htmlFor="wiz-name">Nome do treino</Label>
-              <Input id="wiz-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Treino Glúteos e Core" />
+              <Label htmlFor="wiz-name">Nome do treino <span className="text-destructive">*</span></Label>
+              <Input
+                id="wiz-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={80}
+                placeholder="Ex: Treino Glúteos e Core"
+                aria-required="true"
+                aria-invalid={!name.trim()}
+              />
+              {!name.trim() && (
+                <p className="text-xs text-destructive">Obrigatório — dê um nome ao treino.</p>
+              )}
             </section>
             <section className="rounded-md border border-border bg-card p-4 space-y-3">
               <h2 className="font-semibold text-base">Quantos exercícios?</h2>
@@ -321,8 +332,8 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
         {isLast ? (
           <Button
             className="shrink-0 min-w-0 px-3 sm:px-4"
-            disabled={!composedPrompt || !days.length || generating}
-            onClick={() => onDone({ prompt: composedPrompt, name: name.trim() || 'Treino do assistente', count, days, useBloodExam: useBlood, useBodyPlan: useBody })}
+            disabled={!composedPrompt || !days.length || !name.trim() || generating}
+            onClick={() => onDone({ prompt: composedPrompt, name: name.trim(), count, days, useBloodExam: useBlood, useBodyPlan: useBody })}
           >
             {generating ? <Loader2 className="h-4 w-4 sm:mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 sm:mr-1" />}
             <span className="whitespace-nowrap">{generating ? 'Gerando...' : 'Montar treino'}</span>

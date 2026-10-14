@@ -354,7 +354,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
           {step === 0 && (
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="rand-name" className="text-xs font-medium">Nome do treino</Label>
+                <Label htmlFor="rand-name" className="text-xs font-medium">Nome do treino <span className="text-destructive">*</span></Label>
                 <Input
                   id="rand-name"
                   ref={nameRef}
