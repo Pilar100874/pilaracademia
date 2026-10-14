@@ -181,8 +181,8 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
     return miss.length ? `Falta responder: ${miss.join(' · ')}.` : '';
   };
 
-  const missingSteps = steps.filter((_, i) => !stepComplete(i)).map((s) => s.label);
-  const allComplete = missingSteps.length === 0;
+  const missingSteps = steps.filter((s, i) => s.key !== 'final' && !stepComplete(i)).map((s) => s.label);
+  const allComplete = steps.every((_, i) => stepComplete(i));
 
   const goTo = (i: number) => {
     setShowStepError(false);
