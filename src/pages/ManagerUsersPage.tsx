@@ -13,11 +13,40 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Copy, KeyRound, Loader2, LogIn, Plus, Trash2, UsersRound } from 'lucide-react';
+import { ArrowLeft, Check, Copy, KeyRound, Loader2, LogIn, Plus, Trash2, UsersRound, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { AdminCopyWorkoutDialog } from '@/components/AdminCopyWorkoutDialog';
 
 interface Member { user_id: string; name: string; email: string | null; created_at: string }
+
+const COMMON_PASSWORDS = ['12345678', 'password', 'senha123', 'qwerty123', '11111111', '00000000', 'abcd1234', 'pilar123'];
+
+function passwordChecks(pw: string) {
+  return [
+    { ok: pw.length >= 8, label: 'Pelo menos 8 caracteres' },
+    { ok: /[a-z]/.test(pw) && /[A-Z]/.test(pw), label: 'Letras maiúsculas e minúsculas' },
+    { ok: /\d/.test(pw), label: 'Pelo menos um número' },
+    { ok: /[^A-Za-z0-9]/.test(pw), label: 'Pelo menos um símbolo (ex.: ! @ # $)' },
+    { ok: pw.length > 0 && !COMMON_PASSWORDS.includes(pw.toLowerCase()), label: 'Não pode ser uma senha comum (ex.: 12345678)' },
+  ];
+}
+
+function PasswordHints({ password }: { password: string }) {
+  const checks = passwordChecks(password);
+  return (
+    <ul className="space-y-1 rounded-md border border-border bg-muted/40 px-3 py-2">
+      {checks.map((c) => (
+        <li key={c.label} className={`flex items-center gap-1.5 text-[11px] ${c.ok ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+          {c.ok ? <Check className="h-3 w-3 shrink-0" /> : <X className="h-3 w-3 shrink-0 opacity-50" />}
+          {c.label}
+        </li>
+      ))}
+      <li className="pt-0.5 text-[11px] text-muted-foreground">
+        Dica: misture palavras com números e símbolos, ex.: <span className="font-medium text-foreground">Pilar#Treino2026</span>
+      </li>
+    </ul>
+  );
+}
 
 export default function ManagerUsersPage() {
   const { user } = useAuth();
@@ -194,12 +223,13 @@ export default function ManagerUsersPage() {
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
             <div className="space-y-1"><Label>E-mail</Label>
               <Input type="email" autoComplete="off" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-            <div className="space-y-1"><Label>Senha inicial (mín. 8 caracteres)</Label>
+            <div className="space-y-1"><Label>Senha inicial</Label>
               <Input type="text" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+            <PasswordHints password={form.password} />
           </div>
           <div className="shrink-0 border-t border-border px-5 py-3 flex justify-end gap-2">
             <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={busy}>Cancelar</Button>
-            <Button onClick={create} disabled={busy || !form.name.trim() || !form.email.trim() || form.password.length < 8}>
+            <Button onClick={create} disabled={busy || !form.name.trim() || !form.email.trim() || !passwordChecks(form.password).every((c) => c.ok)}>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar usuário'}
             </Button>
           </div>
@@ -216,13 +246,16 @@ export default function ManagerUsersPage() {
               Nova senha para {pwTarget?.name || pwTarget?.email}. Repasse a senha para a pessoa.
             </DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3 space-y-1">
-            <Label>Nova senha (mín. 8 caracteres)</Label>
-            <Input type="text" autoComplete="new-password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3 space-y-2">
+            <div className="space-y-1">
+              <Label>Nova senha</Label>
+              <Input type="text" autoComplete="new-password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+            </div>
+            <PasswordHints password={newPw} />
           </div>
           <div className="shrink-0 border-t border-border px-5 py-3 flex justify-end gap-2">
             <Button variant="outline" onClick={() => setPwTarget(null)} disabled={busy}>Cancelar</Button>
-            <Button onClick={changePw} disabled={busy || newPw.length < 8}>
+            <Button onClick={changePw} disabled={busy || !passwordChecks(newPw).every((c) => c.ok)}>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salvar senha'}
             </Button>
           </div>
