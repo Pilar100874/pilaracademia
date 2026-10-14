@@ -382,7 +382,7 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
             </section>
           )}
           {current.questions.map((q) => (
-            <section key={q.key} className={cn('rounded-md border bg-card p-4 space-y-3', showStepError && !(answers[q.key]?.length) ? 'border-destructive/50' : 'border-border')}>
+            <section key={q.key} className={cn('rounded-md border bg-card p-4 space-y-3', showStepError && q.required && !(answers[q.key]?.length) ? 'border-destructive/50' : 'border-border')}>
               <div>
                 <h2 className="font-semibold text-base">{q.title}</h2>
                 <p className="text-xs text-muted-foreground">{q.hint || (q.multi ? 'Marque quantas quiser' : 'Escolha uma opção')}</p>
@@ -435,13 +435,8 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
             </section>
           ))}
           </>
-        ) : (
+        ) : steps[step]?.key === 'final' ? (
           <>
-            {missingSteps.length > 0 && (
-              <p className="min-w-0 break-words rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive">
-                Falta responder: {missingSteps.join(', ')}.
-              </p>
-            )}
             <section className="rounded-md border border-border bg-card p-4 space-y-3">
               <Label htmlFor="wiz-name">Nome do treino <span className="text-destructive">*</span></Label>
               <Input
@@ -458,13 +453,18 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
               )}
             </section>
             <section className="rounded-md border border-border bg-card p-4 space-y-3">
-              <h2 className="font-semibold text-base">Quantos exercícios?</h2>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+              <div>
+                <h2 className="font-semibold text-base">Quantos exercícios?</h2>
+                <p className="text-xs text-muted-foreground">
+                  {suggestedCount ? `Sugerido ${suggestedCount} para ${durationAnswer}${countManual ? ' — você ajustou manualmente' : ''}.` : 'Ajuste se quiser.'}
+                </p>
+              </div>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
                 {COUNT_OPTIONS.map((c) => (
                   <button
                     key={c}
                     type="button"
-                    onClick={() => setCount(c)}
+                    onClick={() => { setCount(c); setCountManual(c !== suggestedCount); }}
                     className={cn(
                       'rounded-md border px-4 py-2.5 text-sm transition-colors',
                       count === c ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/60'
@@ -474,38 +474,6 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                   </button>
                 ))}
               </div>
-            </section>
-            <section className="rounded-md border border-border bg-card p-4 space-y-4">
-              <div>
-                <h2 className="font-semibold text-base">Formato do treino</h2>
-                <p className="text-xs text-muted-foreground">
-                  Opcional — ajuda a IA a ajustar duração, intensidade e estrutura da aula.
-                </p>
-              </div>
-              {FORMAT_QUESTIONS.map((q) => (
-                <div key={q.key} className="space-y-2">
-                  <p className="text-sm font-medium">{q.title}</p>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                    {q.options.map((opt) => {
-                      const on = (answers[q.key] || []).includes(opt);
-                      return (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => toggle(q, opt)}
-                          className={cn(
-                            'flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-2.5 py-2 text-center text-sm leading-snug transition-colors',
-                            on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/60'
-                          )}
-                        >
-                          {on && <Check className="h-3.5 w-3.5 shrink-0" />}
-                          <span className="min-w-0 whitespace-normal break-words">{opt}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
             </section>
             <section className="rounded-md border border-border bg-card p-4 space-y-3">
               <Label htmlFor="wiz-free">Quer acrescentar algo? Escreva o que deseja no treino</Label>
@@ -517,14 +485,31 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                 placeholder="Ex: quero terminar com exercícios de respiração e evitar pranchas longas"
               />
             </section>
-            <section className="rounded-md border border-border bg-muted/30 p-4 space-y-2">
-              <h2 className="font-semibold text-sm">Resumo do pedido</h2>
-              {composedPrompt ? (
-                <pre className="whitespace-pre-wrap text-xs text-muted-foreground font-sans">{composedPrompt}</pre>
-              ) : (
-                <p className="text-xs text-muted-foreground">Responda pelo menos uma pergunta ou escreva o que deseja.</p>
-              )}
-            </section>
+          </>
+        ) : (
+          <>
+            {missingSteps.length > 0 && (
+              <p className="min-w-0 break-words rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive">
+                Falta responder: {missingSteps.join(', ')}.
+              </p>
+            )}
+            <div>
+              <h2 className="font-semibold text-base">Confira antes de montar</h2>
+              <p className="text-xs text-muted-foreground">Toque em “Editar” para corrigir uma etapa.</p>
+            </div>
+            {steps.map((s, i) => s.key === 'resumo' ? null : (
+              <section key={s.key} className={cn('rounded-md border bg-card p-3 space-y-1.5', stepComplete(i) ? 'border-border' : 'border-destructive/50')}>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="min-w-0 text-sm font-semibold">{i + 1}. {s.label}</h3>
+                  <Button variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-xs" onClick={() => { setShowStepError(false); setStep(i); }}>
+                    Editar
+                  </Button>
+                </div>
+                {summaryFor(i).map((l, k) => (
+                  <p key={k} className="min-w-0 break-words text-xs leading-snug text-muted-foreground">{l}</p>
+                ))}
+              </section>
+            ))}
           </>
         )}
         </div>
