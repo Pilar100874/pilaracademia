@@ -305,7 +305,11 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   };
 
   const handleSuggestGroups = async (more = false) => {
-    if (!more) { validateFromStart(() => handleSuggestGroups(true)); return; }
+    if (!validatedRef.current) {
+      validateFromStart(() => { validatedRef.current = true; handleSuggestGroups(more); });
+      return;
+    }
+    validatedRef.current = false;
     if (more && groups) {
       // Já mostramos tudo que a biblioteca tem com esses filtros?
       if (filteredExercises.length <= suggestedIdsRef.current.size) {
