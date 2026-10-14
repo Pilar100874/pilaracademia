@@ -336,7 +336,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       if (groups) return handleCreateFromPicked();
       return handleSuggestGroups();
     }
-    if (!validateStep(0) || !validateStep(1)) { setStep(0); return; }
+    if (!validateStep(0) || !validateStep(1)) { if (wizardOpen) { setWizardOpen(false); toast.error('Revise os dados do treino.'); } setStep(0); return; }
     if (!selectedDays.length) { toast.error('Escolha um dia da semana.'); return; }
     const n = parseInt(count, 10);
 
@@ -706,6 +706,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
               setName(n);
               setCount(String(c));
               setSelectedDays(d);
+              setReviewMode(false);
               autoGenRef.current = true;
               setAutoGenTick((t) => t + 1);
             }}

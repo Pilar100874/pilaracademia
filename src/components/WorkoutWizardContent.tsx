@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useProfile } from '@/hooks/useProfile';
 import { calculateAge } from '@/types/profile';
-import { Check, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -304,11 +304,11 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
         </span>
         {isLast ? (
           <Button
-            disabled={!composedPrompt || !days.length}
+            disabled={!composedPrompt || !days.length || generating}
             onClick={() => onDone({ prompt: composedPrompt, name: name.trim() || 'Treino do assistente', count, days, useBloodExam: useBlood, useBodyPlan: useBody })}
           >
-            <Sparkles className="h-4 w-4 mr-1" />
-            Montar treino
+            {generating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
+            {generating ? 'Gerando...' : 'Montar treino'}
           </Button>
         ) : (
           <Button onClick={() => setStep(step + 1)}>
