@@ -517,6 +517,16 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     }
   };
 
+  // Quando o assistente guiado termina, gera o treino direto, sem voltar ao início.
+  const autoGenRef = useRef(false);
+  useEffect(() => {
+    if (autoGenRef.current && !wizardOpen && selectedDays.length > 0) {
+      autoGenRef.current = false;
+      handleGenerate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wizardOpen, selectedDays]);
+
   return (
     <Dialog
       open={open}
