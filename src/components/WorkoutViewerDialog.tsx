@@ -37,6 +37,8 @@ export function WorkoutViewerDialog({
   const { cooldownPlan } = useWorkoutPlans();
   const [cooldownPromptEnabled] = useCooldownPromptEnabled();
   const [showReason, setShowReason] = useShowExerciseReason();
+  const [showPlanReason, setShowPlanReason] = useShowPlanRationale();
+  const hasPlanReason = !!plan.ai_rationale;
   const allExercises = plan.exercises || [];
   const mainBase = useMemo(() => allExercises.filter((e: any) => !e.is_cooldown), [allExercises]);
   const cooldownBase = useMemo(() => cooldownPlan?.exercises ?? [], [cooldownPlan]);
