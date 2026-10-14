@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/EmptyState';
 import { useWorkoutPlans, WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { ListSkeleton } from '@/components/ListSkeleton';
-import { Plus, Dumbbell, Loader2, Library, Shuffle, Sparkles, Leaf, QrCode } from 'lucide-react';
+import { Plus, Dumbbell, Loader2, Library, ListChecks, Shuffle, Sparkles, Leaf, QrCode } from 'lucide-react';
 import { WorkoutPlanDialog } from '@/components/WorkoutPlanDialog';
 import { WorkoutPlanCard } from '@/components/WorkoutPlanCard';
 import { WorkoutViewerDialog } from '@/components/WorkoutViewerDialog';
@@ -76,6 +76,10 @@ export function WorkoutsPage() {
             <Button size="sm" variant="outline" onClick={() => setCooldownOpen(true)}>
               <Leaf className="h-4 w-4 sm:mr-1 text-emerald-600" />
               <span className="hidden sm:inline">Final de Aula</span>
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => navigate('/workouts/wizard')}>
+              <ListChecks className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Assistente</span>
             </Button>
             <Button size="sm" variant="outline" onClick={() => setAiOpen(true)}>
               <Sparkles className="h-4 w-4 sm:mr-1" />
