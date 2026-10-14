@@ -133,6 +133,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const nameRef = useRef<HTMLInputElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const countRef = useRef<HTMLInputElement>(null);
+  const validatedRef = useRef(false);
   const { errorOf, setError, clearError, clearIf } = useFieldError();
 
   // Vínculo estilo de treino → categorias da biblioteca.
@@ -428,7 +429,12 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       if (groups) return handleCreateFromPicked();
       return handleSuggestGroups();
     }
-    if (!validateStep(0) || !validateStep(1)) { if (wizardOpen) { setWizardOpen(false); toast.error('Revise os dados do treino.'); } setStep(0); return; }
+    if (wizardOpen) setWizardOpen(false);
+    if (!validatedRef.current) {
+      validateFromStart(() => { validatedRef.current = true; handleGenerate(); });
+      return;
+    }
+    validatedRef.current = false;
     if (!selectedDays.length) { toast.error('Escolha um dia da semana.'); return; }
     const n = parseInt(count, 10);
 
