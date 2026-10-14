@@ -25,3 +25,6 @@ verify_jwt = false
 
 [functions.translate-exercise-names]
 verify_jwt = false
+
+[functions.manager-users]
+verify_jwt = false

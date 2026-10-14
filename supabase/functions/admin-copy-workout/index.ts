@@ -21,16 +21,27 @@ Deno.serve(async (req) => {
     const callerId = caller?.user?.id;
     if (!callerId) return json({ error: 'Sessão inválida.' }, 401);
 
-    const { data: roles } = await admin.from('user_roles').select('role')
-      .eq('user_id', callerId).eq('role', 'master_admin').limit(1);
-    if (!roles?.length) return json({ error: 'Acesso negado.' }, 403);
-
     const { planId, targetUserId } = await req.json();
     if (!isUuid(planId) || !isUuid(targetUserId)) return json({ error: 'Dados inválidos.' }, 400);
 
-    const { data: plan } = await admin.from('workout_plans').select('*')
-      .eq('id', planId).eq('user_id', callerId).maybeSingle();
+    const { data: roles } = await admin.from('user_roles').select('role').eq('user_id', callerId);
+    const set = new Set((roles ?? []).map((r: { role: string }) => r.role));
+    const isMaster = set.has('master_admin');
+    if (!isMaster && !set.has('gestor')) return json({ error: 'Acesso negado.' }, 403);
+
+    const { data: plan } = await admin.from('workout_plans').select('*').eq('id', planId).maybeSingle();
     if (!plan) return json({ error: 'Treino não encontrado.' }, 404);
+
+    if (isMaster) {
+      if (plan.user_id !== callerId) return json({ error: 'Treino não encontrado.' }, 404);
+    } else {
+      // Gestor: origem = ele mesmo ou um usuário dele; destino = usuário dele.
+      const { data: links } = await admin.from('managed_users').select('member_id').eq('manager_id', callerId);
+      const members = new Set((links ?? []).map((l: { member_id: string }) => l.member_id));
+      if (plan.user_id !== callerId && !members.has(plan.user_id)) return json({ error: 'Treino não encontrado.' }, 404);
+      if (!members.has(targetUserId)) return json({ error: 'Usuário não vinculado a você.' }, 403);
+      if (plan.user_id === targetUserId) return json({ error: 'Escolha outro usuário de destino.' }, 400);
+    }
 
     const { data: target } = await admin.from('profiles').select('user_id').eq('user_id', targetUserId).maybeSingle();
     if (!target) return json({ error: 'Usuário não encontrado.' }, 404);

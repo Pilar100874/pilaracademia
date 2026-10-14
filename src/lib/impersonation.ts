@@ -2,6 +2,10 @@ import { supabase } from '@/integrations/supabase/client';
 
 const KEY = 'pilar-admin-return-session';
 
+export function isImpersonating(): boolean {
+  return !!localStorage.getItem(KEY);
+}
+
 export function getImpersonation(): { email: string } | null {
   try {
     const raw = localStorage.getItem(KEY);
@@ -12,7 +16,7 @@ export function getImpersonation(): { email: string } | null {
   }
 }
 
-export async function startImpersonation(userId: string) {
+export async function startImpersonation(userId: string, returnTo = '/admin/users') {
   const { data: s } = await supabase.auth.getSession();
   if (!s.session) throw new Error('Sem sessão');
   const { data, error } = await supabase.functions.invoke('admin-impersonate', { body: { userId } });
@@ -24,6 +28,7 @@ export async function startImpersonation(userId: string) {
       access_token: s.session.access_token,
       refresh_token: s.session.refresh_token,
       targetEmail: data.email,
+      returnTo,
     }),
   );
   const { error: vErr } = await supabase.auth.verifyOtp({ token_hash: data.token_hash, type: 'magiclink' });
@@ -38,11 +43,11 @@ export async function stopImpersonation() {
   const raw = localStorage.getItem(KEY);
   localStorage.removeItem(KEY);
   if (raw) {
-    const { access_token, refresh_token } = JSON.parse(raw);
+    const { access_token, refresh_token, returnTo } = JSON.parse(raw);
     await supabase.auth.signOut({ scope: 'local' });
     const { error } = await supabase.auth.setSession({ access_token, refresh_token });
     if (!error) {
-      window.location.href = '/admin/users';
+      window.location.href = returnTo || '/admin/users';
       return;
     }
   }
