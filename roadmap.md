@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Manter o assistente de treino aberto durante a geração e validar as respostas obrigatórias antes de avançar ou concluir.
+
 - [x] Resumo completo de evolução dos usuários para o gestor, com gráficos e leitura segura dos dados.
 
 - [ ] Nomes dos exercícios em uma linha.

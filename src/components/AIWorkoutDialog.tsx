@@ -297,7 +297,9 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       if (!validateStep(1)) { setStep(1); return; }
       onValid();
     };
-    if (step !== 0) {
+    const n = parseInt(count, 10);
+    const missingObjective = !name.trim() || (!useBodyPlan && prompt.trim().length < 5) || !n || n < 1;
+    if (step !== 0 && missingObjective && !wizardOpen) {
       setStep(0);
       setTimeout(run, 60);
     } else {
@@ -425,14 +427,19 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   };
 
   const handleGenerate = async () => {
+    if (generating) return;
     if (reviewMode) {
       if (groups) return handleCreateFromPicked();
       return handleSuggestGroups();
     }
-    if (wizardOpen) setWizardOpen(false);
     if (!validatedRef.current) {
+      if (wizardOpen) {
+        if (!validateStep(0) || !validateStep(1)) return;
+        validatedRef.current = true;
+      } else {
       validateFromStart(() => { validatedRef.current = true; handleGenerate(); });
       return;
+      }
     }
     validatedRef.current = false;
     if (!selectedDays.length) { toast.error('Escolha um dia da semana.'); return; }
@@ -808,6 +815,10 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
             styleCategories={styleCategories}
             onStylesChange={applyStyleCategories}
             generating={generating}
+            validateExtras={(c) => {
+              const total = selectedExtraIds.reduce((sum, id) => sum + (parseInt(extraCounts[id] || '0', 10) || 0), 0);
+              return total > c ? 'A soma dos equipamentos ultrapassa a quantidade de exercícios. Ajuste as quantidades na etapa Objetivo.' : undefined;
+            }}
             hasBloodExams={!!bloodExamsQ.data?.length}
             hasBodyPlan={!!planInfo?.plan}
             onDone={({ prompt: p, name: n, count: c, days: d, useBloodExam: ub, useBodyPlan: ubp }) => {

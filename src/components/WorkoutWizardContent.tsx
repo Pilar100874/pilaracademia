@@ -15,7 +15,7 @@ type Question = {
   hint?: string;
   multi: boolean;
   options: string[];
-  /** Obrigatória na etapa. Sem nenhuma obrigatória, basta 1 resposta por etapa. */
+  /** Perguntas são obrigatórias, exceto as explicitamente opcionais. */
   required?: boolean;
 };
 
@@ -66,7 +66,7 @@ const STEPS: Step[] = [
       { key: 'local', title: 'Onde vai treinar?', hint: 'Opcional', multi: false, options: ['Estúdio', 'Academia', 'Casa', 'Ao ar livre'] },
     ],
   },
-];
+].map((s) => ({ ...s, questions: s.questions.map((q) => ({ ...q, required: q.required ?? !q.hint?.startsWith('Opcional') })) }));
 
 const AGENDA_QUESTIONS: Question[] = [
   { key: 'divisao', title: 'Como dividir a semana?', hint: 'Opcional', multi: false, options: ['Corpo todo todo dia', 'Alternar superior e inferior', 'Um foco por dia', 'A IA decide'] },
@@ -102,6 +102,7 @@ interface WorkoutWizardContentProps {
   /** Equipamentos extras, renderizados na etapa Objetivo. */
   extrasSlot?: React.ReactNode;
   generating?: boolean;
+  validateExtras?: (count: number) => string | undefined;
   hasBodyPlan?: boolean;
   /** Nomes das categorias da biblioteca que cada estilo de treino usa. */
   styleCategories?: Record<string, string[]>;
@@ -109,7 +110,7 @@ interface WorkoutWizardContentProps {
   onStylesChange?: (styles: string[]) => void;
 }
 
-export function WorkoutWizardContent({ onCancel, onDone, extrasSlot, generating = false, hasBloodExams = false, hasBodyPlan = false, styleCategories, onStylesChange }: WorkoutWizardContentProps) {
+export function WorkoutWizardContent({ onCancel, onDone, extrasSlot, generating = false, validateExtras, hasBloodExams = false, hasBodyPlan = false, styleCategories, onStylesChange }: WorkoutWizardContentProps) {
   const { profile } = useProfile();
   const [useBlood, setUseBlood] = useState(hasBloodExams);
   const [useBody, setUseBody] = useState(hasBodyPlan);
@@ -186,6 +187,7 @@ export function WorkoutWizardContent({ onCancel, onDone, extrasSlot, generating 
   }, [answers, freeText, styleCategories, days, count, durationAnswer]);
 
   const [showStepError, setShowStepError] = useState(false);
+  const [submitError, setSubmitError] = useState<string>();
 
   const steps = ALL_STEPS;
   const isLast = step === steps.length - 1;
@@ -259,22 +261,37 @@ export function WorkoutWizardContent({ onCancel, onDone, extrasSlot, generating 
   const allComplete = steps.every((_, i) => stepComplete(i));
 
   const goTo = (i: number) => {
+    if (generating) return;
     setShowStepError(false);
     if (i <= step) { setStep(i); return; }
-    for (let j = step; j < i; j++) {
+    for (let j = 0; j < i; j++) {
       if (!stepComplete(j)) { setStep(j); setShowStepError(true); return; }
     }
     setStep(i);
   };
 
   const goNext = () => {
-    if (!stepComplete(step)) { setShowStepError(true); return; }
+    if (generating) return;
+    for (let i = 0; i <= step; i++) {
+      if (!stepComplete(i)) { setStep(i); setShowStepError(true); return; }
+    }
     setShowStepError(false);
     setStep((s) => Math.min(steps.length - 1, s + 1));
   };
 
+  const finish = () => {
+    if (generating) return;
+    const missing = steps.findIndex((_, i) => !stepComplete(i));
+    if (missing >= 0) { setStep(missing); setShowStepError(true); return; }
+    const error = validateExtras?.(count);
+    setSubmitError(error);
+    if (error) return;
+    onDone({ prompt: composedPrompt, name: name.trim(), count, days, useBloodExam: useBlood, useBodyPlan: useBody });
+  };
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      <fieldset disabled={generating} className="contents">
       <div className="px-5 pt-4 lg:px-8">
         <div className="flex items-center justify-between gap-1">
           {steps.map((s, i) => {
@@ -319,6 +336,7 @@ export function WorkoutWizardContent({ onCancel, onDone, extrasSlot, generating 
 
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5 lg:px-8 lg:py-6">
         <div className="mx-auto w-full max-w-3xl space-y-4">
+        {submitError && <p role="alert" className="text-sm text-destructive">{submitError}</p>}
         {showStepError && !stepComplete(step) && (
           <p className="min-w-0 break-words rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive">
             {stepError(step)}
@@ -372,7 +390,7 @@ export function WorkoutWizardContent({ onCancel, onDone, extrasSlot, generating 
           {current.questions.map((q) => (
             <section key={q.key} className={cn('rounded-md border bg-card p-4 space-y-3', showStepError && q.required && !(answers[q.key]?.length) ? 'border-destructive/50' : 'border-border')}>
               <div>
-                <h2 className="font-semibold text-base">{q.title}</h2>
+                <h2 className="font-semibold text-base">{q.title}{q.required && <span className="text-destructive"> *</span>}</h2>
                 <p className="text-xs text-muted-foreground">{q.hint || (q.multi ? 'Marque quantas quiser' : 'Escolha uma opção')}</p>
               </div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -497,7 +515,7 @@ export function WorkoutWizardContent({ onCancel, onDone, extrasSlot, generating 
           <Button
             className="shrink-0 min-w-0 px-3 sm:px-4"
             disabled={!allComplete || !composedPrompt || generating}
-            onClick={() => onDone({ prompt: composedPrompt, name: name.trim(), count, days, useBloodExam: useBlood, useBodyPlan: useBody })}
+                    onClick={finish}
           >
             {generating ? <Loader2 className="h-4 w-4 sm:mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 sm:mr-1" />}
             <span className="whitespace-nowrap">{generating ? 'Gerando...' : 'Montar treino'}</span>
@@ -509,6 +527,7 @@ export function WorkoutWizardContent({ onCancel, onDone, extrasSlot, generating 
           </Button>
         )}
       </div>
+      </fieldset>
     </div>
   );
 }
