@@ -11,6 +11,7 @@ import { applyEnergyMode, ENERGY_MODE_LABEL, type EnergyMode } from '@/lib/worko
 import { useCooldownPromptEnabled } from '@/lib/cooldownPreference';
 import { useVoiceCommandsEnabled, useVoiceWorkoutCommands } from '@/lib/voiceCommands';
 import { useShowExerciseReason } from '@/lib/exerciseReasonPreference';
+import { useShowPlanRationale } from '@/lib/planRationalePreference';
 
 interface WorkoutViewerDialogProps {
   open: boolean;
@@ -36,6 +37,8 @@ export function WorkoutViewerDialog({
   const { cooldownPlan } = useWorkoutPlans();
   const [cooldownPromptEnabled] = useCooldownPromptEnabled();
   const [showReason, setShowReason] = useShowExerciseReason();
+  const [showPlanReason, setShowPlanReason] = useShowPlanRationale();
+  const hasPlanReason = !!plan.ai_rationale;
   const allExercises = plan.exercises || [];
   const mainBase = useMemo(() => allExercises.filter((e: any) => !e.is_cooldown), [allExercises]);
   const cooldownBase = useMemo(() => cooldownPlan?.exercises ?? [], [cooldownPlan]);
@@ -383,6 +386,23 @@ export function WorkoutViewerDialog({
                     {removedCount > 0 && <span className="opacity-80">· −{removedCount}</span>}
                   </button>
                 )}
+                {hasPlanReason && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPlanReason(!showPlanReason)}
+                    aria-pressed={showPlanReason}
+                    aria-label={showPlanReason ? 'Ocultar motivo do treino' : 'Mostrar motivo do treino'}
+                    title={showPlanReason ? 'Ocultar motivo do treino' : 'Mostrar motivo do treino'}
+                    className={`inline-flex items-center gap-1 pointer-events-auto text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full backdrop-blur-sm border transition-colors active:scale-95 ${
+                      showPlanReason
+                        ? 'bg-primary text-primary-foreground border-primary/60'
+                        : 'bg-white/10 text-white hover:bg-white/20 border-white/15'
+                    }`}
+                  >
+                    <Sparkles className="h-3 w-3" strokeWidth={2.5} />
+                    Motivo do treino
+                  </button>
+                )}
               </div>
             </div>
             {hasReason && (
@@ -402,6 +422,16 @@ export function WorkoutViewerDialog({
               </button>
             )}
           </div>
+          {/* Motivo do treino (criado pela IA) — abaixo do cartão do cabeçalho */}
+          {hasPlanReason && showPlanReason && (
+            <div className="mt-2 pointer-events-auto bg-black/45 backdrop-blur-md rounded-2xl border border-white/10 px-4 py-2.5 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <Sparkles className="h-3 w-3 text-primary" strokeWidth={2.5} />
+                <span className="text-[10px] uppercase tracking-wider text-white/60 font-semibold">Por que este treino</span>
+              </div>
+              <p className="text-white/90 text-sm leading-snug whitespace-pre-line">{plan.ai_rationale}</p>
+            </div>
+          )}
         </div>
         {/* Top-right action stack: toggle media + finish */}
         <div className="absolute top-4 right-16 z-40 flex items-center gap-2">
