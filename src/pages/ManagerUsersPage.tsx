@@ -13,9 +13,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Check, Copy, KeyRound, Loader2, LogIn, Plus, Trash2, UsersRound, X } from 'lucide-react';
+import { ArrowLeft, ChartNoAxesCombined, Check, Copy, KeyRound, Loader2, LogIn, Plus, Trash2, UsersRound, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { AdminCopyWorkoutDialog } from '@/components/AdminCopyWorkoutDialog';
+import { MemberEvolutionSummary } from '@/components/MemberEvolutionSummary';
 
 interface Member { user_id: string; name: string; email: string | null; created_at: string }
 
@@ -57,6 +58,7 @@ export default function ManagerUsersPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [busy, setBusy] = useState(false);
   const [copyTarget, setCopyTarget] = useState<Member | null>(null);
+  const [summaryTarget, setSummaryTarget] = useState<Member | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Member | null>(null);
   const [pwTarget, setPwTarget] = useState<Member | null>(null);
   const [newPw, setNewPw] = useState('');
@@ -65,7 +67,8 @@ export default function ManagerUsersPage() {
     queryKey: ['manager', 'members', user?.id],
     enabled: !!user && isGestor,
     queryFn: async (): Promise<Member[]> => {
-      const { data: links } = await supabase.from('managed_users').select('member_id').eq('manager_id', user!.id);
+      if (!user) return [];
+      const { data: links } = await supabase.from('managed_users').select('member_id').eq('manager_id', user.id);
       const ids = (links ?? []).map((l) => l.member_id);
       if (!ids.length) return [];
       const { data, error } = await supabase.from('profiles')
@@ -178,6 +181,9 @@ export default function ManagerUsersPage() {
                   <p className="text-sm font-medium truncate">{m.name || '—'}</p>
                   <p className="text-[11px] text-muted-foreground truncate">{m.email}</p>
                 </div>
+                <Button variant="outline" size="sm" onClick={() => setSummaryTarget(m)}>
+                  <ChartNoAxesCombined className="mr-2 h-4 w-4" /> Resumo e evolução
+                </Button>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                   <button
                     type="button"
@@ -237,6 +243,7 @@ export default function ManagerUsersPage() {
       </Dialog>
 
       <AdminCopyWorkoutDialog target={copyTarget} onClose={() => setCopyTarget(null)} sources={sources} />
+      <MemberEvolutionSummary key={summaryTarget?.user_id || 'closed'} member={summaryTarget} onClose={() => setSummaryTarget(null)} />
 
       <Dialog open={!!pwTarget} onOpenChange={(o) => !busy && !o && setPwTarget(null)}>
         <DialogContent className="flex max-h-[90vh] min-w-0 flex-col overflow-hidden p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
