@@ -3765,6 +3765,7 @@ export type Database = {
         | "student"
         | "station"
         | "master_admin"
+        | "gestor"
       appointment_origin:
         | "particular"
         | "gympass"
@@ -3934,6 +3935,7 @@ export const Constants = {
         "student",
         "station",
         "master_admin",
+        "gestor",
       ],
       appointment_origin: [
         "particular",

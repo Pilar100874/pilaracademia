@@ -64,6 +64,13 @@
       "when": 1791989563640,
       "tag": "0008_per_exercise_sets_reps",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791990160031,
+      "tag": "0009_add_gestor_role",
+      "breakpoints": true
     }
   ]
 }
