@@ -66,6 +66,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [name, setName] = useState(initialName || '');
   const [prompt, setPrompt] = useState(initialPrompt || '');
   const [count, setCount] = useState(initialCount ? String(initialCount) : '8');
+  const [duration, setDuration] = useState<string | null>(null);
+  const [countManual, setCountManual] = useState(false);
   const [selectedDays, setSelectedDays] = useState<number[]>(initialDays || []);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
@@ -87,6 +89,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const suggestionKey = useMemo(() => JSON.stringify({
     prompt: prompt.trim(),
     count,
+    duration,
     source,
     useBodyPlan,
     useBloodExam,
