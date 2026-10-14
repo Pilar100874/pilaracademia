@@ -54,6 +54,23 @@ export default function AdminUsersPage() {
     enabled: isMaster,
   });
 
+  const { data: gestores = [] } = useQuery({
+    queryKey: ['admin', 'gestores'],
+    enabled: isMaster,
+    queryFn: async () => {
+      const { data } = await supabase.from('user_roles').select('user_id').eq('role', 'gestor' as never);
+      return (data ?? []).map((r) => r.user_id as string);
+    },
+  });
+  const toggleGestor = async (userId: string, enabled: boolean) => {
+    const { data, error } = await supabase.functions.invoke('manager-users', {
+      body: { action: 'set_gestor', userId, enabled },
+    });
+    if (error || data?.error) return toast.error(data?.error || 'Falha ao atualizar');
+    toast.success(enabled ? 'Agora é Gestor' : 'Deixou de ser Gestor');
+    qc.invalidateQueries({ queryKey: ['admin', 'gestores'] });
+  };
+
   const setActive = useMutation({
     mutationFn: async ({ user_id, is_active }: { user_id: string; is_active: boolean }) => {
       const { error } = await supabase.from('profiles').update({ is_active }).eq('user_id', user_id);
@@ -215,6 +232,14 @@ export default function AdminUsersPage() {
         >
           <Copy className="h-3 w-3" />
           Copiar treino
+        </button>
+        <button
+          type="button"
+          onClick={() => toggleGestor(p.user_id, !gestores.includes(p.user_id))}
+          className="text-[11px] text-primary hover:underline inline-flex items-center gap-1"
+        >
+          <Users className="h-3 w-3" />
+          {gestores.includes(p.user_id) ? 'Remover Gestor' : 'Tornar Gestor'}
         </button>
         <button
           type="button"
