@@ -24,6 +24,7 @@ import { buildBloodExamHealthContext } from '@/lib/bloodExamContext';
 import { Sparkles, Loader2, Target, ListChecks } from 'lucide-react';
 import { WorkoutWizardContent } from '@/components/WorkoutWizardContent';
 import { styleCategoryMap, idsForStyles } from '@/lib/workoutStyles';
+import { DURATION_OPTIONS, COUNT_BY_DURATION } from '@/lib/workoutFormat';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
@@ -66,6 +67,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [name, setName] = useState(initialName || '');
   const [prompt, setPrompt] = useState(initialPrompt || '');
   const [count, setCount] = useState(initialCount ? String(initialCount) : '8');
+  const [duration, setDuration] = useState<string | null>(null);
+  const [countManual, setCountManual] = useState(false);
   const [selectedDays, setSelectedDays] = useState<number[]>(initialDays || []);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
@@ -87,6 +90,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const suggestionKey = useMemo(() => JSON.stringify({
     prompt: prompt.trim(),
     count,
+    duration,
     source,
     useBodyPlan,
     useBloodExam,
@@ -95,7 +99,15 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     extras: selectedExtraIds,
     extraCounts,
     reviewMode,
-  }), [prompt, count, source, useBodyPlan, useBloodExam, filterNoExtras, selectedCategoryIds, selectedExtraIds, extraCounts, reviewMode]);
+  }), [prompt, count, duration, source, useBodyPlan, useBloodExam, filterNoExtras, selectedCategoryIds, selectedExtraIds, extraCounts, reviewMode]);
+
+  // Pedido enviado à IA: texto do usuário + duração alvo (quando escolhida).
+  const promptWithDuration = useMemo(() => {
+    const base = prompt.trim();
+    if (!duration) return base;
+    const line = `Duração alvo: ${duration} por treino (o treino deve caber nesse tempo, contando séries e descanso).`;
+    return base ? `${base}\n${line}` : line;
+  }, [prompt, duration]);
 
   const suggestionKeyRef = useRef<string | null>(null);
   // IDs já mostrados nas sugestões — usados para pedir MAIS opções sem repetir.
@@ -150,6 +162,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setName('');
     setPrompt('');
     setCount('8');
+    setDuration(null);
+    setCountManual(false);
     setSelectedDays([]);
     setSelectedCategoryIds([]);
     manualCatsRef.current = new Set();
@@ -292,7 +306,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       }));
       const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
         body: {
-          prompt: prompt.trim(),
+          prompt: promptWithDuration,
           count: Math.min(50, Math.max(n * 2, 6)),
           library,
           health_context: healthContext,
@@ -496,7 +510,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           }));
 
           const { data, error } = await supabase.functions.invoke('compose-workout-from-text', {
-            body: { prompt: prompt.trim(), count: remainingCount, library, health_context: healthContext, body_plan_context: bodyPlanContext },
+            body: { prompt: promptWithDuration, count: remainingCount, library, health_context: healthContext, body_plan_context: bodyPlanContext },
           });
 
           if (error || data?.error) {
@@ -517,7 +531,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
         const planObjective = useBodyPlan
           ? (bodyPlanContext || 'Treino sugerido a partir da análise corporal')
-          : prompt.trim();
+          : promptWithDuration;
 
         const plan = await createPlan.mutateAsync({
           name: (name.trim() + bucket.suffix).slice(0, 80),
@@ -849,6 +863,33 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
               )}
 
               <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Tempo do treino</Label>
+                <p className="text-[10px] text-muted-foreground leading-snug">
+                  Define quantos exercícios cabem — você pode ajustar a quantidade abaixo.
+                </p>
+                <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6">
+                  {DURATION_OPTIONS.map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => {
+                        const next = duration === d ? null : d;
+                        setDuration(next);
+                        if (next) { setCount(String(COUNT_BY_DURATION[next])); setCountManual(false); }
+                      }}
+                      className={`rounded-md border px-2 py-2 text-xs font-medium transition-colors ${
+                        duration === d
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border hover:border-primary/60'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
                 <Label htmlFor="ai-count" className="text-xs font-medium">
                   Quantidade de exercícios por treino
                 </Label>
@@ -857,10 +898,13 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                   ref={countRef}
                   inputMode="numeric"
                   value={count}
-                  onChange={(e) => { setCount(e.target.value.replace(/\D/g, '')); clearIf('count'); }}
+                  onChange={(e) => { setCount(e.target.value.replace(/\D/g, '')); setCountManual(true); clearIf('count'); }}
                   placeholder="8"
                   aria-invalid={!!errorOf('count')}
                 />
+                {duration && !countManual && (
+                  <p className="text-[10px] text-muted-foreground">Sugerido para {duration}.</p>
+                )}
                 <FieldError message={errorOf('count')} />
               </div>
 

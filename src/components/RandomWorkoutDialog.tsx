@@ -13,6 +13,7 @@ import { ExtrasPicker } from '@/components/ExtrasPicker';
 import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { Shuffle, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { DURATION_OPTIONS, COUNT_BY_DURATION, SETS_OPTIONS, REPS_OPTIONS, setsFromOption, repsFromOption } from '@/lib/workoutFormat';
 import {
   BODY_GROUPS,
   AESTHETIC_ITEMS,
@@ -44,6 +45,10 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [count, setCount] = useState('10');
+  const [duration, setDuration] = useState<string | null>(null);
+  const [countManual, setCountManual] = useState(false);
+  const [setsOpt, setSetsOpt] = useState<string | null>(null);
+  const [repsOpt, setRepsOpt] = useState<string | null>(null);
   const [minPercent, setMinPercent] = useState('20');
   const [bodyKeys, setBodyKeys] = useState<Set<BodyAnalysisKey>>(new Set());
   const [aestheticKeys, setAestheticKeys] = useState<Set<AestheticAnalysisKey>>(new Set());
@@ -138,6 +143,10 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     setStep(0);
     setName('');
     setCount('10');
+    setDuration(null);
+    setCountManual(false);
+    setSetsOpt(null);
+    setRepsOpt(null);
     setMinPercent('20');
     setBodyKeys(new Set());
     setAestheticKeys(new Set());
@@ -297,8 +306,8 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
               workout_plan_id: plan.id,
               name: ex.name,
               image_urls: ex.image_urls || [],
-              sets: ex.default_sets || 3,
-              reps: ex.default_reps || 12,
+              sets: setsFromOption(setsOpt) ?? ex.default_sets ?? 3,
+              reps: repsFromOption(repsOpt) ?? ex.default_reps ?? 12,
               order_index: idx,
               video_type: ex.video_type,
               video_url: ex.video_url,
@@ -366,6 +375,33 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                 <FieldError message={errorOf('name')} />
               </div>
 
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Tempo do treino</Label>
+                <p className="text-[10px] text-muted-foreground leading-snug">
+                  Define quantos exercícios cabem — você pode ajustar a quantidade abaixo.
+                </p>
+                <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6">
+                  {DURATION_OPTIONS.map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => {
+                        const next = duration === d ? null : d;
+                        setDuration(next);
+                        if (next) { setCount(String(COUNT_BY_DURATION[next])); setCountManual(false); }
+                      }}
+                      className={`rounded-md border px-2 py-2 text-xs font-medium transition-colors ${
+                        duration === d
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border hover:border-primary/60'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="rand-count" className="text-xs font-medium">Qtd. exercícios</Label>
@@ -374,10 +410,13 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                     ref={countRef}
                     inputMode="numeric"
                     value={count}
-                    onChange={(e) => { setCount(e.target.value.replace(/\D/g, '')); clearIf('count'); }}
+                    onChange={(e) => { setCount(e.target.value.replace(/\D/g, '')); setCountManual(true); clearIf('count'); }}
                     placeholder="10"
                     aria-invalid={!!errorOf('count')}
                   />
+                  {duration && !countManual && (
+                    <p className="text-[10px] text-muted-foreground">Sugerido para {duration}.</p>
+                  )}
                   <FieldError message={errorOf('count')} />
                 </div>
                 <div className="space-y-1.5">
@@ -389,6 +428,50 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                     onChange={(e) => setMinPercent(e.target.value.replace(/\D/g, ''))}
                     placeholder="20"
                   />
+                </div>
+              </div>
+
+              <div className="space-y-3 rounded-md border border-border/70 bg-muted/20 p-3">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Séries e repetições <span className="normal-case font-normal">(opcional — sem escolha, usa o padrão de cada exercício)</span>
+                </p>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium">Séries por exercício</Label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {SETS_OPTIONS.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setSetsOpt(setsOpt === s ? null : s)}
+                        className={`rounded-md border px-2 py-2 text-xs font-medium transition-colors ${
+                          setsOpt === s
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background border-border hover:border-primary/60'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium">Repetições</Label>
+                  <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+                    {REPS_OPTIONS.map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setRepsOpt(repsOpt === r ? null : r)}
+                        className={`rounded-md border px-2 py-2 text-xs font-medium transition-colors ${
+                          repsOpt === r
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background border-border hover:border-primary/60'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
