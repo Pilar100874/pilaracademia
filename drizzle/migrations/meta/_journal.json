@@ -85,6 +85,13 @@
       "when": 1791992347208,
       "tag": "0011_add_workout_exercise_rest_seconds",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792000583594,
+      "tag": "0012_member_notifications",
+      "breakpoints": true
     }
   ]
 }
