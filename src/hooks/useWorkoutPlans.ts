@@ -35,6 +35,8 @@ export interface WorkoutPlan {
   is_cooldown_plan?: boolean;
   objective?: string | null;
   ai_rationale?: string | null;
+  sets?: number;
+  reps?: number;
   created_at: string;
   updated_at: string;
   exercises?: WorkoutExercise[];
@@ -97,7 +99,7 @@ export function useWorkoutPlans() {
   });
 
   const createPlan = useMutation({
-    mutationFn: async (data: { name: string; days_of_week: number[]; cooldown_enabled?: boolean; is_cooldown_plan?: boolean; objective?: string | null; ai_rationale?: string | null; _silent?: boolean }) => {
+    mutationFn: async (data: { name: string; days_of_week: number[]; cooldown_enabled?: boolean; is_cooldown_plan?: boolean; objective?: string | null; ai_rationale?: string | null; sets?: number; reps?: number; _silent?: boolean }) => {
       if (!user) throw new Error('User not authenticated');
 
       const { data: plan, error } = await supabase
@@ -110,6 +112,8 @@ export function useWorkoutPlans() {
           ...(data.is_cooldown_plan !== undefined ? { is_cooldown_plan: data.is_cooldown_plan } : {}),
           ...(data.objective !== undefined ? { objective: data.objective } : {}),
           ...(data.ai_rationale !== undefined ? { ai_rationale: data.ai_rationale } : {}),
+          ...(data.sets !== undefined ? { sets: data.sets } : {}),
+          ...(data.reps !== undefined ? { reps: data.reps } : {}),
         } as any)
         .select()
         .single();
@@ -127,7 +131,7 @@ export function useWorkoutPlans() {
   });
 
   const updatePlan = useMutation({
-    mutationFn: async (data: { id: string; name: string; days_of_week: number[]; cooldown_enabled?: boolean; objective?: string | null; ai_rationale?: string | null }) => {
+    mutationFn: async (data: { id: string; name: string; days_of_week: number[]; cooldown_enabled?: boolean; objective?: string | null; ai_rationale?: string | null; sets?: number; reps?: number }) => {
       const { error } = await supabase
         .from('workout_plans')
         .update({
@@ -136,6 +140,8 @@ export function useWorkoutPlans() {
           ...(data.cooldown_enabled !== undefined ? { cooldown_enabled: data.cooldown_enabled } : {}),
           ...(data.objective !== undefined ? { objective: data.objective } : {}),
           ...(data.ai_rationale !== undefined ? { ai_rationale: data.ai_rationale } : {}),
+          ...(data.sets !== undefined ? { sets: data.sets } : {}),
+          ...(data.reps !== undefined ? { reps: data.reps } : {}),
         } as any)
         .eq('id', data.id);
 
