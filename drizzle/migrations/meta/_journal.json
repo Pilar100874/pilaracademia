@@ -57,6 +57,13 @@
       "when": 1791988536780,
       "tag": "0007_workout_level_sets_reps",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791989563640,
+      "tag": "0008_per_exercise_sets_reps",
+      "breakpoints": true
     }
   ]
 }
