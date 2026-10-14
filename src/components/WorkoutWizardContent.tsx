@@ -178,6 +178,7 @@ export function WorkoutWizardContent({ onCancel, onDone, extrasSlot, generating 
       if (a?.length) lines.push(`- ${q.title.replace(/\?$/, '')}: ${a.join(', ')}`);
     });
     if (durationAnswer) lines.push(`- Quantidade de exercícios: ${count} (o treino deve caber em ${durationAnswer}, contando séries e descanso)`);
+    lines.push('- Séries, repetições e descanso: sugira os valores de CADA exercício, adequados ao tipo de movimento e à intensidade escolhida');
     const styleCats = Array.from(new Set((answers.estilo || []).flatMap((s) => styleCategories?.[s] || [])));
     if (styleCats.length) lines.push(`- Categorias do estilo escolhido: ${styleCats.join(', ')}`);
     if (freeText.trim()) lines.push(`- Pedido do aluno: ${freeText.trim()}`);
