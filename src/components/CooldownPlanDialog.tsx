@@ -6,7 +6,6 @@ import { LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { ExerciseListItem } from '@/components/ExerciseListItem';
 import { SelectExerciseDialog } from '@/components/SelectExerciseDialog';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
-import { EditWorkoutExerciseDialog } from '@/components/EditWorkoutExerciseDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { Plus, Leaf } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
@@ -23,14 +22,12 @@ export function CooldownPlanDialog({ open, onOpenChange }: CooldownPlanDialogPro
     cooldownPlan,
     createPlan,
     addExercise,
-    updateExercise,
     deleteExercise,
     reorderExercises,
   } = useWorkoutPlans();
 
   const [selectExerciseOpen, setSelectExerciseOpen] = useState(false);
   const [createExerciseOpen, setCreateExerciseOpen] = useState(false);
-  const [editingExercise, setEditingExercise] = useState<WorkoutExercise | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<WorkoutExercise | null>(null);
   const [localExercises, setLocalExercises] = useState<WorkoutExercise[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -79,28 +76,6 @@ export function CooldownPlanDialog({ open, onOpenChange }: CooldownPlanDialogPro
     });
   };
 
-  const handleSaveExercise = async (data: {
-    sets: number;
-    reps: number;
-    video: {
-      video_type: 'youtube' | 'upload' | 'instagram' | null;
-      video_url: string | null;
-      video_start_seconds: number | null;
-      video_end_seconds: number | null;
-    };
-  }) => {
-    if (!editingExercise) return;
-    await updateExercise.mutateAsync({
-      id: editingExercise.id,
-      sets: data.sets,
-      reps: data.reps,
-      video_type: data.video.video_type,
-      video_url: data.video.video_url,
-      video_start_seconds: data.video.video_start_seconds,
-      video_end_seconds: data.video.video_end_seconds,
-    });
-    setEditingExercise(null);
-  };
 
   const handleDragStart = (index: number) => setDraggedIndex(index);
   const handleDragOver = (e: React.DragEvent, index: number) => {
@@ -174,7 +149,6 @@ export function CooldownPlanDialog({ open, onOpenChange }: CooldownPlanDialogPro
                     <ExerciseListItem
                       exercise={exercise}
                       index={index}
-                      onEdit={() => setEditingExercise(exercise)}
                       onDelete={() => setDeletingExercise(exercise)}
                     />
                   </div>
@@ -204,12 +178,6 @@ export function CooldownPlanDialog({ open, onOpenChange }: CooldownPlanDialogPro
         editingExercise={null}
       />
 
-      <EditWorkoutExerciseDialog
-        open={!!editingExercise}
-        onOpenChange={(o) => !o && setEditingExercise(null)}
-        exercise={editingExercise}
-        onSave={handleSaveExercise}
-      />
 
       <ConfirmDeleteDialog
         open={!!deletingExercise}

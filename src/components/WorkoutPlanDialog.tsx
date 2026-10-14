@@ -15,7 +15,6 @@ import { LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { ExerciseListItem } from '@/components/ExerciseListItem';
 import { SelectExerciseDialog } from '@/components/SelectExerciseDialog';
 import { ExerciseLibraryDialog } from '@/components/ExerciseLibraryDialog';
-import { EditWorkoutExerciseDialog } from '@/components/EditWorkoutExerciseDialog';
 import { Plus, Trash2, Save, Mic } from 'lucide-react';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { FieldError } from '@/components/FieldError';
@@ -58,7 +57,6 @@ export function WorkoutPlanDialog({
     updatePlan,
     deletePlan,
     addExercise,
-    updateExercise,
     deleteExercise,
     reorderExercises,
   } = useWorkoutPlans();
@@ -72,7 +70,6 @@ export function WorkoutPlanDialog({
   const [selectExerciseOpen, setSelectExerciseOpen] = useState(false);
   const [createExerciseOpen, setCreateExerciseOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingExercise, setEditingExercise] = useState<WorkoutExercise | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<WorkoutExercise | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -256,30 +253,6 @@ export function WorkoutPlanDialog({
     setDraggedIndex(null);
   };
 
-  const handleEditExercise = (exercise: WorkoutExercise) => {
-    setEditingExercise(exercise);
-  };
-
-  const handleSaveExercise = async (data: {
-    sets: number;
-    reps: number;
-    video: {
-      video_type: 'youtube' | 'upload' | 'instagram' | null;
-      video_url: string | null;
-      video_start_seconds: number | null;
-      video_end_seconds: number | null;
-    };
-  }) => {
-    if (!editingExercise) return;
-    await updateExercise.mutateAsync({
-      id: editingExercise.id,
-      video_type: data.video.video_type,
-      video_url: data.video.video_url,
-      video_start_seconds: data.video.video_start_seconds,
-      video_end_seconds: data.video.video_end_seconds,
-    });
-    setEditingExercise(null);
-  };
 
   return (
     <>
@@ -432,7 +405,6 @@ export function WorkoutPlanDialog({
                         <ExerciseListItem
                           exercise={exercise}
                           index={index}
-                          onEdit={() => handleEditExercise(exercise)}
                           onDelete={() => setDeletingExercise(exercise)}
                         />
                       </div>
@@ -501,12 +473,6 @@ export function WorkoutPlanDialog({
         description="Esta ação não pode ser desfeita. Todos os exercícios deste treino serão removidos."
       />
 
-      <EditWorkoutExerciseDialog
-        open={!!editingExercise}
-        onOpenChange={(open) => !open && setEditingExercise(null)}
-        exercise={editingExercise}
-        onSave={handleSaveExercise}
-      />
 
       <ConfirmDeleteDialog
         open={!!deletingExercise}
