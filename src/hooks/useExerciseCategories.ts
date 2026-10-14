@@ -9,6 +9,8 @@ export interface ExerciseCategory {
   name: string;
   parent_id: string | null;
   is_global?: boolean;
+  /** Aparece como "estilo de treino" no assistente guiado. */
+  is_style?: boolean;
   /** Categoria pertencente à biblioteca Global Gif. */
   is_gif?: boolean;
   created_at: string;
@@ -95,11 +97,12 @@ export function useExerciseCategories() {
   });
 
   const updateCategory = useMutation({
-    mutationFn: async (data: { id: string; name?: string; parent_id?: string | null; is_global?: boolean }) => {
+    mutationFn: async (data: { id: string; name?: string; parent_id?: string | null; is_global?: boolean; is_style?: boolean }) => {
       const update: Record<string, any> = {};
       if (data.name !== undefined) update.name = data.name.trim();
       if (data.parent_id !== undefined) update.parent_id = data.parent_id;
       if (data.is_global !== undefined) update.is_global = data.is_global;
+      if (data.is_style !== undefined) update.is_style = data.is_style;
       const { error } = await supabase
         .from('exercise_categories')
         .update(update)
