@@ -287,8 +287,25 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   };
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
+  // Valida as etapas 0 e 1 garantindo que os campos estejam montados:
+  // se a etapa atual não for a 0, volta para ela primeiro e só então valida,
+  // para que o campo com erro receba foco e scroll.
+  const validateFromStart = (onValid: () => void) => {
+    const run = () => {
+      if (!validateStep(0)) return;
+      if (!validateStep(1)) { setStep(1); return; }
+      onValid();
+    };
+    if (step !== 0) {
+      setStep(0);
+      setTimeout(run, 60);
+    } else {
+      run();
+    }
+  };
+
   const handleSuggestGroups = async (more = false) => {
-    if (!validateStep(0) || !validateStep(1)) { setStep(0); return; }
+    if (!more) { validateFromStart(() => handleSuggestGroups(true)); return; }
     if (more && groups) {
       // Já mostramos tudo que a biblioteca tem com esses filtros?
       if (filteredExercises.length <= suggestedIdsRef.current.size) {
