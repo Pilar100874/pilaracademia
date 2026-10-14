@@ -84,6 +84,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [groupsRationale, setGroupsRationale] = useState('');
   const aiSetsRef = useRef<{ sets?: number; reps?: number }>({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  const exSetsRef = useRef<Record<string, { sets: number | null; reps: number | null }>>({});
   const [picked, setPicked] = useState<string[]>([]);
 
   // Assinatura de tudo que alimenta a geração de sugestões. Se qualquer dado
@@ -322,6 +323,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       const nextGroups = Array.isArray(data?.groups) ? data.groups : [];
       const nextReasons = (data?.reasons && typeof data.reasons === 'object') ? data.reasons as Record<string, string> : {};
       setReasons((prev) => (more ? { ...prev, ...nextReasons } : nextReasons));
+      const nextSets = (data?.exerciseSets && typeof data.exerciseSets === 'object') ? data.exerciseSets as Record<string, { sets: number | null; reps: number | null }> : {};
+      exSetsRef.current = more ? { ...exSetsRef.current, ...nextSets } : nextSets;
       if (more && groups) {
         // Junta as novas sugestões aos grupos atuais, preservando o que está selecionado.
         const merged = groups.map((g) => ({ ...g, exercise_ids: [...g.exercise_ids] }));
@@ -383,7 +386,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         group_name: groupOf(ex.id)?.name ?? null,
         ai_reason: reasons[ex.id] || groupOf(ex.id)?.reason || null,
         workout_plan_id: plan.id, name: ex.name, image_urls: ex.image_urls || [],
-        sets: ex.default_sets || 3, reps: ex.default_reps || 12, order_index: idx,
+        sets: exSetsRef.current[ex.id]?.sets || aiSetsRef.current.sets || 3, reps: exSetsRef.current[ex.id]?.reps || aiSetsRef.current.reps || 12, order_index: idx,
         video_type: ex.video_type, video_url: ex.video_url,
         video_start_seconds: ex.video_start_seconds, video_end_seconds: ex.video_end_seconds,
         exercise_library_id: ex.id, _silent: true,
@@ -527,7 +530,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
           const ids: string[] = Array.isArray(data?.exercise_ids) ? data.exercise_ids : [];
           aiPicked = ids.map((id) => byId.get(id)).filter(Boolean) as typeof exercises;
-          if (Array.isArray(data?.items)) for (const it of data.items as { id: string; group: string; reason: string }[]) itemInfo.set(it.id, it);
+          if (Array.isArray(data?.items)) for (const it of data.items as { id: string; group: string; reason: string; sets?: number | null; reps?: number | null }[]) itemInfo.set(it.id, it);
           if (data?.rationale) lastRationale = data.rationale;
           if (data?.sets) lastSets = data.sets;
           if (data?.reps) lastReps = data.reps;
@@ -557,8 +560,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
               workout_plan_id: plan.id,
               name: ex.name,
               image_urls: ex.image_urls || [],
-              sets: ex.default_sets || 3,
-              reps: ex.default_reps || 12,
+              sets: itemInfo.get(ex.id)?.sets || lastSets || 3,
+              reps: itemInfo.get(ex.id)?.reps || lastReps || 12,
               order_index: idx,
               video_type: ex.video_type,
               video_url: ex.video_url,
