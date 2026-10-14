@@ -143,6 +143,10 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
     setStep(0);
     setName('');
     setCount('10');
+    setDuration(null);
+    setCountManual(false);
+    setSetsOpt(null);
+    setRepsOpt(null);
     setMinPercent('20');
     setBodyKeys(new Set());
     setAestheticKeys(new Set());
@@ -302,8 +306,8 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
               workout_plan_id: plan.id,
               name: ex.name,
               image_urls: ex.image_urls || [],
-              sets: ex.default_sets || 3,
-              reps: ex.default_reps || 12,
+              sets: setsFromOption(setsOpt) ?? ex.default_sets ?? 3,
+              reps: repsFromOption(repsOpt) ?? ex.default_reps ?? 12,
               order_index: idx,
               video_type: ex.video_type,
               video_url: ex.video_url,
