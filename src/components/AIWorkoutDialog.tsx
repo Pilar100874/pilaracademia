@@ -360,9 +360,13 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       }
       const byId = new Map(exercises.map((ex) => [ex.id, ex] as const));
 
-      const dayBuckets: { days: number[]; suffix: string; categoryId?: string }[] = [
-        { days: selectedDays, suffix: '' },
-      ];
+      const DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      const sortedDays = [...selectedDays].sort((a, b) => a - b);
+      const dayBuckets: { days: number[]; suffix: string; categoryId?: string }[] =
+        sortedDays.length > 1
+          ? sortedDays.map((d) => ({ days: [d], suffix: ` - ${DAY_LABELS[d]}` }))
+          : [{ days: sortedDays, suffix: '' }];
+      const usedIds = new Set<string>();
 
       let totalCreated = 0;
       let lastRationale: string | undefined;
