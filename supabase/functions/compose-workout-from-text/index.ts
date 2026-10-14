@@ -215,8 +215,11 @@ ${libSummary}`;
                     },
                   },
                   rationale: { type: 'string' },
+                  sets: { type: 'integer', description: 'Séries para TODOS os exercícios do treino (1-6), conforme nível/objetivo/duração' },
+                  reps: { type: 'integer', description: 'Repetições por série para todo o treino (4-30)' },
+                  
                 },
-                required: ['groups', 'rationale'],
+                required: ['groups', 'rationale', 'sets', 'reps'],
                 additionalProperties: false,
               },
             },
@@ -235,12 +238,14 @@ ${libSummary}`;
                     description: 'Exercícios na ordem de execução.',
                     items: { type: 'object', properties: { id: { type: 'string' }, group: { type: 'string' }, reason: { type: 'string' } }, required: ['id', 'group', 'reason'], additionalProperties: false },
                   },
+                  sets: { type: 'integer', description: 'Séries para TODOS os exercícios do treino (1-6), conforme nível/objetivo/duração' },
+                  reps: { type: 'integer', description: 'Repetições por série para todo o treino (4-30)' },
                   rationale: {
                     type: 'string',
                     description: 'Breve justificativa (1-2 frases) da escolha e ordem.',
                   },
                 },
-                required: ['exercises', 'rationale'],
+                required: ['exercises', 'rationale', 'sets', 'reps'],
                 additionalProperties: false,
               },
             },
@@ -281,7 +286,7 @@ ${libSummary}`;
       });
     }
 
-    let parsed: { exercise_ids?: unknown; exercises?: unknown; rationale?: unknown; groups?: unknown };
+    let parsed: { sets?: unknown; reps?: unknown; exercise_ids?: unknown; exercises?: unknown; rationale?: unknown; groups?: unknown };
     try {
       parsed = JSON.parse(toolCall.function.arguments);
     } catch (e) {
@@ -321,7 +326,7 @@ ${libSummary}`;
       if (groups.length === 0) {
         return new Response(JSON.stringify({ error: 'A IA não conseguiu sugerir exercícios da sua biblioteca.' }), { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-      return new Response(JSON.stringify({ groups, reasons, rationale: typeof parsed.rationale === 'string' ? parsed.rationale : '' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ groups, reasons, sets: Number.isFinite(Number(parsed.sets)) ? Math.min(6, Math.max(1, Math.round(Number(parsed.sets)))) : null, reps: Number.isFinite(Number(parsed.reps)) ? Math.min(30, Math.max(1, Math.round(Number(parsed.reps)))) : null, rationale: typeof parsed.rationale === 'string' ? parsed.rationale : '' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     const rawItems = Array.isArray(parsed.exercises)
       ? (parsed.exercises as { id?: unknown; group?: unknown; reason?: unknown }[])
@@ -350,6 +355,7 @@ ${libSummary}`;
       JSON.stringify({
         exercise_ids,
         items,
+        sets: Number.isFinite(Number(parsed.sets)) ? Math.min(6, Math.max(1, Math.round(Number(parsed.sets)))) : null, reps: Number.isFinite(Number(parsed.reps)) ? Math.min(30, Math.max(1, Math.round(Number(parsed.reps)))) : null, 
         rationale: typeof parsed.rationale === 'string' ? parsed.rationale : '',
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

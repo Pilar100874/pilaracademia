@@ -3626,6 +3626,8 @@ export type Database = {
           is_cooldown_plan: boolean
           name: string
           objective: string | null
+          reps: number
+          sets: number
           updated_at: string
           user_id: string
         }
@@ -3638,6 +3640,8 @@ export type Database = {
           is_cooldown_plan?: boolean
           name: string
           objective?: string | null
+          reps?: number
+          sets?: number
           updated_at?: string
           user_id: string
         }
@@ -3650,6 +3654,8 @@ export type Database = {
           is_cooldown_plan?: boolean
           name?: string
           objective?: string | null
+          reps?: number
+          sets?: number
           updated_at?: string
           user_id?: string
         }

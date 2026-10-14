@@ -82,6 +82,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [reviewMode, setReviewMode] = useState(false);
   const [groups, setGroups] = useState<{ name: string; reason?: string; exercise_ids: string[] }[] | null>(null);
   const [groupsRationale, setGroupsRationale] = useState('');
+  const aiSetsRef = useRef<{ sets?: number; reps?: number }>({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [picked, setPicked] = useState<string[]>([]);
 
@@ -342,6 +343,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
       } else {
         setGroups(nextGroups);
         setGroupsRationale(data?.rationale || '');
+        aiSetsRef.current = { sets: data?.sets ?? undefined, reps: data?.reps ?? undefined };
         setPicked([]);
         suggestedIdsRef.current = new Set(nextGroups.flatMap((g) => g.exercise_ids));
       }
@@ -371,6 +373,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         days_of_week: selectedDays,
         objective: prompt.trim() || null,
         ai_rationale: groupsRationale || null,
+        sets: aiSetsRef.current.sets,
+        reps: aiSetsRef.current.reps,
         _silent: true,
       });
       const list = picked.map((id) => byId.get(id)).filter(Boolean) as typeof exercises;
@@ -438,6 +442,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
       let totalCreated = 0;
       let lastRationale: string | undefined;
+      let lastSets: number | undefined;
+      let lastReps: number | undefined;
 
       for (const bucket of dayBuckets) {
         const pool = filteredExercises;
@@ -523,6 +529,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           aiPicked = ids.map((id) => byId.get(id)).filter(Boolean) as typeof exercises;
           if (Array.isArray(data?.items)) for (const it of data.items as { id: string; group: string; reason: string }[]) itemInfo.set(it.id, it);
           if (data?.rationale) lastRationale = data.rationale;
+          if (data?.sets) lastSets = data.sets;
+          if (data?.reps) lastReps = data.reps;
         }
 
         const picked = [...pinned, ...aiPicked];
@@ -538,6 +546,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           days_of_week: bucket.days,
           objective: planObjective || null,
           ai_rationale: lastRationale || null,
+          sets: lastSets,
+          reps: lastReps,
           _silent: true,
         });
 

@@ -299,6 +299,8 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
         const plan = await createPlan.mutateAsync({
           name: (name.trim() + bucket.suffix).slice(0, 80),
           days_of_week: bucket.days,
+          sets: setsFromOption(setsOpt) ?? 3,
+          reps: repsFromOption(repsOpt) ?? 12,
         });
         await Promise.all(
           picked.map((ex, idx) =>
@@ -433,7 +435,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
 
               <div className="space-y-3 rounded-md border border-border/70 bg-muted/20 p-3">
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Séries e repetições <span className="normal-case font-normal">(opcional — sem escolha, usa o padrão de cada exercício)</span>
+                  Séries e repetições <span className="normal-case font-normal">(opcional — vale para o treino todo; sem escolha, 3 × 12)</span>
                 </p>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium">Séries por exercício</Label>

@@ -414,29 +414,6 @@ export function ExerciseLibraryDialog({
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="default-sets">Séries Padrão</Label>
-                <Input
-                  id="default-sets"
-                  type="number"
-                  min={1}
-                  value={defaultSets}
-                  onChange={(e) => setDefaultSets(Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="default-reps">Repetições Padrão</Label>
-                <Input
-                  id="default-reps"
-                  type="number"
-                  min={1}
-                  value={defaultReps}
-                  onChange={(e) => setDefaultReps(Number(e.target.value))}
-                />
-              </div>
-            </div>
-
             <ExerciseVideoEditor value={video} onChange={setVideo} />
 
             <Button
