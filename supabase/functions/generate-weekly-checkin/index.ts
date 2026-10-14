@@ -75,7 +75,7 @@ Responda em português, tom amigável, máximo 2 parágrafos curtos.`;
       method: 'POST',
       headers: { Authorization: `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3.8-flash',
         messages: [
           { role: 'system', content: 'Você é coach de saúde. Seja específico com números, sem encheção.' },
           { role: 'user', content: userPrompt },

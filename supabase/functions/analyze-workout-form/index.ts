@@ -59,7 +59,7 @@ Regra: se a pessoa está parada com a palma da mão visível para a câmera (mes
 Forneça também um feedback CURTO em português (máx 60 caracteres) sobre a forma.`;
 
     const body = {
-      model: "google/gemini-2.5-flash-lite",
+      model: "google/gemini-3.1-flash-lite",
       messages: [
         { role: "system", content: systemPrompt },
         {

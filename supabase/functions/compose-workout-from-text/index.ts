@@ -187,7 +187,7 @@ ${libSummary}`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3.8-flash',
         messages: [
           { role: 'system', content: groupsMode ? groupsPrompt : systemPrompt },
           { role: 'user', content: userPrompt },
@@ -378,7 +378,7 @@ async function explain(key: string, prompt: string, body: RequestBody): Promise<
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash',
+      model: 'google/gemini-3.8-flash',
       messages: [
         { role: 'system', content: 'Você é um personal trainer. Para a sequência de exercícios dada (na ordem), escreva para CADA exercício 1 frase curta em pt-BR explicando por que ele está nessa posição da sequência, e uma justificativa geral (2-3 frases) do treino. Responda chamando explain_workout.' },
         { role: 'user', content: `Objetivo: ${prompt}\n${body.health_context ? body.health_context + '\n' : ''}Sequência:\n${list}` },

@@ -134,7 +134,7 @@ Cada item DEVE ter calorias/proteína/carbs/gordura calculados para a quantidade
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3.8-flash',
         messages: [
           { role: 'system', content: SYSTEM },
           { role: 'user', content: userPrompt },
