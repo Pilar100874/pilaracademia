@@ -191,7 +191,8 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 lg:px-8 lg:py-6 space-y-4">
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5 lg:px-8 lg:py-6">
+        <div className="mx-auto w-full max-w-3xl space-y-4">
         {ALL_STEPS[step]?.key === 'categorias' ? (
           <section className="rounded-md border border-border bg-card p-4 space-y-4">{categoriesSlot}</section>
         ) : ALL_STEPS[step]?.key === 'agenda' ? (
