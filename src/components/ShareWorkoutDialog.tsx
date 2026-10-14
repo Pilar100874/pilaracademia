@@ -6,6 +6,7 @@ import { Loader2, Copy, Check, ScanLine } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useAccountKind } from '@/hooks/useAccountKind';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { toast } from 'sonner';
 
@@ -28,12 +29,18 @@ interface ShareRow {
  */
 export function ShareWorkoutDialog({ open, onOpenChange, plan }: Props) {
   const { user } = useAuth();
+  const { restricted } = useAccountKind();
   const [share, setShare] = useState<ShareRow | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !user) return;
+    if (restricted) {
+      toast.error('Somente o gestor pode compartilhar treinos. Peça ao seu gestor.');
+      onOpenChange(false);
+      return;
+    }
     void createShare();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
