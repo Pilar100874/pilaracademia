@@ -312,11 +312,11 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
       </div>
 
       <div className="shrink-0 border-t border-border px-4 py-3 sm:px-5 lg:px-8 flex items-center gap-2">
-        <Button variant="outline" className="shrink-0 px-3 sm:px-4" onClick={() => (step === 0 ? onCancel() : setStep(step - 1))}>
+        <Button variant="outline" className="shrink-0 min-w-0 px-3 sm:px-4" onClick={() => (step === 0 ? onCancel() : setStep(step - 1))}>
           <ChevronLeft className="h-4 w-4 sm:mr-1" />
-          <span className="hidden sm:inline">{step === 0 ? 'Voltar' : 'Anterior'}</span>
+          <span className="whitespace-nowrap">{step === 0 ? 'Voltar' : 'Anterior'}</span>
         </Button>
-        <span className="hidden sm:block flex-1 text-center text-xs text-muted-foreground truncate">
+        <span className="hidden sm:block flex-1 min-w-0 text-center text-xs text-muted-foreground truncate">
           {totalAnswered} respostas
         </span>
         {isLast ? (
@@ -326,11 +326,11 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
             onClick={() => onDone({ prompt: composedPrompt, name: name.trim() || 'Treino do assistente', count, days, useBloodExam: useBlood, useBodyPlan: useBody })}
           >
             {generating ? <Loader2 className="h-4 w-4 sm:mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 sm:mr-1" />}
-            <span className="hidden sm:inline">{generating ? 'Gerando...' : 'Montar treino'}</span>
+            <span className="whitespace-nowrap">{generating ? 'Gerando...' : 'Montar treino'}</span>
           </Button>
         ) : (
-          <Button className="shrink-0" onClick={() => setStep(step + 1)}>
-            Próximo
+          <Button className="shrink-0 min-w-0 px-3 sm:px-4" onClick={() => setStep(step + 1)}>
+            <span className="whitespace-nowrap">Próximo</span>
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         )}
