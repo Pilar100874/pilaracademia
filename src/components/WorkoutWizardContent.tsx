@@ -15,6 +15,8 @@ type Question = {
   hint?: string;
   multi: boolean;
   options: string[];
+  /** Obrigatória na etapa. Sem nenhuma obrigatória, basta 1 resposta por etapa. */
+  required?: boolean;
 };
 
 type Step = { key: string; label: string; questions: Question[] };
@@ -54,13 +56,25 @@ const STEPS: Step[] = [
       { key: 'restricoes', title: 'Restrições de movimento', multi: true, options: ['Sem impacto', 'Sem saltos', 'Sem deitar de bruços', 'Sem ficar de joelhos', 'Sem peso nas mãos', 'Nenhuma'] },
     ],
   },
+  {
+    key: 'formato',
+    label: 'Formato',
+    questions: [
+      { key: 'duracao', required: true, title: 'Quanto tempo por treino?', hint: 'Obrigatório — define quantos exercícios cabem', multi: false, options: ['15 min', '20 min', '30 min', '45 min', '60 min', '90 min'] },
+      { key: 'intensidade', required: true, title: 'Intensidade desejada', hint: 'Obrigatório', multi: false, options: ['Leve', 'Moderada', 'Intensa'] },
+      { key: 'series', title: 'Quantas séries por exercício?', hint: 'Opcional', multi: false, options: ['2 séries', '3 séries', '4 séries', 'A IA decide'] },
+      { key: 'repeticoes', title: 'Repetições', hint: 'Opcional', multi: false, options: ['8 a 10', '12 a 15', '20 ou mais', 'Por tempo (30-45 s)', 'A IA decide'] },
+      { key: 'descanso', title: 'Descanso entre séries', hint: 'Opcional', multi: false, options: ['15 s', '30 s', '60 s', '90 s', 'A IA decide'] },
+      { key: 'estrutura', title: 'O treino deve ter', hint: 'Opcional — marque quantas quiser', multi: true, options: ['Aquecimento', 'Parte principal', 'Alongamento no final', 'Respiração'] },
+      { key: 'local', title: 'Onde vai treinar?', hint: 'Opcional', multi: false, options: ['Estúdio', 'Academia', 'Casa', 'Ao ar livre'] },
+    ],
+  },
 ];
 
-const FORMAT_QUESTIONS: Question[] = [
-  { key: 'duracao', title: 'Quanto tempo por treino?', multi: false, options: ['15 min', '30 min', '45 min', '60 min', '90 min'] },
-  { key: 'intensidade', title: 'Intensidade desejada', multi: false, options: ['Leve', 'Moderada', 'Intensa'] },
-  { key: 'local', title: 'Onde vai treinar?', multi: false, options: ['Estúdio', 'Academia', 'Casa', 'Ao ar livre'] },
-  { key: 'estrutura', title: 'Estrutura da aula', multi: true, options: ['Aquecimento', 'Parte principal', 'Final com alongamento', 'Respiração'] },
+const AGENDA_QUESTIONS: Question[] = [
+  { key: 'divisao', title: 'Como dividir a semana?', hint: 'Opcional', multi: false, options: ['Corpo todo todo dia', 'Alternar superior e inferior', 'Um foco por dia', 'A IA decide'] },
+  { key: 'semanas', title: 'Por quantas semanas?', hint: 'Opcional', multi: false, options: ['4 semanas', '8 semanas', '12 semanas', 'Contínuo'] },
+  { key: 'progressao', title: 'Aumentar a dificuldade com o tempo?', hint: 'Opcional', multi: false, options: ['Sim, aos poucos', 'Não, manter igual'] },
 ];
 
 const ALL_STEPS = [
@@ -68,9 +82,11 @@ const ALL_STEPS = [
   { key: 'categorias', label: 'Categorias' },
   { key: 'agenda', label: 'Agenda' },
   { key: 'final', label: 'Detalhes' },
+  { key: 'resumo', label: 'Resumo' },
 ];
 
-const COUNT_OPTIONS = [6, 8, 10, 12, 15, 20];
+const COUNT_OPTIONS = [4, 6, 8, 10, 12, 15, 20];
+const COUNT_BY_DURATION: Record<string, number> = { '15 min': 4, '20 min': 6, '30 min': 8, '45 min': 12, '60 min': 15, '90 min': 20 };
 
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -111,6 +127,12 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
   const [name, setName] = useState('');
   const [count, setCount] = useState(8);
   const [days, setDays] = useState<number[]>([]);
+  const [countManual, setCountManual] = useState(false);
+  const durationAnswer = answers.duracao?.[0];
+  const suggestedCount = durationAnswer ? COUNT_BY_DURATION[durationAnswer] : undefined;
+  useEffect(() => {
+    if (suggestedCount && !countManual) setCount(suggestedCount);
+  }, [suggestedCount, countManual]);
 
   // Estilo escolhido → categorias da biblioteca (o container aplica a seleção).
   const stylesKey = (answers.estilo || []).join('|');
@@ -154,10 +176,13 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
         if (a?.length) lines.push(`- ${q.title.replace(/\?$/, '')}: ${a.join(', ')}`);
       })
     );
-    FORMAT_QUESTIONS.forEach((q) => {
+    if (days.length) lines.push(`- Dias de treino: ${days.map((d) => DAYS[d]).join(', ')}`);
+    AGENDA_QUESTIONS.forEach((q) => {
+      if (q.key === 'divisao' && days.length < 2) return;
       const a = answers[q.key];
       if (a?.length) lines.push(`- ${q.title.replace(/\?$/, '')}: ${a.join(', ')}`);
     });
+    if (durationAnswer) lines.push(`- Quantidade de exercícios: ${count} (o treino deve caber em ${durationAnswer}, contando séries e descanso)`);
     const styleCats = Array.from(new Set((answers.estilo || []).flatMap((s) => styleCategories?.[s] || [])));
     if (styleCats.length) lines.push(`- Categorias do estilo escolhido: ${styleCats.join(', ')}`);
     if (freeText.trim()) lines.push(`- Pedido do aluno: ${freeText.trim()}`);
@@ -174,16 +199,19 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
   const current = STEPS[step];
   const totalAnswered = Object.values(answers).filter((a) => a.length).length;
 
-  const missingIn = (i: number) => (STEPS[i]?.questions ?? []).filter((q) => !(answers[q.key]?.length));
+  const missingIn = (i: number) => (STEPS[i]?.questions ?? []).filter((q) => q.required && !(answers[q.key]?.length));
 
   const stepComplete = (i: number): boolean => {
     const key = steps[i]?.key;
     if (!key) return false;
+    if (key === 'resumo') return true;
     if (key === 'final') return !!name.trim();
     if (key === 'agenda') return days.length > 0;
     if (key === 'categorias') return hasCategorySelection;
     const qs = STEPS[i]?.questions ?? [];
-    return qs.length > 0 && missingIn(i).length === 0;
+    if (!qs.length) return false;
+    if (qs.some((q) => q.required)) return missingIn(i).length === 0;
+    return qs.some((q) => answers[q.key]?.length);
   };
 
   const stepError = (i: number) => {
@@ -192,7 +220,49 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
     if (key === 'categorias') return 'Escolha ao menos uma categoria ou equipamento.';
     if (key === 'final') return 'Dê um nome ao treino para continuar.';
     const miss = missingIn(i).map((q) => q.title.replace(/\?$/, ''));
-    return miss.length ? `Falta responder: ${miss.join(' · ')}.` : '';
+    return miss.length ? `Falta responder: ${miss.join(' · ')}.` : 'Responda ao menos uma pergunta desta etapa.';
+  };
+
+  const renderQuestion = (q: Question) => (
+    <section key={q.key} className={cn('rounded-md border bg-card p-4 space-y-3', showStepError && q.required && !(answers[q.key]?.length) ? 'border-destructive/50' : 'border-border')}>
+      <div>
+        <h2 className="font-semibold text-base">{q.title}{q.required && <span className="text-destructive"> *</span>}</h2>
+        <p className="text-xs text-muted-foreground">{q.hint || (q.multi ? 'Marque quantas quiser' : 'Escolha uma opção')}</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        {q.options.map((opt) => {
+          const on = (answers[q.key] || []).includes(opt);
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => toggle(q, opt)}
+              className={cn(
+                'flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-2.5 py-2.5 text-center text-sm leading-snug transition-colors',
+                on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/60'
+              )}
+            >
+              {on && <Check className="h-3.5 w-3.5 shrink-0" />}
+              <span className="min-w-0 whitespace-normal break-words">{opt}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+
+  const summaryFor = (i: number): string[] => {
+    const key = steps[i]?.key;
+    const qa = (qs: Question[]) => qs.filter((q) => answers[q.key]?.length).map((q) => `${q.title.replace(/\?$/, '')}: ${answers[q.key].join(', ')}`);
+    if (key === 'categorias') return [hasCategorySelection ? 'Categorias/equipamentos escolhidos' : 'Nada escolhido'];
+    if (key === 'agenda') return [`Dias: ${days.map((d) => DAYS[d]).join(', ') || '—'}`, ...qa(AGENDA_QUESTIONS.filter((q) => q.key !== 'divisao' || days.length > 1))];
+    if (key === 'final') return [`Nome: ${name.trim() || '—'}`, `Exercícios: ${count}`, ...(freeText.trim() ? [`Pedido: ${freeText.trim()}`] : [])];
+    const lines = qa(STEPS[i]?.questions ?? []);
+    if (key === 'saude') {
+      if (useBlood) lines.push('Usar exames de sangue');
+      if (useBody) lines.push('Usar bioimpedância');
+    }
+    return lines.length ? lines : ['—'];
   };
 
   const missingSteps = steps.filter((s, i) => s.key !== 'final' && !stepComplete(i)).map((s) => s.label);
@@ -292,7 +362,11 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
               })}
             </div>
           </section>
-        ) : current ? (
+        ) : null}
+        {steps[step]?.key === 'agenda' && (
+          <>{AGENDA_QUESTIONS.filter((q) => q.key !== 'divisao' || days.length > 1).map(renderQuestion)}</>
+        )}
+        {steps[step]?.key === 'categorias' || steps[step]?.key === 'agenda' ? null : current ? (
           <>
           {current.key === 'saude' && (
             <section className="rounded-md border border-border bg-card p-4 space-y-3">
