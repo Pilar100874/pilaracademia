@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlans';
 import { GripVertical, Trash2, Dumbbell, ImageIcon, Play } from 'lucide-react';
@@ -11,13 +11,24 @@ interface ExerciseListItemProps {
   exercise: WorkoutExercise;
   index: number;
   onDelete: () => void;
+  onChangeSetsReps?: (sets: number, reps: number) => void;
 }
 
 export function ExerciseListItem({
   exercise,
   index,
   onDelete,
+  onChangeSetsReps,
 }: ExerciseListItemProps) {
+  const [setsTxt, setSetsTxt] = useState(String(exercise.sets));
+  const [repsTxt, setRepsTxt] = useState(String(exercise.reps));
+  useEffect(() => { setSetsTxt(String(exercise.sets)); setRepsTxt(String(exercise.reps)); }, [exercise.sets, exercise.reps]);
+  const commit = () => {
+    const s = Math.min(20, Math.max(1, parseInt(setsTxt) || exercise.sets));
+    const r = Math.min(100, Math.max(1, parseInt(repsTxt) || exercise.reps));
+    setSetsTxt(String(s)); setRepsTxt(String(r));
+    if (s !== exercise.sets || r !== exercise.reps) onChangeSetsReps?.(s, r);
+  };
   const [zoomOpen, setZoomOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
 
@@ -102,9 +113,30 @@ export function ExerciseListItem({
           <p className="font-medium text-sm leading-tight truncate" title={exercise.name}>
             {exercise.name}
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {exercise.sets} × {exercise.reps}
-          </p>
+          {onChangeSetsReps ? (
+            <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground" onPointerDown={(e) => e.stopPropagation()}>
+              <input
+                inputMode="numeric" aria-label="Séries" value={setsTxt} draggable={false}
+                onDragStart={(e) => e.preventDefault()}
+                onChange={(e) => setSetsTxt(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                className="h-7 w-10 rounded-md border border-border bg-background text-center text-sm text-foreground"
+              />
+              <span>séries ×</span>
+              <input
+                inputMode="numeric" aria-label="Repetições" value={repsTxt} draggable={false}
+                onDragStart={(e) => e.preventDefault()}
+                onChange={(e) => setRepsTxt(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                className="h-7 w-11 rounded-md border border-border bg-background text-center text-sm text-foreground"
+              />
+              <span>reps</span>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {exercise.sets} × {exercise.reps}
+            </p>
+          )}
         </div>
 
         <div className="flex gap-0.5 shrink-0">
