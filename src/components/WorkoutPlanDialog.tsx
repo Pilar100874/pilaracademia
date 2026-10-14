@@ -59,6 +59,7 @@ export function WorkoutPlanDialog({
     addExercise,
     deleteExercise,
     reorderExercises,
+    updateExercise,
   } = useWorkoutPlans();
 
   const [name, setName] = useState('');
