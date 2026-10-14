@@ -1,4 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useProfile } from '@/hooks/useProfile';
+import { calculateAge } from '@/types/profile';
 import { Check, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,20 +82,39 @@ export interface WorkoutWizardResult {
   name: string;
   count: number;
   days: number[];
+  useBloodExam: boolean;
+  useBodyPlan: boolean;
 }
 
 interface WorkoutWizardContentProps {
   onCancel: () => void;
   onDone: (result: WorkoutWizardResult) => void;
+  hasBloodExams?: boolean;
+  hasBodyPlan?: boolean;
 }
 
-export function WorkoutWizardContent({ onCancel, onDone }: WorkoutWizardContentProps) {
+export function WorkoutWizardContent({ onCancel, onDone, hasBloodExams = false, hasBodyPlan = false }: WorkoutWizardContentProps) {
+  const { profile } = useProfile();
+  const [useBlood, setUseBlood] = useState(hasBloodExams);
+  const [useBody, setUseBody] = useState(hasBodyPlan);
+  useEffect(() => setUseBlood(hasBloodExams), [hasBloodExams]);
+  useEffect(() => setUseBody(hasBodyPlan), [hasBodyPlan]);
+  const ageSeeded = useRef(false);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [freeText, setFreeText] = useState('');
   const [name, setName] = useState('');
   const [count, setCount] = useState(8);
   const [days, setDays] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (ageSeeded.current || !profile?.birth_date) return;
+    const age = calculateAge(profile.birth_date);
+    if (!age || age <= 0) return;
+    ageSeeded.current = true;
+    const opt = age <= 25 ? 'Até 25' : age <= 40 ? '26 a 40' : age <= 60 ? '41 a 60' : 'Acima de 60';
+    setAnswers((prev) => (prev.idade?.length ? prev : { ...prev, idade: [opt] }));
+  }, [profile?.birth_date]);
 
   const toggleDay = (idx: number) =>
     setDays((prev) => (prev.includes(idx) ? prev.filter((d) => d !== idx) : [...prev, idx].sort()));
@@ -179,7 +201,21 @@ export function WorkoutWizardContent({ onCancel, onDone }: WorkoutWizardContentP
             </div>
           </section>
         ) : current ? (
-          current.questions.map((q) => (
+          <>
+          {current.key === 'saude' && (
+            <section className="rounded-md border border-border bg-card p-4 space-y-3">
+              <h2 className="font-semibold text-base">Usar meus dados de saúde?</h2>
+              <label className="flex items-start gap-2 text-sm">
+                <Checkbox checked={useBlood} disabled={!hasBloodExams} onCheckedChange={(v) => setUseBlood(!!v)} />
+                <span>Considerar exames de sangue{!hasBloodExams && <span className="block text-xs text-muted-foreground">Nenhum exame cadastrado</span>}</span>
+              </label>
+              <label className="flex items-start gap-2 text-sm">
+                <Checkbox checked={useBody} disabled={!hasBodyPlan} onCheckedChange={(v) => setUseBody(!!v)} />
+                <span>Considerar bioimpedância / análise corporal{!hasBodyPlan && <span className="block text-xs text-muted-foreground">Nenhuma análise cadastrada</span>}</span>
+              </label>
+            </section>
+          )}
+          {current.questions.map((q) => (
             <section key={q.key} className="rounded-md border border-border bg-card p-4 space-y-3">
               <div>
                 <h2 className="font-semibold text-base">{q.title}</h2>
@@ -205,7 +241,8 @@ export function WorkoutWizardContent({ onCancel, onDone }: WorkoutWizardContentP
                 })}
               </div>
             </section>
-          ))
+          ))}
+          </>
         ) : (
           <>
             <section className="rounded-md border border-border bg-card p-4 space-y-3">
@@ -263,7 +300,7 @@ export function WorkoutWizardContent({ onCancel, onDone }: WorkoutWizardContentP
         {isLast ? (
           <Button
             disabled={!composedPrompt || !days.length}
-            onClick={() => onDone({ prompt: composedPrompt, name: name.trim() || 'Treino do assistente', count, days })}
+            onClick={() => onDone({ prompt: composedPrompt, name: name.trim() || 'Treino do assistente', count, days, useBloodExam: useBlood, useBodyPlan: useBody })}
           >
             <Sparkles className="h-4 w-4 mr-1" />
             Montar treino
