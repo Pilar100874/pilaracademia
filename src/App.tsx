@@ -35,6 +35,7 @@ import { PendingUploadRunner } from "@/components/PendingUploadRunner";
 import { GlobalBackgroundProgressBar } from "@/components/GlobalBackgroundProgressBar";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
+import ManagerUsersPage from "@/pages/ManagerUsersPage";
 import { PublicWorkoutPage } from "@/pages/PublicWorkoutPage";
 import { ImportWorkoutPage } from "@/pages/ImportWorkoutPage";
 import { Dashboard } from "@/components/Dashboard";
@@ -269,6 +270,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AdminUsersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/gestor"
+        element={
+          <ProtectedRoute>
+            <ManagerUsersPage />
           </ProtectedRoute>
         }
       />

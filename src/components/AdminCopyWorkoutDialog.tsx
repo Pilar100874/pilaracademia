@@ -11,21 +11,25 @@ import { cn } from '@/lib/utils';
 interface Props {
   target: { user_id: string; name: string; email: string | null } | null;
   onClose: () => void;
+  /** Gestor: de quem copiar (ele mesmo + usuários vinculados). */
+  sources?: { user_id: string; name: string }[];
 }
 
-export function AdminCopyWorkoutDialog({ target, onClose }: Props) {
+export function AdminCopyWorkoutDialog({ target, onClose, sources }: Props) {
   const { user } = useAuth();
   const [planId, setPlanId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [sourceId, setSourceId] = useState<string | null>(null);
+  const ownerId = sourceId ?? user?.id;
 
   const { data: plans = [], isLoading } = useQuery({
-    queryKey: ['admin', 'own-plans', user?.id],
+    queryKey: ['admin', 'own-plans', ownerId],
     enabled: !!target && !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('workout_plans')
         .select('id,name,objective')
-        .eq('user_id', user!.id)
+        .eq('user_id', ownerId!)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -64,10 +68,24 @@ export function AdminCopyWorkoutDialog({ target, onClose }: Props) {
           </DialogDescription>
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
+          {sources && (
+            <div className="mb-3 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Copiar de</p>
+              <select
+                className="w-full min-w-0 rounded-md border border-border bg-background px-3 py-2 text-sm"
+                value={ownerId ?? ''}
+                onChange={(e) => { setSourceId(e.target.value); setPlanId(null); }}
+              >
+                {sources.filter((s) => s.user_id !== target?.user_id).map((s) => (
+                  <option key={s.user_id} value={s.user_id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           {isLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" /></div>
           ) : plans.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Você não tem treinos.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">Nenhum treino aqui.</p>
           ) : (
             <ul className="space-y-2">
               {plans.map((p) => (
