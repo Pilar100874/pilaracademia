@@ -21,7 +21,8 @@ import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
 import { useBloodExams } from '@/hooks/useBloodExams';
 import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
 import { buildBloodExamHealthContext } from '@/lib/bloodExamContext';
-import { Sparkles, Loader2, Target } from 'lucide-react';
+import { Sparkles, Loader2, Target, ListChecks } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
@@ -70,6 +71,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [useBodyPlan, setUseBodyPlan] = useState(false);
   const [useBloodExam, setUseBloodExam] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const navigate = useNavigate();
   const [reviewMode, setReviewMode] = useState(false);
   const [groups, setGroups] = useState<{ name: string; reason?: string; exercise_ids: string[] }[] | null>(null);
   const [groupsRationale, setGroupsRationale] = useState('');
@@ -536,6 +538,18 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           <DialogDescription className="text-xs leading-relaxed">
             Em 3 passos a IA monta a sequência usando os exercícios da sua biblioteca.
           </DialogDescription>
+          <button
+            type="button"
+            onClick={() => {
+              reset();
+              onOpenChange(false);
+              navigate('/workouts/wizard');
+            }}
+            className="mt-2 inline-flex items-center gap-1.5 self-start rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            <ListChecks className="h-3.5 w-3.5 text-primary" />
+            Prefere responder perguntas? Abrir assistente guiado
+          </button>
         </DialogHeader>
 
         <WizardStepper steps={STEPS} current={step} onJump={(i) => i < step && setStep(i)} />
