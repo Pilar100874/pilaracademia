@@ -578,20 +578,20 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
               <div className="space-y-1.5 pt-3 border-t border-border/60">
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     Equipamentos extras
                   </p>
                   {(selectedExtraIds.length > 0 || filterNoExtras) && (
                     <button
                       type="button"
                       onClick={() => { setSelectedExtraIds([]); setExtraCounts({}); setFilterNoExtras(false); }}
-                      className="text-[10px] text-muted-foreground hover:text-foreground underline"
+                      className="text-xs text-muted-foreground hover:text-foreground underline"
                     >
                       Limpar
                     </button>
                   )}
                 </div>
-                <p className="text-[10px] text-muted-foreground leading-snug">
+                <p className="text-xs text-muted-foreground leading-snug">
                   Quantos exercícios devem usar cada equipamento? Eles entram em sequência no início do treino.
                 </p>
                 <ExtrasPicker
@@ -649,7 +649,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                   const nVal = parseInt(count, 10) || 0;
                   if (totalQuota > nVal) {
                     return (
-                      <p className="text-[10px] text-destructive">
+                      <p className="text-xs text-destructive">
                         A soma dos equipamentos ({totalQuota}) ultrapassa a quantidade de exercícios ({nVal}).
                       </p>
                     );
