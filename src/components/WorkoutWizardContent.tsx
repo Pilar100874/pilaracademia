@@ -153,30 +153,46 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="px-5 pt-4 lg:px-8">
-        <div className="flex gap-1.5 overflow-x-auto pb-2">
+        <div className="flex items-center justify-between gap-1">
           {ALL_STEPS.map((s, i) => (
             <button
               key={s.key}
               type="button"
               onClick={() => setStep(i)}
-              className={cn(
-                'shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors',
-                i === step && 'bg-primary text-primary-foreground border-primary',
-                i < step && 'bg-primary/10 text-primary border-primary/40',
-                i > step && 'bg-background text-muted-foreground border-border'
-              )}
+              title={s.label}
+              className="flex min-w-0 flex-1 flex-col items-center gap-1"
             >
-              {i < step ? <Check className="h-3 w-3" /> : <span className="font-semibold">{i + 1}</span>}
-              {s.label}
+              <span
+                className={cn(
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors',
+                  i === step && 'bg-primary text-primary-foreground border-primary',
+                  i < step && 'bg-primary/10 text-primary border-primary/40',
+                  i > step && 'bg-background text-muted-foreground border-border'
+                )}
+              >
+                {i < step ? <Check className="h-3.5 w-3.5" /> : i + 1}
+              </span>
+              <span
+                className={cn(
+                  'hidden sm:block w-full truncate text-center text-[11px] leading-tight',
+                  i === step ? 'font-semibold text-foreground' : 'text-muted-foreground'
+                )}
+              >
+                {s.label}
+              </span>
             </button>
           ))}
         </div>
-        <div className="h-1 rounded-full bg-muted overflow-hidden mt-1">
+        <p className="mt-1.5 text-center text-xs font-medium sm:hidden">
+          Etapa {step + 1} de {ALL_STEPS.length} · {ALL_STEPS[step]?.label}
+        </p>
+        <div className="h-1 rounded-full bg-muted overflow-hidden mt-2">
           <div className="h-full bg-primary transition-all" style={{ width: `${((step + 1) / ALL_STEPS.length) * 100}%` }} />
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 lg:px-8 lg:py-6 space-y-4">
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5 lg:px-8 lg:py-6">
+        <div className="mx-auto w-full max-w-3xl space-y-4">
         {ALL_STEPS[step]?.key === 'categorias' ? (
           <section className="rounded-md border border-border bg-card p-4 space-y-4">{categoriesSlot}</section>
         ) : ALL_STEPS[step]?.key === 'agenda' ? (
@@ -185,7 +201,7 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
               <h2 className="font-semibold text-base">Em quais dias da semana?</h2>
               <p className="text-xs text-muted-foreground">Marque um ou mais dias — um treino é criado para cada dia.</p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
               {DAYS.map((d, i) => {
                 const on = days.includes(i);
                 return (
@@ -194,11 +210,11 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                     type="button"
                     onClick={() => toggleDay(i)}
                     className={cn(
-                      'inline-flex items-center gap-1 rounded-full border px-4 py-2 text-sm transition-colors',
+                      'flex items-center justify-center gap-1 rounded-md border px-2 py-2.5 text-sm transition-colors',
                       on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/60'
                     )}
                   >
-                    {on && <Check className="h-3.5 w-3.5" />}
+                    {on && <Check className="h-3.5 w-3.5 shrink-0" />}
                     {d}
                   </button>
                 );
@@ -226,7 +242,7 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                 <h2 className="font-semibold text-base">{q.title}</h2>
                 <p className="text-xs text-muted-foreground">{q.hint || (q.multi ? 'Marque quantas quiser' : 'Escolha uma opção')}</p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                 {q.options.map((opt) => {
                   const on = (answers[q.key] || []).includes(opt);
                   return (
@@ -235,12 +251,12 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
                       type="button"
                       onClick={() => toggle(q, opt)}
                       className={cn(
-                        'inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm transition-colors',
+                        'flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-3 py-2.5 text-center text-sm transition-colors',
                         on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/60'
                       )}
                     >
-                      {on && <Check className="h-3.5 w-3.5" />}
-                      {opt}
+                      {on && <Check className="h-3.5 w-3.5 shrink-0" />}
+                      <span className="truncate">{opt}</span>
                     </button>
                   );
                 })}
@@ -256,14 +272,14 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
             </section>
             <section className="rounded-md border border-border bg-card p-4 space-y-3">
               <h2 className="font-semibold text-base">Quantos exercícios?</h2>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                 {COUNT_OPTIONS.map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => setCount(c)}
                     className={cn(
-                      'rounded-full border px-4 py-1.5 text-sm',
+                      'rounded-md border px-4 py-2.5 text-sm transition-colors',
                       count === c ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-primary/60'
                     )}
                   >
@@ -292,9 +308,10 @@ export function WorkoutWizardContent({ onCancel, onDone, categoriesSlot, generat
             </section>
           </>
         )}
+        </div>
       </div>
 
-      <div className="shrink-0 border-t border-border px-5 py-3 lg:px-8 flex items-center gap-2">
+      <div className="shrink-0 border-t border-border px-4 py-3 sm:px-5 lg:px-8 flex items-center gap-2">
         <Button variant="outline" onClick={() => (step === 0 ? onCancel() : setStep(step - 1))}>
           <ChevronLeft className="h-4 w-4 mr-1" />
           {step === 0 ? 'Voltar' : 'Anterior'}
