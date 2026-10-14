@@ -22,7 +22,7 @@ import { useBloodExams } from '@/hooks/useBloodExams';
 import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
 import { buildBloodExamHealthContext } from '@/lib/bloodExamContext';
 import { Sparkles, Loader2, Target, ListChecks } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { WorkoutWizardContent } from '@/components/WorkoutWizardContent';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
@@ -71,7 +71,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const [useBodyPlan, setUseBodyPlan] = useState(false);
   const [useBloodExam, setUseBloodExam] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const navigate = useNavigate();
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
   const [groups, setGroups] = useState<{ name: string; reason?: string; exercise_ids: string[] }[] | null>(null);
   const [groupsRationale, setGroupsRationale] = useState('');
@@ -144,6 +144,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setSource('all');
     setUseBodyPlan(false);
     setUseBloodExam(true);
+    setWizardOpen(false);
   };
 
   const toggleCategory = (id: string) => {
@@ -540,11 +541,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           </DialogDescription>
           <button
             type="button"
-            onClick={() => {
-              reset();
-              onOpenChange(false);
-              navigate('/workouts/wizard');
-            }}
+            onClick={() => setWizardOpen(true)}
             className="mt-2 inline-flex items-center gap-1.5 self-start rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
           >
             <ListChecks className="h-3.5 w-3.5 text-primary" />
@@ -552,6 +549,19 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           </button>
         </DialogHeader>
 
+        {wizardOpen ? (
+          <WorkoutWizardContent
+            onCancel={() => setWizardOpen(false)}
+            onDone={({ prompt: p, name: n, count: c }) => {
+              setPrompt(p);
+              setName(n);
+              setCount(String(c));
+              setWizardOpen(false);
+              setStep(0);
+            }}
+          />
+        ) : (
+        <>
         <WizardStepper steps={STEPS} current={step} onJump={(i) => i < step && setStep(i)} />
 
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 lg:px-8 lg:py-6">
@@ -974,6 +984,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
             )
           }
         />
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );
