@@ -373,7 +373,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
       for (const bucket of dayBuckets) {
         const pool = filteredExercises;
-        const available = pool;
+        const fresh = pool.filter((ex) => !usedIds.has(ex.id));
+        const available = fresh.length >= n ? fresh : pool;
 
         if (!available.length) {
           toast.message('Sem exercícios disponíveis', {
@@ -458,6 +459,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
 
         const picked = [...pinned, ...aiPicked];
         if (!picked.length) continue;
+        picked.forEach((ex) => usedIds.add(ex.id));
 
         const planObjective = useBodyPlan
           ? (bodyPlanContext || 'Treino sugerido a partir da análise corporal')
