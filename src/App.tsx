@@ -35,6 +35,12 @@ import { PendingUploadRunner } from "@/components/PendingUploadRunner";
 import { GlobalBackgroundProgressBar } from "@/components/GlobalBackgroundProgressBar";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
+import ManagerUsersPage from "@/pages/ManagerUsersPage";
+import { useAccountKind } from "@/hooks/useAccountKind";
+function MemberBlock({ children }: { children: React.ReactNode }) {
+  const { restricted } = useAccountKind();
+  return restricted ? <Navigate to="/workouts" replace /> : <>{children}</>;
+}
 import { PublicWorkoutPage } from "@/pages/PublicWorkoutPage";
 import { ImportWorkoutPage } from "@/pages/ImportWorkoutPage";
 import { Dashboard } from "@/components/Dashboard";
@@ -186,7 +192,7 @@ function AppRoutes() {
         path="/exercises"
         element={
           <ProtectedRoute>
-            <ExerciseLibraryPage />
+            <MemberBlock><ExerciseLibraryPage /></MemberBlock>
           </ProtectedRoute>
         }
       />
@@ -269,6 +275,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AdminUsersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/gestor"
+        element={
+          <ProtectedRoute>
+            <ManagerUsersPage />
           </ProtectedRoute>
         }
       />

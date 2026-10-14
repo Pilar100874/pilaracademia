@@ -21,14 +21,21 @@ Deno.serve(async (req) => {
     const callerId = caller?.user?.id;
     if (!callerId) return json({ error: 'Sessão inválida.' }, 401);
 
-    const { data: roles } = await admin
-      .from('user_roles').select('role')
-      .eq('user_id', callerId).eq('role', 'master_admin').limit(1);
-    if (!roles?.length) return json({ error: 'Acesso negado.' }, 403);
-
     const { userId } = await req.json();
     if (!userId || typeof userId !== 'string') return json({ error: 'Usuário inválido.' }, 400);
     if (userId === callerId) return json({ error: 'Você já está nesta conta.' }, 400);
+
+    const { data: roles } = await admin
+      .from('user_roles').select('role')
+      .eq('user_id', callerId).eq('role', 'master_admin').limit(1);
+    let mode = 'login_as';
+    if (!roles?.length) {
+      // Gestor pode entrar apenas nas contas vinculadas a ele.
+      const { data: link } = await admin.from('managed_users').select('id')
+        .eq('manager_id', callerId).eq('member_id', userId).maybeSingle();
+      if (!link) return json({ error: 'Acesso negado.' }, 403);
+      mode = 'manager_login_as';
+    }
 
     const { data: target, error: tErr } = await admin.auth.admin.getUserById(userId);
     const email = target?.user?.email;
@@ -38,7 +45,7 @@ Deno.serve(async (req) => {
     if (lErr || !link?.properties?.hashed_token) return json({ error: 'Falha ao gerar acesso.' }, 500);
 
     await admin.from('impersonation_log').insert({
-      actor_user_id: callerId, target_user_id: userId, mode: 'login_as',
+      actor_user_id: callerId, target_user_id: userId, mode,
     });
 
     return json({ token_hash: link.properties.hashed_token, email });

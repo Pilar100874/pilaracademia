@@ -13,12 +13,14 @@ import { RemindersSection } from '@/components/RemindersSection';
 import { DeleteAccountDialog } from '@/components/DeleteAccountDialog';
 import { ChangePasswordDialog } from '@/components/ChangePasswordDialog';
 import { useIsMaster } from '@/hooks/useIsMaster';
+import { useAccountKind } from '@/hooks/useAccountKind';
 
 
 export function ProfilePage() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { isMaster } = useIsMaster();
+  const { isGestor } = useAccountKind();
   const { profile, isLoading, updateProfile, getGoals, clearNutritionOverride } = useProfile();
   const [isSaving, setIsSaving] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -413,6 +415,21 @@ export function ProfilePage() {
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </button>
 
+          {isGestor && (
+            <button
+              onClick={() => navigate('/gestor')}
+              className="w-full flex items-center gap-3 py-3 text-left"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+                <KeyRound className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-sm">Meus usuários</p>
+                <p className="text-xs text-muted-foreground">Criar contas, montar treinos e ver dados</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </button>
+          )}
           {isMaster && (
             <>
               <button

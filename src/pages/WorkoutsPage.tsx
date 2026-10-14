@@ -15,12 +15,14 @@ import { AIWorkoutDialog } from '@/components/AIWorkoutDialog';
 import { CooldownPlanDialog } from '@/components/CooldownPlanDialog';
 import { ReceiveWorkoutDialog } from '@/components/ReceiveWorkoutDialog';
 import { WorkoutPreloader } from '@/components/WorkoutPreloader';
+import { useAccountKind } from '@/hooks/useAccountKind';
 
 const DAYS_OF_WEEK = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 export function WorkoutsPage() {
   const navigate = useNavigate();
   const { workoutPlans, isLoading } = useWorkoutPlans();
+  const { restricted } = useAccountKind();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<WorkoutPlan | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -64,7 +66,7 @@ export function WorkoutsPage() {
             <Dumbbell className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
             <h1 className="text-lg sm:text-xl font-bold break-words line-clamp-2 min-w-0 flex-1">Meus Treinos</h1>
           </div>
-          <div className="flex flex-wrap gap-2 lg:shrink-0">
+          {!restricted && <div className="flex flex-wrap gap-2 lg:shrink-0">
             <Button size="sm" variant="outline" onClick={() => navigate('/exercises')}>
               <Library className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Biblioteca</span>
@@ -89,7 +91,7 @@ export function WorkoutsPage() {
               <Plus className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Novo</span>
             </Button>
-          </div>
+          </div>}
         </div>
       </header>
 
@@ -100,8 +102,8 @@ export function WorkoutsPage() {
           <EmptyState
             icon={Dumbbell}
             title="Nenhum treino cadastrado"
-            description="Crie seu primeiro treino com exercícios personalizados ou gere um automaticamente com IA."
-            action={{ label: 'Criar Treino', icon: Plus, onClick: () => setDialogOpen(true) }}
+            description={restricted ? 'Seu gestor ainda não criou treinos para você.' : 'Crie seu primeiro treino com exercícios personalizados ou gere um automaticamente com IA.'}
+            action={restricted ? undefined : { label: 'Criar Treino', icon: Plus, onClick: () => setDialogOpen(true) }}
           />
         ) : (
           <>
@@ -121,6 +123,7 @@ export function WorkoutsPage() {
                       plan={plan}
                       onEdit={() => handleEdit(plan)}
                       onStart={() => handleStart(plan)}
+                      readOnly={restricted}
                       compact
                     />
                   ))}
@@ -140,6 +143,7 @@ export function WorkoutsPage() {
                     plan={plan}
                     onEdit={() => handleEdit(plan)}
                     onStart={() => handleStart(plan)}
+                      readOnly={restricted}
                   />
                 ))}
               </div>

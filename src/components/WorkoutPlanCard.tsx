@@ -19,9 +19,10 @@ interface WorkoutPlanCardProps {
   onEdit: () => void;
   onStart?: () => void;
   compact?: boolean;
+  readOnly?: boolean;
 }
 
-export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanCardProps) {
+export function WorkoutPlanCard({ plan, onEdit, onStart, compact, readOnly }: WorkoutPlanCardProps) {
   const exerciseCount = plan.exercises?.length || 0;
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -75,7 +76,7 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
   if (compact) {
     return (
       <div
-        onClick={onStart || onEdit}
+        onClick={onStart || (readOnly ? undefined : onEdit)}
         className="flex items-center justify-between p-3 rounded-lg bg-card border cursor-pointer hover:bg-accent/50 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -232,6 +233,7 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
                 <Play className="h-4 w-4 ml-0.5" />
               </Button>
             )}
+            {!readOnly && (<>
             <Button size="icon" variant="ghost" onClick={onEdit} title="Editar">
               <Edit className="h-4 w-4" />
             </Button>
@@ -252,6 +254,7 @@ export function WorkoutPlanCard({ plan, onEdit, onStart, compact }: WorkoutPlanC
             >
               <Trash2 className="h-4 w-4" />
             </Button>
+            </>)}
           </div>
         </div>
       </CardContent>
