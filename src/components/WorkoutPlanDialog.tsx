@@ -21,6 +21,7 @@ import { FieldError } from '@/components/FieldError';
 import { useFieldError, validateRequired } from '@/lib/formValidation';
 import { Switch } from '@/components/ui/switch';
 import { useVoiceCommandsEnabled } from '@/lib/voiceCommands';
+import { useAccountKind } from '@/hooks/useAccountKind';
 import { AddMoreExercisesDialog } from '@/components/AddMoreExercisesDialog';
 import { Sparkles } from 'lucide-react';
 
