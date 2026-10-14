@@ -23,6 +23,7 @@ import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
 import { buildBloodExamHealthContext } from '@/lib/bloodExamContext';
 import { Sparkles, Loader2, Target, ListChecks } from 'lucide-react';
 import { WorkoutWizardContent } from '@/components/WorkoutWizardContent';
+import { styleCategoryMap, idsForStyles } from '@/lib/workoutStyles';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { VideoThumbnail } from '@/components/VideoThumbnail';
@@ -34,6 +35,8 @@ interface AIWorkoutDialogProps {
   initialName?: string;
   initialCount?: number;
   initialDays?: number[];
+  /** Categorias ligadas ao estilo escolhido no assistente (pré-marcadas). */
+  initialCategoryIds?: string[];
 }
 
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -51,7 +54,7 @@ const STEPS = [
   { key: 'schedule', label: 'Agenda' },
 ];
 
-export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName, initialCount, initialDays }: AIWorkoutDialogProps) {
+export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName, initialCount, initialDays, initialCategoryIds }: AIWorkoutDialogProps) {
   const { allExercises: exercises, globalExercises, exercises: personalOnly } = useExerciseLibrary();
   const { categories } = useExerciseCategories();
   const { createPlan, addExercise } = useWorkoutPlans();
@@ -118,14 +121,24 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   const countRef = useRef<HTMLInputElement>(null);
   const { errorOf, setError, clearError, clearIf } = useFieldError();
 
+  // Vínculo estilo de treino → categorias da biblioteca.
+  const styleCategories = useMemo(() => styleCategoryMap(categories), [categories]);
+  const manualCatsRef = useRef<Set<string>>(new Set()); // marcados/desmarcados à mão
+  const autoCatsRef = useRef<Set<string>>(new Set()); // puxados pelo estilo
+  const dismissedRef = useRef<Set<string>>(new Set()); // sugestões de estilo que o usuário tirou
+
   const lastSeed = useRef<string>('');
   if (open) {
-    const seed = `${initialPrompt || ''}|${initialName || ''}|${initialCount || ''}`;
+    const seed = `${initialPrompt || ''}|${initialName || ''}|${initialCount || ''}|${(initialCategoryIds || []).join(',')}`;
     if (lastSeed.current !== seed) {
       lastSeed.current = seed;
       if (initialPrompt && prompt !== initialPrompt) setPrompt(initialPrompt);
       if (initialName && name !== initialName) setName(initialName);
       if (initialCount && count !== String(initialCount)) setCount(String(initialCount));
+      if (initialCategoryIds?.length) {
+        setSelectedCategoryIds(initialCategoryIds);
+        autoCatsRef.current = new Set(initialCategoryIds);
+      }
     }
   } else if (lastSeed.current) {
     lastSeed.current = '';
@@ -139,6 +152,9 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
     setCount('8');
     setSelectedDays([]);
     setSelectedCategoryIds([]);
+    manualCatsRef.current = new Set();
+    autoCatsRef.current = new Set();
+    dismissedRef.current = new Set();
     setSelectedExtraIds([]);
     setFilterNoExtras(false);
     setExtraCounts({});
@@ -149,9 +165,37 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
   };
 
   const toggleCategory = (id: string) => {
+    if (selectedCategoryIds.includes(id)) {
+      if (autoCatsRef.current.has(id)) dismissedRef.current.add(id);
+    } else {
+      dismissedRef.current.delete(id);
+      manualCatsRef.current.add(id);
+    }
     setSelectedCategoryIds((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
     );
+  };
+
+  /** Marca as categorias dos estilos escolhidos, sem tocar no que o usuário escolheu. */
+  const applyStyleCategories = (styles: string[]) => {
+    const want = idsForStyles(styles, categories).filter((id) => !dismissedRef.current.has(id));
+    const prevAuto = autoCatsRef.current;
+    setSelectedCategoryIds((prev) => {
+      const kept = prev.filter((id) => manualCatsRef.current.has(id) || !prevAuto.has(id));
+      const next = [...kept];
+      want.forEach((id) => {
+        if (!next.includes(id)) next.push(id);
+      });
+      return next;
+    });
+    autoCatsRef.current = new Set(want);
+  };
+
+  const clearCategories = () => {
+    manualCatsRef.current = new Set();
+    autoCatsRef.current = new Set();
+    dismissedRef.current = new Set();
+    setSelectedCategoryIds([]);
   };
 
   const sortedCategories = useMemo(() => {
@@ -549,7 +593,7 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
                 {selectedCategoryIds.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => setSelectedCategoryIds([])}
+                    onClick={clearCategories}
                     className="text-primary hover:underline"
                   >
                     Limpar seleção
@@ -702,6 +746,8 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
           <WorkoutWizardContent
             onCancel={() => setWizardOpen(false)}
             categoriesSlot={categoriesPanel}
+            styleCategories={styleCategories}
+            onStylesChange={applyStyleCategories}
             hasCategorySelection={
               selectedCategoryIds.length > 0 || selectedExtraIds.length > 0 || filterNoExtras
             }

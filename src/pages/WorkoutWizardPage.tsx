@@ -1,15 +1,21 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ListChecks } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BottomNav } from '@/components/BottomNav';
 import { AIWorkoutDialog } from '@/components/AIWorkoutDialog';
+import { useExerciseCategories } from '@/hooks/useExerciseCategories';
+import { styleCategoryMap, idsForStyles } from '@/lib/workoutStyles';
 import { WorkoutWizardContent, WorkoutWizardResult } from '@/components/WorkoutWizardContent';
 
 export function WorkoutWizardPage() {
   const navigate = useNavigate();
+  const { categories } = useExerciseCategories();
   const [aiOpen, setAiOpen] = useState(false);
   const [result, setResult] = useState<WorkoutWizardResult | null>(null);
+  const [styleCats, setStyleCats] = useState<string[]>([]);
+
+  const styleCategories = useMemo(() => styleCategoryMap(categories), [categories]);
 
   return (
     <div className="min-h-screen bg-background pb-24 flex flex-col">
@@ -26,6 +32,8 @@ export function WorkoutWizardPage() {
       <main className="mx-auto w-full max-w-4xl flex-1 flex flex-col">
         <WorkoutWizardContent
           onCancel={() => navigate('/workouts')}
+          styleCategories={styleCategories}
+          onStylesChange={(styles) => setStyleCats(idsForStyles(styles, categories))}
           onDone={(r) => {
             setResult(r);
             setAiOpen(true);
@@ -40,6 +48,7 @@ export function WorkoutWizardPage() {
         initialName={result?.name}
         initialCount={result?.count}
         initialDays={result?.days}
+        initialCategoryIds={styleCats}
       />
 
       <BottomNav />
