@@ -49,9 +49,9 @@ Deno.serve(async (req) => {
       const email = String(body.email ?? '').trim().toLowerCase();
       const password = String(body.password ?? '');
       const name = String(body.name ?? '').trim().slice(0, 120);
-      if (!name) return json({ error: 'Informe o nome.' }, 400);
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'E-mail inválido.' }, 400);
-      if (password.length < 8) return json({ error: 'A senha precisa ter ao menos 8 caracteres.' }, 400);
+      if (!name) return json({ error: 'Informe o nome.' }, 200);
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'E-mail inválido.' }, 200);
+      if (password.length < 8) return json({ error: 'A senha precisa ter ao menos 8 caracteres.' }, 200);
 
       const { data: created, error: cErr } = await admin.auth.admin.createUser({
         email, password, email_confirm: true, user_metadata: { name },
@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
           : /weak|easy to guess|pwned|leaked/i.test(raw)
           ? 'Essa senha é muito fácil ou já apareceu em vazamentos. Escolha uma senha mais forte (misture letras, números e símbolos).'
           : raw || 'Falha ao criar usuário.';
-        return json({ error: msg }, 400);
+        return json({ error: msg }, 200);
       }
       const memberId = created.user.id;
       await admin.from('profiles').update({
