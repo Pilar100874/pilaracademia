@@ -61,7 +61,6 @@ const STEPS: Step[] = [
       { key: 'duracao', title: 'Quanto tempo por treino?', multi: false, options: ['15 min', '30 min', '45 min', '60 min', '90 min'] },
       { key: 'intensidade', title: 'Intensidade desejada', multi: false, options: ['Leve', 'Moderada', 'Intensa'] },
       { key: 'local', title: 'Onde vai treinar?', multi: false, options: ['Estúdio', 'Academia', 'Casa', 'Ao ar livre'] },
-      { key: 'equipamentos', title: 'Equipamentos disponíveis', multi: true, options: ['Reformer', 'Cadillac', 'Chair', 'Barrel', 'Bola', 'Faixa elástica', 'Halteres', 'Caneleira', 'Mini band', 'Rolo', 'Só o corpo'] },
       { key: 'estrutura', title: 'Estrutura da aula', multi: true, options: ['Aquecimento', 'Parte principal', 'Final com alongamento', 'Respiração'] },
     ],
   },
