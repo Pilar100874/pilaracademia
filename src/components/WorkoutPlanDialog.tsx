@@ -271,8 +271,8 @@ export function WorkoutPlanDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg w-[calc(100vw-1rem)] sm:w-full min-w-0 max-h-[92vh] flex flex-col overflow-hidden p-0">
-          <div className="shrink-0 px-4 pt-4 pr-12 sm:px-6 sm:pt-6 sm:pr-14">
+        <DialogContent className="max-w-lg lg:max-w-4xl w-[calc(100vw-1rem)] sm:w-full min-w-0 max-h-[92vh] flex flex-col overflow-hidden p-0">
+          <div className="shrink-0 px-4 pt-4 pr-12 sm:px-6 sm:pt-6 sm:pr-14 lg:px-8">
             <DialogHeader>
               <DialogTitle>
                 {editingPlan ? 'Editar Treino' : 'Novo Treino'}
@@ -280,7 +280,7 @@ export function WorkoutPlanDialog({
             </DialogHeader>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pt-3 pb-6 sm:px-6">
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pt-3 pb-6 sm:px-6 lg:px-8">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome do Treino</Label>
@@ -378,12 +378,12 @@ export function WorkoutPlanDialog({
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                     {currentPlan && (
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="w-full h-auto whitespace-normal text-center leading-snug py-2.5"
+                        className="w-full lg:col-span-2 h-auto whitespace-normal text-center leading-snug py-2.5"
                         onClick={() => setMoreOpen(true)}
                       >
                         <Sparkles className="h-4 w-4 shrink-0" />

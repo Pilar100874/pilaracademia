@@ -333,10 +333,10 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <DialogContent
-        className="max-w-md w-[calc(100vw-1rem)] max-h-[92vh] sm:max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden"
+        className="max-w-md lg:max-w-3xl w-[calc(100vw-1rem)] min-w-0 max-h-[92vh] sm:max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <DialogHeader className="px-5 pt-5 pb-3 border-b border-border/60">
+        <DialogHeader className="px-5 pt-5 pb-3 lg:px-8 lg:pt-6 border-b border-border/60">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
               <Shuffle className="h-4 w-4" />
@@ -415,7 +415,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                   {BODY_GROUPS.map((g) => (
                     <div key={g.group} className="space-y-1.5">
                       <p className="text-[11px] font-medium text-muted-foreground/80">{g.group}</p>
-                      <div className="grid grid-cols-1 gap-1">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
                         {g.items.map((it) => (
                           <label key={it.key} className="flex items-center gap-2 cursor-pointer py-1 pl-1 rounded hover:bg-background/60 transition-colors">
                             <Checkbox checked={bodyKeys.has(it.key)} onCheckedChange={() => toggleBody(it.key)} />
@@ -429,7 +429,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
 
                 <section className="p-3 space-y-1.5">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Estética</p>
-                  <div className="grid grid-cols-1 gap-1">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
                     {AESTHETIC_ITEMS.map((it) => (
                       <label key={it.key} className="flex items-center gap-2 cursor-pointer py-1 pl-1 rounded hover:bg-background/60 transition-colors">
                         <Checkbox checked={aestheticKeys.has(it.key)} onCheckedChange={() => toggleAesthetic(it.key)} />
@@ -444,7 +444,7 @@ export function RandomWorkoutDialog({ open, onOpenChange }: RandomWorkoutDialogP
                   {MOBILITY_GROUPS.map((mg) => (
                     <div key={mg.group} className="space-y-1.5">
                       <p className="text-[11px] font-medium text-muted-foreground/80">{mg.group}</p>
-                      <div className="grid grid-cols-1 gap-1">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
                         {mg.items.map((it) => (
                           <label key={it.key} className="flex items-center gap-2 cursor-pointer py-1 pl-1 rounded hover:bg-background/60 transition-colors">
                             <Checkbox checked={mobilityKeys.has(it.key)} onCheckedChange={() => toggleMobility(it.key)} />
