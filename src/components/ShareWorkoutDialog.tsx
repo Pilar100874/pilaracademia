@@ -6,6 +6,7 @@ import { Loader2, Copy, Check, ScanLine } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useAccountKind } from '@/hooks/useAccountKind';
 import { WorkoutPlan } from '@/hooks/useWorkoutPlans';
 import { toast } from 'sonner';
 
