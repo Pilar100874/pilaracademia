@@ -552,12 +552,13 @@ export function AIWorkoutDialog({ open, onOpenChange, initialPrompt, initialName
         {wizardOpen ? (
           <WorkoutWizardContent
             onCancel={() => setWizardOpen(false)}
-            onDone={({ prompt: p, name: n, count: c }) => {
+            onDone={({ prompt: p, name: n, count: c, days: d }) => {
               setPrompt(p);
               setName(n);
               setCount(String(c));
+              setSelectedDays(d);
               setWizardOpen(false);
-              setStep(0);
+              autoGenRef.current = true;
             }}
           />
         ) : (
