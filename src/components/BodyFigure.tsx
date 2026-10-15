@@ -502,32 +502,31 @@ function MorphFigure({
     <div className="space-y-2">
     <HumanSilhouette sex={sex} scales={scales} tones={tones} freeform offsetX={OFF} frameWidth={268} className="max-w-[240px]">
       {showValues &&
-        callouts
-          .filter((c) => c.v != null)
-          .map((c) => {
-            const dot = regionAnchor(c.region, dims);
-            const dx = OFF + dot.x;
-            const dy = dot.y;
-            const sx = c.side === 'left' ? 52 : 216;
-            const tx = c.side === 'left' ? 2 : 266;
-            const anchor = c.side === 'left' ? 'start' : 'end';
-            const connector =
-              c.side === 'left'
-                ? `M ${sx} ${c.y - 4} C ${sx + 18} ${c.y - 14}, ${dx - 16} ${dy}, ${dx} ${dy}`
-                : `M ${sx} ${c.y - 4} C ${sx - 18} ${c.y - 14}, ${dx + 16} ${dy}, ${dx} ${dy}`;
-            return (
-              <g key={`${c.side}-${c.label}`}>
-                <path d={connector} fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth={0.9} opacity={0.7} />
-                <circle cx={dx} cy={dy} r={2.6} fill="hsl(var(--foreground))" />
-                <text x={tx} y={c.y} textAnchor={anchor} fontSize={13} fontWeight={700} style={{ fill: 'hsl(var(--foreground))' }}>
-                  {fmtShort(c.v!)}{c.unit}
-                </text>
-                <text x={tx} y={c.y + 13} textAnchor={anchor} fontSize={9.5} style={{ fill: 'hsl(var(--muted-foreground))' }}>
-                  {c.label}
-                </text>
-              </g>
-            );
-          })}
+        callouts.map((c) => {
+          const dot = morphAnchor(c.at, c.side, dims);
+          const dx = OFF + dot.x;
+          const dy = dot.y;
+          const sx = c.side === 'left' ? 52 : 216;
+          const tx = c.side === 'left' ? 2 : 266;
+          const anchor = c.side === 'left' ? 'start' : 'end';
+          const ty = dy + 4;
+          const connector =
+            c.side === 'left'
+              ? `M ${sx} ${ty - 4} C ${sx + 18} ${ty - 14}, ${dx - 16} ${dy}, ${dx} ${dy}`
+              : `M ${sx} ${ty - 4} C ${sx - 18} ${ty - 14}, ${dx + 16} ${dy}, ${dx} ${dy}`;
+          return (
+            <g key={`${c.side}-${c.label}`}>
+              <path d={connector} fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth={1.1} opacity={0.85} />
+              <circle cx={dx} cy={dy} r={2.6} fill="hsl(var(--foreground))" />
+              <text x={tx} y={ty} textAnchor={anchor} fontSize={13} fontWeight={700} style={{ fill: 'hsl(var(--foreground))' }}>
+                {c.v != null ? `${fmtShort(c.v)}${c.unit}` : '—'}
+              </text>
+              <text x={tx} y={ty + 13} textAnchor={anchor} fontSize={9.5} style={{ fill: 'hsl(var(--muted-foreground))' }}>
+                {c.label}
+              </text>
+            </g>
+          );
+        })}
     </HumanSilhouette>
     {tones && <ToneLegend items={MORPH_LEGEND} />}
     </div>
