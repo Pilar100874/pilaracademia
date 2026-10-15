@@ -385,7 +385,21 @@ function MeasurementDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 space-y-5">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <div className="sm:grid sm:grid-cols-[170px_minmax(0,1fr)] sm:gap-5 space-y-5 sm:space-y-0">
+            <div>
+              <div className="sm:sticky sm:top-0">
+                <BodyFigure
+                  values={numericValues}
+                  activeKey={activeKey}
+                  onMarkerClick={focusField}
+                />
+                <p className="text-[10px] text-muted-foreground text-center mt-1 leading-snug">
+                  Toque nos números da figura para ir até a medida correspondente.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-5 min-w-0">
           <div className="space-y-1.5">
             <p className="text-sm font-medium">Data da medição</p>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
