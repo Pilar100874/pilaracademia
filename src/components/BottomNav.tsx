@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Calendar, Dumbbell, Heart, User, Activity, Utensils } from 'lucide-react';
+import { Home, Calendar, Dumbbell, Heart, User, Utensils } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelpMenu } from '@/components/HelpMenu';
 

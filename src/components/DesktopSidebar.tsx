@@ -5,7 +5,6 @@ import {
   Dumbbell,
   Heart,
   User,
-  Activity,
   Utensils,
   Library,
   ScanLine,

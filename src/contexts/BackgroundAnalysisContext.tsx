@@ -233,7 +233,7 @@ export function BackgroundAnalysisProvider({ children }: { children: React.React
             duration: 10000,
             action: {
               label: 'Ver exame',
-              onClick: () => navigate('/bioimpedance?tab=blood'),
+              onClick: () => navigate('/health?tab=blood'),
             },
           });
         } catch (e) {

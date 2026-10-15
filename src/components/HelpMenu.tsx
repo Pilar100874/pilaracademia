@@ -51,23 +51,14 @@ const HELP_BY_ROUTE: Record<string, HelpSection> = {
   },
   '/health': {
     title: 'Saúde',
-    intro: 'Métricas corporais, exames e indicadores derivados dos seus dados.',
+    intro: 'Indicadores do corpo, bioimpedância e exames de sangue em uma tela só, com abas.',
     steps: [
-      { label: 'IMC e BMR', desc: 'Cálculos automáticos a partir de peso, altura, idade e sexo do perfil.' },
-      { label: 'Glicemia', desc: 'Registre medições — o tipo (jejum, pós-refeição) é categorizado automaticamente. Há também predição do impacto glicêmico antes de comer.' },
+      { label: 'Visão geral', desc: 'IMC, peso ideal, gasto em repouso e zonas de frequência cardíaca a partir de peso, altura, idade e sexo do perfil.' },
+      { label: 'Bioimpedância', desc: 'Envie a foto do laudo — a IA extrai % gordura, massa muscular, água e mais, explicados sem jargão, com comparação entre medições.' },
       { label: 'Exames de sangue', desc: 'Faça upload do PDF/foto. A IA extrai marcadores, mostra tendências e ajusta cardápio e treinos sugeridos com base no resultado.' },
-      { label: 'Peso atual vs. histórico', desc: 'O peso atual é o último registrado; o histórico mostra a evolução completa em gráfico.' },
+      { label: 'Glicemia', desc: 'Registre medições — o tipo (jejum, pós-refeição) é categorizado automaticamente. Há também predição do impacto glicêmico antes de comer.' },
     ],
     tips: ['As análises de exame são educativas — sempre valide com seu médico.'],
-  },
-  '/bioimpedance': {
-    title: 'Composição Corporal',
-    intro: 'Acompanhe gordura, massa magra, água e fotos de progresso.',
-    steps: [
-      { label: 'Importar bioimpedância', desc: 'Tire foto do laudo da balança/equipamento — a IA extrai % gordura, massa magra, água, etc.' },
-      { label: 'Fotos de progresso', desc: 'Registre fotos frente/lado/costas para comparar visualmente ao longo do tempo.' },
-      { label: 'Antes & Depois', desc: 'O card compara automaticamente sua medição mais antiga com a mais recente.' },
-    ],
   },
   '/products': {
     title: 'Produtos',
