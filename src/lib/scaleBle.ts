@@ -69,7 +69,7 @@ function checksumAc02(frame: number[]): boolean {
 }
 
 /** Peso: `AC 02 [u16 BE /10 kg] 00 00 STATUS CKSUM`; impedância: `AC 02 FD 01 [u16 BE Ω] CB CKSUM`. */
-function parseAc02(bytes: number[]): ScaleReading | null {
+export function parseAc02(bytes: number[]): ScaleReading | null {
   if (bytes.length !== 8 || bytes[0] !== 0xac || (bytes[1] !== 0x02 && bytes[1] !== 0x03)) return null;
   if (!checksumAc02(bytes)) return null;
 
@@ -91,7 +91,7 @@ function parseAc02(bytes: number[]): ScaleReading | null {
 /* Frame: [seq][total-len][frag][payload ≤16B][cksum = sum(payload)&0x1F] */
 /* ------------------------------------------------------------------ */
 
-class IcomonAssembler {
+export class IcomonAssembler {
   private buffer: number[] = [];
   private expectedLen = 0;
 
@@ -126,7 +126,7 @@ function u24be(b: number[], off: number): number {
 }
 
 /** Mensagens reassembladas: A2 = peso ao vivo, A3 = resultado com impedâncias. */
-function parseIcomonMessage(msg: number[]): ScaleReading | null {
+export function parseIcomonMessage(msg: number[]): ScaleReading | null {
   const type = msg[0];
   if (type === 0xa2 && msg.length >= 6) {
     const state = msg[1];
@@ -155,7 +155,7 @@ function parseIcomonMessage(msg: number[]): ScaleReading | null {
 }
 
 /** Robi S9 trata o frame de 20 bytes standalone: A3 no offset 3, peso u24 BE no offset 5. */
-function parseIcomonStandalone(frame: number[]): ScaleReading | null {
+export function parseIcomonStandalone(frame: number[]): ScaleReading | null {
   if (frame.length !== 20 || frame[3] !== 0xa3) return null;
   const weightKg = u24be(frame, 5) / 1000;
   if (weightKg < 5 || weightKg > 250) return null;
