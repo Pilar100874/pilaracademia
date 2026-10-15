@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BioimpedanceCompare } from '@/components/BioimpedanceCompare';
+import { ScaleBleCard } from '@/components/ScaleBleCard';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
 import { useBackgroundAnalysis } from '@/contexts/BackgroundAnalysisContext';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
@@ -222,6 +223,7 @@ export function BioimpedanceTab() {
           ev.target.value = '';
         }}
       />
+      <ScaleBleCard onSaved={() => list.refetch()} />
       {rows.length >= 2 && !comparing && (
         <Button variant="outline" className="w-full" onClick={() => setComparing(true)}>
           <GitCompareArrows className="h-4 w-4 mr-1.5" />
