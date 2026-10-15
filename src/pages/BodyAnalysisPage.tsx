@@ -767,29 +767,60 @@ function CompareDialog({
 /** Simple read-only view for exams saved from the smart scale (no AI plan). */
 function ScaleExamView({ row }: { row: BodyAnalysisRow }) {
   const e = row.extracted || {};
+  const waterPct =
+    e.body_water_kg != null && e.weight_kg != null && e.weight_kg > 0
+      ? Math.round((e.body_water_kg / e.weight_kg) * 100)
+      : null;
   const items: Array<{ label: string; value: string }> = [
     e.weight_kg != null && { label: 'Peso', value: `${e.weight_kg} kg` },
     e.body_fat_pct != null && { label: '% de gordura', value: `${e.body_fat_pct}%` },
     e.fat_mass_kg != null && { label: 'Massa de gordura', value: `${e.fat_mass_kg} kg` },
     e.lean_mass_kg != null && { label: 'Massa magra', value: `${e.lean_mass_kg} kg` },
+    waterPct != null && { label: 'Água corporal', value: `${waterPct}%` },
+    e.muscle_mass_kg != null && { label: 'Massa muscular', value: `${e.muscle_mass_kg} kg` },
+    e.skeletal_muscle_kg != null && { label: 'Músculo esquelético', value: `${e.skeletal_muscle_kg} kg` },
+    e.bone_mass_kg != null && { label: 'Massa óssea', value: `${e.bone_mass_kg} kg` },
+    e.bmr_kcal != null && { label: 'Metabolismo basal', value: `${e.bmr_kcal} kcal` },
     e.bmi != null && { label: 'IMC', value: String(e.bmi) },
     e.height_cm != null && { label: 'Altura', value: `${e.height_cm} cm` },
   ].filter(Boolean) as Array<{ label: string; value: string }>;
 
+  const hasSegFat = e.segmental_fat && Object.values(e.segmental_fat).some((v) => v != null);
+  const hasSegMuscle = e.segmental_muscle && Object.values(e.segmental_muscle).some((v) => v != null);
+
   return (
-    <div className="rounded-md border border-border bg-card p-4 space-y-3">
-      <p className="text-xs text-muted-foreground leading-relaxed">
-        Medição importada da balança via Health Connect — sem plano de IA. Para a análise
-        completa com plano, envie a foto do relatório de bioimpedância.
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        {items.map((it) => (
-          <div key={it.label} className="rounded-md border border-border p-3 text-center">
-            <p className="text-[11px] text-muted-foreground">{it.label}</p>
-            <p className="text-lg font-semibold">{it.value}</p>
-          </div>
-        ))}
+    <div className="space-y-3">
+      <div className="rounded-md border border-border bg-card p-4 space-y-3">
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Medição lida diretamente da balança — sem plano de IA. Água, músculo, ossos e
+          metabolismo basal são estimativas calculadas pelo app. Para a análise completa
+          com plano, envie a foto do relatório de bioimpedância.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {items.map((it) => (
+            <div key={it.label} className="rounded-md border border-border p-3 text-center">
+              <p className="text-[11px] text-muted-foreground">{it.label}</p>
+              <p className="text-lg font-semibold">{it.value}</p>
+            </div>
+          ))}
+        </div>
       </div>
+      {(hasSegFat || hasSegMuscle) && (
+        <div className={cn('grid gap-3', hasSegFat && hasSegMuscle && 'sm:grid-cols-2')}>
+          {hasSegFat && (
+            <div className="rounded-md border border-border bg-card p-4 space-y-2">
+              <p className="text-sm font-medium">Gordura por região</p>
+              <SegmentalFigure kind="fat" values={e.segmental_fat!} />
+            </div>
+          )}
+          {hasSegMuscle && (
+            <div className="rounded-md border border-border bg-card p-4 space-y-2">
+              <p className="text-sm font-medium">Equilíbrio muscular</p>
+              <SegmentalFigure kind="muscle" values={e.segmental_muscle!} />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

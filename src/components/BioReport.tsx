@@ -192,7 +192,7 @@ const REF: Record<'fat' | 'muscle', Record<'trunk' | 'arm' | 'leg', number>> = {
   muscle: { trunk: 16, arm: 3.0, leg: 9.0 },
 };
 
-function SegmentalFigure({ kind, values }: { kind: 'fat' | 'muscle'; values: SegValues }) {
+export function SegmentalFigure({ kind, values }: { kind: 'fat' | 'muscle'; values: SegValues }) {
   const CX = 110;
   const total = (Object.values(values).filter((v): v is number => v != null) as number[]).reduce(
     (s, v) => s + v,
