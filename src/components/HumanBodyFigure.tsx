@@ -112,9 +112,9 @@ function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
   return [
     { x: X(0), y: 10 },
     { x: X(0), y: 10 }, // canto: topo da cabeça
-    { x: X(11), y: 13 },
-    { x: X(13), y: 25 },
-    { x: X(10.8), y: 37 },
+    { x: X(10), y: 13 },
+    { x: X(11.8), y: 24 },
+    { x: X(10), y: 36 },
     { x: X(o.nk * 0.9), y: 46 },
     { x: X(o.nk), y: 56 },
     { x: X(o.nk + 6), y: 64 },
@@ -289,12 +289,12 @@ export function HumanSilhouette({
     >
       <defs>
         <radialGradient id={`hg${uid}`} cx="50%" cy="26%" r="85%">
-          <stop offset="0%" stopColor="#EFC65C" />
-          <stop offset="45%" stopColor="#BCCF6E" />
-          <stop offset="100%" stopColor="#57B3A6" />
+          <stop offset="0%" stopColor="#EEBF4E" />
+          <stop offset="45%" stopColor="#B5CC66" />
+          <stop offset="100%" stopColor="#46A898" />
         </radialGradient>
         <filter id={`hb${uid}`} x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="1.3" />
+          <feGaussianBlur stdDeviation="1" />
         </filter>
         <filter id={`ht${uid}`} x="-30%" y="-30%" width="160%" height="160%">
           <feGaussianBlur stdDeviation="12" />
@@ -306,7 +306,13 @@ export function HumanSilhouette({
 
       <g transform={offsetX ? `translate(${offsetX} 0)` : undefined}>
         {/* corpo com gradiente suave */}
-        <path d={d} fill={`url(#hg${uid})`} filter={`url(#hb${uid})`} />
+        <path
+          d={d}
+          fill={`url(#hg${uid})`}
+          filter={`url(#hb${uid})`}
+          stroke="hsl(var(--foreground) / 0.14)"
+          strokeWidth={1}
+        />
 
         {/* tons por região (gordura/músculo) */}
         {tones && (
