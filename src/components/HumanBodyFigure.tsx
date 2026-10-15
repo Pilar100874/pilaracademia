@@ -118,72 +118,95 @@ function smooth(pts: { x: number; y: number }[]): string {
 
 type SideDims = { nk: number; sh: number; ch: number; wa: number; hp: number; up: number; fo: number; th: number; cf: number };
 
-/** Contorno de um lado do corpo, do topo da cabeça até a virilha.
- *  Proporções de um corpo-padrão de referência (altura ~400, cabeça ~1/8),
- *  com os pontos ordenados para o braço nunca cruzar o tronco. */
-function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
+/** Contorno de um lado do tronco (cabeça, pescoço, torso e perna), sem o
+ *  braço — desenhado à parte e sobreposto, para a silhueta nunca se abrir
+ *  em falhas brancas. Proporções de um corpo-padrão (altura ~400, cabeça 1/8). */
+function torsoPoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
   const X = (dx: number) => CX + dir * dx;
   return [
     { x: X(0), y: 8 },
     { x: X(0), y: 8 }, // canto: topo da cabeça
-    { x: X(9), y: 10 },
-    { x: X(12.5), y: 18 },
-    { x: X(13), y: 29 },
-    { x: X(11.5), y: 39 },
-    { x: X(9.5), y: 45 }, // mandíbula
-    { x: X(o.nk), y: 50 },
-    { x: X(o.nk), y: 58 },
-    { x: X(o.nk + 5), y: 62 },
-    { x: X(o.sh * 0.72), y: 66 },
-    { x: X(o.sh), y: 74 }, // ponta do ombro
-    { x: X(o.sh + o.up * 0.35), y: 100 },
-    { x: X(o.sh + o.up * 0.4), y: 140 },
-    { x: X(o.sh * 0.8 + o.fo + 2), y: 172 }, // cotovelo externo
-    { x: X(o.hp + o.fo + 1.5), y: 196 },
-    { x: X(o.hp + o.fo + 1), y: 222 },
-    { x: X(o.hp + o.fo * 0.7 + 1), y: 240 }, // pulso externo
-    { x: X(o.hp + o.fo * 0.6 + 1), y: 248 },
-    { x: X(o.hp + o.fo * 0.55 + 1), y: 254 },
-    { x: X(o.hp + o.fo * 0.55 + 1), y: 254 }, // canto: ponta dos dedos
-    { x: X(o.hp + o.fo * 0.3 + 1), y: 250 },
-    { x: X(o.hp + 1.5), y: 236 }, // pulso interno
-    { x: X(o.hp + 1), y: 212 }, // antebraço interno
-    { x: X(o.wa + o.up * 0.35 + 2), y: 186 },
-    { x: X(o.ch + o.up * 0.3), y: 164 }, // cotovelo interno
-    { x: X(o.ch + o.up * 0.25), y: 138 }, // braço interno
-    { x: X(o.ch * 0.95), y: 124 }, // axila
-    { x: X(o.ch), y: 134 },
-    { x: X(o.ch * 0.98), y: 154 },
-    { x: X(o.wa), y: 172 }, // cintura
-    { x: X((o.wa + o.hp) / 2 + 1), y: 194 },
-    { x: X(o.hp), y: 214 }, // quadril
-    { x: X(o.hp * 0.98), y: 238 },
-    { x: X(o.th + 4), y: 262 }, // coxa externa
-    { x: X(o.th + 2), y: 288 },
-    { x: X(o.cf * 0.8 + 4), y: 306 }, // joelho externo
-    { x: X(o.cf + 3), y: 328 },
-    { x: X(o.cf + 2), y: 354 }, // panturrilha externa
-    { x: X(7), y: 380 }, // tornozelo externo
-    { x: X(7.5), y: 394 },
-    { x: X(9.5), y: 400 },
-    { x: X(12), y: 404 },
-    { x: X(12), y: 404 }, // canto: ponta do pé
+    { x: X(8.5), y: 10 },
+    { x: X(12), y: 17 },
+    { x: X(13), y: 27 },
+    { x: X(11.5), y: 37 },
+    { x: X(9), y: 44 }, // mandíbula
+    { x: X(o.nk), y: 50 }, // pescoço
+    { x: X(o.nk), y: 57 },
+    { x: X(o.nk + 6), y: 61 }, // trapézio
+    { x: X(o.sh * 0.72), y: 64 },
+    { x: X(o.sh), y: 70 }, // ponta do ombro
+    { x: X(o.sh * 0.96), y: 86 }, // deltóide
+    { x: X(o.ch * 1.03), y: 104 }, // peito
+    { x: X(o.ch), y: 130 },
+    { x: X(o.wa + (o.ch - o.wa) * 0.35), y: 150 },
+    { x: X(o.wa), y: 170 }, // cintura
+    { x: X((o.wa + o.hp) / 2 + 1.5), y: 192 },
+    { x: X(o.hp), y: 212 }, // quadril
+    { x: X(o.hp * 0.96), y: 238 },
+    { x: X(o.th + 3), y: 260 }, // coxa externa
+    { x: X(o.th + 1), y: 286 },
+    { x: X(o.cf * 0.75 + 4), y: 306 }, // joelho externo
+    { x: X(o.cf + 2.5), y: 330 }, // panturrilha externa
+    { x: X(o.cf + 1.5), y: 352 },
+    { x: X(6.5), y: 376 }, // tornozelo externo
+    { x: X(6.5), y: 392 },
+    { x: X(8), y: 400 },
+    { x: X(11.5), y: 404 },
+    { x: X(11.5), y: 404 }, // canto: ponta do pé
     { x: X(3), y: 404 },
     { x: X(3), y: 394 }, // tornozelo interno
-    { x: X(o.cf * 0.55 + 1), y: 350 },
-    { x: X(o.cf * 0.5 + 1), y: 310 }, // joelho interno
-    { x: X(o.th * 0.45 + 1), y: 266 }, // coxa interna
-    { x: X(5), y: 250 },
-    { x: X(0), y: 244 },
-    { x: X(0), y: 244 }, // canto: virilha
+    { x: X(o.cf * 0.55 + 1), y: 352 },
+    { x: X(o.cf * 0.5 + 1), y: 312 }, // joelho interno
+    { x: X(o.th * 0.42 + 1), y: 268 }, // coxa interna
+    { x: X(4.5), y: 252 },
+    { x: X(0), y: 245 },
+    { x: X(0), y: 245 }, // canto: virilha
   ];
 }
 
-export function bodyPath(dims: BodyDims): string {
+/** Braço como peça separada, pendendo ao lado do corpo com a mão na
+ *  altura do meio da coxa. A parte superior fica escondida sob o tronco. */
+function armPoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
+  const X = (dx: number) => CX + dir * dx;
+  return [
+    { x: X(o.sh * 0.6), y: 58 }, // início escondido sob o trapézio
+    { x: X(o.sh * 0.6), y: 58 },
+    { x: X(o.sh), y: 70 }, // ponta do ombro
+    { x: X(o.sh + o.up * 0.55), y: 92 }, // braço externo
+    { x: X(o.sh + o.up * 0.55), y: 122 },
+    { x: X(o.sh * 0.85 + o.fo * 0.55), y: 152 }, // cotovelo externo
+    { x: X(o.hp + o.fo + 2.5), y: 184 }, // antebraço externo
+    { x: X(o.hp + o.fo * 0.9 + 2), y: 214 },
+    { x: X(o.hp + o.fo * 0.75 + 1.5), y: 236 }, // pulso externo
+    { x: X(o.hp + o.fo * 0.7 + 1), y: 245 }, // mão
+    { x: X(o.hp + o.fo * 0.5 + 1), y: 249 },
+    { x: X(o.hp + o.fo * 0.5 + 1), y: 249 }, // canto: ponta dos dedos
+    { x: X(o.hp + 2), y: 242 }, // pulso interno
+    { x: X(o.hp + 1), y: 214 }, // antebraço interno
+    { x: X(o.wa + o.up * 0.35 + 2), y: 184 },
+    { x: X(o.ch + o.up * 0.35), y: 158 }, // cotovelo interno
+    { x: X(o.ch + o.up * 0.3), y: 132 }, // braço interno
+    { x: X(o.ch * 0.97), y: 110 }, // axila (escondida sob o peito)
+    { x: X(o.ch * 0.97), y: 110 },
+  ];
+}
+
+export interface BodyPaths {
+  torso: string;
+  armL: string;
+  armR: string;
+}
+
+export function bodyPaths(dims: BodyDims): BodyPaths {
   const right: SideDims = { nk: dims.nk, sh: dims.sh, ch: dims.ch, wa: dims.wa, hp: dims.hp, up: dims.upR, fo: dims.foR, th: dims.thR, cf: dims.cfR };
   const left: SideDims = { nk: dims.nk, sh: dims.sh, ch: dims.ch, wa: dims.wa, hp: dims.hp, up: dims.upL, fo: dims.foL, th: dims.thL, cf: dims.cfL };
-  const pts = [...sidePoints(right, 1), ...sidePoints(left, -1).reverse().slice(2)];
-  return `${smooth(pts)} Z`;
+  const pts = [...torsoPoints(right, 1), ...torsoPoints(left, -1).reverse().slice(2)];
+  return {
+    torso: `${smooth(pts)} Z`,
+    armL: `${smooth(armPoints(left, -1))} Z`,
+    armR: `${smooth(armPoints(right, 1))} Z`,
+  };
 }
 
 /* ------------------------------------------------------------------ */
