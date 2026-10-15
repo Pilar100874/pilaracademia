@@ -145,9 +145,9 @@ export function HealthPage() {
       </header>
 
       <div className="px-4 py-4 space-y-4">
-        {/* Atalho para análise corporal por IA */}
+        {/* Atalho para análise corporal por IA (tela Corpo) */}
         <Link
-          to="/body-analysis"
+          to="/bioimpedance"
           className="flex items-center gap-3 rounded-md border border-primary/30 bg-primary/5 p-4 hover:bg-primary/10 transition"
         >
           <div className="h-10 w-10 rounded-md bg-primary/15 flex items-center justify-center shrink-0">
@@ -158,7 +158,7 @@ export function HealthPage() {
               Análise corporal por IA <Sparkles className="h-3.5 w-3.5 text-primary" />
             </p>
             <p className="text-xs text-muted-foreground">
-              Envie a foto do seu relatório de bioimpedância — gera plano completo, calorias, nutrientes e treino.
+              Envie bioimpedância e exames de sangue na tela Corpo — a IA gera plano completo, calorias, nutrientes e treino.
             </p>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -16,12 +16,14 @@ import {
   TrendingDown,
   TrendingUp,
   Minus,
+  Upload,
 } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
+import { useBackgroundAnalysis } from '@/contexts/BackgroundAnalysisContext';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 import { cn } from '@/lib/utils';
 import { BloodExamsTab } from '@/components/BloodExamsTab';
