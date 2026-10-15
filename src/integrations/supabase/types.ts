@@ -149,6 +149,75 @@ export type Database = {
         }
         Relationships: []
       }
+      body_measurements: {
+        Row: {
+          abdomen_cm: number | null
+          arm_left_cm: number | null
+          arm_right_cm: number | null
+          calf_left_cm: number | null
+          calf_right_cm: number | null
+          chest_cm: number | null
+          created_at: string
+          forearm_left_cm: number | null
+          forearm_right_cm: number | null
+          hip_cm: number | null
+          id: string
+          measured_at: string
+          neck_cm: number | null
+          notes: string | null
+          shoulders_cm: number | null
+          thigh_left_cm: number | null
+          thigh_right_cm: number | null
+          updated_at: string
+          user_id: string
+          waist_cm: number | null
+        }
+        Insert: {
+          abdomen_cm?: number | null
+          arm_left_cm?: number | null
+          arm_right_cm?: number | null
+          calf_left_cm?: number | null
+          calf_right_cm?: number | null
+          chest_cm?: number | null
+          created_at?: string
+          forearm_left_cm?: number | null
+          forearm_right_cm?: number | null
+          hip_cm?: number | null
+          id?: string
+          measured_at?: string
+          neck_cm?: number | null
+          notes?: string | null
+          shoulders_cm?: number | null
+          thigh_left_cm?: number | null
+          thigh_right_cm?: number | null
+          updated_at?: string
+          user_id: string
+          waist_cm?: number | null
+        }
+        Update: {
+          abdomen_cm?: number | null
+          arm_left_cm?: number | null
+          arm_right_cm?: number | null
+          calf_left_cm?: number | null
+          calf_right_cm?: number | null
+          chest_cm?: number | null
+          created_at?: string
+          forearm_left_cm?: number | null
+          forearm_right_cm?: number | null
+          hip_cm?: number | null
+          id?: string
+          measured_at?: string
+          neck_cm?: number | null
+          notes?: string | null
+          shoulders_cm?: number | null
+          thigh_left_cm?: number | null
+          thigh_right_cm?: number | null
+          updated_at?: string
+          user_id?: string
+          waist_cm?: number | null
+        }
+        Relationships: []
+      }
       bookable_slot_equipment: {
         Row: {
           bookable_slot_id: string
