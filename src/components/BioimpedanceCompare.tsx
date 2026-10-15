@@ -148,6 +148,7 @@ export function BioimpedanceCompare({
         sex={eB.sex ?? eA.sex}
         valuesA={bioToTapeValues(eA)}
         valuesB={bioToTapeValues(eB)}
+        callouts={segCallouts(eA, eB)}
         labelA={rowLabel(rowA)}
         labelB={rowLabel(rowB)}
         showValues
