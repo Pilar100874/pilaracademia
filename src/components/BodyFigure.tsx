@@ -361,7 +361,7 @@ export function BodyMorph({
   return (
     <div className="rounded-md border border-border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">Evolução visual do corpo</p>
+        <p className="text-sm font-medium">{title}</p>
         <Button
           variant="outline"
           size="sm"
@@ -383,6 +383,7 @@ export function BodyMorph({
         sex={sex}
         showValues={showValues}
         callouts={callouts}
+        legendItems={legendItems}
         t={t}
       />
 
