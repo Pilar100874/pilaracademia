@@ -427,7 +427,23 @@ function amplifyScales(now: ZoneScales, a: ZoneScales, b: ZoneScales): ZoneScale
   return out;
 }
 
-function MorphFigure({ values, valuesA, valuesB, sex, showValues }: { values: Values; valuesA: Values; valuesB: Values; sex?: BodySex; showValues: boolean }) {
+function MorphFigure({
+  values,
+  valuesA,
+  valuesB,
+  sex,
+  showValues,
+  callouts: customCallouts,
+  t,
+}: {
+  values: Values;
+  valuesA: Values;
+  valuesB: Values;
+  sex?: BodySex;
+  showValues: boolean;
+  callouts?: MorphCallout[];
+  t: number;
+}) {
   const pairAvg = (a: string, b: string): number | null => {
     const nums = [values[a], values[b]].filter((v): v is number => v != null && Number.isFinite(v) && v > 0);
     return nums.length ? nums.reduce((s, v) => s + v, 0) / nums.length : null;
