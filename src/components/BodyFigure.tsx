@@ -299,6 +299,8 @@ export function BodyMorph({
   showMarkers = true,
   sex,
   callouts,
+  title = 'Evolução visual do corpo',
+  legendItems,
 }: {
   valuesA: Values;
   valuesB: Values;
@@ -309,6 +311,10 @@ export function BodyMorph({
   sex?: BodySex;
   /** Quando informado, substitui os rótulos em cm (ex.: kg de gordura/músculo por região) */
   callouts?: MorphCallout[];
+  /** Título do cartão (padrão: "Evolução visual do corpo") */
+  title?: string;
+  /** Itens da legenda de cores (padrão: legenda genérica do morph) */
+  legendItems?: { tone: RegionTone; label: string }[];
 }) {
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -355,7 +361,7 @@ export function BodyMorph({
   return (
     <div className="rounded-md border border-border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">Evolução visual do corpo</p>
+        <p className="text-sm font-medium">{title}</p>
         <Button
           variant="outline"
           size="sm"
@@ -377,6 +383,7 @@ export function BodyMorph({
         sex={sex}
         showValues={showValues}
         callouts={callouts}
+        legendItems={legendItems}
         t={t}
       />
 
@@ -444,6 +451,7 @@ function MorphFigure({
   sex,
   showValues,
   callouts: customCallouts,
+  legendItems,
   t,
 }: {
   values: Values;
@@ -452,6 +460,7 @@ function MorphFigure({
   sex?: BodySex;
   showValues: boolean;
   callouts?: MorphCallout[];
+  legendItems?: { tone: RegionTone; label: string }[];
   t: number;
 }) {
   const pairAvg = (a: string, b: string): number | null => {
@@ -530,7 +539,7 @@ function MorphFigure({
           );
         })}
     </HumanSilhouette>
-    {tones && <ToneLegend items={MORPH_LEGEND} />}
+    {tones && <ToneLegend items={legendItems ?? MORPH_LEGEND} />}
     </div>
   );
 }
