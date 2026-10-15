@@ -431,12 +431,20 @@ function MeasurementDialog({
               <div className="grid grid-cols-2 gap-2">
                 {FIELDS.filter((f) => f.group === group).map((f) => (
                   <div key={f.key as string} className="space-y-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{f.label}</p>
+                    <p className="text-xs font-medium truncate">
+                      <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-primary/10 text-primary text-[9px] font-bold mr-1 align-middle">
+                        {MARKER_ORDER[f.key as string]}
+                      </span>
+                      {f.label}
+                    </p>
                     {f.hint && (
                       <p className="text-[10px] text-muted-foreground truncate">{f.hint}</p>
                     )}
                     <div className="relative">
                       <Input
+                        ref={(el) => {
+                          inputRefs.current[f.key as string] = el;
+                        }}
                         inputMode="decimal"
                         placeholder="0,0"
                         value={values[f.key as string] ?? ''}
@@ -446,7 +454,8 @@ function MeasurementDialog({
                             setValues((prev) => ({ ...prev, [f.key as string]: raw }));
                           }
                         }}
-                        className="pr-9"
+                        onFocus={() => setActiveKey(f.key as string)}
+                        className={cn('pr-9', activeKey === (f.key as string) && 'ring-1 ring-primary')}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
                         cm
