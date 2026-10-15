@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -372,14 +372,13 @@ function MeasurementDialog({
     }
   };
 
+  useEffect(() => {
+    if (open) initFrom(editing);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editing]);
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        if (o) initFrom(editing);
-        onOpenChange(o);
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex flex-col overflow-hidden p-0 max-w-lg sm:max-w-2xl max-h-[90vh]"
         onOpenAutoFocus={(e) => e.preventDefault()}
