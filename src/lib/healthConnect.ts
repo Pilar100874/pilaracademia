@@ -104,13 +104,15 @@ async function sleepLastNight(): Promise<number | null> {
 }
 
 export async function readWatchSummary(): Promise<WatchSummary> {
-  const [stepsToday, caloriesToday, hr, restingHr, sleepMinutes, weight] = await Promise.all([
+  const [stepsToday, caloriesToday, hr, restingHr, sleepMinutes, weight, bodyFat, height] = await Promise.all([
     aggregateToday('steps'),
     aggregateToday('calories'),
     latestSample('heartRate'),
     latestSample('restingHeartRate'),
     sleepLastNight(),
     latestSample('weight'),
+    latestSample('bodyFat', 90),
+    latestSample('height', 365 * 5),
   ]);
 
   return {
@@ -120,6 +122,8 @@ export async function readWatchSummary(): Promise<WatchSummary> {
     restingHeartRate: restingHr ? Math.round(restingHr.value) : null,
     sleepMinutesLastNight: sleepMinutes,
     latestWeight: weight ? { kg: Math.round(weight.value * 10) / 10, date: weight.endDate } : null,
+    latestBodyFat: bodyFat ? { pct: Math.round(bodyFat.value * 10) / 10, date: bodyFat.endDate } : null,
+    latestHeightCm: height ? Math.round(height.value * 100) : null,
     syncedAt: new Date().toISOString(),
   };
 }
