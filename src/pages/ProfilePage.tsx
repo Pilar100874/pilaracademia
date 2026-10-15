@@ -379,20 +379,6 @@ export function ProfilePage() {
             <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
           </button>
 
-          <button
-            type="button"
-            onClick={() => setAndroidOpen(true)}
-            className="w-full flex items-center gap-3 py-3 text-left"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
-              <Smartphone className="h-5 w-5 text-emerald-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm">Baixar app Android</p>
-              <p className="text-xs text-muted-foreground">Versão nativa com sincronização do Galaxy Watch</p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-          </button>
         </div>
 
         <RemindersSection />
