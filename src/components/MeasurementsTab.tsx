@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -49,6 +49,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { BodyFigure, BodyMorph, MARKER_ORDER } from '@/components/BodyFigure';
 
 type MeasurementRow = Tables<'body_measurements'>;
 
@@ -296,6 +297,23 @@ function MeasurementDialog({
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const numericValues = useMemo(() => {
+    const out: Record<string, number | null> = {};
+    for (const f of FIELDS) out[f.key as string] = parseMeasure(values[f.key as string] ?? '');
+    return out;
+  }, [values]);
+
+  const focusField = (key: string) => {
+    setActiveKey(key);
+    const el = inputRefs.current[key];
+    if (el) {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.focus({ preventScroll: true });
+    }
+  };
 
   const initFrom = (row: MeasurementRow | null) => {
     setDate(row ? parseISO(row.measured_at) : new Date());
@@ -357,7 +375,7 @@ function MeasurementDialog({
       }}
     >
       <DialogContent
-        className="flex flex-col overflow-hidden p-0 max-w-lg max-h-[90vh]"
+        className="flex flex-col overflow-hidden p-0 max-w-lg sm:max-w-2xl max-h-[90vh]"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader className="px-5 pt-5 pb-3 border-b border-border shrink-0">
@@ -367,7 +385,21 @@ function MeasurementDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 space-y-5">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <div className="sm:grid sm:grid-cols-[170px_minmax(0,1fr)] sm:gap-5 space-y-5 sm:space-y-0">
+            <div>
+              <div className="sm:sticky sm:top-0">
+                <BodyFigure
+                  values={numericValues}
+                  activeKey={activeKey}
+                  onMarkerClick={focusField}
+                />
+                <p className="text-[10px] text-muted-foreground text-center mt-1 leading-snug">
+                  Toque nos números da figura para ir até a medida correspondente.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-5 min-w-0">
           <div className="space-y-1.5">
             <p className="text-sm font-medium">Data da medição</p>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
@@ -399,12 +431,20 @@ function MeasurementDialog({
               <div className="grid grid-cols-2 gap-2">
                 {FIELDS.filter((f) => f.group === group).map((f) => (
                   <div key={f.key as string} className="space-y-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{f.label}</p>
+                    <p className="text-xs font-medium truncate">
+                      <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-primary/10 text-primary text-[9px] font-bold mr-1 align-middle">
+                        {MARKER_ORDER[f.key as string]}
+                      </span>
+                      {f.label}
+                    </p>
                     {f.hint && (
                       <p className="text-[10px] text-muted-foreground truncate">{f.hint}</p>
                     )}
                     <div className="relative">
                       <Input
+                        ref={(el) => {
+                          inputRefs.current[f.key as string] = el;
+                        }}
                         inputMode="decimal"
                         placeholder="0,0"
                         value={values[f.key as string] ?? ''}
@@ -414,7 +454,8 @@ function MeasurementDialog({
                             setValues((prev) => ({ ...prev, [f.key as string]: raw }));
                           }
                         }}
-                        className="pr-9"
+                        onFocus={() => setActiveKey(f.key as string)}
+                        className={cn('pr-9', activeKey === (f.key as string) && 'ring-1 ring-primary')}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
                         cm
@@ -435,6 +476,8 @@ function MeasurementDialog({
               maxLength={300}
               rows={2}
             />
+          </div>
+            </div>
           </div>
         </div>
 
@@ -553,6 +596,13 @@ function MeasurementsCompare({
           <p className="text-[10px] text-muted-foreground">cm somados</p>
         </div>
       </div>
+
+      <BodyMorph
+        valuesA={rowA as unknown as Record<string, number | null>}
+        valuesB={rowB as unknown as Record<string, number | null>}
+        labelA={rowLabel(rowA)}
+        labelB={rowLabel(rowB)}
+      />
 
       <div className="space-y-3">
         {visibleFields.map((f) => (
