@@ -147,11 +147,25 @@ export function HealthPage() {
       </header>
 
       <Tabs value={tab} onValueChange={setTab} className="px-5 py-5">
-        <TabsList className="mb-5 grid w-full grid-cols-2 gap-1 p-1 sm:grid-cols-4">
-          <TabsTrigger value="overview" className="w-full min-w-0 px-2 text-xs sm:text-sm">Visão geral</TabsTrigger>
-          <TabsTrigger value="bioimpedance" className="w-full min-w-0 px-2 text-xs sm:text-sm">Bioimpedância</TabsTrigger>
-          <TabsTrigger value="measurements" className="w-full min-w-0 px-2 text-xs sm:text-sm">Medidas</TabsTrigger>
-          <TabsTrigger value="blood" className="w-full min-w-0 px-2 text-xs sm:text-sm">Exames</TabsTrigger>
+        <TabsList className="mb-5 grid h-auto w-full grid-cols-4 gap-1 rounded-xl bg-muted/60 p-1.5">
+          {([
+            { value: 'overview', label: 'Visão geral', short: 'Geral', icon: Heart },
+            { value: 'bioimpedance', label: 'Bioimpedância', short: 'Bioimp.', icon: Scale },
+            { value: 'measurements', label: 'Medidas', short: 'Medidas', icon: Ruler },
+            { value: 'blood', label: 'Exames', short: 'Exames', icon: HeartPulse },
+          ] as const).map(({ value, label, short, icon: Icon }) => (
+            <TabsTrigger
+              key={value}
+              value={value}
+              className="flex w-full min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-muted-foreground transition-colors data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            >
+              <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-[10px] font-medium leading-tight sm:text-xs">
+                <span className="sm:hidden">{short}</span>
+                <span className="hidden sm:inline">{label}</span>
+              </span>
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-5 mt-0">
