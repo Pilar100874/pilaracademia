@@ -55,10 +55,10 @@ const S = (v?: number) => (v != null && Number.isFinite(v) && v > 0 ? clamp(v, 0
 export function computeDims(scales: ZoneScales): BodyDims {
   return {
     nk: 7 * S(scales.neck),
-    sh: 40 * S(scales.shoulders),
-    ch: 32 * S(scales.chest),
-    wa: 23 * S(scales.waist),
-    hp: 31 * S(scales.hip),
+    sh: 42 * S(scales.shoulders),
+    ch: 33 * S(scales.chest),
+    wa: 24 * S(scales.waist),
+    hp: 28.5 * S(scales.hip),
     upL: 9.5 * S(scales.armL),
     upR: 9.5 * S(scales.armR),
     foL: 7 * S(scales.forearmL ?? scales.armL),
