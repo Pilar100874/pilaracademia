@@ -251,6 +251,7 @@ export function MeasurementsTab() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         editing={editing}
+        previous={rows[0] ?? null}
         onSaved={() => {
           queryClient.invalidateQueries({ queryKey: ['body_measurements'] });
           setDialogOpen(false);
@@ -289,12 +290,14 @@ function MeasurementDialog({
   open,
   onOpenChange,
   editing,
+  previous,
   onSaved,
   sex,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editing: MeasurementRow | null;
+  previous: MeasurementRow | null;
   onSaved: () => void;
   sex?: BodySex;
 }) {
