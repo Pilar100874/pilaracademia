@@ -872,6 +872,10 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
         </div>
       )}
 
+      {/* Equilíbrio corporal + gasto em exercícios */}
+      <BodyBalanceCard e={e} weight={weight} />
+      <ExerciseBurnCard weight={weight} />
+
       {/* Tipo corporal */}
       <BodyTypeMatrix e={e} />
     </div>
