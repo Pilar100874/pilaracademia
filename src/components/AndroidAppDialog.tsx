@@ -7,9 +7,8 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-/** Link direto do APK mais recente (gerado a cada build no repositório). */
-const APK_URL =
-  'https://github.com/Pilar100874/pilaracademia/releases/latest/download/pilaracademia.apk';
+/** APK servido pelo próprio app (public/downloads), sem depender do GitHub. */
+const APK_URL = '/downloads/pilaracademia.apk';
 
 const FEATURES = [
   {
