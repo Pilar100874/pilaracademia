@@ -308,7 +308,7 @@ export function HumanSilhouette({
         {/* corpo com gradiente suave */}
         <path d={d} fill={`url(#hg${uid})`} filter={`url(#hb${uid})`} />
         {/* contorno subtil por cima do blur para definição */}
-        <path d={d} fill="none" stroke="hsl(160 25% 35% / 0.35)" strokeWidth={0.8} />
+        <path d={d} fill="none" stroke="hsl(165 35% 28% / 0.5)" strokeWidth={1.1} />
 
         {/* tons por região (gordura/músculo) */}
         {tones && (
