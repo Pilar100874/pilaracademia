@@ -170,9 +170,10 @@ function torsoPoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
 function armPoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
   const X = (dx: number) => CX + dir * dx;
   return [
-    { x: X(o.sh * 0.6), y: 58 }, // início escondido sob o trapézio
-    { x: X(o.sh * 0.6), y: 58 },
-    { x: X(o.sh), y: 70 }, // ponta do ombro
+    { x: X(o.sh * 0.5), y: 66 }, // início escondido sob o trapézio
+    { x: X(o.sh * 0.5), y: 66 },
+    { x: X(o.sh * 0.88), y: 69 },
+    { x: X(o.sh), y: 73 }, // ponta do ombro (sob a linha do tronco)
     { x: X(o.sh + o.up * 0.55), y: 92 }, // braço externo
     { x: X(o.sh + o.up * 0.55), y: 122 },
     { x: X(o.sh * 0.85 + o.fo * 0.55), y: 152 }, // cotovelo externo
