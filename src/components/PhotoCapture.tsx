@@ -90,6 +90,39 @@ function ScanFrame() {
   );
 }
 
+// Downscale camera photos before base64: full-res images (multi-MB) exhaust
+// mobile memory and the browser kills/reloads the tab on repeated captures.
+function compressImageFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const MAX = 1280;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('no canvas ctx');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      } catch (err) {
+        reject(err);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('image decode failed'));
+    };
+    img.src = url;
+  });
+}
+
 export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCaptureProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -171,7 +204,9 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
     setError(null);
     
     try {
-      const base64 = await fileToBase64(file);
+      // Downscale before anything else: full-res camera photos (multi-MB base64)
+      // blow up mobile memory and the browser kills/reloads the tab on repeat captures.
+      const base64 = await compressImageFile(file).catch(() => fileToBase64(file));
       console.log('PhotoCapture: base64 generated, length:', base64.length);
       
       // Clear input AFTER reading the file
