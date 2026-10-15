@@ -1,4 +1,4 @@
-import { Activity, Bone, Droplet, Dumbbell, Flame, Scale } from 'lucide-react';
+import { Activity, Bone, Droplet, Dumbbell, Flame, Scale, Zap } from 'lucide-react';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 import { fmtN } from '@/components/BioimpedanceTab';
 import { cn } from '@/lib/utils';
@@ -395,6 +395,7 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
     { icon: Dumbbell, label: 'Músculo', value: muscle, unit: 'kg' },
     { icon: Droplet, label: 'Água', value: waterPct, unit: '%' },
     { icon: Bone, label: 'Ossos', value: num(e.bone_mass_kg), unit: 'kg' },
+    { icon: Zap, label: 'Metabolismo basal', value: num(e.bmr_kcal), unit: 'kcal' },
     { icon: Activity, label: 'Idade corporal', value: num(e.body_age), unit: 'anos' },
   ].filter((t) => t.value != null);
 
