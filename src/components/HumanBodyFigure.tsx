@@ -58,26 +58,26 @@ const S = (v?: number) => {
 };
 
 export function computeDims(scales: ZoneScales): BodyDims {
-  const ch = 35 * S(scales.chest);
-  let sh = 43 * S(scales.shoulders);
-  let wa = 28 * S(scales.waist);
-  let hp = 33 * S(scales.hip);
+  const ch = 30 * S(scales.chest);
+  let sh = 45 * S(scales.shoulders);
+  let wa = 25 * S(scales.waist);
+  let hp = 31 * S(scales.hip);
   // Vínculos anatômicos de um corpo-padrão (cânone de 8 cabeças): ombros
   // um pouco mais largos que o peito, cintura mais fina que peito e quadril,
   // quadril nunca mais largo que os ombros.
-  sh = clamp(sh, ch * 1.12, ch * 1.3);
-  wa = clamp(wa, ch * 0.7, ch * 0.95);
-  hp = clamp(hp, wa * 1.06, Math.min(ch * 1.08, sh * 0.86));
+  sh = clamp(sh, ch * 1.35, ch * 1.6);
+  wa = clamp(wa, ch * 0.75, ch * 1.0);
+  hp = clamp(hp, wa * 1.06, Math.min(ch * 1.12, sh * 0.8));
   return {
     nk: 9 * S(scales.neck),
     sh,
     ch,
     wa,
     hp,
-    upL: 12 * S(scales.armL),
-    upR: 12 * S(scales.armR),
-    foL: 10 * S(scales.forearmL ?? scales.armL),
-    foR: 10 * S(scales.forearmR ?? scales.armR),
+    upL: 16 * S(scales.armL),
+    upR: 16 * S(scales.armR),
+    foL: 13 * S(scales.forearmL ?? scales.armL),
+    foR: 13 * S(scales.forearmR ?? scales.armR),
     thL: 27 * S(scales.thighL),
     thR: 27 * S(scales.thighR),
     cfL: 16 * S(scales.calfL ?? scales.thighL),
@@ -89,9 +89,9 @@ export function computeDims(scales: ZoneScales): BodyDims {
 export function regionAnchor(region: keyof RegionTones, d: BodyDims): { x: number; y: number } {
   switch (region) {
     case 'leftArm':
-      return { x: CX - d.sh - d.upL * 0.3, y: 135 };
+      return { x: CX - Math.max(d.sh + 1, d.ch + 1 + d.upL), y: 135 };
     case 'rightArm':
-      return { x: CX + d.sh + d.upR * 0.3, y: 135 };
+      return { x: CX + Math.max(d.sh + 1, d.ch + 1 + d.upR), y: 135 };
     case 'trunk':
       return { x: CX - d.wa, y: 178 };
     case 'leftLeg':
@@ -126,14 +126,17 @@ type SideDims = { nk: number; sh: number; ch: number; wa: number; hp: number; up
  *  cabeça 48, virilha na metade da altura, mão no meio da coxa. */
 function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
   const X = (dx: number) => CX + dir * dx;
-  const armOut = o.sh + o.up * 0.3;
-  const armIn = Math.max(o.ch + 1.5, armOut - o.up);
-  const elbowOut = o.sh + 2;
-  const elbowIn = Math.max(o.wa + 9, elbowOut - o.up * 0.85);
-  const foreOut = o.sh + 2 + o.fo * 0.2;
-  const foreIn = Math.max(o.hp + 5, foreOut - o.fo);
-  const wristOut = Math.max(o.sh + 1, foreIn + o.fo * 0.7);
-  const wristIn = wristOut - o.fo * 0.7;
+  // Braço com espessura real: largura do braço ~1/2 da cabeça, antebraço
+  // um pouco mais fino e pulso estreito, encaixado logo abaixo da axila.
+  const armIn = o.ch + 1;
+  const armOut = Math.max(o.sh + 1, armIn + o.up);
+  const deltoid = Math.max(o.sh + 2, armOut + 0.5);
+  const elbowIn = Math.max(o.wa + 7, o.ch - 1);
+  const elbowOut = elbowIn + o.up * 0.82;
+  const foreIn = Math.max(o.hp + 4, elbowIn + 1);
+  const foreOut = foreIn + o.fo;
+  const wristIn = foreIn + 1;
+  const wristOut = wristIn + o.fo * 0.7;
   const thOut = Math.min(o.hp - 0.5, 3 + o.th);
   const kx = 14; // centro do joelho
   const tf = o.th / 27;
@@ -151,7 +154,7 @@ function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
     { x: X(o.nk + 9), y: 76 }, // trapézio
     { x: X(o.sh * 0.82), y: 80 },
     { x: X(o.sh), y: 87 }, // ponta do ombro
-    { x: X(armOut), y: 102 }, // deltóide
+    { x: X(deltoid), y: 102 }, // deltóide
     { x: X(armOut - 0.5), y: 135 }, // braço externo
     { x: X(elbowOut), y: 168 }, // cotovelo externo
     { x: X(foreOut), y: 192 }, // antebraço externo
@@ -322,8 +325,8 @@ export function HumanSilhouette({
         { x: CX - dims.nk - 10, y: 66, anchor: 'end', v: single('neck_cm') },
         { x: CX - dims.sh - 8, y: 86, anchor: 'end', v: single('shoulders_cm') },
         { x: CX + dims.ch + 8, y: 128, anchor: 'start', v: single('chest_cm') },
-        { x: CX + dims.sh + dims.upR * 0.3 + 10, y: 140, anchor: 'start', v: pairVal('arm_left_cm', 'arm_right_cm') },
-        { x: CX - dims.sh - dims.foL * 0.2 - 10, y: 200, anchor: 'end', v: pairVal('forearm_left_cm', 'forearm_right_cm') },
+        { x: CX + Math.max(dims.sh + 1, dims.ch + 1 + dims.upR) + 8, y: 140, anchor: 'start', v: pairVal('arm_left_cm', 'arm_right_cm') },
+        { x: CX - Math.max(dims.hp + 4, dims.ch) - dims.foL - 8, y: 200, anchor: 'end', v: pairVal('forearm_left_cm', 'forearm_right_cm') },
         { x: CX - dims.wa - 8, y: 160, anchor: 'end', v: single('waist_cm') },
         { x: CX + dims.wa + 16, y: 192, anchor: 'start', v: single('abdomen_cm') },
         { x: CX - dims.hp - 8, y: 226, anchor: 'end', v: single('hip_cm') },
