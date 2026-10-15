@@ -72,11 +72,11 @@ export async function signMediaUrl(url: string | null | undefined): Promise<stri
  * Signe en lot les champs médias (string ou string[]) d'une liste de lignes,
  * en regroupant les appels par bucket.
  */
-export async function signRowsMedia<T extends Record<string, unknown>>(rows: T[], fields: (keyof T & string)[]): Promise<T[]> {
+export async function signRowsMedia<T extends object>(rows: T[], fields: (keyof T & string)[]): Promise<T[]> {
   const parsedByUrl = new Map<string, ParsedStorageUrl>();
   for (const row of rows) {
     for (const field of fields) {
-      const value = row[field];
+      const value = (row as Record<string, unknown>)[field];
       const urls = Array.isArray(value) ? value : [value];
       for (const u of urls) {
         if (typeof u !== 'string' || parsedByUrl.has(u)) continue;
