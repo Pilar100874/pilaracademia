@@ -313,7 +313,7 @@ export function SegmentalFigure({
   };
 
   const callout = (side: 'left' | 'right', region: keyof RegionTones, kg: number | undefined, refKg: number, y: number) => {
-    const dot = regionAnchor(region, dims);
+    const dot = regionAnchor(region, dims, side);
     const dx = OFF + dot.x;
     const dy = dot.y;
     const sx = side === 'left' ? 50 : 210;

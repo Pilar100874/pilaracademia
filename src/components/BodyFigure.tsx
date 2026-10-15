@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { HumanSilhouette, ToneLegend, tapeToScales, computeDims, regionAnchor, type BodySex, type RegionTone, type RegionTones, type ZoneScales } from '@/components/HumanBodyFigure';
+import { HumanSilhouette, ToneLegend, tapeToScales, computeDims, morphAnchor, type MorphAnchorPoint, type BodySex, type RegionTone, type RegionTones, type ZoneScales } from '@/components/HumanBodyFigure';
 import { cn } from '@/lib/utils';
 
 /* ------------------------------------------------------------------ */
