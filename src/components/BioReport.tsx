@@ -177,8 +177,17 @@ const FAT_SHARE: Record<SegKey, number> = {
 
 const REF: Record<'fat' | 'muscle', Record<'trunk' | 'arm' | 'leg', number>> = {
   fat: { trunk: 11, arm: 1.0, leg: 4.0 },
-  muscle: { trunk: 16, arm: 3.0, leg: 9.0 },
+  muscle: { trunk: 24, arm: 3.2, leg: 9.5 },
 };
+
+/** Referência por segmento proporcional ao peso, quando disponível */
+function segRef(kind: 'fat' | 'muscle', seg: 'trunk' | 'arm' | 'leg', weightKg?: number): number {
+  if (weightKg == null || weightKg <= 0) return REF[kind][seg];
+  const share = kind === 'fat'
+    ? { trunk: 0.1, arm: 0.013, leg: 0.028 }
+    : { trunk: 0.3, arm: 0.045, leg: 0.115 };
+  return weightKg * share[seg];
+}
 
 const CLS_COLOR: Record<'good' | 'warn' | 'bad', string> = {
   good: 'hsl(150 55% 36%)',
@@ -186,8 +195,20 @@ const CLS_COLOR: Record<'good' | 'warn' | 'bad', string> = {
   bad: 'hsl(0 65% 44%)',
 };
 
-export function SegmentalFigure({ kind, values }: { kind: 'fat' | 'muscle'; values: SegValues }) {
-  const ref = REF[kind];
+export function SegmentalFigure({
+  kind,
+  values,
+  weightKg,
+}: {
+  kind: 'fat' | 'muscle';
+  values: SegValues;
+  weightKg?: number;
+}) {
+  const ref = {
+    trunk: segRef(kind, 'trunk', weightKg),
+    arm: segRef(kind, 'arm', weightKg),
+    leg: segRef(kind, 'leg', weightKg),
+  };
   const total = (Object.values(values).filter((v): v is number => v != null) as number[]).reduce(
     (s, v) => s + v,
     0,
