@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useIsMaster } from './useIsMaster';
 import { toast } from 'sonner';
+import { signRowsMedia, toCanonicalStorageUrl } from '@/lib/signedMediaUrl';
 import type { BodyAnalysis, AestheticAnalysis, MobilityAnalysis } from '@/lib/exerciseAnalysis';
 
 export interface LibraryExercise {
@@ -118,11 +119,13 @@ export function useExerciseLibrary() {
         extrasByExercise.set(link.exercise_id, arr);
       }
 
-      return (exRes.data ?? []).map((ex: any) => ({
+      const mapped = (exRes.data ?? []).map((ex: any) => ({
         ...ex,
         category_ids: linksByExercise.get(ex.id) ?? (ex.category_id ? [ex.category_id] : []),
         extra_ids: extrasByExercise.get(ex.id) ?? [],
       })) as LibraryExercise[];
+      // Buckets privés : URLs signées temporaires pour l'affichage/la lecture.
+      return signRowsMedia(mapped, ['video_url', 'image_urls']);
     },
     enabled: !!user,
     refetchInterval: 60000,
@@ -165,11 +168,11 @@ export function useExerciseLibrary() {
       const insertPayload = {
         user_id: user.id,
         name: data.name,
-        image_urls: data.image_urls || [],
+        image_urls: (data.image_urls || []).map((u) => toCanonicalStorageUrl(u) ?? u),
         default_sets: data.default_sets || 3,
         default_reps: data.default_reps || 12,
         video_type: data.video_type ?? null,
-        video_url: data.video_url ?? null,
+        video_url: toCanonicalStorageUrl(data.video_url),
         video_optimized_at: data.video_optimized_at ?? null,
         video_hash: data.video_hash ?? null,
         video_start_seconds: data.video_start_seconds ?? null,

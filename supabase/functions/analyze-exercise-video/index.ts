@@ -180,8 +180,29 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Bucket privé : si l'URL publique canonique pointe sur notre storage,
+    // générer une URL signée côté serveur avant de télécharger.
+    let fetchUrl = videoUrl;
+    const pubMarker = '/storage/v1/object/public/';
+    const markerIdx = videoUrl.indexOf(pubMarker);
+    if (videoUrl.startsWith(SUPABASE_URL) && markerIdx > 0) {
+      const rest = videoUrl.slice(markerIdx + pubMarker.length).split('?')[0];
+      const slash = rest.indexOf('/');
+      const bucket = rest.slice(0, slash);
+      const path = decodeURIComponent(rest.slice(slash + 1));
+      const signRes = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/${bucket}/${path}`, {
+        method: 'POST',
+        headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expiresIn: 600 }),
+      });
+      if (signRes.ok) {
+        const signBody = await signRes.json();
+        if (signBody?.signedURL) fetchUrl = `${SUPABASE_URL}/storage/v1${signBody.signedURL}`;
+      }
+    }
+
     // Baixa o vídeo e converte para base64 (Gemini aceita inline_data)
-    const videoRes = await fetch(videoUrl);
+    const videoRes = await fetch(fetchUrl);
     if (!videoRes.ok) throw new Error(`Failed to fetch video: ${videoRes.status}`);
     const contentType = videoRes.headers.get('content-type') || 'video/mp4';
     const buffer = new Uint8Array(await videoRes.arrayBuffer());

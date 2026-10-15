@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import type { BodyAnalysisRow, BodyPlan } from '@/types/bodyAnalysis';
+import { signRowsMedia } from '@/lib/signedMediaUrl';
 
 export function useBodyAnalyses() {
   const { user } = useAuth();
@@ -16,7 +17,8 @@ export function useBodyAnalyses() {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as unknown as BodyAnalysisRow[];
+      // Bucket privé : URL signée temporaire pour l'affichage.
+      return signRowsMedia((data || []) as unknown as BodyAnalysisRow[], ['image_url']);
     },
   });
 

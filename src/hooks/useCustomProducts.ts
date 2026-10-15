@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { signRowsMedia, toCanonicalStorageUrl } from '@/lib/signedMediaUrl';
 
 export interface CustomProduct {
   id: string;
@@ -49,7 +50,8 @@ export function useCustomProducts() {
       .order('name', { ascending: true });
 
     if (!error && data) {
-      setProducts(data as CustomProduct[]);
+      // Bucket privé : URLs signées temporaires pour l'affichage.
+      setProducts(await signRowsMedia(data as CustomProduct[], ['image_url']));
     }
     setIsLoading(false);
   }, [user]);
@@ -88,7 +90,7 @@ export function useCustomProducts() {
         barcode: product.barcode,
         name: product.name,
         brand: product.brand,
-        image_url: product.image_url,
+        image_url: toCanonicalStorageUrl(product.image_url),
         calories: product.calories,
         protein: product.protein,
         carbs: product.carbs,
@@ -251,7 +253,7 @@ export function useCustomProducts() {
         fiber: Number(((product.fiber || 0) * factor).toFixed(1)),
         sodium: Number(((product.sodium || 0) * factor).toFixed(1)),
         name: product.name,
-        image_url: product.image_url,
+        image_url: toCanonicalStorageUrl(product.image_url),
       };
 
       const { error: updateError } = await supabase
