@@ -252,16 +252,17 @@ function armPoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
   const X = (dx: number) => CX + dir * dx;
   const { ax, outSh, elIn, elOut, foIn, foOut, wrIn, wrOut } = armGeom(o);
   return [
-    { x: X(o.sh * 0.55), y: 78 }, // topo do ombro (sob o trapézio)
+    { x: X(o.sh * 0.92), y: 84 }, // topo do ombro (sob o trapézio)
     { x: X(outSh), y: 94 }, // deltóide
     { x: X(outSh - 0.5), y: 128 }, // braço externo
     { x: X(elOut), y: 164 }, // cotovelo externo
     { x: X(foOut), y: 196 }, // antebraço externo
-    { x: X(wrOut), y: 230 }, // pulso externo
-    { x: X(wrOut + 1.5), y: 246 }, // mão
-    { x: X(wrOut - 1), y: 259 }, // ponta dos dedos
-    { x: X(wrIn - 1), y: 250 },
-    { x: X(wrIn), y: 230 }, // pulso interno
+    { x: X(wrOut), y: 228 }, // pulso externo
+    { x: X(wrOut + 1.2), y: 240 }, // mão externa
+    { x: X(wrOut - 1), y: 251 }, // ponta dos dedos
+    { x: X(wrIn + 1.5), y: 249 }, // dedos internos
+    { x: X(wrIn), y: 238 }, // mão interna
+    { x: X(wrIn), y: 228 }, // pulso interno
     { x: X(foIn), y: 196 }, // antebraço interno
     { x: X(elIn), y: 164 }, // cotovelo interno
     { x: X(ax), y: 122 }, // braço interno
@@ -273,6 +274,9 @@ export interface BodyPaths {
   torso: string;
   armL: string;
   armR: string;
+  /** contorno do braço sem o topo (a borda que encosta no ombro não é desenhada) */
+  armLLine: string;
+  armRLine: string;
 }
 
 /** Tronco + braços como peças próprias (o braço passa por cima do quadril). */
@@ -280,10 +284,14 @@ export function bodyPaths(dims: BodyDims): BodyPaths {
   const right: SideDims = { nk: dims.nk, sh: dims.sh, ch: dims.ch, wa: dims.wa, hp: dims.hp, up: dims.upR, fo: dims.foR, th: dims.thR, cf: dims.cfR };
   const left: SideDims = { nk: dims.nk, sh: dims.sh, ch: dims.ch, wa: dims.wa, hp: dims.hp, up: dims.upL, fo: dims.foL, th: dims.thL, cf: dims.cfL };
   const pts = [...sidePoints(right, 1), ...sidePoints(left, -1).reverse().slice(2)];
+  const armLpts = armPoints(left, -1);
+  const armRpts = armPoints(right, 1);
   return {
     torso: `${smooth(pts)} Z`,
-    armL: `${smooth(armPoints(left, -1))} Z`,
-    armR: `${smooth(armPoints(right, 1))} Z`,
+    armL: `${smooth(armLpts)} Z`,
+    armR: `${smooth(armRpts)} Z`,
+    armLLine: smooth(armLpts.slice(1)),
+    armRLine: smooth(armRpts.slice(1)),
   };
 }
 
