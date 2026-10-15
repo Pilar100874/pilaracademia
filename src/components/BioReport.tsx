@@ -1,4 +1,4 @@
-import { Activity, Bone, Droplet, Dumbbell, Flame, Scale } from 'lucide-react';
+import { Activity, Bone, Droplet, Dumbbell, Flame, Scale, Zap } from 'lucide-react';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 import { fmtN } from '@/components/BioimpedanceTab';
 import { cn } from '@/lib/utils';
@@ -192,7 +192,7 @@ const REF: Record<'fat' | 'muscle', Record<'trunk' | 'arm' | 'leg', number>> = {
   muscle: { trunk: 16, arm: 3.0, leg: 9.0 },
 };
 
-function SegmentalFigure({ kind, values }: { kind: 'fat' | 'muscle'; values: SegValues }) {
+export function SegmentalFigure({ kind, values }: { kind: 'fat' | 'muscle'; values: SegValues }) {
   const CX = 110;
   const total = (Object.values(values).filter((v): v is number => v != null) as number[]).reduce(
     (s, v) => s + v,
@@ -395,6 +395,7 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
     { icon: Dumbbell, label: 'Músculo', value: muscle, unit: 'kg' },
     { icon: Droplet, label: 'Água', value: waterPct, unit: '%' },
     { icon: Bone, label: 'Ossos', value: num(e.bone_mass_kg), unit: 'kg' },
+    { icon: Zap, label: 'Metabolismo basal', value: num(e.bmr_kcal), unit: 'kcal' },
     { icon: Activity, label: 'Idade corporal', value: num(e.body_age), unit: 'anos' },
   ].filter((t) => t.value != null);
 

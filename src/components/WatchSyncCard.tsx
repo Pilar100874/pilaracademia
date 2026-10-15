@@ -148,7 +148,7 @@ export function WatchSyncCard() {
         image_url: null,
         measured_at: measuredAt,
         extracted,
-        plan: null,
+        plan: {} as never,
         summary: 'Medição importada da balança via Health Connect.',
       });
       if (error) throw error;

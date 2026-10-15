@@ -45,6 +45,8 @@ export interface ScaleProfile {
 export interface ScaleReading {
   weightKg: number | null;
   impedanceOhm: number | null;
+  /** Impedâncias segmentais (Ω) quando o dialeto ICOMON as envia (mensagem A3). */
+  segmentalOhm?: number[] | null;
   stable: boolean;
 }
 
@@ -137,17 +139,22 @@ export function parseIcomonMessage(msg: number[]): ScaleReading | null {
   if (type === 0xa3 && msg.length >= 26) {
     const weightKg = u24be(msg, 2) / 1000;
     // 10 impedâncias segmentais u16 BE /10 ohms a partir do offset 6
+    const segmental: number[] = [];
     let impedance: number | null = null;
     for (let off = 6; off + 1 < msg.length && off <= 24; off += 2) {
       const ohm = ((msg[off] << 8) | msg[off + 1]) / 10;
-      if (ohm >= IMPEDANCE_PLAUSIBLE_MIN && ohm <= IMPEDANCE_PLAUSIBLE_MAX) {
+      segmental.push(Math.round(ohm * 10) / 10);
+      if (impedance == null && ohm >= IMPEDANCE_PLAUSIBLE_MIN && ohm <= IMPEDANCE_PLAUSIBLE_MAX) {
         impedance = Math.round(ohm);
-        break;
       }
     }
+    const hasPlausible = segmental.some(
+      (z) => z >= IMPEDANCE_PLAUSIBLE_MIN && z <= IMPEDANCE_PLAUSIBLE_MAX,
+    );
     return {
       weightKg: weightKg >= 5 && weightKg <= 250 ? Math.round(weightKg * 100) / 100 : null,
       impedanceOhm: impedance,
+      segmentalOhm: hasPlausible ? segmental : null,
       stable: true,
     };
   }
@@ -313,6 +320,7 @@ export class ScaleBleSession {
     const merged: ScaleReading = {
       weightKg: reading.weightKg ?? this.lastStable?.weightKg ?? null,
       impedanceOhm: reading.impedanceOhm ?? this.lastStable?.impedanceOhm ?? null,
+      segmentalOhm: reading.segmentalOhm ?? this.lastStable?.segmentalOhm ?? null,
       stable: reading.stable,
     };
     this.cb.onReading(merged);
@@ -380,4 +388,142 @@ export function estimateBodyFatPct(params: {
 
   if (pct < 3 || pct > 60) return null;
   return Math.round(pct * 10) / 10;
+}
+
+/* ------------------------------------------------------------------ */
+/* Derivações extras a partir de peso + impedância + perfil            */
+/* ------------------------------------------------------------------ */
+
+export interface DerivedBodyMetrics {
+  bodyFatPct: number | null;
+  fatMassKg: number | null;
+  leanMassKg: number | null;
+  /** Água corporal ≈ 73% da massa magra (fração clássica de Pace & Rathbun). */
+  waterKg: number | null;
+  /** Massa muscular ≈ massa magra − mineral ósseo. */
+  muscleMassKg: number | null;
+  /** Músculo esquelético ≈ 60% da massa muscular total. */
+  skeletalMuscleKg: number | null;
+  /** Mineral ósseo ≈ 7% da massa magra. */
+  boneMassKg: number | null;
+  /** Metabolismo basal — Mifflin-St Jeor. */
+  bmrKcal: number | null;
+}
+
+/**
+ * Estimativas derivadas da leitura bruta (peso + impedância) e do perfil.
+ * São aproximações — podem divergir dos índices calculados pelo app do
+ * fabricante, que usa fórmula e calibração proprietárias.
+ */
+export function deriveBodyMetrics(params: {
+  weightKg: number;
+  impedanceOhm: number | null;
+  heightCm: number | null;
+  ageYears: number | null;
+  isMale: boolean | null;
+}): DerivedBodyMetrics {
+  const { weightKg, impedanceOhm, heightCm, ageYears, isMale } = params;
+  const round1 = (v: number) => Math.round(v * 10) / 10;
+
+  const bodyFatPct = estimateBodyFatPct({ impedanceOhm, weightKg, heightCm, ageYears, isMale });
+  const fatMassKg = bodyFatPct != null ? round1((weightKg * bodyFatPct) / 100) : null;
+  const leanMassKg = fatMassKg != null ? round1(weightKg - fatMassKg) : null;
+  const waterKg = leanMassKg != null ? round1(leanMassKg * 0.73) : null;
+  const boneMassKg = leanMassKg != null ? round1(leanMassKg * 0.07) : null;
+  const muscleMassKg = leanMassKg != null && boneMassKg != null ? round1(leanMassKg - boneMassKg) : null;
+  const skeletalMuscleKg = muscleMassKg != null ? round1(muscleMassKg * 0.6) : null;
+
+  let bmrKcal: number | null = null;
+  if (heightCm != null && ageYears != null) {
+    // Sexo desconhecido: média entre as duas constantes (+5 / −161)
+    const sexTerm = isMale == null ? -78 : isMale ? 5 : -161;
+    bmrKcal = Math.round(10 * weightKg + 6.25 * heightCm - 5 * ageYears + sexTerm);
+  }
+
+  return { bodyFatPct, fatMassKg, leanMassKg, waterKg, muscleMassKg, skeletalMuscleKg, boneMassKg, bmrKcal };
+}
+
+export type SegmentalKey = 'trunk_kg' | 'left_arm_kg' | 'right_arm_kg' | 'left_leg_kg' | 'right_leg_kg';
+
+/**
+ * Mapeamento das 10 impedâncias do frame A3 (2 frequências por segmento):
+ * [braço dir., braço esq., perna dir., perna esq., tronco] × 2.
+ * Ordem inferida da família ICOMON/SACOMA — não confirmada na Proscan Voice.
+ */
+const SEGMENT_PAIRS: Record<SegmentalKey, [number, number]> = {
+  right_arm_kg: [0, 1],
+  left_arm_kg: [2, 3],
+  right_leg_kg: [4, 5],
+  left_leg_kg: [6, 7],
+  trunk_kg: [8, 9],
+};
+
+/** Proporção de referência de músculo por segmento (corpo inteiro). */
+const MUSCLE_SHARE: Record<SegmentalKey, number> = {
+  trunk_kg: 0.44,
+  left_arm_kg: 0.09,
+  right_arm_kg: 0.09,
+  left_leg_kg: 0.19,
+  right_leg_kg: 0.19,
+};
+
+/** Proporção de referência de gordura por segmento (corpo inteiro). */
+const FAT_SHARE_MAP: Record<SegmentalKey, number> = {
+  trunk_kg: 0.5,
+  left_arm_kg: 0.065,
+  right_arm_kg: 0.065,
+  left_leg_kg: 0.175,
+  right_leg_kg: 0.175,
+};
+
+/**
+ * Distribui músculo e gordura totais pelos 5 segmentos ajustando pela
+ * impedância relativa de cada um (mais impedância → menos massa magra /
+ * mais gordura naquela região). As somas batem com os totais derivados.
+ */
+export function deriveSegmental(
+  segmentalOhm: number[],
+  muscleMassKg: number | null,
+  fatMassKg: number | null,
+): { muscle: Partial<Record<SegmentalKey, number>>; fat: Partial<Record<SegmentalKey, number>> } | null {
+  if (segmentalOhm.length < 10 || (muscleMassKg == null && fatMassKg == null)) return null;
+
+  const segOhm: Partial<Record<SegmentalKey, number>> = {};
+  for (const key of Object.keys(SEGMENT_PAIRS) as SegmentalKey[]) {
+    const [a, b] = SEGMENT_PAIRS[key];
+    const z = (segmentalOhm[a] + segmentalOhm[b]) / 2;
+    if (z >= IMPEDANCE_PLAUSIBLE_MIN * 0.5 && z <= IMPEDANCE_PLAUSIBLE_MAX * 2) segOhm[key] = z;
+  }
+  const keys = (Object.keys(MUSCLE_SHARE) as SegmentalKey[]).filter((k) => segOhm[k] != null);
+  if (keys.length < 3) return null;
+
+  const meanZ = keys.reduce((s, k) => s + segOhm[k]!, 0) / keys.length;
+  const round1 = (v: number) => Math.round(v * 10) / 10;
+
+  // Ajuste moderado: fator limitado a ±25% sobre a proporção de referência
+  const factor = (k: SegmentalKey, invert: boolean) => {
+    const ratio = meanZ / segOhm[k]!; // >1 = mais magro que a média
+    const adj = invert ? 1 / ratio : ratio;
+    return Math.min(1.25, Math.max(0.75, adj));
+  };
+
+  const muscle: Partial<Record<SegmentalKey, number>> = {};
+  if (muscleMassKg != null) {
+    const raw = keys.map((k) => MUSCLE_SHARE[k] * factor(k, false));
+    const sum = raw.reduce((a, b) => a + b, 0);
+    keys.forEach((k, i) => {
+      muscle[k] = round1((muscleMassKg * raw[i]) / sum);
+    });
+  }
+
+  const fat: Partial<Record<SegmentalKey, number>> = {};
+  if (fatMassKg != null) {
+    const raw = keys.map((k) => FAT_SHARE_MAP[k] * factor(k, true));
+    const sum = raw.reduce((a, b) => a + b, 0);
+    keys.forEach((k, i) => {
+      fat[k] = round1((fatMassKg * raw[i]) / sum);
+    });
+  }
+
+  return { muscle, fat };
 }
