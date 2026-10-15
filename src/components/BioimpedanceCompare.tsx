@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { METRICS, fmtN, type MetricSpec } from '@/components/BioimpedanceTab';
-import { BodyMorph } from '@/components/BodyFigure';
+import { BodyMorph, type MorphCallout } from '@/components/BodyFigure';
 import { bioToTapeValues } from '@/components/BioReport';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 import { cn } from '@/lib/utils';
