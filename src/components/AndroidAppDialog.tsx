@@ -10,6 +10,7 @@ interface Props {
 }
 
 const REPO_KEY = 'pilar_github_repo';
+const DEFAULT_REPO = 'https://github.com/Pilar100874/pilaracademia';
 
 /** Aceita "https://github.com/ dono/repo", "github.com/dono/repo" ou "dono/repo". */
 function normalizeRepo(raw: string): string | null {
@@ -33,11 +34,9 @@ export function AndroidAppDialog({ open, onOpenChange }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    const stored = localStorage.getItem(REPO_KEY);
-    if (stored) {
-      setRepo(stored);
-      setSaved(normalizeRepo(stored));
-    }
+    const stored = localStorage.getItem(REPO_KEY) ?? DEFAULT_REPO;
+    setRepo(stored);
+    setSaved(normalizeRepo(stored));
     setError(null);
   }, [open]);
 
