@@ -69,7 +69,7 @@ export function computeDims(scales: ZoneScales): BodyDims {
   wa = clamp(wa, ch * 0.7, ch * 0.95);
   hp = clamp(hp, wa * 1.06, Math.min(ch * 1.08, sh * 0.86));
   return {
-    nk: 8 * S(scales.neck),
+    nk: 9 * S(scales.neck),
     sh,
     ch,
     wa,
@@ -177,13 +177,14 @@ function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
     { x: X(kx + cf * 0.5), y: 314 }, // joelho externo
     { x: X(kx + cf * 0.62), y: 342 }, // panturrilha externa
     { x: X(12 + cf * 0.36), y: 372 },
-    { x: X(12 + 4.5), y: 390 }, // tornozelo externo
-    { x: X(17), y: 401 },
-    { x: X(21), y: 406 },
-    { x: X(21), y: 406 }, // ponta do pé
-    { x: X(7), y: 407 },
-    { x: X(7), y: 407 },
-    { x: X(8), y: 390 }, // tornozelo interno
+    { x: X(12 + 5), y: 388 }, // tornozelo externo
+    { x: X(19), y: 398 },
+    { x: X(23), y: 404 },
+    { x: X(22.5), y: 408 }, // ponta do pé
+    { x: X(6.5), y: 409 },
+    { x: X(6.5), y: 409 },
+    { x: X(7.5), y: 398 },
+    { x: X(8), y: 388 }, // tornozelo interno
     { x: X(kx - cf * 0.5), y: 346 }, // panturrilha interna
     { x: X(kx - cf * 0.48), y: 314 }, // joelho interno
     { x: X(Math.max(2, 3.5 * (2 - tf))), y: 268 }, // coxa interna
