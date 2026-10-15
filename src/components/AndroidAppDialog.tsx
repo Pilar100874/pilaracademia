@@ -7,8 +7,9 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-/** APK servido pelo próprio app (public/downloads), sem depender do GitHub. */
-const APK_URL = '/downloads/pilaracademia.apk';
+/** APK gerado pelo GitHub Actions (release "latest", asset pilaracademia.apk). */
+const APK_URL =
+  'https://github.com/Pilar100874/pilaracademia/releases/latest/download/pilaracademia.apk';
 
 const FEATURES = [
   {
@@ -79,7 +80,7 @@ export function AndroidAppDialog({ open, onOpenChange }: Props) {
 
         <div className="shrink-0 border-t border-border px-5 py-3 space-y-2">
           <Button className="w-full h-11 text-base" asChild>
-            <a href={APK_URL} download>
+            <a href={APK_URL} target="_blank" rel="noreferrer">
               <Download className="h-4 w-4 mr-2" />
               Baixar app Android
             </a>
