@@ -16,7 +16,8 @@ export function useBodyAnalyses() {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as unknown as BodyAnalysisRow[];
+      // Bucket privé : URL signée temporaire pour l'affichage.
+      return signRowsMedia((data || []) as unknown as BodyAnalysisRow[], ['image_url']);
     },
   });
 
