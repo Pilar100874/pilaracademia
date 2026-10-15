@@ -862,6 +862,8 @@ export default function BodyAnalysisPage() {
   }, [searchParams, list.data, setSearchParams]);
 
   const selected = (list.data || []).find((r) => r.id === selectedId) || (list.data || [])[0];
+  // A scale/Bluetooth import stores an empty {} plan (column is NOT NULL) — treat it as "no plan".
+  const selectedHasPlan = !!selected?.plan && Object.keys(selected.plan).length > 0;
 
   const macrosAppliedFromSelected =
     !!selected &&
@@ -1116,7 +1118,7 @@ export default function BodyAnalysisPage() {
                   <CameraIcon className="h-3.5 w-3.5 mr-1" />
                   Fotos
                 </Button>
-                {selected.plan && (
+                {selectedHasPlan && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1149,7 +1151,7 @@ export default function BodyAnalysisPage() {
                 </Button>
               </div>
             </div>
-            {selected.plan ? (
+            {selectedHasPlan ? (
               <PlanView
                 row={selected}
                 onApplyMacros={handleApplyMacros}
