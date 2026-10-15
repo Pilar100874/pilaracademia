@@ -36,7 +36,72 @@ const CATEGORY_LABEL: Record<string, string> = {
   outros: 'Outros',
 };
 
-function buildSeries(exams: BloodExamRow[]): MarkerSeries[] {
+/* Canonical key aliases: different exams/AI extractions name the same marker
+   differently (e.g. colesterol_hdl vs hdl_colesterol). Map every known variant
+   to one canonical key so a marker's history merges into a single series. */
+const KEY_ALIASES: Record<string, string> = {
+  // Lipídios
+  colesterol_total: 'colesterol_total',
+  hdl_colesterol: 'colesterol_hdl',
+  colesterol_hdl: 'colesterol_hdl',
+  ldl_colesterol: 'colesterol_ldl',
+  colesterol_ldl: 'colesterol_ldl',
+  vldl_colesterol: 'colesterol_vldl',
+  colesterol_vldl: 'colesterol_vldl',
+  nao_hdl_colesterol: 'colesterol_nao_hdl',
+  colesterol_nao_hdl: 'colesterol_nao_hdl',
+  triglicerides: 'triglicerideos',
+  triglicerideos: 'triglicerideos',
+  // Hemograma
+  hemoglobina: 'hemoglobina',
+  hematocrito: 'hematocrito',
+  eritrocitos: 'eritrocitos',
+  leucocitos: 'leucocitos',
+  plaquetas: 'plaquetas',
+  vcm: 'vcm',
+  hcm: 'hemoglobina_corpuscular_media',
+  hemoglobina_corpuscular_media: 'hemoglobina_corpuscular_media',
+  chcm: 'concentracao_hemoglobina_corpuscular_media',
+  concentracao_hemoglobina_corpuscular_media: 'concentracao_hemoglobina_corpuscular_media',
+  // Glicemia
+  glicose: 'glicose',
+  glicemia: 'glicose',
+  hemoglobina_glicada: 'hemoglobina_glicada',
+  hba1c: 'hemoglobina_glicada',
+  insulina: 'insulina',
+  homa_ir: 'homa_ir',
+  // Vitaminas e minerais
+  ferro: 'ferro_serico',
+  ferro_serico: 'ferro_serico',
+  ferritina: 'ferritina',
+  vitamina_d: 'vitamina_d',
+  vitamina_b12: 'vitamina_b12',
+  acido_folico: 'acido_folico',
+  // Rim e fígado
+  creatinina: 'creatinina',
+  tgo_ast: 'tgo_ast',
+  ast: 'tgo_ast',
+  tgp_alt: 'tgp_alt',
+  alt: 'tgp_alt',
+  // Hormônios
+  tsh: 'tsh',
+  t4_livre: 't4_livre',
+  testosterona_total: 'testosterona_total',
+  testosterona_livre: 'testosterona_livre',
+  estradiol: 'estradiol',
+};
+
+function canonicalKey(key: string): string {
+  const k = (key || '').trim().toLowerCase();
+  return KEY_ALIASES[k] || k;
+}
+
+interface BuildResult {
+  chartable: MarkerSeries[];
+  single: MarkerSeries[];
+}
+
+function buildSeries(exams: BloodExamRow[]): BuildResult {
   const byKey = new Map<string, MarkerSeries>();
 
   // sort exams ascending by date for chart
@@ -48,18 +113,26 @@ function buildSeries(exams: BloodExamRow[]): MarkerSeries[] {
 
   for (const exam of sorted) {
     const date = exam.collected_at || exam.created_at;
+    const seen = new Set<string>();
     for (const m of exam.markers || []) {
       if (m.value == null || !Number.isFinite(m.value)) continue;
-      if (!byKey.has(m.key)) {
-        byKey.set(m.key, {
-          key: m.key,
+      const key = canonicalKey(m.key);
+      if (seen.has(key)) continue; // same canonical marker twice in one exam
+      seen.add(key);
+      if (!byKey.has(key)) {
+        byKey.set(key, {
+          key,
           label: m.label,
           unit: m.unit,
           category: m.category || 'outros',
           points: [],
         });
       }
-      byKey.get(m.key)!.points.push({
+      const series = byKey.get(key)!;
+      // Keep the most recent label/unit for display
+      series.label = m.label || series.label;
+      series.unit = m.unit ?? series.unit;
+      series.points.push({
         date,
         value: m.value,
         status: m.status,
@@ -69,10 +142,13 @@ function buildSeries(exams: BloodExamRow[]): MarkerSeries[] {
     }
   }
 
-  // Only keep markers with 2+ data points (worth charting)
-  return Array.from(byKey.values())
-    .filter((s) => s.points.length >= 2)
-    .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+  const all = Array.from(byKey.values()).sort((a, b) =>
+    a.label.localeCompare(b.label, 'pt-BR'),
+  );
+  return {
+    chartable: all.filter((s) => s.points.length >= 2),
+    single: all.filter((s) => s.points.length === 1),
+  };
 }
 
 function trendInfo(points: MarkerSeries['points']) {
@@ -222,24 +298,24 @@ function MarkerMiniChart({ series }: { series: MarkerSeries }) {
 /* ------------------------------------------------------------------ */
 
 export function BloodMarkerTrendChart({ exams }: { exams: BloodExamRow[] }) {
-  const series = useMemo(() => buildSeries(exams), [exams]);
+  const { chartable, single } = useMemo(() => buildSeries(exams), [exams]);
 
   const categories = useMemo(() => {
-    const set = new Set(series.map((s) => s.category));
+    const set = new Set(chartable.map((s) => s.category));
     return ['all', ...Array.from(set)];
-  }, [series]);
+  }, [chartable]);
 
   const [filter, setFilter] = useState<string>('all');
 
-  const filtered = filter === 'all' ? series : series.filter((s) => s.category === filter);
+  const filtered = filter === 'all' ? chartable : chartable.filter((s) => s.category === filter);
 
-  if (series.length === 0) {
+  if (chartable.length === 0 && single.length === 0) {
     return (
       <div className="rounded-md border border-dashed border-border bg-card p-6 text-center space-y-2">
         <LineIcon className="h-6 w-6 text-muted-foreground mx-auto" />
         <p className="text-sm font-medium">Sem histórico ainda</p>
         <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-          Envie pelo menos 2 exames com o mesmo marcador para ver a evolução em gráfico.
+          Envie um exame de sangue para começar a acompanhar os índices.
         </p>
       </div>
     );
@@ -267,11 +343,40 @@ export function BloodMarkerTrendChart({ exams }: { exams: BloodExamRow[] }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3">
-        {filtered.map((s) => (
-          <MarkerMiniChart key={s.key} series={s} />
-        ))}
-      </div>
+      {filtered.length > 0 ? (
+        <div className="grid grid-cols-1 gap-3">
+          {filtered.map((s) => (
+            <MarkerMiniChart key={s.key} series={s} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground text-center py-2">
+          Nenhum índice com 2+ medições nesta categoria ainda.
+        </p>
+      )}
+
+      {single.length > 0 && (
+        <div className="rounded-md border border-border bg-card p-4 space-y-2">
+          <p className="text-sm font-medium">Índices com uma única medição</p>
+          <p className="text-[11px] text-muted-foreground">
+            Estes índices apareceram em apenas um exame — envie outro exame para ver a evolução.
+          </p>
+          <ul className="divide-y divide-border">
+            {single.map((s) => {
+              const p = s.points[0];
+              return (
+                <li key={s.key} className="flex items-center justify-between gap-2 py-1.5">
+                  <span className="text-xs truncate">{s.label}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {p.value}
+                    {s.unit ? ` ${s.unit}` : ''} · {format(parseISO(p.date), 'dd/MM/yy', { locale: ptBR })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
