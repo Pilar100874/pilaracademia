@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { activityLabels, goalLabels, calculateAge, calculateBMR, calculateTDEE, calculateDailyCalories, calculateAllNutrients } from '@/types/profile';
-import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle, Sparkles, UtensilsCrossed, Share2, ChevronRight, TrendingUp, FileText, Shield, Trash2, KeyRound } from 'lucide-react';
+import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle, Sparkles, UtensilsCrossed, Share2, ChevronRight, TrendingUp, FileText, Shield, Trash2, KeyRound, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
 import { DataExportSection } from '@/components/DataExportSection';
@@ -12,6 +12,7 @@ import { ShareSummaryDialog } from '@/components/ShareSummaryDialog';
 import { RemindersSection } from '@/components/RemindersSection';
 import { DeleteAccountDialog } from '@/components/DeleteAccountDialog';
 import { ChangePasswordDialog } from '@/components/ChangePasswordDialog';
+import { AndroidAppDialog } from '@/components/AndroidAppDialog';
 import { useIsMaster } from '@/hooks/useIsMaster';
 import { useAccountKind } from '@/hooks/useAccountKind';
 
@@ -26,6 +27,7 @@ export function ProfilePage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [androidOpen, setAndroidOpen] = useState(false);
 
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('');
