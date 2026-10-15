@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, Activity, Sparkles, HeartPulse, Upload, FileText } from 'lucide-react';
+import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, HeartPulse } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { BottomNav } from '@/components/BottomNav';
 import { differenceInYears, parseISO } from 'date-fns';
@@ -355,44 +355,6 @@ export function HealthPage() {
               </div>
             </>
           )}
-
-          {/* Atalhos para envio de exames */}
-          <div className="grid grid-cols-1 gap-3">
-            <button
-              type="button"
-              onClick={() => setTab('bioimpedance')}
-              className="flex items-center gap-3 rounded-md border border-primary/30 bg-primary/5 p-4 hover:bg-primary/10 transition text-left"
-            >
-              <div className="h-10 w-10 rounded-md bg-primary/15 flex items-center justify-center shrink-0">
-                <Activity className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm flex items-center gap-1.5">
-                  Análise corporal por IA <Sparkles className="h-3.5 w-3.5 text-primary" />
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Envie sua bioimpedância — a IA extrai os números e monta seu plano completo.
-                </p>
-              </div>
-              <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab('blood')}
-              className="flex items-center gap-3 rounded-md border border-border bg-card p-4 hover:bg-muted/40 transition text-left"
-            >
-              <div className="h-10 w-10 rounded-md bg-primary/15 flex items-center justify-center shrink-0">
-                <FileText className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">Exames de sangue</p>
-                <p className="text-xs text-muted-foreground">
-                  Envie o PDF ou foto do exame e acompanhe a evolução dos marcadores.
-                </p>
-              </div>
-              <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
-            </button>
-          </div>
         </TabsContent>
 
         <TabsContent value="bioimpedance" className="mt-0">
