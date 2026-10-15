@@ -24,7 +24,13 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - uses: android-actions/setup-android@v3
+      # O runner ubuntu-latest do GitHub já traz o Android SDK instalado
+      # (ANDROID_HOME configurado) — não é necessário o setup-android,
+      # que falhava ao aceitar licenças via sdkmanager.
+      - name: Verificar Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME"
 
       - run: npm ci
 
