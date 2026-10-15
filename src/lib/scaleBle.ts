@@ -45,6 +45,8 @@ export interface ScaleProfile {
 export interface ScaleReading {
   weightKg: number | null;
   impedanceOhm: number | null;
+  /** Impedâncias segmentais (Ω) quando o dialeto ICOMON as envia (mensagem A3). */
+  segmentalOhm?: number[] | null;
   stable: boolean;
 }
 
@@ -137,17 +139,22 @@ export function parseIcomonMessage(msg: number[]): ScaleReading | null {
   if (type === 0xa3 && msg.length >= 26) {
     const weightKg = u24be(msg, 2) / 1000;
     // 10 impedâncias segmentais u16 BE /10 ohms a partir do offset 6
+    const segmental: number[] = [];
     let impedance: number | null = null;
     for (let off = 6; off + 1 < msg.length && off <= 24; off += 2) {
       const ohm = ((msg[off] << 8) | msg[off + 1]) / 10;
-      if (ohm >= IMPEDANCE_PLAUSIBLE_MIN && ohm <= IMPEDANCE_PLAUSIBLE_MAX) {
+      segmental.push(Math.round(ohm * 10) / 10);
+      if (impedance == null && ohm >= IMPEDANCE_PLAUSIBLE_MIN && ohm <= IMPEDANCE_PLAUSIBLE_MAX) {
         impedance = Math.round(ohm);
-        break;
       }
     }
+    const hasPlausible = segmental.some(
+      (z) => z >= IMPEDANCE_PLAUSIBLE_MIN && z <= IMPEDANCE_PLAUSIBLE_MAX,
+    );
     return {
       weightKg: weightKg >= 5 && weightKg <= 250 ? Math.round(weightKg * 100) / 100 : null,
       impedanceOhm: impedance,
+      segmentalOhm: hasPlausible ? segmental : null,
       stable: true,
     };
   }
@@ -313,6 +320,7 @@ export class ScaleBleSession {
     const merged: ScaleReading = {
       weightKg: reading.weightKg ?? this.lastStable?.weightKg ?? null,
       impedanceOhm: reading.impedanceOhm ?? this.lastStable?.impedanceOhm ?? null,
+      segmentalOhm: reading.segmentalOhm ?? this.lastStable?.segmentalOhm ?? null,
       stable: reading.stable,
     };
     this.cb.onReading(merged);
