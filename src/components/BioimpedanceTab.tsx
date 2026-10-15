@@ -20,6 +20,7 @@ import {
   GitCompareArrows,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BioReport } from '@/components/BioReport';
 import { BioimpedanceCompare } from '@/components/BioimpedanceCompare';
 import { ScaleBleCard } from '@/components/ScaleBleCard';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
@@ -256,82 +257,90 @@ export function BioimpedanceTab() {
             )}
           </div>
 
-          {/* Metric cards */}
-          <div className="grid grid-cols-1 gap-3">
-            {METRICS.map((m) => {
-              const value = e[m.key] as number | null | undefined;
-              if (value == null || !Number.isFinite(value as number)) return null;
-              const v = value as number;
-              const prevValue = ePrev[m.key] as number | null | undefined;
-              const status = m.classify ? m.classify(v, e) : null;
-              const Icon = m.icon;
-              const formatted = m.format ? m.format(v) : fmtN(v, 1);
-              const delta =
-                prevValue != null && Number.isFinite(prevValue as number)
-                  ? v - (prevValue as number)
-                  : null;
-              return (
-                <div key={m.key as string}>
-                  <div className="rounded-md border border-border bg-card p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                          <p className="text-sm font-medium">{m.label}</p>
-                          {status && (
-                            <span
-                              className={cn(
-                                'text-[10px] px-2 py-0.5 rounded-full border',
-                                toneClasses[status.tone],
-                              )}
-                            >
-                              {status.label}
-                            </span>
-                          )}
+          {/* Relatório estilo Fitdays */}
+          <BioReport e={e} row={latest} />
+
+          {/* Detalhes de cada métrica (explicações) */}
+          <details className="rounded-md border border-border bg-card">
+            <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium">
+              Ver explicação de cada métrica
+            </summary>
+            <div className="grid grid-cols-1 gap-3 p-4 pt-1">
+              {METRICS.map((m) => {
+                const value = e[m.key] as number | null | undefined;
+                if (value == null || !Number.isFinite(value as number)) return null;
+                const v = value as number;
+                const prevValue = ePrev[m.key] as number | null | undefined;
+                const status = m.classify ? m.classify(v, e) : null;
+                const Icon = m.icon;
+                const formatted = m.format ? m.format(v) : fmtN(v, 1);
+                const delta =
+                  prevValue != null && Number.isFinite(prevValue as number)
+                    ? v - (prevValue as number)
+                    : null;
+                return (
+                  <div key={m.key as string}>
+                    <div className="rounded-md border border-border bg-card p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                          <Icon className="h-4 w-4" />
                         </div>
-                        <div className="flex items-baseline gap-2 mt-0.5">
-                          <span className="text-2xl font-semibold leading-none">
-                            {formatted}
-                          </span>
-                          {m.unit && (
-                            <span className="text-xs text-muted-foreground">{m.unit}</span>
-                          )}
-                          {delta != null && Math.abs(delta) >= 0.05 && (
-                            <span
-                              className={cn(
-                                'inline-flex items-center text-[11px] ml-1',
-                                delta > 0 ? 'text-amber-700' : 'text-emerald-700',
-                              )}
-                            >
-                              {delta > 0 ? (
-                                <TrendingUp className="h-3 w-3 mr-0.5" />
-                              ) : (
-                                <TrendingDown className="h-3 w-3 mr-0.5" />
-                              )}
-                              {delta > 0 ? '+' : ''}
-                              {fmtN(delta, 1)}
-                              {m.unit ? ` ${m.unit}` : ''}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                            <p className="text-sm font-medium">{m.label}</p>
+                            {status && (
+                              <span
+                                className={cn(
+                                  'text-[10px] px-2 py-0.5 rounded-full border',
+                                  toneClasses[status.tone],
+                                )}
+                              >
+                                {status.label}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-baseline gap-2 mt-0.5">
+                            <span className="text-2xl font-semibold leading-none">
+                              {formatted}
                             </span>
-                          )}
-                          {delta != null && Math.abs(delta) < 0.05 && (
-                            <span className="inline-flex items-center text-[11px] ml-1 text-muted-foreground">
-                              <Minus className="h-3 w-3 mr-0.5" />
-                              estável
-                            </span>
-                          )}
+                            {m.unit && (
+                              <span className="text-xs text-muted-foreground">{m.unit}</span>
+                            )}
+                            {delta != null && Math.abs(delta) >= 0.05 && (
+                              <span
+                                className={cn(
+                                  'inline-flex items-center text-[11px] ml-1',
+                                  delta > 0 ? 'text-amber-700' : 'text-emerald-700',
+                                )}
+                              >
+                                {delta > 0 ? (
+                                  <TrendingUp className="h-3 w-3 mr-0.5" />
+                                ) : (
+                                  <TrendingDown className="h-3 w-3 mr-0.5" />
+                                )}
+                                {delta > 0 ? '+' : ''}
+                                {fmtN(delta, 1)}
+                                {m.unit ? ` ${m.unit}` : ''}
+                              </span>
+                            )}
+                            {delta != null && Math.abs(delta) < 0.05 && (
+                              <span className="inline-flex items-center text-[11px] ml-1 text-muted-foreground">
+                                <Minus className="h-3 w-3 mr-0.5" />
+                                estável
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
+                            {m.explain}
+                          </p>
                         </div>
-                        <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
-                          {m.explain}
-                        </p>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </details>
 
           {/* Footer info */}
           <div className="rounded-md border border-border bg-muted/40 p-4 flex gap-3">

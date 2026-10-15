@@ -89,12 +89,14 @@ export function BodyFigure({
   activeKey,
   onMarkerClick,
   showValues = true,
+  showMarkers = true,
   className,
 }: {
   values: Values;
   activeKey?: string | null;
   onMarkerClick?: (key: string) => void;
   showValues?: boolean;
+  showMarkers?: boolean;
   className?: string;
 }) {
   // Meia-larguras escaladas (lados esq/dir usam a média quando ambos existem)
@@ -196,7 +198,7 @@ export function BodyFigure({
       <circle cx={CX} cy={26} r={15} fill={fill} stroke={ink} strokeWidth={1.4} />
 
       {/* marcadores numerados */}
-      {markers.map((m) => {
+      {showMarkers && markers.map((m) => {
         const n = MARKER_ORDER[m.key];
         const v = values[m.key];
         const filled = v != null && Number.isFinite(v) && v > 0;
@@ -256,11 +258,15 @@ export function BodyMorph({
   valuesB,
   labelA,
   labelB,
+  showValues = true,
+  showMarkers = true,
 }: {
   valuesA: Values;
   valuesB: Values;
   labelA: string;
   labelB: string;
+  showValues?: boolean;
+  showMarkers?: boolean;
 }) {
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -322,7 +328,7 @@ export function BodyMorph({
         </Button>
       </div>
 
-      <BodyFigure values={values} className="max-w-[170px]" />
+      <BodyFigure values={values} className="max-w-[170px]" showValues={showValues} showMarkers={showMarkers} />
 
       <div className="space-y-1.5">
         <input

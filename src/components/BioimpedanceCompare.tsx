@@ -11,6 +11,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { METRICS, fmtN, type MetricSpec } from '@/components/BioimpedanceTab';
+import { BodyMorph } from '@/components/BodyFigure';
+import { bioToTapeValues } from '@/components/BioReport';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 import { cn } from '@/lib/utils';
 
@@ -140,6 +142,16 @@ export function BioimpedanceCompare({
           <ScoreBlock label="Exame B" score={rowB?.score} highlight />
         </div>
       )}
+
+      {/* Evolução visual do corpo (A -> B) */}
+      <BodyMorph
+        valuesA={bioToTapeValues(eA)}
+        valuesB={bioToTapeValues(eB)}
+        labelA={rowLabel(rowA)}
+        labelB={rowLabel(rowB)}
+        showValues={false}
+        showMarkers={false}
+      />
 
       {/* Metric rows */}
       <div className="space-y-3">
