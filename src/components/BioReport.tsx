@@ -722,6 +722,12 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
         </div>
       )}
 
+      {/* Controle de peso + outros indicadores */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <WeightControlCard e={e} weight={weight} fatMass={fatMass} lean={lean} />
+        <OtherIndicatorsCard e={e} weight={weight} />
+      </div>
+
       {/* Análise de obesidade */}
       {(bmi != null || bf != null || visceral != null) && (
         <div className="rounded-md border border-border bg-card p-4 space-y-4">
