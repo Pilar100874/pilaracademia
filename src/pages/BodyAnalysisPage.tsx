@@ -1054,25 +1054,29 @@ export default function BodyAnalysisPage() {
                   <CameraIcon className="h-3.5 w-3.5 mr-1" />
                   Fotos
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => exportPlanToPdf(selected.plan as BodyPlan, profile?.name)}
-                  className="h-7 text-xs"
-                >
-                  <FileDown className="h-3.5 w-3.5 mr-1" />
-                  PDF
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="h-7 text-xs"
-                  disabled={analyzing}
-                >
-                  <RefreshCw className={cn('h-3.5 w-3.5 mr-1', analyzing && 'animate-spin')} />
-                  Re-analisar
-                </Button>
+                {selected.plan && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => exportPlanToPdf(selected.plan as BodyPlan, profile?.name)}
+                    className="h-7 text-xs"
+                  >
+                    <FileDown className="h-3.5 w-3.5 mr-1" />
+                    PDF
+                  </Button>
+                )}
+                {selected.image_url && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-7 text-xs"
+                    disabled={analyzing}
+                  >
+                    <RefreshCw className={cn('h-3.5 w-3.5 mr-1', analyzing && 'animate-spin')} />
+                    Re-analisar
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1083,15 +1087,19 @@ export default function BodyAnalysisPage() {
                 </Button>
               </div>
             </div>
-            <PlanView
-              row={selected}
-              onApplyMacros={handleApplyMacros}
-              onGenerateWorkout={handleGenerateWorkout}
-              onApplyWorkout={handleApplyWorkout}
-              macrosApplied={macrosAppliedFromSelected}
-              isActive={selected.id === (list.data || [])[0]?.id}
-              applyingWorkout={applyingWorkout}
-            />
+            {selected.plan ? (
+              <PlanView
+                row={selected}
+                onApplyMacros={handleApplyMacros}
+                onGenerateWorkout={handleGenerateWorkout}
+                onApplyWorkout={handleApplyWorkout}
+                macrosApplied={macrosAppliedFromSelected}
+                isActive={selected.id === (list.data || [])[0]?.id}
+                applyingWorkout={applyingWorkout}
+              />
+            ) : (
+              <ScaleExamView row={selected} />
+            )}
           </>
         ) : (
           !analyzing && (
