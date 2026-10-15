@@ -428,8 +428,8 @@ function amplifyScales(now: ZoneScales, a: ZoneScales, b: ZoneScales): ZoneScale
     if (va != null && vb != null) {
       const mid = (va + vb) / 2;
       const dev = vn - mid;
-      const k = Math.min(6, 0.35 / Math.max(Math.abs(dev), 0.004));
-      out[kk] = mid + dev * k;
+      const k = Math.min(12, 0.6 / Math.max(Math.abs(dev), 0.003));
+      out[kk] = mid + Math.sign(dev) * Math.min(Math.abs(dev) * k, 0.12);
     } else {
       out[kk] = 1 + (vn - 1) * 1.5;
     }
@@ -509,11 +509,13 @@ function MorphFigure({
           const sx = c.side === 'left' ? 52 : 216;
           const tx = c.side === 'left' ? 2 : 266;
           const anchor = c.side === 'left' ? 'start' : 'end';
-          const ty = dy + 4;
+          // Braço e peito ficam com o texto acima do ponto para não colidir com a cintura
+          const above = c.at === 'arm' || c.at === 'chest';
+          const ty = above ? dy - 18 : dy + 6;
           const connector =
             c.side === 'left'
-              ? `M ${sx} ${ty - 4} C ${sx + 18} ${ty - 14}, ${dx - 16} ${dy}, ${dx} ${dy}`
-              : `M ${sx} ${ty - 4} C ${sx - 18} ${ty - 14}, ${dx + 16} ${dy}, ${dx} ${dy}`;
+              ? `M ${sx} ${ty + 2} C ${sx + 18} ${ty - 8}, ${dx - 16} ${dy}, ${dx} ${dy}`
+              : `M ${sx} ${ty + 2} C ${sx - 18} ${ty - 8}, ${dx + 16} ${dy}, ${dx} ${dy}`;
           return (
             <g key={`${c.side}-${c.label}`}>
               <path d={connector} fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth={1.1} opacity={0.85} />
