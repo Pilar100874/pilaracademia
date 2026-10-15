@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
       devOptions: {
         enabled: false,
       },
-      includeAssets: ['favicon.ico', 'robots.txt'],
+      includeAssets: ['favicon.png', 'robots.txt'],
       manifest: {
         name: 'Pilar Saúde',
         short_name: 'Pilar Saúde',
