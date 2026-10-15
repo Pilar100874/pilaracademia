@@ -298,24 +298,24 @@ function MarkerMiniChart({ series }: { series: MarkerSeries }) {
 /* ------------------------------------------------------------------ */
 
 export function BloodMarkerTrendChart({ exams }: { exams: BloodExamRow[] }) {
-  const series = useMemo(() => buildSeries(exams), [exams]);
+  const { chartable, single } = useMemo(() => buildSeries(exams), [exams]);
 
   const categories = useMemo(() => {
-    const set = new Set(series.map((s) => s.category));
+    const set = new Set(chartable.map((s) => s.category));
     return ['all', ...Array.from(set)];
-  }, [series]);
+  }, [chartable]);
 
   const [filter, setFilter] = useState<string>('all');
 
-  const filtered = filter === 'all' ? series : series.filter((s) => s.category === filter);
+  const filtered = filter === 'all' ? chartable : chartable.filter((s) => s.category === filter);
 
-  if (series.length === 0) {
+  if (chartable.length === 0 && single.length === 0) {
     return (
       <div className="rounded-md border border-dashed border-border bg-card p-6 text-center space-y-2">
         <LineIcon className="h-6 w-6 text-muted-foreground mx-auto" />
         <p className="text-sm font-medium">Sem histórico ainda</p>
         <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-          Envie pelo menos 2 exames com o mesmo marcador para ver a evolução em gráfico.
+          Envie um exame de sangue para começar a acompanhar os índices.
         </p>
       </div>
     );
@@ -343,11 +343,40 @@ export function BloodMarkerTrendChart({ exams }: { exams: BloodExamRow[] }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3">
-        {filtered.map((s) => (
-          <MarkerMiniChart key={s.key} series={s} />
-        ))}
-      </div>
+      {filtered.length > 0 ? (
+        <div className="grid grid-cols-1 gap-3">
+          {filtered.map((s) => (
+            <MarkerMiniChart key={s.key} series={s} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground text-center py-2">
+          Nenhum índice com 2+ medições nesta categoria ainda.
+        </p>
+      )}
+
+      {single.length > 0 && (
+        <div className="rounded-md border border-border bg-card p-4 space-y-2">
+          <p className="text-sm font-medium">Índices com uma única medição</p>
+          <p className="text-[11px] text-muted-foreground">
+            Estes índices apareceram em apenas um exame — envie outro exame para ver a evolução.
+          </p>
+          <ul className="divide-y divide-border">
+            {single.map((s) => {
+              const p = s.points[0];
+              return (
+                <li key={s.key} className="flex items-center justify-between gap-2 py-1.5">
+                  <span className="text-xs truncate">{s.label}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {p.value}
+                    {s.unit ? ` ${s.unit}` : ''} · {format(parseISO(p.date), 'dd/MM/yy', { locale: ptBR })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
