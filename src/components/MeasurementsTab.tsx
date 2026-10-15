@@ -50,6 +50,8 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { BodyFigure, BodyMorph, MARKER_ORDER } from '@/components/BodyFigure';
+import type { BodySex } from '@/components/HumanBodyFigure';
+import { useProfile } from '@/hooks/useProfile';
 
 type MeasurementRow = Tables<'body_measurements'>;
 
@@ -121,6 +123,7 @@ function useMeasurements() {
 /* ------------------------------------------------------------------ */
 
 export function MeasurementsTab() {
+  const { profile } = useProfile();
   const queryClient = useQueryClient();
   const { data: rows = [], isLoading } = useMeasurements();
   const [mode, setMode] = useState<'list' | 'compare'>('list');
@@ -142,7 +145,7 @@ export function MeasurementsTab() {
   });
 
   if (mode === 'compare' && rows.length >= 2) {
-    return <MeasurementsCompare rows={rows} onClose={() => setMode('list')} />;
+    return <MeasurementsCompare rows={rows} sex={profile?.gender} onClose={() => setMode('list')} />;
   }
 
   return (
@@ -244,6 +247,7 @@ export function MeasurementsTab() {
       )}
 
       <MeasurementDialog
+        sex={profile?.gender}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         editing={editing}
@@ -286,11 +290,13 @@ function MeasurementDialog({
   onOpenChange,
   editing,
   onSaved,
+  sex,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editing: MeasurementRow | null;
   onSaved: () => void;
+  sex?: BodySex;
 }) {
   const [date, setDate] = useState<Date>(new Date());
   const [values, setValues] = useState<Record<string, string>>({});
@@ -390,6 +396,7 @@ function MeasurementDialog({
             <div>
               <div className="sm:sticky sm:top-0">
                 <BodyFigure
+                  sex={sex}
                   values={numericValues}
                   activeKey={activeKey}
                   onMarkerClick={focusField}
@@ -501,9 +508,11 @@ function MeasurementDialog({
 function MeasurementsCompare({
   rows,
   onClose,
+  sex,
 }: {
   rows: MeasurementRow[];
   onClose: () => void;
+  sex?: BodySex;
 }) {
   const [idA, setIdA] = useState<string>(rows[1]?.id ?? rows[0].id);
   const [idB, setIdB] = useState<string>(rows[0].id);
@@ -598,6 +607,7 @@ function MeasurementsCompare({
       </div>
 
       <BodyMorph
+        sex={sex}
         valuesA={rowA as unknown as Record<string, number | null>}
         valuesB={rowB as unknown as Record<string, number | null>}
         labelA={rowLabel(rowA)}

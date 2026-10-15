@@ -145,6 +145,7 @@ export function BioimpedanceCompare({
 
       {/* Evolução visual do corpo (A -> B) */}
       <BodyMorph
+        sex={eB.sex ?? eA.sex}
         valuesA={bioToTapeValues(eA)}
         valuesB={bioToTapeValues(eB)}
         labelA={rowLabel(rowA)}

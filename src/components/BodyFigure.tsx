@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { HumanSilhouette, tapeToScales } from '@/components/HumanBodyFigure';
+import { HumanSilhouette, tapeToScales, type BodySex } from '@/components/HumanBodyFigure';
 import { cn } from '@/lib/utils';
 
 /* ------------------------------------------------------------------ */
@@ -50,11 +50,19 @@ type Values = Partial<Record<string, number | null>>;
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
-function scaledHw(key: string, values: Values, fallback?: number): number {
+/** Ajusta a medida de referência por sexo: ombros mais largos no homem, quadril
+ *  mais largo na mulher — assim o desenho lê o formato certo. */
+const SEX_REF: Record<'male' | 'female', Record<string, number>> = {
+  male: { shoulders_cm: 0.94, chest_cm: 0.95, waist_cm: 1.0, abdomen_cm: 1.0, hip_cm: 1.08, thigh_left_cm: 1.05, thigh_right_cm: 1.05 },
+  female: { shoulders_cm: 1.12, chest_cm: 1.05, waist_cm: 1.05, abdomen_cm: 1.05, hip_cm: 0.9, thigh_left_cm: 0.95, thigh_right_cm: 0.95 },
+};
+
+function scaledHw(key: string, values: Values, fallback?: number, sex?: BodySex): number {
   const spec = SHAPE[key];
   const raw = values[key];
   const v = raw != null && Number.isFinite(raw) && raw > 0 ? raw : fallback;
-  const scale = v != null ? clamp(v / spec.ref, 0.55, 1.6) : 1;
+  const f = sex === 'male' || sex === 'female' ? SEX_REF[sex][key] ?? 1 : 1;
+  const scale = v != null ? clamp(v / (spec.ref * f), 0.55, 1.6) : 1;
   return spec.hw * scale;
 }
 
@@ -92,6 +100,7 @@ export function BodyFigure({
   showValues = true,
   showMarkers = true,
   className,
+  sex,
 }: {
   values: Values;
   activeKey?: string | null;
@@ -99,6 +108,7 @@ export function BodyFigure({
   showValues?: boolean;
   showMarkers?: boolean;
   className?: string;
+  sex?: BodySex;
 }) {
   // Meia-larguras escaladas (lados esq/dir usam a média quando ambos existem)
   const pairAvg = (a: string, b: string): number | undefined => {
@@ -109,16 +119,16 @@ export function BodyFigure({
     return nums.reduce((s, v) => s + v, 0) / nums.length;
   };
 
-  const nkHW = scaledHw('neck_cm', values);
-  const shHW = scaledHw('shoulders_cm', values);
-  const chHW = scaledHw('chest_cm', values);
-  const waHW = scaledHw('waist_cm', values);
-  const abHW = scaledHw('abdomen_cm', values, values.waist_cm ?? undefined);
-  const hpHW = scaledHw('hip_cm', values);
+  const nkHW = scaledHw('neck_cm', values, undefined, sex);
+  const shHW = scaledHw('shoulders_cm', values, undefined, sex);
+  const chHW = scaledHw('chest_cm', values, undefined, sex);
+  const waHW = scaledHw('waist_cm', values, undefined, sex);
+  const abHW = scaledHw('abdomen_cm', values, values.waist_cm ?? undefined, sex);
+  const hpHW = scaledHw('hip_cm', values, undefined, sex);
   const armHW = clamp(SHAPE.arm_left_cm.hw * ((pairAvg('arm_left_cm', 'arm_right_cm') ?? SHAPE.arm_left_cm.ref) / SHAPE.arm_left_cm.ref), 4, 12);
   const foHW = clamp(SHAPE.forearm_left_cm.hw * ((pairAvg('forearm_left_cm', 'forearm_right_cm') ?? SHAPE.forearm_left_cm.ref) / SHAPE.forearm_left_cm.ref), 3.5, 9);
-  const thHW = scaledHw('thigh_left_cm', values, pairAvg('thigh_left_cm', 'thigh_right_cm'));
-  const cfHW = scaledHw('calf_left_cm', values, pairAvg('calf_left_cm', 'calf_right_cm'));
+  const thHW = scaledHw('thigh_left_cm', values, pairAvg('thigh_left_cm', 'thigh_right_cm'), sex);
+  const cfHW = scaledHw('calf_left_cm', values, pairAvg('calf_left_cm', 'calf_right_cm'), sex);
 
   const torso = outline([
     { y: 58, cx: CX, hw: shHW },
@@ -261,6 +271,7 @@ export function BodyMorph({
   labelB,
   showValues = true,
   showMarkers = true,
+  sex,
 }: {
   valuesA: Values;
   valuesB: Values;
@@ -268,6 +279,7 @@ export function BodyMorph({
   labelB: string;
   showValues?: boolean;
   showMarkers?: boolean;
+  sex?: BodySex;
 }) {
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -330,6 +342,7 @@ export function BodyMorph({
       </div>
 
       <HumanSilhouette
+        sex={sex}
         scales={tapeToScales(values)}
         chipValues={values}
         showChips={showValues && showMarkers}

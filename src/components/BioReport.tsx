@@ -7,6 +7,7 @@ import {
   regionAnchor,
   type RegionTones,
   type ZoneScales,
+  type BodySex,
 } from '@/components/HumanBodyFigure';
 import { cn } from '@/lib/utils';
 
@@ -199,10 +200,12 @@ export function SegmentalFigure({
   kind,
   values,
   weightKg,
+  sex,
 }: {
   kind: 'fat' | 'muscle';
   values: SegValues;
   weightKg?: number;
+  sex?: BodySex;
 }) {
   const ref = {
     trunk: segRef(kind, 'trunk', weightKg),
@@ -272,7 +275,7 @@ export function SegmentalFigure({
     rightLeg: toneFor('right_leg_kg'),
   };
 
-  const dims = computeDims(scales);
+  const dims = computeDims(scales, sex);
   const OFF = 30;
 
   const classify = (
@@ -320,7 +323,7 @@ export function SegmentalFigure({
   };
 
   return (
-    <HumanSilhouette scales={scales} tones={tones} badges palette={kind} offsetX={OFF} frameWidth={260} className="max-w-[280px]">
+    <HumanSilhouette scales={scales} sex={sex} tones={tones} badges palette={kind} offsetX={OFF} frameWidth={260} className="max-w-[280px]">
       {callout('left', 'leftArm', values.left_arm_kg, ref.arm, 100)}
       {callout('left', 'trunk', values.trunk_kg, ref.trunk, 196)}
       {callout('left', 'leftLeg', values.left_leg_kg, ref.leg, 300)}
@@ -853,7 +856,7 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
           {hasSegmentalFat && (
             <div className="rounded-md border border-border bg-card p-4 space-y-2">
               <p className="text-sm font-medium">Gordura por região</p>
-              <SegmentalFigure kind="fat" values={e.segmental_fat!} weightKg={weight ?? undefined} />
+              <SegmentalFigure kind="fat" values={e.segmental_fat!} weightKg={weight ?? undefined} sex={e.sex} />
               <p className="text-[10px] text-muted-foreground leading-relaxed">
                 Verde: abaixo do esperado · azul: dentro do padrão · amarelo/vermelho: acima,
                 comparando a distribuição entre as regiões.
@@ -863,7 +866,7 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
           {hasSegmentalMuscle && (
             <div className="rounded-md border border-border bg-card p-4 space-y-2">
               <p className="text-sm font-medium">Equilíbrio muscular</p>
-              <SegmentalFigure kind="muscle" values={e.segmental_muscle!} weightKg={weight ?? undefined} />
+              <SegmentalFigure kind="muscle" values={e.segmental_muscle!} weightKg={weight ?? undefined} sex={e.sex} />
               <p className="text-[10px] text-muted-foreground leading-relaxed">
                 Verde: lados equilibrados · amarelo/vermelho: assimetria entre esquerdo e direito.
               </p>

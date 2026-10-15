@@ -57,47 +57,94 @@ const S = (v?: number) => {
   return 1 + (s - 1) * 0.6;
 };
 
-export function computeDims(scales: ZoneScales): BodyDims {
-  const ch = 30 * S(scales.chest);
-  let sh = 45 * S(scales.shoulders);
-  let wa = 25 * S(scales.waist);
-  let hp = 31 * S(scales.hip);
-  // Vínculos anatômicos de um corpo-padrão (cânone de 8 cabeças): ombros
-  // um pouco mais largos que o peito, cintura mais fina que peito e quadril,
-  // quadril nunca mais largo que os ombros.
-  sh = clamp(sh, ch * 1.35, ch * 1.6);
-  wa = clamp(wa, ch * 0.75, ch * 1.0);
-  hp = clamp(hp, wa * 1.06, Math.min(ch * 1.12, sh * 0.8));
+/** Sexo usado apenas para as proporções do desenho — não altera nenhum cálculo. */
+export type BodySex = 'male' | 'female' | 'unknown' | null | undefined;
+
+type SexKey = 'male' | 'female' | 'neutral';
+
+interface SexBase {
+  nk: number;
+  sh: number;
+  ch: number;
+  wa: number;
+  hp: number;
+  up: number;
+  fo: number;
+  th: number;
+  cf: number;
+}
+
+/** Meia-larguras de um corpo-padrão (cânone de 8 cabeças, altura ~400).
+ *  Masculino: ombros bem mais largos que o quadril, cintura menos marcada.
+ *  Feminino: quadril quase tão largo quanto os ombros, cintura mais fina. */
+const SEX_BASE: Record<SexKey, SexBase> = {
+  male: { nk: 9.5, sh: 46, ch: 31, wa: 27, hp: 29.5, up: 16.5, fo: 13.5, th: 28, cf: 16.5 },
+  female: { nk: 8, sh: 36.5, ch: 28, wa: 23.5, hp: 34, up: 14.5, fo: 12, th: 27, cf: 15.5 },
+  neutral: { nk: 9, sh: 44, ch: 30, wa: 25, hp: 31, up: 16, fo: 13, th: 27.5, cf: 16 },
+};
+
+const sexKey = (sex: BodySex): SexKey => (sex === 'male' || sex === 'female' ? sex : 'neutral');
+
+export function computeDims(scales: ZoneScales, sex?: BodySex): BodyDims {
+  const key = sexKey(sex);
+  const b = SEX_BASE[key];
+  const ch = b.ch * S(scales.chest);
+  let sh = b.sh * S(scales.shoulders);
+  let wa = b.wa * S(scales.waist);
+  let hp = b.hp * S(scales.hip);
+  // Vínculos anatômicos: ombros mais largos que o peito, cintura mais fina que
+  // peito e quadril, quadril nunca mais largo que os ombros.
+  if (key === 'female') {
+    sh = clamp(sh, ch * 1.12, ch * 1.38);
+    wa = clamp(wa, ch * 0.68, ch * 0.95);
+    hp = clamp(hp, wa * 1.14, Math.min(ch * 1.28, sh * 1.06));
+  } else if (key === 'male') {
+    sh = clamp(sh, ch * 1.4, ch * 1.68);
+    wa = clamp(wa, ch * 0.8, ch * 1.05);
+    hp = clamp(hp, wa * 0.98, Math.min(ch * 1.04, sh * 0.82));
+  } else {
+    sh = clamp(sh, ch * 1.35, ch * 1.6);
+    wa = clamp(wa, ch * 0.75, ch * 1.0);
+    hp = clamp(hp, wa * 1.06, Math.min(ch * 1.12, sh * 0.8));
+  }
   return {
-    nk: 9 * S(scales.neck),
+    nk: b.nk * S(scales.neck),
     sh,
     ch,
     wa,
     hp,
-    upL: 16 * S(scales.armL),
-    upR: 16 * S(scales.armR),
-    foL: 13 * S(scales.forearmL ?? scales.armL),
-    foR: 13 * S(scales.forearmR ?? scales.armR),
-    thL: 27 * S(scales.thighL),
-    thR: 27 * S(scales.thighR),
-    cfL: 16 * S(scales.calfL ?? scales.thighL),
-    cfR: 16 * S(scales.calfR ?? scales.thighR),
+    upL: b.up * S(scales.armL),
+    upR: b.up * S(scales.armR),
+    foL: b.fo * S(scales.forearmL ?? scales.armL),
+    foR: b.fo * S(scales.forearmR ?? scales.armR),
+    thL: b.th * S(scales.thighL),
+    thR: b.th * S(scales.thighR),
+    cfL: b.cf * S(scales.calfL ?? scales.thighL),
+    cfR: b.cf * S(scales.calfR ?? scales.thighR),
   };
 }
 
 /** Ponto de ancoragem de uma região no corpo (coordenadas do corpo, sem offset) */
 export function regionAnchor(region: keyof RegionTones, d: BodyDims): { x: number; y: number } {
   switch (region) {
-    case 'leftArm':
-      return { x: CX - Math.max(d.sh + 1, d.ch + 1 + d.upL), y: 135 };
-    case 'rightArm':
-      return { x: CX + Math.max(d.sh + 1, d.ch + 1 + d.upR), y: 135 };
+    case 'leftArm': {
+      const g = armGeom({ sh: d.sh, ch: d.ch, up: d.upL, fo: d.foL, hp: d.hp, th: d.thL });
+      return { x: CX - g.outSh + 0.5, y: 135 };
+    }
+    case 'rightArm': {
+      const g = armGeom({ sh: d.sh, ch: d.ch, up: d.upR, fo: d.foR, hp: d.hp, th: d.thR });
+      return { x: CX + g.outSh - 0.5, y: 135 };
+    }
     case 'trunk':
       return { x: CX - d.wa, y: 178 };
-    case 'leftLeg':
-      return { x: CX - Math.min(d.hp - 0.5, 3 + d.thL) + 1.5, y: 278 };
-    case 'rightLeg':
-      return { x: CX + Math.min(d.hp - 0.5, 3 + d.thR) - 1.5, y: 278 };
+    case 'leftLeg': {
+      const g = armGeom({ sh: d.sh, ch: d.ch, up: d.upL, fo: d.foL, hp: d.hp, th: d.thL });
+      return { x: CX - g.thOut + 1.5, y: 278 };
+    }
+    case 'rightLeg': {
+      const g = armGeom({ sh: d.sh, ch: d.ch, up: d.upR, fo: d.foR, hp: d.hp, th: d.thR });
+      return { x: CX + g.thOut - 1.5, y: 278 };
+    }
   }
 }
 
@@ -121,23 +168,39 @@ function smooth(pts: { x: number; y: number }[]): string {
 
 type SideDims = { nk: number; sh: number; ch: number; wa: number; hp: number; up: number; fo: number; th: number; cf: number };
 
-/** Meio contorno (um lado) de um corpo-padrão em pé, braços relaxados ao
- *  lado do corpo com uma pequena folga. Cânone de 8 cabeças: altura ~400,
- *  cabeça 48, virilha na metade da altura, mão no meio da coxa. */
+/** Geometria do braço. Ele pende do ombro e fica encostado no corpo: a linha
+ *  interna é uma reta suave da axila ao pulso — o quadril largo não empurra o
+ *  braço para fora, o braço simplesmente passa por cima dele. */
+interface ArmGeom {
+  ax: number;
+  outSh: number;
+  elIn: number;
+  elOut: number;
+  foIn: number;
+  foOut: number;
+  wrIn: number;
+  wrOut: number;
+  thOut: number;
+}
+
+function armGeom(o: { sh: number; ch: number; up: number; fo: number; hp: number; th: number }): ArmGeom {
+  const ax = o.ch - 2;
+  const outSh = Math.max(o.sh + 1.5, ax + o.up * 1.05);
+  const thOut = Math.min(o.hp - 0.5, 3 + o.th);
+  const wrIn = Math.max(ax + 2, thOut - 1);
+  const wrOut = wrIn + o.fo * 0.72;
+  const elIn = ax + (wrIn - ax) * 0.42;
+  const elOut = elIn + o.up * 0.85;
+  const foIn = ax + (wrIn - ax) * 0.72;
+  const foOut = foIn + o.fo * 0.95;
+  return { ax, outSh, elIn, elOut, foIn, foOut, wrIn, wrOut, thOut };
+}
+
+/** Meio contorno do tronco (um lado), sem os braços. Cânone de 8 cabeças:
+ *  altura ~400, cabeça 48, virilha na metade da altura. */
 function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
   const X = (dx: number) => CX + dir * dx;
-  // Braço com espessura real: largura do braço ~1/2 da cabeça, antebraço
-  // um pouco mais fino e pulso estreito, encaixado logo abaixo da axila.
-  const armIn = o.ch + 1;
-  const armOut = Math.max(o.sh + 1, armIn + o.up);
-  const deltoid = Math.max(o.sh + 2, armOut + 0.5);
-  const elbowIn = Math.max(o.wa + 7, o.ch - 1);
-  const elbowOut = elbowIn + o.up * 0.82;
-  const foreIn = Math.max(o.hp + 4, elbowIn + 1);
-  const foreOut = foreIn + o.fo;
-  const wristIn = foreIn + 1;
-  const wristOut = wristIn + o.fo * 0.7;
-  const thOut = Math.min(o.hp - 0.5, 3 + o.th);
+  const { thOut } = armGeom(o);
   const kx = 14; // centro do joelho
   const tf = o.th / 27;
   const cf = o.cf;
@@ -153,24 +216,13 @@ function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
     { x: X(o.nk), y: 69 },
     { x: X(o.nk + 9), y: 76 }, // trapézio
     { x: X(o.sh * 0.82), y: 80 },
-    { x: X(o.sh), y: 87 }, // ponta do ombro
-    { x: X(deltoid), y: 102 }, // deltóide
-    { x: X(armOut - 0.5), y: 135 }, // braço externo
-    { x: X(elbowOut), y: 168 }, // cotovelo externo
-    { x: X(foreOut), y: 192 }, // antebraço externo
-    { x: X(wristOut), y: 230 }, // pulso externo
-    { x: X(wristOut + 1.5), y: 248 }, // mão
-    { x: X(wristOut - 2), y: 262 },
-    { x: X(wristOut - 4), y: 265 }, // ponta dos dedos
-    { x: X(wristIn - 1), y: 256 },
-    { x: X(wristIn), y: 232 }, // pulso interno
-    { x: X(foreIn), y: 195 }, // antebraço interno
-    { x: X(elbowIn), y: 166 }, // cotovelo interno
-    { x: X(armIn), y: 132 }, // braço interno
-    { x: X(o.ch), y: 113 },
-    { x: X(o.ch), y: 113 }, // axila
-    { x: X(o.ch * 0.98), y: 132 }, // peito / costelas
-    { x: X(o.wa + (o.ch - o.wa) * 0.4), y: 155 },
+    { x: X(o.sh * 0.95), y: 85 },
+    { x: X(o.sh), y: 90 }, // ponta do ombro
+    { x: X(o.sh * 0.98), y: 97 },
+    { x: X(o.sh * 0.96), y: 104 }, // ombro -> peito (fica sob o braço)
+    { x: X(o.ch), y: 128 },
+    { x: X(o.ch * 0.98), y: 146 },
+    { x: X(o.wa + (o.ch - o.wa) * 0.4), y: 160 },
     { x: X(o.wa), y: 178 }, // cintura
     { x: X(o.wa + (o.hp - o.wa) * 0.7), y: 202 },
     { x: X(o.hp), y: 222 }, // quadril
@@ -197,18 +249,54 @@ function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
   ];
 }
 
+/** Contorno fechado de um braço (peça própria, desenhada por cima do tronco). */
+function armPoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
+  const X = (dx: number) => CX + dir * dx;
+  const { ax, outSh, elIn, elOut, foIn, foOut, wrIn, wrOut } = armGeom(o);
+  return [
+    { x: X(o.sh * 0.92), y: 84 }, // topo do ombro (sob o trapézio)
+    { x: X(outSh), y: 94 }, // deltóide
+    { x: X(outSh - 0.5), y: 128 }, // braço externo
+    { x: X(elOut), y: 164 }, // cotovelo externo
+    { x: X(foOut), y: 196 }, // antebraço externo
+    { x: X(wrOut), y: 228 }, // pulso externo
+    { x: X(wrOut + 1.2), y: 240 }, // mão externa
+    { x: X(wrOut - 1), y: 251 }, // ponta dos dedos
+    { x: X(wrIn + 1.5), y: 249 }, // dedos internos
+    { x: X(wrIn), y: 238 }, // mão interna
+    { x: X(wrIn), y: 228 }, // pulso interno
+    { x: X(foIn), y: 196 }, // antebraço interno
+    { x: X(elIn), y: 164 }, // cotovelo interno
+    { x: X(ax), y: 122 }, // braço interno
+    { x: X(ax + 0.5), y: 110 },
+    { x: X(ax - 1.5), y: 102 }, // dobra da axila
+    { x: X(ax - 4), y: 96 }, // axila
+  ];
+}
+
 export interface BodyPaths {
   torso: string;
   armL: string;
   armR: string;
+  /** contorno do braço sem o topo (a borda que encosta no ombro não é desenhada) */
+  armLLine: string;
+  armRLine: string;
 }
 
-/** Contorno único e fechado (mais limpo que peças sobrepostas). */
+/** Tronco + braços como peças próprias (o braço passa por cima do quadril). */
 export function bodyPaths(dims: BodyDims): BodyPaths {
   const right: SideDims = { nk: dims.nk, sh: dims.sh, ch: dims.ch, wa: dims.wa, hp: dims.hp, up: dims.upR, fo: dims.foR, th: dims.thR, cf: dims.cfR };
   const left: SideDims = { nk: dims.nk, sh: dims.sh, ch: dims.ch, wa: dims.wa, hp: dims.hp, up: dims.upL, fo: dims.foL, th: dims.thL, cf: dims.cfL };
   const pts = [...sidePoints(right, 1), ...sidePoints(left, -1).reverse().slice(2)];
-  return { torso: `${smooth(pts)} Z`, armL: '', armR: '' };
+  const armLpts = armPoints(left, -1);
+  const armRpts = armPoints(right, 1);
+  return {
+    torso: `${smooth(pts)} Z`,
+    armL: `${smooth(armLpts)} Z`,
+    armR: `${smooth(armRpts)} Z`,
+    armLLine: smooth(armLpts.slice(1)),
+    armRLine: smooth(armRpts.slice(1)),
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -280,6 +368,7 @@ const PALETTES: Record<'neutral' | 'fat' | 'muscle', [string, string, string, st
 
 export function HumanSilhouette({
   scales = {},
+  sex,
   tones,
   badges = false,
   chipValues,
@@ -291,6 +380,7 @@ export function HumanSilhouette({
   children,
 }: {
   scales?: ZoneScales;
+  sex?: BodySex;
   tones?: RegionTones;
   /** Cor base da figura: neutra, gordura (bege) ou músculo (verde-azulado) */
   palette?: 'neutral' | 'fat' | 'muscle';
@@ -305,7 +395,7 @@ export function HumanSilhouette({
   children?: ReactNode;
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const dims = computeDims(scales);
+  const dims = computeDims(scales, sex);
   const paths = bodyPaths(dims);
   const [g0, g1, g2, outlineColor] = PALETTES[palette];
 
@@ -320,17 +410,20 @@ export function HumanSilhouette({
     return v != null && Number.isFinite(v) && v > 0 ? v : null;
   };
 
+  const gR = armGeom({ sh: dims.sh, ch: dims.ch, up: dims.upR, fo: dims.foR, hp: dims.hp, th: dims.thR });
+  const gL = armGeom({ sh: dims.sh, ch: dims.ch, up: dims.upL, fo: dims.foL, hp: dims.hp, th: dims.thL });
+
   const chips: { x: number; y: number; anchor: 'start' | 'end'; v: number | null }[] = showChips
     ? [
         { x: CX - dims.nk - 10, y: 66, anchor: 'end', v: single('neck_cm') },
         { x: CX - dims.sh - 8, y: 86, anchor: 'end', v: single('shoulders_cm') },
-        { x: CX + dims.ch + 8, y: 128, anchor: 'start', v: single('chest_cm') },
-        { x: CX + Math.max(dims.sh + 1, dims.ch + 1 + dims.upR) + 8, y: 140, anchor: 'start', v: pairVal('arm_left_cm', 'arm_right_cm') },
-        { x: CX - Math.max(dims.hp + 4, dims.ch) - dims.foL - 8, y: 200, anchor: 'end', v: pairVal('forearm_left_cm', 'forearm_right_cm') },
-        { x: CX - dims.wa - 8, y: 160, anchor: 'end', v: single('waist_cm') },
-        { x: CX + dims.wa + 16, y: 192, anchor: 'start', v: single('abdomen_cm') },
+        { x: CX + gR.outSh + 8, y: 112, anchor: 'start', v: single('chest_cm') },
+        { x: CX + gR.outSh + 8, y: 140, anchor: 'start', v: pairVal('arm_left_cm', 'arm_right_cm') },
+        { x: CX - gL.foOut - 8, y: 200, anchor: 'end', v: pairVal('forearm_left_cm', 'forearm_right_cm') },
+        { x: CX - gL.elOut - 7, y: 160, anchor: 'end', v: single('waist_cm') },
+        { x: CX + gR.foOut + 8, y: 192, anchor: 'start', v: single('abdomen_cm') },
         { x: CX - dims.hp - 8, y: 226, anchor: 'end', v: single('hip_cm') },
-        { x: CX + dims.thR + 10, y: 280, anchor: 'start', v: pairVal('thigh_left_cm', 'thigh_right_cm') },
+        { x: CX + gR.thOut + 10, y: 280, anchor: 'start', v: pairVal('thigh_left_cm', 'thigh_right_cm') },
         { x: CX - 14 - dims.cfL * 0.62 - 6, y: 346, anchor: 'end', v: pairVal('calf_left_cm', 'calf_right_cm') },
       ]
     : [];
@@ -356,6 +449,8 @@ export function HumanSilhouette({
         </filter>
         <clipPath id={`hc${uid}`}>
           <path d={paths.torso} />
+          <path d={paths.armL} />
+          <path d={paths.armR} />
         </clipPath>
       </defs>
 
@@ -364,6 +459,11 @@ export function HumanSilhouette({
         <path d={paths.torso} fill={`url(#hg${uid})`} filter={`url(#hb${uid})`} />
         {/* contorno subtil por cima do blur para definição */}
         <path d={paths.torso} fill="none" stroke={outlineColor} strokeWidth={1.1} />
+        {/* braços por cima do tronco: encostados no corpo, passando sobre o quadril */}
+        <path d={paths.armL} fill={`url(#hg${uid})`} filter={`url(#hb${uid})`} />
+        <path d={paths.armR} fill={`url(#hg${uid})`} filter={`url(#hb${uid})`} />
+        <path d={paths.armLLine} fill="none" stroke={outlineColor} strokeWidth={1.1} />
+        <path d={paths.armRLine} fill="none" stroke={outlineColor} strokeWidth={1.1} />
 
         {/* tons por região (gordura/músculo) */}
         {tones && (
