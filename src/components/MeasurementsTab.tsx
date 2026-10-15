@@ -49,7 +49,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { BodyFigure, BodyMorph, MARKER_ORDER } from '@/components/BodyFigure';
+import { BodyFigure, BodyMorph, MARKER_ORDER, type MorphCallout } from '@/components/BodyFigure';
 import type { BodySex } from '@/components/HumanBodyFigure';
 import { useProfile } from '@/hooks/useProfile';
 
