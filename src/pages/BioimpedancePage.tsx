@@ -389,7 +389,7 @@ export default function BioimpedancePage() {
 /* Empty                                                              */
 /* ------------------------------------------------------------------ */
 
-function EmptyState() {
+function EmptyState({ onUpload }: { onUpload: () => void }) {
   return (
     <div className="rounded-md border border-dashed border-border bg-card p-8 text-center space-y-3">
       <Activity className="h-8 w-8 text-muted-foreground mx-auto" />
@@ -398,11 +398,9 @@ function EmptyState() {
         Envie uma foto do seu laudo de bioimpedância para vermos seu corpo em números —
         peso, gordura, músculos, água e mais — explicados de forma simples.
       </p>
-      <Button asChild className="mt-2">
-        <Link to="/body-analysis">
-          Enviar exame
-          <ArrowRight className="h-4 w-4 ml-1.5" />
-        </Link>
+      <Button className="mt-2" onClick={onUpload}>
+        Enviar exame
+        <ArrowRight className="h-4 w-4 ml-1.5" />
       </Button>
     </div>
   );
