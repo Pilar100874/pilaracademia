@@ -408,7 +408,7 @@ function amplifyScales(now: ZoneScales, a: ZoneScales, b: ZoneScales): ZoneScale
     const vb = b[k];
     if (va != null && vb != null) maxDev = Math.max(maxDev, Math.abs(va - vb) / 2);
   }
-  const k = maxDev > 0.001 ? Math.min(20, 0.22 / maxDev) : 2;
+  const k = maxDev > 0.001 ? Math.min(30, 0.4 / maxDev) : 2;
   const out: ZoneScales = {};
   const keys = new Set([...Object.keys(now), ...Object.keys(a), ...Object.keys(b)]);
   for (const key of keys) {
@@ -454,7 +454,7 @@ function MorphFigure({
   };
 
   const scales = amplifyScales(tapeToScales(values), tapeToScales(valuesA), tapeToScales(valuesB));
-  const dims = computeDims(scales, sex);
+  const dims = computeDims(scales, sex, { freeform: true });
   const OFF = 34;
 
   type CalloutSpec = { side: 'left' | 'right'; region: 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg'; label: string; v: number | null; unit: string; y: number };
