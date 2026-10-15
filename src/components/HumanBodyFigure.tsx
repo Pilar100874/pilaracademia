@@ -289,9 +289,9 @@ export function HumanSilhouette({
     >
       <defs>
         <radialGradient id={`hg${uid}`} cx="50%" cy="26%" r="85%">
-          <stop offset="0%" stopColor="#F2D06B" />
-          <stop offset="45%" stopColor="#C9D47E" />
-          <stop offset="100%" stopColor="#6FBFB2" />
+          <stop offset="0%" stopColor="#EFC65C" />
+          <stop offset="45%" stopColor="#BCCF6E" />
+          <stop offset="100%" stopColor="#57B3A6" />
         </radialGradient>
         <filter id={`hb${uid}`} x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="1.3" />
