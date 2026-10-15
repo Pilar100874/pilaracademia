@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, Activity, Sparkles, HeartPulse, Upload, FileText } from 'lucide-react';
+import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, HeartPulse } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { BottomNav } from '@/components/BottomNav';
 import { differenceInYears, parseISO } from 'date-fns';
@@ -355,9 +355,6 @@ export function HealthPage() {
               </div>
             </>
           )}
-              <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
-            </button>
-          </div>
         </TabsContent>
 
         <TabsContent value="bioimpedance" className="mt-0">
