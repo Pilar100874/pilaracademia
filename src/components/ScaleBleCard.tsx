@@ -249,6 +249,48 @@ export function ScaleBleCard({ onSaved }: { onSaved?: () => void }) {
               <p className="text-lg font-bold">{bodyFatPct != null ? `${bodyFatPct}%` : '—'}</p>
             </div>
           </div>
+          {derived && (derived.waterKg != null || derived.muscleMassKg != null || derived.boneMassKg != null || derived.bmrKcal != null) && (
+            <div className="grid grid-cols-2 gap-3">
+              {derived.waterKg != null && reading.weightKg != null && (
+                <div className="rounded-md border border-border p-3 text-center">
+                  <Droplet className="h-4 w-4 text-primary mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">Água corporal</p>
+                  <p className="text-lg font-bold">{Math.round((derived.waterKg / reading.weightKg) * 100)}%</p>
+                </div>
+              )}
+              {derived.muscleMassKg != null && (
+                <div className="rounded-md border border-border p-3 text-center">
+                  <Dumbbell className="h-4 w-4 text-primary mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">Massa muscular</p>
+                  <p className="text-lg font-bold">{derived.muscleMassKg.toFixed(1)} kg</p>
+                </div>
+              )}
+              {derived.boneMassKg != null && (
+                <div className="rounded-md border border-border p-3 text-center">
+                  <Bone className="h-4 w-4 text-primary mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">Massa óssea</p>
+                  <p className="text-lg font-bold">{derived.boneMassKg.toFixed(1)} kg</p>
+                </div>
+              )}
+              {derived.bmrKcal != null && (
+                <div className="rounded-md border border-border p-3 text-center">
+                  <Flame className="h-4 w-4 text-primary mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">Metabolismo basal</p>
+                  <p className="text-lg font-bold">{derived.bmrKcal} kcal</p>
+                </div>
+              )}
+            </div>
+          )}
+          {segmental && (Object.keys(segmental.muscle).length > 0 || Object.keys(segmental.fat).length > 0) && (
+            <p className="text-[12px] text-muted-foreground leading-relaxed">
+              A balança enviou as impedâncias por região do corpo — ao salvar, o exame mostra o
+              mapa de gordura e músculo por braço, perna e tronco.
+            </p>
+          )}
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Água, músculo, ossos e metabolismo basal são estimativas calculadas pelo app a partir
+            do peso, da impedância e do seu perfil — podem divergir dos índices do app da balança.
+          </p>
           {reading.impedanceOhm == null && (
             <p className="text-[12px] text-muted-foreground leading-relaxed">
               A balança não enviou a impedância — a gordura foi estimada por fórmula a partir do seu perfil.
