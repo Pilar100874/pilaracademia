@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 /* Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-interface MetricSpec {
+export interface MetricSpec {
   key: keyof ExtractedBioimpedance;
   label: string;
   unit?: string;
@@ -41,10 +41,10 @@ interface MetricSpec {
   format?: (value: number) => string;
 }
 
-const fmtN = (v: number, digits = 1) =>
+export const fmtN = (v: number, digits = 1) =>
   Number.isFinite(v) ? v.toFixed(digits).replace(/\.0$/, '') : '—';
 
-const METRICS: MetricSpec[] = [
+export const METRICS: MetricSpec[] = [
   {
     key: 'weight_kg',
     label: 'Peso',
