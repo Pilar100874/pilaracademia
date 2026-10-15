@@ -178,6 +178,9 @@ const toneClasses: Record<string, string> = {
 
 export default function BioimpedancePage() {
   const { list } = useBodyAnalyses();
+  const { startBioimpedance, jobs } = useBackgroundAnalysis();
+  const analyzing = jobs.some((j) => j.kind === 'bioimpedance');
+  const fileRef = useRef<HTMLInputElement>(null);
   const rows = list.data ?? [];
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab') === 'blood' ? 'blood' : 'bioimpedance';
