@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Watch, RefreshCw, Footprints, Flame, HeartPulse, Moon, Scale, Settings } from 'lucide-react';
+import { Watch, RefreshCw, Footprints, Flame, HeartPulse, Moon, Scale, Settings, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +22,7 @@ export function WatchSyncCard() {
   const [summary, setSummary] = useState<WatchSummary | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSavingWeight, setIsSavingWeight] = useState(false);
+  const [isSavingExam, setIsSavingExam] = useState(false);
 
   useEffect(() => {
     if (!isWatchSyncSupported()) return;
@@ -110,6 +111,59 @@ export function WatchSyncCard() {
     }
   };
 
+  const saveBodyExam = async () => {
+    if (!user || !summary) return;
+    const { latestWeight, latestBodyFat, latestHeightCm } = summary;
+    if (!latestWeight && !latestBodyFat) return;
+    setIsSavingExam(true);
+    try {
+      const measuredAt = latestBodyFat?.date || latestWeight?.date || new Date().toISOString();
+      const heightM = latestHeightCm ? latestHeightCm / 100 : null;
+      const weightKg = latestWeight?.kg ?? null;
+      const fatPct = latestBodyFat?.pct ?? null;
+
+      const { data: existing } = await supabase
+        .from('body_analyses')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('measured_at', measuredAt)
+        .limit(1);
+      if (existing && existing.length > 0) {
+        toast({ title: 'Exame já salvo', description: 'Essa medição já está no seu histórico.' });
+        return;
+      }
+
+      const extracted = {
+        measured_at: measuredAt,
+        weight_kg: weightKg,
+        body_fat_pct: fatPct,
+        fat_mass_kg: weightKg != null && fatPct != null ? Math.round(weightKg * (fatPct / 100) * 10) / 10 : null,
+        lean_mass_kg: weightKg != null && fatPct != null ? Math.round(weightKg * (1 - fatPct / 100) * 10) / 10 : null,
+        height_cm: latestHeightCm ?? null,
+        bmi: weightKg != null && heightM ? Math.round((weightKg / (heightM * heightM)) * 10) / 10 : null,
+      };
+
+      const { error } = await supabase.from('body_analyses').insert({
+        user_id: user.id,
+        image_url: null,
+        measured_at: measuredAt,
+        extracted,
+        plan: null,
+        summary: 'Medição importada da balança via Health Connect.',
+      });
+      if (error) throw error;
+      toast({ title: 'Exame salvo!', description: 'A medição da balança entrou no seu histórico de bioimpedância.' });
+    } catch {
+      toast({
+        title: 'Erro ao salvar exame',
+        description: 'Não foi possível salvar a medição. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingExam(false);
+    }
+  };
+
   if (!isWatchSyncSupported()) return null;
 
   const formatSleep = (minutes: number) => {
@@ -126,6 +180,7 @@ export function WatchSyncCard() {
         { icon: HeartPulse, label: 'Repouso', value: summary.restingHeartRate != null ? `${summary.restingHeartRate} bpm` : '—' },
         { icon: Moon, label: 'Sono (última noite)', value: summary.sleepMinutesLastNight != null ? formatSleep(summary.sleepMinutesLastNight) : '—' },
         { icon: Scale, label: 'Peso no relógio', value: summary.latestWeight ? `${summary.latestWeight.kg} kg` : '—' },
+        { icon: Activity, label: 'Gordura corporal', value: summary.latestBodyFat ? `${summary.latestBodyFat.pct}%` : '—' },
       ]
     : [];
 
@@ -191,6 +246,12 @@ export function WatchSyncCard() {
               <Button variant="outline" size="sm" onClick={() => void saveWeight()} disabled={isSavingWeight}>
                 <Scale className="h-4 w-4 mr-2" />
                 {isSavingWeight ? 'Salvando...' : 'Salvar peso no histórico'}
+              </Button>
+            )}
+            {(summary.latestWeight || summary.latestBodyFat) && (
+              <Button variant="outline" size="sm" onClick={() => void saveBodyExam()} disabled={isSavingExam}>
+                <Activity className="h-4 w-4 mr-2" />
+                {isSavingExam ? 'Salvando...' : 'Salvar como exame de bioimpedância'}
               </Button>
             )}
           </div>

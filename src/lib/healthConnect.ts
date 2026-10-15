@@ -8,7 +8,7 @@ import { Health, type HealthSample } from '@capgo/capacitor-health';
 
 export const isWatchSyncSupported = () => Capacitor.isNativePlatform();
 
-const READ_TYPES = ['steps', 'calories', 'heartRate', 'restingHeartRate', 'sleep', 'weight'] as const;
+const READ_TYPES = ['steps', 'calories', 'heartRate', 'restingHeartRate', 'sleep', 'weight', 'bodyFat', 'height'] as const;
 
 export interface WatchSummary {
   stepsToday: number | null;
@@ -17,6 +17,8 @@ export interface WatchSummary {
   restingHeartRate: number | null;
   sleepMinutesLastNight: number | null;
   latestWeight: { kg: number; date: string } | null;
+  latestBodyFat: { pct: number; date: string } | null;
+  latestHeightCm: number | null;
   syncedAt: string;
 }
 
@@ -66,11 +68,14 @@ async function aggregateToday(dataType: 'steps' | 'calories'): Promise<number | 
   }
 }
 
-async function latestSample(dataType: 'heartRate' | 'restingHeartRate' | 'weight'): Promise<HealthSample | null> {
+async function latestSample(
+  dataType: 'heartRate' | 'restingHeartRate' | 'weight' | 'bodyFat' | 'height',
+  daysBack = 30,
+): Promise<HealthSample | null> {
   try {
     const { samples } = await Health.readSamples({
       dataType,
-      startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      startDate: new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString(),
       endDate: new Date().toISOString(),
       limit: 1,
     });
@@ -99,13 +104,15 @@ async function sleepLastNight(): Promise<number | null> {
 }
 
 export async function readWatchSummary(): Promise<WatchSummary> {
-  const [stepsToday, caloriesToday, hr, restingHr, sleepMinutes, weight] = await Promise.all([
+  const [stepsToday, caloriesToday, hr, restingHr, sleepMinutes, weight, bodyFat, height] = await Promise.all([
     aggregateToday('steps'),
     aggregateToday('calories'),
     latestSample('heartRate'),
     latestSample('restingHeartRate'),
     sleepLastNight(),
     latestSample('weight'),
+    latestSample('bodyFat', 90),
+    latestSample('height', 365 * 5),
   ]);
 
   return {
@@ -115,6 +122,8 @@ export async function readWatchSummary(): Promise<WatchSummary> {
     restingHeartRate: restingHr ? Math.round(restingHr.value) : null,
     sleepMinutesLastNight: sleepMinutes,
     latestWeight: weight ? { kg: Math.round(weight.value * 10) / 10, date: weight.endDate } : null,
+    latestBodyFat: bodyFat ? { pct: Math.round(bodyFat.value * 10) / 10, date: bodyFat.endDate } : null,
+    latestHeightCm: height ? Math.round(height.value) : null,
     syncedAt: new Date().toISOString(),
   };
 }
