@@ -495,6 +495,7 @@ export function ProfilePage() {
 
         <DeleteAccountDialog open={deleteOpen} onOpenChange={setDeleteOpen} />
         <ChangePasswordDialog open={passwordOpen} onOpenChange={setPasswordOpen} />
+        <AndroidAppDialog open={androidOpen} onOpenChange={setAndroidOpen} />
       </div>
 
       <BottomNav />
