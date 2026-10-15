@@ -320,7 +320,7 @@ export function SegmentalFigure({
   };
 
   return (
-    <HumanSilhouette scales={scales} tones={tones} badges offsetX={OFF} frameWidth={260} className="max-w-[280px]">
+    <HumanSilhouette scales={scales} tones={tones} badges palette={kind} offsetX={OFF} frameWidth={260} className="max-w-[280px]">
       {callout('left', 'leftArm', values.left_arm_kg, ref.arm, 100)}
       {callout('left', 'trunk', values.trunk_kg, ref.trunk, 196)}
       {callout('left', 'leftLeg', values.left_leg_kg, ref.leg, 300)}
@@ -380,6 +380,232 @@ function BodyTypeMatrix({ e }: { e: ExtractedBioimpedance }) {
       </div>
       <p className="text-[11px] text-muted-foreground leading-relaxed">
         Estimativa a partir do músculo esquelético por altura e do percentual de gordura.
+      </p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Controle de peso (peso ideal estimado pela altura)                  */
+/* ------------------------------------------------------------------ */
+
+function WeightControlCard({
+  e,
+  weight,
+  fatMass,
+  lean,
+}: {
+  e: ExtractedBioimpedance;
+  weight: number | null;
+  fatMass: number | null;
+  lean: number | null;
+}) {
+  const h = num(e.height_cm);
+  if (h == null || weight == null) return null;
+  const m = h / 100;
+  const ideal = (e.sex === 'female' ? 21 : 22) * m * m;
+  const adjust = weight - ideal;
+  const [flo, fhi] = fatStandardRange(e);
+  const targetFat = (ideal * ((flo + fhi) / 2)) / 100;
+  const fatCtl = fatMass != null ? fatMass - targetFat : null;
+  const muscleCtl = lean != null ? lean - (ideal - targetFat) : null;
+
+  const rows = [
+    { label: 'Peso ideal estimado', v: `${fmtN(ideal, 1)} kg`, tone: 'text-foreground' },
+    {
+      label: 'Ajuste de peso',
+      v: `${adjust > 0 ? '+' : ''}${fmtN(adjust, 1)} kg`,
+      tone: Math.abs(adjust) < 2 ? 'text-emerald-700' : 'text-amber-700',
+    },
+    fatCtl != null
+      ? {
+          label: 'Controle de gordura',
+          v: `${fatCtl > 0 ? '-' : '+'}${fmtN(Math.abs(fatCtl), 1)} kg`,
+          tone: Math.abs(fatCtl) < 2 ? 'text-emerald-700' : 'text-amber-700',
+        }
+      : null,
+    muscleCtl != null
+      ? {
+          label: 'Controle muscular',
+          v: `${muscleCtl > 0 ? '+' : ''}${fmtN(muscleCtl, 1)} kg`,
+          tone: muscleCtl >= -1 ? 'text-emerald-700' : 'text-amber-700',
+        }
+      : null,
+  ].filter((r): r is NonNullable<typeof r> => r != null);
+
+  return (
+    <div className="rounded-md border border-border bg-card p-4 space-y-2">
+      <p className="text-sm font-medium">Controle de peso</p>
+      {rows.map((r) => (
+        <div key={r.label} className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">{r.label}</span>
+          <span className={cn('font-semibold', r.tone)}>{r.v}</span>
+        </div>
+      ))}
+      <p className="text-[10px] text-muted-foreground leading-relaxed">
+        Estimativa a partir da altura e da faixa de gordura padrão para o seu sexo.
+      </p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Outros indicadores                                                  */
+/* ------------------------------------------------------------------ */
+
+function statusChip(ok: boolean | null): { label: string; cls: string } {
+  if (ok == null) return { label: '—', cls: 'bg-muted text-muted-foreground' };
+  return ok
+    ? { label: 'Padrão', cls: 'bg-emerald-500/15 text-emerald-700' }
+    : { label: 'Atenção', cls: 'bg-amber-500/15 text-amber-700' };
+}
+
+function OtherIndicatorsCard({ e, weight }: { e: ExtractedBioimpedance; weight: number | null }) {
+  const protein = num(e.protein_mass_kg);
+  const proteinPct = protein != null && weight != null && weight > 0 ? (protein / weight) * 100 : null;
+  const visceral = num(e.visceral_fat);
+  const whr = num(e.whr);
+  const bodyAge = num(e.body_age);
+  const age = num(e.age);
+  const whrStd = e.sex === 'female' ? 0.85 : 0.9;
+
+  const rows: { label: string; value: string; ok: boolean | null }[] = [
+    protein != null
+      ? {
+          label: 'Proteína',
+          value: `${fmtN(protein, 1)} kg${proteinPct != null ? ` (${fmtN(proteinPct, 1)}%)` : ''}`,
+          ok: proteinPct != null ? proteinPct >= 14 && proteinPct <= 22 : null,
+        }
+      : null,
+    num(e.bone_mass_kg) != null
+      ? { label: 'Massa óssea', value: `${fmtN(num(e.bone_mass_kg)!, 1)} kg`, ok: null }
+      : null,
+    visceral != null
+      ? { label: 'Gordura visceral', value: `nível ${fmtN(visceral, 0)}`, ok: visceral <= 9 }
+      : null,
+    num(e.bmr_kcal) != null
+      ? { label: 'Metabolismo basal', value: `${fmtN(num(e.bmr_kcal)!, 0)} kcal`, ok: null }
+      : null,
+    bodyAge != null
+      ? {
+          label: 'Idade corporal',
+          value: `${fmtN(bodyAge, 0)} anos${age != null ? ` (real: ${fmtN(age, 0)})` : ''}`,
+          ok: age != null ? bodyAge <= age : null,
+        }
+      : null,
+    whr != null
+      ? { label: 'Relação cintura-quadril', value: fmtN(whr, 2), ok: whr <= whrStd }
+      : null,
+  ].filter((r): r is NonNullable<typeof r> => r != null);
+
+  if (rows.length === 0) return null;
+  return (
+    <div className="rounded-md border border-border bg-card p-4 space-y-2">
+      <p className="text-sm font-medium">Outros indicadores</p>
+      {rows.map((r) => {
+        const chip = statusChip(r.ok);
+        return (
+          <div key={r.label} className="flex items-center justify-between gap-2 text-sm">
+            <span className="text-muted-foreground">{r.label}</span>
+            <span className="flex items-center gap-2">
+              <span className="font-semibold">{r.value}</span>
+              <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', chip.cls)}>
+                {chip.label}
+              </span>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Equilíbrio corporal (superior × inferior)                            */
+/* ------------------------------------------------------------------ */
+
+function BodyBalanceCard({ e, weight }: { e: ExtractedBioimpedance; weight: number | null }) {
+  const seg = e.segmental_muscle;
+  if (!seg) return null;
+  const armAvg =
+    ((num(seg.left_arm_kg) ?? 0) + (num(seg.right_arm_kg) ?? 0)) / 2 || null;
+  const legAvg =
+    ((num(seg.left_leg_kg) ?? 0) + (num(seg.right_leg_kg) ?? 0)) / 2 || null;
+  const trunk = num(seg.trunk_kg);
+  if (armAvg == null && legAvg == null && trunk == null) return null;
+
+  const refArm = segRef('muscle', 'arm', weight ?? undefined);
+  const refLeg = segRef('muscle', 'leg', weight ?? undefined);
+  const refTrunk = segRef('muscle', 'trunk', weight ?? undefined);
+
+  const evalPart = (v: number | null, ref: number): boolean | null => {
+    if (v == null) return null;
+    const ratio = v / ref;
+    return ratio >= 0.85 && ratio <= 1.2;
+  };
+
+  const rows = [
+    { label: 'Parte superior (braços)', ok: evalPart(armAvg, refArm) },
+    { label: 'Tronco', ok: evalPart(trunk, refTrunk) },
+    { label: 'Parte inferior (pernas)', ok: evalPart(legAvg, refLeg) },
+  ];
+
+  return (
+    <div className="rounded-md border border-border bg-card p-4 space-y-2">
+      <p className="text-sm font-medium">Avaliação do equilíbrio corporal</p>
+      {rows.map((r) => {
+        const chip = r.ok == null
+          ? { label: '—', cls: 'bg-muted text-muted-foreground' }
+          : r.ok
+            ? { label: 'Equilibrado', cls: 'bg-emerald-500/15 text-emerald-700' }
+            : { label: 'Desequilibrado', cls: 'bg-amber-500/15 text-amber-700' };
+        return (
+          <div key={r.label} className="flex items-center justify-between gap-2 text-sm">
+            <span className="text-muted-foreground">{r.label}</span>
+            <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', chip.cls)}>
+              {chip.label}
+            </span>
+          </div>
+        );
+      })}
+      <p className="text-[10px] text-muted-foreground leading-relaxed">
+        Compara o músculo de cada parte com a referência proporcional ao seu peso.
+      </p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Gasto estimado em exercícios (30 min)                                */
+/* ------------------------------------------------------------------ */
+
+function ExerciseBurnCard({ weight }: { weight: number | null }) {
+  if (weight == null || weight <= 0) return null;
+  const activities = [
+    { icon: Activity, label: 'Caminhada', met: 3.5 },
+    { icon: Zap, label: 'Corrida', met: 9 },
+    { icon: Activity, label: 'Ciclismo', met: 7 },
+    { icon: Droplet, label: 'Natação', met: 8 },
+    { icon: Dumbbell, label: 'Musculação', met: 5 },
+  ];
+  return (
+    <div className="rounded-md border border-border bg-card p-4 space-y-3">
+      <p className="text-sm font-medium">Gasto estimado em exercícios (30 min)</p>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        {activities.map((a) => {
+          const Icon = a.icon;
+          const kcal = a.met * weight * 0.5;
+          return (
+            <div key={a.label} className="rounded-md border border-border bg-muted/30 p-2.5 text-center">
+              <Icon className="h-4 w-4 mx-auto text-primary" />
+              <p className="text-sm font-semibold mt-1">{fmtN(kcal, 0)} kcal</p>
+              <p className="text-[10px] text-muted-foreground">{a.label}</p>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[10px] text-muted-foreground leading-relaxed">
+        Estimativa pelo seu peso atual — valores reais variam com a intensidade.
       </p>
     </div>
   );
@@ -495,6 +721,12 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
           })}
         </div>
       )}
+
+      {/* Controle de peso + outros indicadores */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <WeightControlCard e={e} weight={weight} fatMass={fatMass} lean={lean} />
+        <OtherIndicatorsCard e={e} weight={weight} />
+      </div>
 
       {/* Análise de obesidade */}
       {(bmi != null || bf != null || visceral != null) && (
@@ -639,6 +871,10 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
           )}
         </div>
       )}
+
+      {/* Equilíbrio corporal + gasto em exercícios */}
+      <BodyBalanceCard e={e} weight={weight} />
+      <ExerciseBurnCard weight={weight} />
 
       {/* Tipo corporal */}
       <BodyTypeMatrix e={e} />

@@ -1,57 +1,35 @@
-import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Smartphone, Github, Download, Watch, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Smartphone, Download, Watch, Bluetooth, ShieldCheck, Bell } from 'lucide-react';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const REPO_KEY = 'pilar_github_repo';
-const DEFAULT_REPO = 'https://github.com/Pilar100874/pilaracademia';
+/** Link direto do APK mais recente (gerado a cada build no repositório). */
+const APK_URL =
+  'https://github.com/Pilar100874/pilaracademia/releases/latest/download/pilaracademia.apk';
 
-/** Aceita "https://github.com/ dono/repo", "github.com/dono/repo" ou "dono/repo". */
-function normalizeRepo(raw: string): string | null {
-  const value = raw.trim();
-  if (!value) return null;
-  const full = value.match(/github\.com[/:]([^/\s]+)\/([^/\s#?]+)/i);
-  if (full) return `https://github.com/${full[1]}/${full[2].replace(/\.git$/i, '')}`;
-  const short = value.match(/^([\w.-]+)\/([\w.-]+)$/);
-  if (short) return `https://github.com/${short[1]}/${short[2]}`;
-  return null;
-}
-
-function openUrl(url: string) {
-  window.open(url, '_blank', 'noopener,noreferrer');
-}
+const FEATURES = [
+  {
+    icon: Bluetooth,
+    title: 'Balança por Bluetooth',
+    text: 'Lê peso e bioimpedância da sua balança direto no app, sem outros aplicativos.',
+  },
+  {
+    icon: Watch,
+    title: 'Galaxy Watch',
+    text: 'Passos, calorias, batimentos, sono e peso sincronizados na tela de Saúde.',
+  },
+  {
+    icon: Bell,
+    title: 'Sempre à mão',
+    text: 'Ícone na tela inicial do celular, abrindo direto como um app instalado.',
+  },
+];
 
 export function AndroidAppDialog({ open, onOpenChange }: Props) {
-  const [repo, setRepo] = useState('');
-  const [saved, setSaved] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const stored = localStorage.getItem(REPO_KEY) ?? DEFAULT_REPO;
-    setRepo(stored);
-    setSaved(normalizeRepo(stored));
-    setError(null);
-  }, [open]);
-
-  const save = () => {
-    const normalized = normalizeRepo(repo);
-    if (!normalized) {
-      setError('Endereço inválido. Exemplo: github.com/seu-usuario/pilaracademia');
-      return;
-    }
-    localStorage.setItem(REPO_KEY, normalized);
-    setRepo(normalized);
-    setSaved(normalized);
-    setError(null);
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex flex-col overflow-hidden p-0 max-w-lg min-w-0">
@@ -62,120 +40,51 @@ export function AndroidAppDialog({ open, onOpenChange }: Props) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 space-y-5 text-sm">
-          <p className="text-muted-foreground">
-            A versão nativa para Android permite ler a sua balança por Bluetooth e
-            sincronizar os dados do Galaxy Watch (passos, calorias, batimentos, sono e
-            peso) direto na tela de Saúde.
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 space-y-5 text-sm">
+          <p className="text-muted-foreground leading-relaxed">
+            Instale a versão nativa do Pilar Academia no seu Android e libere os
+            recursos que não funcionam no navegador:
           </p>
 
-          <div className="space-y-3 rounded-xl bg-muted/50 p-4">
-            <p className="font-medium flex items-center gap-2">
-              <Github className="h-4 w-4" />
-              Endereço do seu repositório no GitHub
-            </p>
-            <p className="text-xs text-muted-foreground">
-              É ele que gera e guarda o instalável do app. Cole uma vez e o botão abaixo
-              leva direto para a página de download.
-            </p>
-            <div className="flex gap-2">
-              <Input
-                value={repo}
-                onChange={(e) => setRepo(e.target.value)}
-                placeholder="github.com/seu-usuario/pilaracademia"
-                className="h-11 rounded-xl"
-                inputMode="url"
-              />
-              <Button variant="outline" className="h-11 rounded-xl shrink-0" onClick={save}>
-                Salvar
-              </Button>
-            </div>
-            {error && <p className="text-xs text-destructive">{error}</p>}
-            {saved && (
-              <p className="text-xs flex items-center gap-1.5 text-emerald-600">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Salvo: {saved}
-              </p>
-            )}
+          <div className="space-y-2.5">
+            {FEATURES.map((f) => {
+              const Icon = f.icon;
+              return (
+                <div
+                  key={f.title}
+                  className="flex items-start gap-3 rounded-md border border-border bg-card p-3"
+                >
+                  <div className="rounded-md bg-primary/10 p-2 shrink-0">
+                    <Icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium leading-tight">{f.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                      {f.text}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          <div className="space-y-3">
-            <p className="font-medium flex items-center gap-2">
-              <Download className="h-4 w-4 text-primary" />
-              Como baixar o instalável
-            </p>
-            <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
-              <li>
-                Abra a aba <span className="font-medium text-foreground">Actions</span> do
-                seu repositório (o botão abaixo já abre nela).
-              </li>
-              <li>
-                Clique na execução mais recente de{' '}
-                <span className="font-medium text-foreground">Build Android APK</span>.
-              </li>
-              <li>
-                Em <span className="font-medium text-foreground">Artifacts</span>, baixe{' '}
-                <span className="font-medium text-foreground">pilaracademia-debug-apk</span>{' '}
-                e instale o arquivo no celular.
-              </li>
-            </ol>
-            <p className="text-xs text-muted-foreground">
-              Você precisa estar logado no GitHub para baixar. Na primeira instalação o
-              Android pede para permitir "instalar apps de fontes desconhecidas".
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <p className="font-medium flex items-center gap-2">
-              <Watch className="h-4 w-4 text-primary" />
-              Conectar o Galaxy Watch
-            </p>
-            <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
-              <li>
-                No celular, abra o <span className="font-medium text-foreground">Samsung
-                Health</span> → Configurações → Health Connect e ative o compartilhamento.
-              </li>
-              <li>
-                Abra o app Pilar Academia → Saúde → cartão{' '}
-                <span className="font-medium text-foreground">Dados do relógio</span> →
-                Conectar.
-              </li>
-            </ol>
-          </div>
-
-          <div className="space-y-2 rounded-xl bg-muted/50 p-3">
-            <p className="font-medium flex items-center gap-2 text-xs">
-              <Github className="h-4 w-4" />
-              Quer compilar você mesmo?
-            </p>
-            <p className="text-xs text-muted-foreground">
-              No seu computador: <code className="text-foreground">npm install</code>,{' '}
-              <code className="text-foreground">npx cap add android</code>,{' '}
-              <code className="text-foreground">npm run build</code>,{' '}
-              <code className="text-foreground">npx cap sync</code> e{' '}
-              <code className="text-foreground">npx cap run android</code> (requer Android
-              Studio).
-            </p>
+          <div className="flex items-start gap-2.5 rounded-md bg-muted/50 p-3 text-xs text-muted-foreground leading-relaxed">
+            <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
+            <span>
+              Na primeira instalação o Android pede para permitir "instalar apps de
+              fontes desconhecidas" no navegador. É seguro: o instalável é gerado
+              automaticamente a partir do código do seu app.
+            </span>
           </div>
         </div>
 
         <div className="shrink-0 border-t border-border px-5 py-3 space-y-2">
-          {saved ? (
-            <>
-              <Button className="w-full" onClick={() => openUrl(`${saved}/actions/workflows/android-apk.yml`)}>
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Abrir página de download
-              </Button>
-              <Button variant="ghost" className="w-full" onClick={() => openUrl(`${saved}/actions`)}>
-                Ver todas as execuções do build
-              </Button>
-            </>
-          ) : (
-            <Button className="w-full" onClick={() => openUrl('https://github.com/actions')}>
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Abrir GitHub
-            </Button>
-          )}
+          <Button className="w-full h-11 text-base" asChild>
+            <a href={APK_URL} download>
+              <Download className="h-4 w-4 mr-2" />
+              Baixar app Android
+            </a>
+          </Button>
           <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
             Fechar
           </Button>
