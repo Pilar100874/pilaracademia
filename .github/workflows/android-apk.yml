@@ -19,10 +19,12 @@ jobs:
           node-version: 22
           cache: npm
 
+      # Capacitor 8 exige JDK 21 (sourceCompatibility VERSION_21);
+      # com JDK 17 o Gradle falha na compilação.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
 
       # O runner ubuntu-latest do GitHub já traz o Android SDK instalado
       # (ANDROID_HOME configurado) — não é necessário o setup-android,
