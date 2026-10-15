@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { HumanSilhouette, tapeToScales } from '@/components/HumanBodyFigure';
 import { cn } from '@/lib/utils';
 
 /* ------------------------------------------------------------------ */
@@ -328,7 +329,12 @@ export function BodyMorph({
         </Button>
       </div>
 
-      <BodyFigure values={values} className="max-w-[170px]" showValues={showValues} showMarkers={showMarkers} />
+      <HumanSilhouette
+        scales={tapeToScales(values)}
+        chipValues={values}
+        showChips={showValues && showMarkers}
+        className="max-w-[190px]"
+      />
 
       <div className="space-y-1.5">
         <input
