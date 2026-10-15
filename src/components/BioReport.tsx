@@ -621,7 +621,7 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
           {hasSegmentalFat && (
             <div className="rounded-md border border-border bg-card p-4 space-y-2">
               <p className="text-sm font-medium">Gordura por região</p>
-              <SegmentalFigure kind="fat" values={e.segmental_fat!} />
+              <SegmentalFigure kind="fat" values={e.segmental_fat!} weightKg={weight ?? undefined} />
               <p className="text-[10px] text-muted-foreground leading-relaxed">
                 Verde: abaixo do esperado · azul: dentro do padrão · amarelo/vermelho: acima,
                 comparando a distribuição entre as regiões.
@@ -631,7 +631,7 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
           {hasSegmentalMuscle && (
             <div className="rounded-md border border-border bg-card p-4 space-y-2">
               <p className="text-sm font-medium">Equilíbrio muscular</p>
-              <SegmentalFigure kind="muscle" values={e.segmental_muscle!} />
+              <SegmentalFigure kind="muscle" values={e.segmental_muscle!} weightKg={weight ?? undefined} />
               <p className="text-[10px] text-muted-foreground leading-relaxed">
                 Verde: lados equilibrados · amarelo/vermelho: assimetria entre esquerdo e direito.
               </p>
