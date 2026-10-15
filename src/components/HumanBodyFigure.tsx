@@ -85,9 +85,29 @@ const SEX_BASE: Record<SexKey, SexBase> = {
 
 const sexKey = (sex: BodySex): SexKey => (sex === 'male' || sex === 'female' ? sex : 'neutral');
 
-export function computeDims(scales: ZoneScales, sex?: BodySex): BodyDims {
+export function computeDims(scales: ZoneScales, sex?: BodySex, opts?: { freeform?: boolean }): BodyDims {
   const key = sexKey(sex);
   const b = SEX_BASE[key];
+  if (opts?.freeform) {
+    // Modo evolução/morph: sem amortecimento nem vínculos anatômicos, para a
+    // diferença entre duas medições aparecer de forma clara no desenho.
+    const F = (v?: number) => (v != null && Number.isFinite(v) && v > 0 ? clamp(v, 0.6, 1.6) : 1);
+    return {
+      nk: b.nk * F(scales.neck),
+      sh: b.sh * F(scales.shoulders ?? scales.chest),
+      ch: b.ch * F(scales.chest),
+      wa: b.wa * F(scales.waist),
+      hp: b.hp * F(scales.hip),
+      upL: b.up * F(scales.armL),
+      upR: b.up * F(scales.armR),
+      foL: b.fo * F(scales.forearmL ?? scales.armL),
+      foR: b.fo * F(scales.forearmR ?? scales.armR),
+      thL: b.th * F(scales.thighL),
+      thR: b.th * F(scales.thighR),
+      cfL: b.cf * F(scales.calfL ?? scales.thighL),
+      cfR: b.cf * F(scales.calfR ?? scales.thighR),
+    };
+  }
   const ch = b.ch * S(scales.chest);
   let sh = b.sh * S(scales.shoulders);
   let wa = b.wa * S(scales.waist);
@@ -376,6 +396,7 @@ export function HumanSilhouette({
   offsetX = 0,
   frameWidth = 200,
   palette = 'neutral',
+  freeform = false,
   className,
   children,
 }: {
