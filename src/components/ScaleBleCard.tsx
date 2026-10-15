@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bluetooth, BluetoothSearching, Scale, Activity, Copy, Check, Info } from 'lucide-react';
+import { Bluetooth, BluetoothSearching, Scale, Activity, Copy, Check, Info, Droplet, Dumbbell, Bone, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +8,8 @@ import { useProfile } from '@/hooks/useProfile';
 import { calculateAge } from '@/types/profile';
 import {
   ScaleBleSession,
-  estimateBodyFatPct,
+  deriveBodyMetrics,
+  deriveSegmental,
   isScaleBleSupported,
   type ScaleReading,
 } from '@/lib/scaleBle';
@@ -43,15 +44,20 @@ export function ScaleBleCard({ onSaved }: { onSaved?: () => void }) {
   const ageYears = profile?.birth_date ? calculateAge(profile.birth_date) : null;
   const isMale = profile?.gender ? profile.gender === 'male' : null;
 
-  const bodyFatPct =
+  const derived =
     reading?.weightKg != null
-      ? estimateBodyFatPct({
-          impedanceOhm: reading.impedanceOhm,
+      ? deriveBodyMetrics({
+          impedanceOhm: reading.impedanceOhm ?? null,
           weightKg: reading.weightKg,
           heightCm: profile?.height_cm ?? null,
           ageYears,
           isMale,
         })
+      : null;
+  const bodyFatPct = derived?.bodyFatPct ?? null;
+  const segmental =
+    reading?.segmentalOhm && derived
+      ? deriveSegmental(reading.segmentalOhm, derived.muscleMassKg, derived.fatMassKg)
       : null;
 
   const start = async () => {
@@ -139,6 +145,14 @@ export function ScaleBleCard({ onSaved }: { onSaved?: () => void }) {
         bmi: heightM ? Math.round((weightKg / (heightM * heightM)) * 10) / 10 : null,
         sex: profile?.gender ?? null,
         age_years: ageYears,
+        // Derivações calculadas pelo app a partir do peso + impedância
+        body_water_kg: derived?.waterKg ?? null,
+        muscle_mass_kg: derived?.muscleMassKg ?? null,
+        skeletal_muscle_kg: derived?.skeletalMuscleKg ?? null,
+        bone_mass_kg: derived?.boneMassKg ?? null,
+        bmr_kcal: derived?.bmrKcal ?? null,
+        segmental_muscle: segmental?.muscle ?? null,
+        segmental_fat: segmental?.fat ?? null,
       };
 
       const { error } = await supabase.from('body_analyses').insert({
