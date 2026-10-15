@@ -150,7 +150,7 @@ export function BioimpedanceCompare({
         valuesB={bioToTapeValues(eB)}
         labelA={rowLabel(rowA)}
         labelB={rowLabel(rowB)}
-        showValues={false}
+        showValues
         showMarkers={false}
       />
 

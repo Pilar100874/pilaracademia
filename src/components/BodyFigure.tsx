@@ -341,7 +341,7 @@ export function BodyMorph({
         </Button>
       </div>
 
-      <MorphFigure values={values} sex={sex} showValues={showValues} />
+      <MorphFigure values={values} valuesA={valuesA} valuesB={valuesB} sex={sex} showValues={showValues} />
 
       <div className="space-y-1.5">
         <input
