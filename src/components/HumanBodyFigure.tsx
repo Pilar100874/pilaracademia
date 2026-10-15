@@ -136,21 +136,21 @@ function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
     { x: X(o.nk + 5), y: 62 },
     { x: X(o.sh * 0.72), y: 66 },
     { x: X(o.sh), y: 74 }, // ponta do ombro
-    { x: X(o.sh + o.up * 0.55), y: 100 },
-    { x: X(o.sh + o.up * 0.6), y: 140 },
-    { x: X(o.sh + o.up * 0.4), y: 172 }, // cotovelo externo
-    { x: X(o.sh * 0.85 + o.fo), y: 200 },
-    { x: X(o.sh * 0.78 + o.fo), y: 228 },
-    { x: X(o.sh * 0.74 + o.fo), y: 246 }, // pulso externo
-    { x: X(o.sh * 0.72 + o.fo), y: 256 },
-    { x: X(o.sh * 0.71 + o.fo), y: 264 },
-    { x: X(o.sh * 0.71 + o.fo), y: 264 }, // canto: ponta dos dedos
-    { x: X(o.sh * 0.66 + o.fo), y: 260 },
-    { x: X(o.hp + o.fo * 0.6), y: 238 }, // pulso interno
-    { x: X(o.hp + o.fo * 0.7), y: 216 }, // antebraço interno
-    { x: X(o.wa + o.up * 0.6 + 2), y: 186 },
-    { x: X(o.ch + o.up * 0.55), y: 164 }, // cotovelo interno
-    { x: X(o.ch + o.up * 0.35), y: 138 }, // braço interno
+    { x: X(o.sh + o.up * 0.4), y: 100 },
+    { x: X(o.sh + o.up * 0.45), y: 140 },
+    { x: X(o.sh + o.up * 0.25), y: 172 }, // cotovelo externo
+    { x: X(o.hp + o.fo + 3), y: 200 },
+    { x: X(o.hp + o.fo + 2), y: 226 },
+    { x: X(o.hp + o.fo * 0.6 + 2), y: 244 }, // pulso externo
+    { x: X(o.hp + o.fo * 0.5 + 2), y: 252 },
+    { x: X(o.hp + o.fo * 0.5 + 2), y: 258 },
+    { x: X(o.hp + o.fo * 0.5 + 2), y: 258 }, // canto: ponta dos dedos
+    { x: X(o.hp + o.fo * 0.3 + 1), y: 254 },
+    { x: X(o.hp + 1.5), y: 240 }, // pulso interno
+    { x: X(o.hp + 1), y: 218 }, // antebraço interno
+    { x: X(o.wa + o.up * 0.4 + 3), y: 188 },
+    { x: X(o.ch + o.up * 0.3), y: 166 }, // cotovelo interno
+    { x: X(o.ch + o.up * 0.3), y: 140 }, // braço interno
     { x: X(o.ch * 0.95), y: 124 }, // axila
     { x: X(o.ch), y: 134 },
     { x: X(o.ch * 0.98), y: 154 },
@@ -162,14 +162,14 @@ function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
     { x: X(o.th + 2), y: 288 },
     { x: X(o.cf * 0.8 + 4), y: 306 }, // joelho externo
     { x: X(o.cf + 3), y: 328 },
-    { x: X(o.cf + 1.5), y: 354 }, // panturrilha externa
-    { x: X(5.5), y: 380 }, // tornozelo externo
-    { x: X(6.5), y: 394 },
-    { x: X(8.5), y: 400 },
-    { x: X(10.5), y: 404 },
-    { x: X(10.5), y: 404 }, // canto: ponta do pé
-    { x: X(2), y: 404 },
-    { x: X(2), y: 394 }, // tornozelo interno
+    { x: X(o.cf + 2), y: 354 }, // panturrilha externa
+    { x: X(7), y: 380 }, // tornozelo externo
+    { x: X(7.5), y: 394 },
+    { x: X(9.5), y: 400 },
+    { x: X(12), y: 404 },
+    { x: X(12), y: 404 }, // canto: ponta do pé
+    { x: X(3), y: 404 },
+    { x: X(3), y: 394 }, // tornozelo interno
     { x: X(o.cf * 0.55 + 1), y: 350 },
     { x: X(o.cf * 0.5 + 1), y: 310 }, // joelho interno
     { x: X(o.th * 0.45 + 1), y: 266 }, // coxa interna
