@@ -147,11 +147,11 @@ export function HealthPage() {
       </header>
 
       <Tabs value={tab} onValueChange={setTab} className="px-5 py-5">
-        <TabsList className="w-full mb-5 flex h-auto flex-nowrap justify-start gap-1 overflow-x-auto p-1">
-          <TabsTrigger value="overview" className="shrink-0 text-xs sm:text-sm">Visão geral</TabsTrigger>
-          <TabsTrigger value="bioimpedance" className="shrink-0 text-xs sm:text-sm">Bioimpedância</TabsTrigger>
-          <TabsTrigger value="measurements" className="shrink-0 text-xs sm:text-sm">Medidas</TabsTrigger>
-          <TabsTrigger value="blood" className="shrink-0 text-xs sm:text-sm">Exames</TabsTrigger>
+        <TabsList className="mb-5 grid w-full grid-cols-2 gap-1 p-1 sm:grid-cols-4">
+          <TabsTrigger value="overview" className="w-full min-w-0 px-2 text-xs sm:text-sm">Visão geral</TabsTrigger>
+          <TabsTrigger value="bioimpedance" className="w-full min-w-0 px-2 text-xs sm:text-sm">Bioimpedância</TabsTrigger>
+          <TabsTrigger value="measurements" className="w-full min-w-0 px-2 text-xs sm:text-sm">Medidas</TabsTrigger>
+          <TabsTrigger value="blood" className="w-full min-w-0 px-2 text-xs sm:text-sm">Exames</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-5 mt-0">
