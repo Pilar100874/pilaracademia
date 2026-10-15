@@ -154,8 +154,8 @@ function torsoPoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
     { x: X(o.cf * 0.75 + 4), y: 306 }, // joelho externo
     { x: X(o.cf + 2.5), y: 330 }, // panturrilha externa
     { x: X(o.cf + 1.5), y: 352 },
-    { x: X(6.5), y: 376 }, // tornozelo externo
-    { x: X(6.5), y: 392 },
+    { x: X(o.cf * 0.6 + 1.5), y: 376 }, // tornozelo externo
+    { x: X(o.cf * 0.55 + 1.5), y: 392 },
     { x: X(8), y: 400 },
     { x: X(11.5), y: 404 },
     { x: X(11.5), y: 404 }, // canto: ponta do pé
