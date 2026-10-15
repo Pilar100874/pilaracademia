@@ -177,17 +177,33 @@ export function BioimpedanceCompare({
         </div>
       )}
 
-      {/* Evolução visual do corpo (A -> B) */}
-      <BodyMorph
-        sex={eB.sex ?? eA.sex}
-        valuesA={bioToTapeValues(eA)}
-        valuesB={bioToTapeValues(eB)}
-        callouts={segCallouts(eA, eB)}
-        labelA={rowLabel(rowA)}
-        labelB={rowLabel(rowB)}
-        showValues
-        showMarkers={false}
-      />
+      {/* Evolução visual do corpo (A -> B): gordura por região e equilíbrio muscular */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <BodyMorph
+          title="Gordura por região"
+          sex={eB.sex ?? eA.sex}
+          valuesA={bioToTapeValues(eA)}
+          valuesB={bioToTapeValues(eB)}
+          callouts={segCallouts('fat', eA, eB)}
+          legendItems={segmentalLegendItems('fat')}
+          labelA={rowLabel(rowA)}
+          labelB={rowLabel(rowB)}
+          showValues
+          showMarkers={false}
+        />
+        <BodyMorph
+          title="Equilíbrio muscular"
+          sex={eB.sex ?? eA.sex}
+          valuesA={bioToTapeValues(eA)}
+          valuesB={bioToTapeValues(eB)}
+          callouts={segCallouts('muscle', eA, eB)}
+          legendItems={segmentalLegendItems('muscle')}
+          labelA={rowLabel(rowA)}
+          labelB={rowLabel(rowB)}
+          showValues
+          showMarkers={false}
+        />
+      </div>
 
       {/* Metric rows */}
       <div className="space-y-3">
