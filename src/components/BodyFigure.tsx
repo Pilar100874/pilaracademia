@@ -495,7 +495,7 @@ function MorphFigure({
                 <path d={connector} fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth={0.9} opacity={0.7} />
                 <circle cx={dx} cy={dy} r={2.6} fill="hsl(var(--foreground))" />
                 <text x={tx} y={c.y} textAnchor={anchor} fontSize={13} fontWeight={700} style={{ fill: 'hsl(var(--foreground))' }}>
-                  {fmtShort(c.v!)}cm
+                  {fmtShort(c.v!)}{c.unit}
                 </text>
                 <text x={tx} y={c.y + 13} textAnchor={anchor} fontSize={9.5} style={{ fill: 'hsl(var(--muted-foreground))' }}>
                   {c.label}
