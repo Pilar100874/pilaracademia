@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 import { useAccountKind } from './useAccountKind';
 import { toast } from 'sonner';
 import { isImpersonating } from '@/lib/impersonation';
+import { signRowsMedia, toCanonicalStorageUrl } from '@/lib/signedMediaUrl';
 
 export interface WorkoutExercise {
   id: string;
@@ -215,7 +216,10 @@ export function useWorkoutPlans() {
         .from('workout_exercises')
         .insert({
           ...payload,
-          image_url: payload.image_urls?.[0] || null, // Keep backward compatibility
+          // Ne jamais stocker d'URL signée (éphémère) : on garde l'URL canonique.
+          image_urls: payload.image_urls?.map((u) => toCanonicalStorageUrl(u) ?? u),
+          video_url: toCanonicalStorageUrl(payload.video_url),
+          image_url: toCanonicalStorageUrl(payload.image_urls?.[0]) || null, // Keep backward compatibility
         })
         .select()
         .single();
@@ -250,10 +254,11 @@ export function useWorkoutPlans() {
     }) => {
       const { id, image_urls, ...rest } = data;
       const updateData: Record<string, unknown> = { ...rest };
-      
+      if (rest.video_url !== undefined) updateData.video_url = toCanonicalStorageUrl(rest.video_url as string | null);
+
       if (image_urls !== undefined) {
-        updateData.image_urls = image_urls;
-        updateData.image_url = image_urls[0] || null; // Keep backward compatibility
+        updateData.image_urls = image_urls.map((u) => toCanonicalStorageUrl(u) ?? u);
+        updateData.image_url = toCanonicalStorageUrl(image_urls[0]) || null; // Keep backward compatibility
       }
       
       const { error } = await supabase
