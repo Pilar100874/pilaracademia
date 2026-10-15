@@ -353,15 +353,22 @@ export function HumanSilhouette({
           <feGaussianBlur stdDeviation="12" />
         </filter>
         <clipPath id={`hc${uid}`}>
-          <path d={d} />
+          <path d={paths.torso} />
+          <path d={paths.armL} />
+          <path d={paths.armR} />
         </clipPath>
       </defs>
 
       <g transform={offsetX ? `translate(${offsetX} 0)` : undefined}>
+        {/* braços por baixo do tronco: a junção fica escondida sob o ombro */}
+        <path d={paths.armL} fill={`url(#hg${uid})`} filter={`url(#hb${uid})`} />
+        <path d={paths.armR} fill={`url(#hg${uid})`} filter={`url(#hb${uid})`} />
+        <path d={paths.armL} fill="none" stroke={outlineColor} strokeWidth={1.1} />
+        <path d={paths.armR} fill="none" stroke={outlineColor} strokeWidth={1.1} />
         {/* corpo com gradiente suave */}
-        <path d={d} fill={`url(#hg${uid})`} filter={`url(#hb${uid})`} />
+        <path d={paths.torso} fill={`url(#hg${uid})`} filter={`url(#hb${uid})`} />
         {/* contorno subtil por cima do blur para definição */}
-        <path d={d} fill="none" stroke={outlineColor} strokeWidth={1.1} />
+        <path d={paths.torso} fill="none" stroke={outlineColor} strokeWidth={1.1} />
 
         {/* tons por região (gordura/músculo) */}
         {tones && (
