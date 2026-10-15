@@ -418,9 +418,9 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
           <div className="rounded-md border border-border bg-card p-4 space-y-2">
             <p className="text-[11px] text-muted-foreground">Metas de controle</p>
             {[
-              { label: 'Peso', v: weightControl },
-              { label: 'Gordura', v: fatControl },
-              { label: 'Músculo', v: muscleControl },
+              { label: 'Peso', v: weightControl, upGood: false },
+              { label: 'Gordura', v: fatControl, upGood: false },
+              { label: 'Músculo', v: muscleControl, upGood: true },
             ]
               .filter((r) => r.v != null)
               .map((r) => (
@@ -429,7 +429,15 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
                   <span
                     className={cn(
                       'font-semibold',
-                      r.v! < 0 ? 'text-emerald-700' : r.v! > 0 ? 'text-amber-700' : 'text-muted-foreground',
+                      r.v! === 0
+                        ? 'text-muted-foreground'
+                        : r.upGood
+                          ? r.v! > 0
+                            ? 'text-emerald-700'
+                            : 'text-amber-700'
+                          : r.v! < 0
+                            ? 'text-emerald-700'
+                            : 'text-amber-700',
                     )}
                   >
                     {r.v! > 0 ? '+' : ''}
