@@ -222,7 +222,15 @@ export function BioimpedanceTab() {
           ev.target.value = '';
         }}
       />
-      {!latest ? (
+      {rows.length >= 2 && !comparing && (
+        <Button variant="outline" className="w-full" onClick={() => setComparing(true)}>
+          <GitCompareArrows className="h-4 w-4 mr-1.5" />
+          Comparar exames lado a lado
+        </Button>
+      )}
+      {comparing && rows.length >= 2 ? (
+        <BioimpedanceCompare rows={rows} onClose={() => setComparing(false)} />
+      ) : !latest ? (
         <EmptyState onUpload={() => fileRef.current?.click()} />
       ) : (
         <>
