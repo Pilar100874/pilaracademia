@@ -179,14 +179,16 @@ function armPoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
     { x: X(o.hp + o.fo + 2.5), y: 184 }, // antebraço externo
     { x: X(o.hp + o.fo * 0.9 + 2), y: 214 },
     { x: X(o.hp + o.fo * 0.75 + 1.5), y: 236 }, // pulso externo
-    { x: X(o.hp + o.fo * 0.7 + 1), y: 245 }, // mão
-    { x: X(o.hp + o.fo * 0.5 + 1), y: 249 },
-    { x: X(o.hp + o.fo * 0.5 + 1), y: 249 }, // canto: ponta dos dedos
-    { x: X(o.hp + 2), y: 242 }, // pulso interno
-    { x: X(o.hp + 1), y: 214 }, // antebraço interno
-    { x: X(o.wa + o.up * 0.35 + 2), y: 184 },
-    { x: X(o.ch + o.up * 0.35), y: 158 }, // cotovelo interno
-    { x: X(o.ch + o.up * 0.3), y: 132 }, // braço interno
+    { x: X(o.hp + o.fo * 0.72 + 1), y: 243 },
+    { x: X(o.hp + o.fo * 0.6 + 1), y: 247 }, // mão
+    { x: X(o.hp + o.fo * 0.45 + 1), y: 248.5 },
+    { x: X(o.hp + o.fo * 0.45 + 1), y: 248.5 }, // canto: ponta dos dedos
+    { x: X(o.hp + o.fo * 0.3 + 1), y: 246 },
+    { x: X(o.hp + 1), y: 240 }, // pulso interno
+    { x: X(o.hp - 1), y: 212 }, // antebraço interno (rente ao quadril)
+    { x: X(o.wa + 2), y: 184 },
+    { x: X(o.ch + o.up * 0.2), y: 158 }, // cotovelo interno
+    { x: X(o.ch * 0.99), y: 132 }, // braço interno (rente ao peito)
     { x: X(o.ch * 0.97), y: 110 }, // axila (escondida sob o peito)
     { x: X(o.ch * 0.97), y: 110 },
   ];
