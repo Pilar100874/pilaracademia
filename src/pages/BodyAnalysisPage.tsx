@@ -38,6 +38,7 @@ import type { BodyAnalysisRow, BodyPlan } from '@/types/bodyAnalysis';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { SegmentalFigure } from '@/components/BioReport';
 import { AIWorkoutDialog } from '@/components/AIWorkoutDialog';
 import { MacroAdjustmentPanel } from '@/components/MacroAdjustmentPanel';
 import { NarrativeBlock } from '@/components/NarrativeBlock';
