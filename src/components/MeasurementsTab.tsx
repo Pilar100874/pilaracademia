@@ -477,6 +477,8 @@ function MeasurementDialog({
               rows={2}
             />
           </div>
+            </div>
+          </div>
         </div>
 
         <DialogFooter className="shrink-0 border-t border-border px-5 py-3">
@@ -594,6 +596,13 @@ function MeasurementsCompare({
           <p className="text-[10px] text-muted-foreground">cm somados</p>
         </div>
       </div>
+
+      <BodyMorph
+        valuesA={rowA as unknown as Record<string, number | null>}
+        valuesB={rowB as unknown as Record<string, number | null>}
+        labelA={rowLabel(rowA)}
+        labelB={rowLabel(rowB)}
+      />
 
       <div className="space-y-3">
         {visibleFields.map((f) => (
