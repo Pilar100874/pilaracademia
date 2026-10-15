@@ -299,6 +299,8 @@ export function BodyMorph({
   showMarkers = true,
   sex,
   callouts,
+  title = 'Evolução visual do corpo',
+  legendItems,
 }: {
   valuesA: Values;
   valuesB: Values;
@@ -309,6 +311,10 @@ export function BodyMorph({
   sex?: BodySex;
   /** Quando informado, substitui os rótulos em cm (ex.: kg de gordura/músculo por região) */
   callouts?: MorphCallout[];
+  /** Título do cartão (padrão: "Evolução visual do corpo") */
+  title?: string;
+  /** Itens da legenda de cores (padrão: legenda genérica do morph) */
+  legendItems?: { tone: RegionTone; label: string }[];
 }) {
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
