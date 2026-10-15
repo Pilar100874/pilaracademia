@@ -18,8 +18,17 @@ import {
   Minus,
   Upload,
   GitCompareArrows,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { BioReport } from '@/components/BioReport';
 import { BioimpedanceCompare } from '@/components/BioimpedanceCompare';
 import { ScaleBleCard } from '@/components/ScaleBleCard';
@@ -177,25 +186,32 @@ const toneClasses: Record<string, string> = {
 /* ------------------------------------------------------------------ */
 
 export function BioimpedanceTab() {
-  const { list } = useBodyAnalyses();
+  const { list, remove } = useBodyAnalyses();
   const { startBioimpedance, jobs } = useBackgroundAnalysis();
   const analyzing = jobs.some((j) => j.kind === 'bioimpedance');
   const fileRef = useRef<HTMLInputElement>(null);
   const [comparing, setComparing] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const rows = list.data ?? [];
 
   const latest = rows[0] as BodyAnalysisRow | undefined;
-  const previous = rows[1] as BodyAnalysisRow | undefined;
+  const selected = (rows.find((r) => r.id === selectedId) ?? latest) as BodyAnalysisRow | undefined;
+  const selectedIdx = rows.findIndex((r) => r.id === selected?.id);
+  const previous = (selectedIdx >= 0 ? rows[selectedIdx + 1] : rows[1]) as BodyAnalysisRow | undefined;
 
-  const e = (latest?.extracted || {}) as ExtractedBioimpedance;
+  const e = (selected?.extracted || {}) as ExtractedBioimpedance;
   const ePrev = (previous?.extracted || {}) as ExtractedBioimpedance;
 
-  const measuredAt = latest?.measured_at || latest?.created_at;
+  const measuredAt = selected?.measured_at || selected?.created_at;
+
+  const rowLabel = (r: BodyAnalysisRow) =>
+    format(parseISO(r.measured_at || r.created_at), "d 'de' MMM, yyyy", { locale: ptBR });
 
   const summary = useMemo(() => {
-    if (!latest) return null;
+    if (!selected) return null;
     return buildPlainSummary(e, ePrev);
-  }, [latest, e, ePrev]);
+  }, [selected, e, ePrev]);
 
   return (
     <div className="space-y-5">
