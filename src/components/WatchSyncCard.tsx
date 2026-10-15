@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Watch, RefreshCw, Footprints, Flame, HeartPulse, Moon, Scale, Settings } from 'lucide-react';
+import { Watch, RefreshCw, Footprints, Flame, HeartPulse, Moon, Scale, Settings, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -126,6 +126,7 @@ export function WatchSyncCard() {
         { icon: HeartPulse, label: 'Repouso', value: summary.restingHeartRate != null ? `${summary.restingHeartRate} bpm` : '—' },
         { icon: Moon, label: 'Sono (última noite)', value: summary.sleepMinutesLastNight != null ? formatSleep(summary.sleepMinutesLastNight) : '—' },
         { icon: Scale, label: 'Peso no relógio', value: summary.latestWeight ? `${summary.latestWeight.kg} kg` : '—' },
+        { icon: Activity, label: 'Gordura corporal', value: summary.latestBodyFat ? `${summary.latestBodyFat.pct}%` : '—' },
       ]
     : [];
 
@@ -191,6 +192,12 @@ export function WatchSyncCard() {
               <Button variant="outline" size="sm" onClick={() => void saveWeight()} disabled={isSavingWeight}>
                 <Scale className="h-4 w-4 mr-2" />
                 {isSavingWeight ? 'Salvando...' : 'Salvar peso no histórico'}
+              </Button>
+            )}
+            {(summary.latestWeight || summary.latestBodyFat) && (
+              <Button variant="outline" size="sm" onClick={() => void saveBodyExam()} disabled={isSavingExam}>
+                <Activity className="h-4 w-4 mr-2" />
+                {isSavingExam ? 'Salvando...' : 'Salvar como exame de bioimpedância'}
               </Button>
             )}
           </div>
