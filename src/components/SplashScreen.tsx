@@ -34,7 +34,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
             {/* Icon */}
             <motion.img
               src="/pwa-512x512.png"
-              alt="Pilar Academia"
+              alt="Pilar Saúde"
               initial={{ y: 20 }}
               animate={{ y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
@@ -48,7 +48,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
               transition={{ delay: 0.5, duration: 0.5 }}
               className="text-4xl font-bold text-foreground tracking-tight"
             >
-              Pilar Academia
+              Pilar Saúde
             </motion.h1>
 
             {/* Tagline */}

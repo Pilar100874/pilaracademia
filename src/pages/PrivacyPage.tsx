@@ -21,7 +21,7 @@ export default function PrivacyPage() {
         <p className="text-sm text-muted-foreground">Última atualização: 15/10/2026 — em conformidade com a LGPD (Lei 13.709/2018).</p>
 
         <h2>1. Quem somos</h2>
-        <p>Pilar Academia é o controlador dos dados pessoais coletados no app. Contato do encarregado (DPO): <a href="mailto:contato@pilarapp.com.br">contato@pilarapp.com.br</a></p>
+        <p>Pilar Saúde é o controlador dos dados pessoais coletados no app. Contato do encarregado (DPO): <a href="mailto:contato@pilarapp.com.br">contato@pilarapp.com.br</a></p>
 
         <h2>2. Dados coletados</h2>
         <ul>

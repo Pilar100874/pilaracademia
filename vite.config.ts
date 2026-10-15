@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => ({
       },
       includeAssets: ['favicon.ico', 'robots.txt'],
       manifest: {
-        name: 'Pilar Academia',
-        short_name: 'Pilar Academia',
+        name: 'Pilar Saúde',
+        short_name: 'Pilar Saúde',
         description: 'Controle suas calorias e nutrição de forma inteligente',
         theme_color: '#000000',
         background_color: '#0a0a0a',

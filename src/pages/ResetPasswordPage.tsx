@@ -55,7 +55,7 @@ export default function ResetPasswordPage() {
         <div className="text-center mb-8">
           <img
             src="/pwa-512x512.png"
-            alt="Pilar Academia"
+            alt="Pilar Saúde"
             className="h-20 w-20 mx-auto mb-4 rounded-3xl shadow-lg"
           />
           <h1 className="text-2xl font-extrabold text-foreground">Nova senha</h1>

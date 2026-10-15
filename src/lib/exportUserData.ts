@@ -282,7 +282,7 @@ export async function downloadPDF(data: UserDataExport) {
   const bullet = (text: string, size = 9) => writeLine(`• ${text}`, { size, indent: 6 });
 
   // ===== Header =====
-  writeLine('Pilar Academia', { size: 22, bold: true });
+  writeLine('Pilar Saúde', { size: 22, bold: true });
   writeLine('Relatório completo para profissional de saúde', {
     size: 10,
     color: [100, 100, 100],
@@ -627,7 +627,7 @@ export async function downloadPDF(data: UserDataExport) {
   // ===== Disclaimer =====
   sectionHeader('Aviso');
   writeLine(
-    'Este relatório é gerado automaticamente a partir dos registros do usuário no aplicativo Pilar Academia. As informações têm caráter informativo e não substituem avaliação clínica. Decisões terapêuticas devem ser feitas por profissional habilitado.',
+    'Este relatório é gerado automaticamente a partir dos registros do usuário no aplicativo Pilar Saúde. As informações têm caráter informativo e não substituem avaliação clínica. Decisões terapêuticas devem ser feitas por profissional habilitado.',
     { size: 9, color: [100, 100, 100] },
   );
 
@@ -638,7 +638,7 @@ export async function downloadPDF(data: UserDataExport) {
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
     doc.text(
-      `Pilar Academia · Relatório completo · ${i} / ${pageCount}`,
+      `Pilar Saúde · Relatório completo · ${i} / ${pageCount}`,
       pageW / 2,
       pageH - 24,
       { align: 'center' },

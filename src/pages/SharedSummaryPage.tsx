@@ -121,7 +121,7 @@ export default function SharedSummaryPage() {
       <header className="border-b border-border">
         <div className="max-w-2xl mx-auto px-5 py-5">
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            Pilar Academia · Resumo compartilhado
+            Pilar Saúde · Resumo compartilhado
           </p>
           <h1 className="text-2xl font-semibold mt-1">
             {profile.name || 'Resumo do paciente'}
@@ -316,7 +316,7 @@ export default function SharedSummaryPage() {
         <section className="rounded-md border border-border bg-muted/40 p-4 flex gap-3">
           <Stethoscope className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <p className="text-[12px] text-muted-foreground leading-relaxed">
-            Este resumo foi gerado automaticamente pelo aplicativo Pilar Academia para fins
+            Este resumo foi gerado automaticamente pelo aplicativo Pilar Saúde para fins
             informativos. Os dados são autorrelatados e a interpretação clínica deve ser feita pelo
             profissional de saúde.
           </p>
