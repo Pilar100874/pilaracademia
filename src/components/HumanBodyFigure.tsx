@@ -304,7 +304,7 @@ export function HumanSilhouette({
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const dims = computeDims(scales);
-  const d = bodyPath(dims);
+  const paths = bodyPaths(dims);
   const [g0, g1, g2, outlineColor] = PALETTES[palette];
 
   const pairVal = (a: string, b: string): number | null => {
