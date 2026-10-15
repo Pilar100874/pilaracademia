@@ -163,7 +163,7 @@ export function regionAnchor(region: keyof RegionTones, d: BodyDims, side: 'left
   }
 }
 
-export type MorphAnchorPoint = 'arm' | 'chest' | 'waist' | 'hip' | 'thigh' | 'calf';
+export type MorphAnchorPoint = 'neck' | 'shoulder' | 'arm' | 'forearm' | 'chest' | 'waist' | 'abdomen' | 'hip' | 'thigh' | 'calf';
 
 /** Âncora das setas do morph comparativo: pontos específicos por parte do corpo. */
 export function morphAnchor(at: MorphAnchorPoint, side: 'left' | 'right', d: BodyDims): { x: number; y: number } {
@@ -176,9 +176,13 @@ export function morphAnchor(at: MorphAnchorPoint, side: 'left' | 'right', d: Bod
     th: side === 'left' ? d.thL : d.thR,
   });
   switch (at) {
+    case 'neck': return { x: CX + s * (d.nk + 2), y: 65 };
+    case 'shoulder': return { x: CX + s * (d.sh - 1), y: 90 };
     case 'arm': return { x: CX + s * (g.elOut + 1), y: 158 };
+    case 'forearm': return { x: CX + s * (g.foOut + 1), y: 196 };
     case 'chest': return { x: CX + s * (d.ch - 1), y: 130 };
     case 'waist': return { x: CX + s * d.wa, y: 178 };
+    case 'abdomen': return { x: CX + s * (d.wa + (d.hp - d.wa) * 0.7), y: 202 };
     case 'hip': return { x: CX + s * (d.hp - 1), y: 222 };
     case 'thigh': return { x: CX + s * (g.thOut + 1), y: 262 };
     case 'calf': return { x: CX + s * (14 + (side === 'left' ? d.cfL : d.cfR) * 0.62 + 2), y: 342 };
