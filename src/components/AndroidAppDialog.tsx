@@ -42,7 +42,7 @@ export function AndroidAppDialog({ open, onOpenChange }: Props) {
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 space-y-5 text-sm">
           <p className="text-muted-foreground leading-relaxed">
-            Instale a versão nativa do Pilar Academia no seu Android e libere os
+            Instale a versão nativa do Pilar Saúde no seu Android e libere os
             recursos que não funcionam no navegador:
           </p>
 

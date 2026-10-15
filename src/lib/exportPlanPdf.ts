@@ -18,7 +18,7 @@ export function exportPlanToPdf(plan: BodyPlan, profileName?: string) {
   const sep = () => { y += 6; doc.setDrawColor(200); doc.line(40, y, w - 40, y); y += 12; };
   const page = () => { if (y > 760) { doc.addPage(); y = 50; } };
 
-  line('Plano Corporal — Pilar Academia', 18, true);
+  line('Plano Corporal — Pilar Saúde', 18, true);
   if (profileName) line(profileName, 11);
   line(new Date().toLocaleDateString('pt-BR'), 10);
   sep();

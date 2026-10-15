@@ -152,7 +152,7 @@ export default function OnboardingPage() {
                 <div className="h-12 w-12 rounded-md bg-primary/10 text-primary flex items-center justify-center">
                   <Sparkles className="h-5 w-5" />
                 </div>
-                <h1 className="page-title">Bem-vindo ao Pilar Academia</h1>
+                <h1 className="page-title">Bem-vindo ao Pilar Saúde</h1>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Em menos de 2 minutos vamos personalizar sua experiência. Você poderá registrar
                   refeições, treinos, peso, exames de sangue e bioimpedância — tudo em um só lugar,

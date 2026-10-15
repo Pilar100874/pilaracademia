@@ -19,7 +19,7 @@ export default function TermsPage() {
         <p className="text-sm text-muted-foreground">Última atualização: 02/05/2026</p>
 
         <h2>1. Aceitação</h2>
-        <p>Ao usar o Pilar Academia, você concorda com estes Termos. Se não concordar, não utilize o aplicativo.</p>
+        <p>Ao usar o Pilar Saúde, você concorda com estes Termos. Se não concordar, não utilize o aplicativo.</p>
 
         <h2>2. Natureza do serviço</h2>
         <p>O Pilar é uma ferramenta de acompanhamento nutricional e de atividade física com auxílio de IA. <strong>Não substitui orientação médica, nutricional ou de educação física.</strong> Sempre consulte profissionais qualificados antes de adotar dietas, treinos ou interpretar exames.</p>
@@ -34,7 +34,7 @@ export default function TermsPage() {
         <p>Cardápios, sugestões de treino e leituras de exames são gerados por modelos de IA e podem conter imprecisões. Use como apoio, não como prescrição.</p>
 
         <h2>5. Propriedade intelectual</h2>
-        <p>O conteúdo do app pertence ao Pilar Academia. Seus dados pessoais, fotos e registros pertencem a você.</p>
+        <p>O conteúdo do app pertence ao Pilar Saúde. Seus dados pessoais, fotos e registros pertencem a você.</p>
 
         <h2>6. Encerramento</h2>
         <p>Você pode excluir sua conta a qualquer momento em <em>Perfil → Excluir conta</em>. Podemos suspender contas em caso de uso indevido.</p>
