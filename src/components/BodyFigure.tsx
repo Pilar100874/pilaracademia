@@ -369,3 +369,75 @@ export function BodyMorph({
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Figura do morph: amplifica a diferença A->B e mostra os valores    */
+/* com setas, como no relatório de gordura por região                 */
+/* ------------------------------------------------------------------ */
+
+/** Amplifica o desvio em relação ao corpo-padrão para a animação ficar visível. */
+function amplifyScales(scales: ZoneScales): ZoneScales {
+  const amp = (v?: number) => (v == null ? undefined : 1 + (v - 1) * 2.6);
+  const out: ZoneScales = {};
+  for (const [k, v] of Object.entries(scales)) {
+    (out as Record<string, number | undefined>)[k] = amp(v);
+  }
+  return out;
+}
+
+function MorphFigure({ values, sex, showValues }: { values: Values; sex?: BodySex; showValues: boolean }) {
+  const pairAvg = (a: string, b: string): number | null => {
+    const nums = [values[a], values[b]].filter((v): v is number => v != null && Number.isFinite(v) && v > 0);
+    return nums.length ? nums.reduce((s, v) => s + v, 0) / nums.length : null;
+  };
+  const single = (k: string): number | null => {
+    const v = values[k];
+    return v != null && Number.isFinite(v) && v > 0 ? v : null;
+  };
+
+  const scales = amplifyScales(tapeToScales(values));
+  const dims = computeDims(scales, sex);
+  const OFF = 34;
+
+  type CalloutSpec = { side: 'left' | 'right'; region: 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg'; label: string; v: number | null; y: number };
+  const callouts: CalloutSpec[] = [
+    { side: 'left', region: 'leftArm', label: 'Braço', v: pairAvg('arm_left_cm', 'arm_right_cm'), y: 104 },
+    { side: 'left', region: 'trunk', label: 'Cintura', v: single('waist_cm') ?? single('abdomen_cm'), y: 200 },
+    { side: 'left', region: 'leftLeg', label: 'Coxa', v: pairAvg('thigh_left_cm', 'thigh_right_cm'), y: 304 },
+    { side: 'right', region: 'rightArm', label: 'Peito', v: single('chest_cm'), y: 104 },
+    { side: 'right', region: 'rightLeg', label: 'Quadril', v: single('hip_cm'), y: 236 },
+    { side: 'right', region: 'rightLeg', label: 'Panturrilha', v: pairAvg('calf_left_cm', 'calf_right_cm'), y: 336 },
+  ];
+
+  return (
+    <HumanSilhouette sex={sex} scales={scales} offsetX={OFF} frameWidth={268} className="max-w-[240px]">
+      {showValues &&
+        callouts
+          .filter((c) => c.v != null)
+          .map((c) => {
+            const dot = regionAnchor(c.region, dims);
+            const dx = OFF + dot.x;
+            const dy = dot.y;
+            const sx = c.side === 'left' ? 52 : 216;
+            const tx = c.side === 'left' ? 2 : 266;
+            const anchor = c.side === 'left' ? 'start' : 'end';
+            const connector =
+              c.side === 'left'
+                ? `M ${sx} ${c.y - 4} C ${sx + 18} ${c.y - 14}, ${dx - 16} ${dy}, ${dx} ${dy}`
+                : `M ${sx} ${c.y - 4} C ${sx - 18} ${c.y - 14}, ${dx + 16} ${dy}, ${dx} ${dy}`;
+            return (
+              <g key={`${c.side}-${c.label}`}>
+                <path d={connector} fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth={0.9} opacity={0.7} />
+                <circle cx={dx} cy={dy} r={2.6} fill="hsl(var(--foreground))" />
+                <text x={tx} y={c.y} textAnchor={anchor} fontSize={13} fontWeight={700} style={{ fill: 'hsl(var(--foreground))' }}>
+                  {fmtShort(c.v!)}cm
+                </text>
+                <text x={tx} y={c.y + 13} textAnchor={anchor} fontSize={9.5} style={{ fill: 'hsl(var(--muted-foreground))' }}>
+                  {c.label}
+                </text>
+              </g>
+            );
+          })}
+    </HumanSilhouette>
+  );
+}
