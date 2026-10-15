@@ -144,27 +144,44 @@ export function computeDims(scales: ZoneScales, sex?: BodySex, opts?: { freeform
   };
 }
 
-/** Ponto de ancoragem de uma região no corpo (coordenadas do corpo, sem offset) */
-export function regionAnchor(region: keyof RegionTones, d: BodyDims): { x: number; y: number } {
+/** Ponto de ancoragem de uma região no corpo (coordenadas do corpo, sem offset).
+ *  `side` só importa para o tronco: a seta aponta para a lateral do lado do rótulo. */
+export function regionAnchor(region: keyof RegionTones, d: BodyDims, side: 'left' | 'right' = 'left'): { x: number; y: number } {
+  const gL = armGeom({ sh: d.sh, ch: d.ch, up: d.upL, fo: d.foL, hp: d.hp, th: d.thL });
+  const gR = armGeom({ sh: d.sh, ch: d.ch, up: d.upR, fo: d.foR, hp: d.hp, th: d.thR });
   switch (region) {
-    case 'leftArm': {
-      const g = armGeom({ sh: d.sh, ch: d.ch, up: d.upL, fo: d.foL, hp: d.hp, th: d.thL });
-      return { x: CX - g.outSh + 0.5, y: 135 };
-    }
-    case 'rightArm': {
-      const g = armGeom({ sh: d.sh, ch: d.ch, up: d.upR, fo: d.foR, hp: d.hp, th: d.thR });
-      return { x: CX + g.outSh - 0.5, y: 135 };
-    }
+    case 'leftArm':
+      return { x: CX - (gL.elOut + 1), y: 158 };
+    case 'rightArm':
+      return { x: CX + (gR.elOut + 1), y: 158 };
     case 'trunk':
-      return { x: CX - d.wa, y: 178 };
-    case 'leftLeg': {
-      const g = armGeom({ sh: d.sh, ch: d.ch, up: d.upL, fo: d.foL, hp: d.hp, th: d.thL });
-      return { x: CX - g.thOut + 1.5, y: 278 };
-    }
-    case 'rightLeg': {
-      const g = armGeom({ sh: d.sh, ch: d.ch, up: d.upR, fo: d.foR, hp: d.hp, th: d.thR });
-      return { x: CX + g.thOut - 1.5, y: 278 };
-    }
+      return side === 'right' ? { x: CX + d.wa, y: 178 } : { x: CX - d.wa, y: 178 };
+    case 'leftLeg':
+      return { x: CX - (gL.thOut + 1), y: 262 };
+    case 'rightLeg':
+      return { x: CX + (gR.thOut + 1), y: 262 };
+  }
+}
+
+export type MorphAnchorPoint = 'arm' | 'chest' | 'waist' | 'hip' | 'thigh' | 'calf';
+
+/** Âncora das setas do morph comparativo: pontos específicos por parte do corpo. */
+export function morphAnchor(at: MorphAnchorPoint, side: 'left' | 'right', d: BodyDims): { x: number; y: number } {
+  const s = side === 'left' ? -1 : 1;
+  const g = armGeom({
+    sh: d.sh, ch: d.ch,
+    up: side === 'left' ? d.upL : d.upR,
+    fo: side === 'left' ? d.foL : d.foR,
+    hp: d.hp,
+    th: side === 'left' ? d.thL : d.thR,
+  });
+  switch (at) {
+    case 'arm': return { x: CX + s * (g.elOut + 1), y: 158 };
+    case 'chest': return { x: CX + s * (d.ch - 1), y: 130 };
+    case 'waist': return { x: CX + s * d.wa, y: 178 };
+    case 'hip': return { x: CX + s * (d.hp - 1), y: 222 };
+    case 'thigh': return { x: CX + s * (g.thOut + 1), y: 262 };
+    case 'calf': return { x: CX + s * (14 + (side === 'left' ? d.cfL : d.cfR) * 0.62 + 2), y: 342 };
   }
 }
 

@@ -313,7 +313,7 @@ export function SegmentalFigure({
   };
 
   const callout = (side: 'left' | 'right', region: keyof RegionTones, kg: number | undefined, refKg: number, y: number) => {
-    const dot = regionAnchor(region, dims);
+    const dot = regionAnchor(region, dims, side);
     const dx = OFF + dot.x;
     const dy = dot.y;
     const sx = side === 'left' ? 50 : 210;
@@ -348,11 +348,11 @@ export function SegmentalFigure({
   return (
     <div className="space-y-2">
       <HumanSilhouette scales={scales} sex={sex} tones={tones} badges palette={kind} offsetX={OFF} frameWidth={260} className="max-w-[280px]">
-        {callout('left', 'leftArm', values.left_arm_kg, ref.arm, 100)}
-        {callout('left', 'trunk', values.trunk_kg, ref.trunk, 196)}
-        {callout('left', 'leftLeg', values.left_leg_kg, ref.leg, 300)}
-        {callout('right', 'rightArm', values.right_arm_kg, ref.arm, 100)}
-        {callout('right', 'rightLeg', values.right_leg_kg, ref.leg, 300)}
+        {callout('left', 'leftArm', values.left_arm_kg, ref.arm, 146)}
+        {callout('left', 'trunk', values.trunk_kg, ref.trunk, 186)}
+        {callout('left', 'leftLeg', values.left_leg_kg, ref.leg, 270)}
+        {callout('right', 'rightArm', values.right_arm_kg, ref.arm, 146)}
+        {callout('right', 'rightLeg', values.right_leg_kg, ref.leg, 270)}
       </HumanSilhouette>
       <ToneLegend items={segmentalLegendItems(kind)} />
     </div>

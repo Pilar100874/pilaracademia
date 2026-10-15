@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { HumanSilhouette, ToneLegend, tapeToScales, computeDims, regionAnchor, type BodySex, type RegionTone, type RegionTones, type ZoneScales } from '@/components/HumanBodyFigure';
+import { HumanSilhouette, ToneLegend, tapeToScales, computeDims, morphAnchor, type MorphAnchorPoint, type BodySex, type RegionTone, type RegionTones, type ZoneScales } from '@/components/HumanBodyFigure';
 import { cn } from '@/lib/utils';
 
 /* ------------------------------------------------------------------ */
@@ -268,6 +268,8 @@ export function BodyFigure({
 export interface MorphCallout {
   side: 'left' | 'right';
   region: 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg';
+  /** Ponto do corpo para onde a seta aponta (padrão: derivado de `region`) */
+  at?: MorphAnchorPoint;
   label: string;
   a: number | null;
   b: number | null;
@@ -413,15 +415,8 @@ export function BodyMorph({
 /** Amplifica a diferença A->B em torno do ponto médio das duas medições,
  *  para a animação mostrar a mudança mesmo quando ela é pequena em cm. */
 function amplifyScales(now: ZoneScales, a: ZoneScales, b: ZoneScales): ZoneScales {
-  // Fator adaptativo: a maior diferença A<->B vira uma mudança clara no desenho,
-  // mesmo quando a diferença real é de poucos centímetros.
-  let maxDev = 0;
-  for (const k of Object.keys(a) as (keyof ZoneScales)[]) {
-    const va = a[k];
-    const vb = b[k];
-    if (va != null && vb != null) maxDev = Math.max(maxDev, Math.abs(va - vb) / 2);
-  }
-  const k = maxDev > 0.001 ? Math.min(30, 0.4 / maxDev) : 2;
+  // Amplificação moderada por zona: cada região se move na direção real da sua
+  // mudança (sem fator global que saturava umas zonas e distorcia outras).
   const out: ZoneScales = {};
   const keys = new Set([...Object.keys(now), ...Object.keys(a), ...Object.keys(b)]);
   for (const key of keys) {
@@ -432,9 +427,11 @@ function amplifyScales(now: ZoneScales, a: ZoneScales, b: ZoneScales): ZoneScale
     if (vn == null) continue;
     if (va != null && vb != null) {
       const mid = (va + vb) / 2;
-      out[kk] = mid + (vn - mid) * k;
+      const dev = vn - mid;
+      const k = Math.min(12, 0.6 / Math.max(Math.abs(dev), 0.003));
+      out[kk] = mid + Math.sign(dev) * Math.min(Math.abs(dev) * k, 0.12);
     } else {
-      out[kk] = 1 + (vn - 1) * 2;
+      out[kk] = 1 + (vn - 1) * 1.5;
     }
   }
   return out;
@@ -470,22 +467,25 @@ function MorphFigure({
   const dims = computeDims(scales, sex, { freeform: true });
   const OFF = 34;
 
-  type CalloutSpec = { side: 'left' | 'right'; region: 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg'; label: string; v: number | null; unit: string; y: number; tone?: RegionTone };
+  type Region = 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg';
+  type CalloutSpec = { side: 'left' | 'right'; region: Region; at: MorphAnchorPoint; label: string; v: number | null; unit: string; tone?: RegionTone };
+  const regionToAt = (r: Region): MorphAnchorPoint =>
+    r === 'trunk' ? 'waist' : r === 'leftArm' || r === 'rightArm' ? 'arm' : 'thigh';
   const callouts: CalloutSpec[] = customCallouts
     ? customCallouts.map((c) => {
         const va = c.a != null && Number.isFinite(c.a) ? c.a : null;
         const vb = c.b != null && Number.isFinite(c.b) ? c.b : null;
         const v = va == null && vb == null ? null : (va ?? vb!) + ((vb ?? va!) - (va ?? vb!)) * t;
         const tone = t < 0.5 ? (c.toneA ?? c.toneB) : (c.toneB ?? c.toneA);
-        return { side: c.side, region: c.region, label: c.label, v, unit: c.unit, y: c.y, tone };
+        return { side: c.side, region: c.region, at: c.at ?? regionToAt(c.region), label: c.label, v, unit: c.unit, tone };
       })
     : [
-        { side: 'left', region: 'leftArm', label: 'Braço', v: pairAvg('arm_left_cm', 'arm_right_cm'), unit: 'cm', y: 104 },
-        { side: 'left', region: 'trunk', label: 'Cintura', v: single('waist_cm') ?? single('abdomen_cm'), unit: 'cm', y: 200 },
-        { side: 'left', region: 'leftLeg', label: 'Coxa', v: pairAvg('thigh_left_cm', 'thigh_right_cm'), unit: 'cm', y: 304 },
-        { side: 'right', region: 'rightArm', label: 'Peito', v: single('chest_cm'), unit: 'cm', y: 104 },
-        { side: 'right', region: 'rightLeg', label: 'Quadril', v: single('hip_cm'), unit: 'cm', y: 236 },
-        { side: 'right', region: 'rightLeg', label: 'Panturrilha', v: pairAvg('calf_left_cm', 'calf_right_cm'), unit: 'cm', y: 336 },
+        { side: 'left', region: 'leftArm', at: 'arm', label: 'Braço', v: pairAvg('arm_left_cm', 'arm_right_cm'), unit: 'cm' },
+        { side: 'left', region: 'trunk', at: 'waist', label: 'Cintura', v: single('waist_cm') ?? single('abdomen_cm'), unit: 'cm' },
+        { side: 'left', region: 'leftLeg', at: 'thigh', label: 'Coxa', v: pairAvg('thigh_left_cm', 'thigh_right_cm'), unit: 'cm' },
+        { side: 'right', region: 'trunk', at: 'chest', label: 'Peito', v: single('chest_cm'), unit: 'cm' },
+        { side: 'right', region: 'trunk', at: 'hip', label: 'Quadril', v: single('hip_cm'), unit: 'cm' },
+        { side: 'right', region: 'rightLeg', at: 'calf', label: 'Panturrilha', v: pairAvg('calf_left_cm', 'calf_right_cm'), unit: 'cm' },
       ];
 
   // Cor por região: quando os callouts trazem classificação, usa o pior tom da região
@@ -502,32 +502,33 @@ function MorphFigure({
     <div className="space-y-2">
     <HumanSilhouette sex={sex} scales={scales} tones={tones} freeform offsetX={OFF} frameWidth={268} className="max-w-[240px]">
       {showValues &&
-        callouts
-          .filter((c) => c.v != null)
-          .map((c) => {
-            const dot = regionAnchor(c.region, dims);
-            const dx = OFF + dot.x;
-            const dy = dot.y;
-            const sx = c.side === 'left' ? 52 : 216;
-            const tx = c.side === 'left' ? 2 : 266;
-            const anchor = c.side === 'left' ? 'start' : 'end';
-            const connector =
-              c.side === 'left'
-                ? `M ${sx} ${c.y - 4} C ${sx + 18} ${c.y - 14}, ${dx - 16} ${dy}, ${dx} ${dy}`
-                : `M ${sx} ${c.y - 4} C ${sx - 18} ${c.y - 14}, ${dx + 16} ${dy}, ${dx} ${dy}`;
-            return (
-              <g key={`${c.side}-${c.label}`}>
-                <path d={connector} fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth={0.9} opacity={0.7} />
-                <circle cx={dx} cy={dy} r={2.6} fill="hsl(var(--foreground))" />
-                <text x={tx} y={c.y} textAnchor={anchor} fontSize={13} fontWeight={700} style={{ fill: 'hsl(var(--foreground))' }}>
-                  {fmtShort(c.v!)}{c.unit}
-                </text>
-                <text x={tx} y={c.y + 13} textAnchor={anchor} fontSize={9.5} style={{ fill: 'hsl(var(--muted-foreground))' }}>
-                  {c.label}
-                </text>
-              </g>
-            );
-          })}
+        callouts.map((c) => {
+          const dot = morphAnchor(c.at, c.side, dims);
+          const dx = OFF + dot.x;
+          const dy = dot.y;
+          const sx = c.side === 'left' ? 52 : 216;
+          const tx = c.side === 'left' ? 2 : 266;
+          const anchor = c.side === 'left' ? 'start' : 'end';
+          // Braço e peito ficam com o texto acima do ponto para não colidir com a cintura
+          const above = c.at === 'arm' || c.at === 'chest';
+          const ty = above ? dy - 18 : dy + 6;
+          const connector =
+            c.side === 'left'
+              ? `M ${sx} ${ty + 2} C ${sx + 18} ${ty - 8}, ${dx - 16} ${dy}, ${dx} ${dy}`
+              : `M ${sx} ${ty + 2} C ${sx - 18} ${ty - 8}, ${dx + 16} ${dy}, ${dx} ${dy}`;
+          return (
+            <g key={`${c.side}-${c.label}`}>
+              <path d={connector} fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth={1.1} opacity={0.85} />
+              <circle cx={dx} cy={dy} r={2.6} fill="hsl(var(--foreground))" />
+              <text x={tx} y={ty} textAnchor={anchor} fontSize={13} fontWeight={700} style={{ fill: 'hsl(var(--foreground))' }}>
+                {c.v != null ? `${fmtShort(c.v)}${c.unit}` : '—'}
+              </text>
+              <text x={tx} y={ty + 13} textAnchor={anchor} fontSize={9.5} style={{ fill: 'hsl(var(--muted-foreground))' }}>
+                {c.label}
+              </text>
+            </g>
+          );
+        })}
     </HumanSilhouette>
     {tones && <ToneLegend items={MORPH_LEGEND} />}
     </div>
