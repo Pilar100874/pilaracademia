@@ -406,7 +406,7 @@ function MorphFigure({ values, valuesA, valuesB, sex, showValues }: { values: Va
     return v != null && Number.isFinite(v) && v > 0 ? v : null;
   };
 
-  const scales = amplifyScales(tapeToScales(values));
+  const scales = amplifyScales(tapeToScales(values), tapeToScales(valuesA), tapeToScales(valuesB));
   const dims = computeDims(scales, sex);
   const OFF = 34;
 
