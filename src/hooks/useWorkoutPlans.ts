@@ -92,7 +92,7 @@ export function useWorkoutPlans() {
 
           return {
             ...plan,
-            exercises: merged,
+            exercises: await signRowsMedia(merged, ['video_url', 'image_urls', 'image_url']),
           };
         })
       );

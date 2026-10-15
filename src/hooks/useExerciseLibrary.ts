@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useIsMaster } from './useIsMaster';
 import { toast } from 'sonner';
+import { signRowsMedia, toCanonicalStorageUrl } from '@/lib/signedMediaUrl';
 import type { BodyAnalysis, AestheticAnalysis, MobilityAnalysis } from '@/lib/exerciseAnalysis';
 
 export interface LibraryExercise {
