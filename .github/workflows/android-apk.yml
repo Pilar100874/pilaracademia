@@ -46,6 +46,11 @@ jobs:
       - name: Ajustar minSdkVersion para 26
         run: sed -i 's/minSdkVersion = .*/minSdkVersion = 26/' android/variables.gradle
 
+      # Gera os ícones do Android a partir de assets/icon-only.png
+      # (mesmo ícone da versão web instalável).
+      - name: Gerar ícones do app
+        run: npx --yes @capacitor/assets generate --android
+
       - run: npx cap sync android
 
       - name: Build debug APK
