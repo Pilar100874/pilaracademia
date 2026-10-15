@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { METRICS, fmtN, type MetricSpec } from '@/components/BioimpedanceTab';
 import { BodyMorph, type MorphCallout } from '@/components/BodyFigure';
-import { bioToTapeValues } from '@/components/BioReport';
+import { bioToTapeValues, segmentalTones } from '@/components/BioReport';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 import { cn } from '@/lib/utils';
 
@@ -64,13 +64,18 @@ function segCallouts(a: ExtractedBioimpedance, b: ExtractedBioimpedance): MorphC
   const fatB = b.segmental_fat;
   const musA = a.segmental_muscle;
   const musB = b.segmental_muscle;
+  // Classificação por cor de cada exame (gordura à esquerda, músculo à direita)
+  const fatToneA = segmentalTones('fat', fatA ?? {});
+  const fatToneB = segmentalTones('fat', fatB ?? {});
+  const musToneA = segmentalTones('muscle', musA ?? {});
+  const musToneB = segmentalTones('muscle', musB ?? {});
   return [
-    { side: 'left', region: 'leftArm', label: 'Gordura braço', a: pair(fatA, 'left_arm_kg', 'right_arm_kg'), b: pair(fatB, 'left_arm_kg', 'right_arm_kg'), unit: 'kg', y: 104 },
-    { side: 'left', region: 'trunk', label: 'Gordura tronco', a: num(fatA?.trunk_kg), b: num(fatB?.trunk_kg), unit: 'kg', y: 200 },
-    { side: 'left', region: 'leftLeg', label: 'Gordura perna', a: pair(fatA, 'left_leg_kg', 'right_leg_kg'), b: pair(fatB, 'left_leg_kg', 'right_leg_kg'), unit: 'kg', y: 304 },
-    { side: 'right', region: 'rightArm', label: 'Músculo braço', a: pair(musA, 'left_arm_kg', 'right_arm_kg'), b: pair(musB, 'left_arm_kg', 'right_arm_kg'), unit: 'kg', y: 104 },
-    { side: 'right', region: 'trunk', label: 'Músculo tronco', a: num(musA?.trunk_kg), b: num(musB?.trunk_kg), unit: 'kg', y: 200 },
-    { side: 'right', region: 'rightLeg', label: 'Músculo perna', a: pair(musA, 'left_leg_kg', 'right_leg_kg'), b: pair(musB, 'left_leg_kg', 'right_leg_kg'), unit: 'kg', y: 304 },
+    { side: 'left', region: 'leftArm', label: 'Gordura braço', a: pair(fatA, 'left_arm_kg', 'right_arm_kg'), b: pair(fatB, 'left_arm_kg', 'right_arm_kg'), unit: 'kg', y: 104, toneA: fatToneA.leftArm, toneB: fatToneB.leftArm },
+    { side: 'left', region: 'trunk', label: 'Gordura tronco', a: num(fatA?.trunk_kg), b: num(fatB?.trunk_kg), unit: 'kg', y: 200, toneA: fatToneA.trunk, toneB: fatToneB.trunk },
+    { side: 'left', region: 'leftLeg', label: 'Gordura perna', a: pair(fatA, 'left_leg_kg', 'right_leg_kg'), b: pair(fatB, 'left_leg_kg', 'right_leg_kg'), unit: 'kg', y: 304, toneA: fatToneA.leftLeg, toneB: fatToneB.leftLeg },
+    { side: 'right', region: 'rightArm', label: 'Músculo braço', a: pair(musA, 'left_arm_kg', 'right_arm_kg'), b: pair(musB, 'left_arm_kg', 'right_arm_kg'), unit: 'kg', y: 104, toneA: musToneA.rightArm, toneB: musToneB.rightArm },
+    { side: 'right', region: 'trunk', label: 'Músculo tronco', a: num(musA?.trunk_kg), b: num(musB?.trunk_kg), unit: 'kg', y: 200, toneA: musToneA.trunk, toneB: musToneB.trunk },
+    { side: 'right', region: 'rightLeg', label: 'Músculo perna', a: pair(musA, 'left_leg_kg', 'right_leg_kg'), b: pair(musB, 'left_leg_kg', 'right_leg_kg'), unit: 'kg', y: 304, toneA: musToneA.rightLeg, toneB: musToneB.rightLeg },
   ];
 }
 

@@ -3,6 +3,7 @@ import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysi
 import { fmtN } from '@/components/BioimpedanceTab';
 import {
   HumanSilhouette,
+  ToneLegend,
   computeDims,
   regionAnchor,
   type RegionTones,
@@ -163,8 +164,8 @@ function RangeBar({
 /* Figura segmentar (gordura / músculo) estilo relatório               */
 /* ------------------------------------------------------------------ */
 
-type SegKey = 'trunk_kg' | 'left_arm_kg' | 'right_arm_kg' | 'left_leg_kg' | 'right_leg_kg';
-type SegValues = Partial<Record<SegKey, number>>;
+export type SegKey = 'trunk_kg' | 'left_arm_kg' | 'right_arm_kg' | 'left_leg_kg' | 'right_leg_kg';
+export type SegValues = Partial<Record<SegKey, number>>;
 
 type Tone = 'good' | 'std' | 'warn' | 'bad';
 
@@ -196,22 +197,8 @@ const CLS_COLOR: Record<'good' | 'warn' | 'bad', string> = {
   bad: 'hsl(0 65% 44%)',
 };
 
-export function SegmentalFigure({
-  kind,
-  values,
-  weightKg,
-  sex,
-}: {
-  kind: 'fat' | 'muscle';
-  values: SegValues;
-  weightKg?: number;
-  sex?: BodySex;
-}) {
-  const ref = {
-    trunk: segRef(kind, 'trunk', weightKg),
-    arm: segRef(kind, 'arm', weightKg),
-    leg: segRef(kind, 'leg', weightKg),
-  };
+/** Tons por região (verde/azul/âmbar/vermelho) para gordura ou músculo segmentar. */
+export function segmentalTones(kind: 'fat' | 'muscle', values: SegValues): RegionTones {
   const total = (Object.values(values).filter((v): v is number => v != null) as number[]).reduce(
     (s, v) => s + v,
     0,
@@ -245,6 +232,48 @@ export function SegmentalFigure({
     return 'bad';
   };
 
+  return {
+    leftArm: toneFor('left_arm_kg'),
+    rightArm: toneFor('right_arm_kg'),
+    trunk: toneFor('trunk_kg'),
+    leftLeg: toneFor('left_leg_kg'),
+    rightLeg: toneFor('right_leg_kg'),
+  };
+}
+
+/** Itens de legenda das cores por tipo de figura segmentar. */
+export function segmentalLegendItems(kind: 'fat' | 'muscle'): { tone: Tone; label: string }[] {
+  return kind === 'fat'
+    ? [
+        { tone: 'good', label: 'Abaixo do padrão' },
+        { tone: 'std', label: 'Padrão' },
+        { tone: 'warn', label: 'Acima do padrão' },
+        { tone: 'bad', label: 'Muito acima' },
+      ]
+    : [
+        { tone: 'good', label: 'Lados simétricos' },
+        { tone: 'std', label: 'Sem comparação' },
+        { tone: 'warn', label: 'Leve assimetria' },
+        { tone: 'bad', label: 'Assimetria' },
+      ];
+}
+
+export function SegmentalFigure({
+  kind,
+  values,
+  weightKg,
+  sex,
+}: {
+  kind: 'fat' | 'muscle';
+  values: SegValues;
+  weightKg?: number;
+  sex?: BodySex;
+}) {
+  const ref = {
+    trunk: segRef(kind, 'trunk', weightKg),
+    arm: segRef(kind, 'arm', weightKg),
+    leg: segRef(kind, 'leg', weightKg),
+  };
   // Amortece a proporção para o desenho continuar humano mesmo com valores extremos
   const damp = (s: number | undefined, f = 0.45) =>
     s == null ? undefined : clamp(1 + (s - 1) * f, 0.72, 1.35);
@@ -267,13 +296,7 @@ export function SegmentalFigure({
     thighR: damp(sc(values.right_leg_kg, ref.leg), 0.55),
   };
 
-  const tones: RegionTones = {
-    leftArm: toneFor('left_arm_kg'),
-    rightArm: toneFor('right_arm_kg'),
-    trunk: toneFor('trunk_kg'),
-    leftLeg: toneFor('left_leg_kg'),
-    rightLeg: toneFor('right_leg_kg'),
-  };
+  const tones: RegionTones = segmentalTones(kind, values);
 
   const dims = computeDims(scales, sex);
   const OFF = 30;
@@ -323,13 +346,16 @@ export function SegmentalFigure({
   };
 
   return (
-    <HumanSilhouette scales={scales} sex={sex} tones={tones} badges palette={kind} offsetX={OFF} frameWidth={260} className="max-w-[280px]">
-      {callout('left', 'leftArm', values.left_arm_kg, ref.arm, 100)}
-      {callout('left', 'trunk', values.trunk_kg, ref.trunk, 196)}
-      {callout('left', 'leftLeg', values.left_leg_kg, ref.leg, 300)}
-      {callout('right', 'rightArm', values.right_arm_kg, ref.arm, 100)}
-      {callout('right', 'rightLeg', values.right_leg_kg, ref.leg, 300)}
-    </HumanSilhouette>
+    <div className="space-y-2">
+      <HumanSilhouette scales={scales} sex={sex} tones={tones} badges palette={kind} offsetX={OFF} frameWidth={260} className="max-w-[280px]">
+        {callout('left', 'leftArm', values.left_arm_kg, ref.arm, 100)}
+        {callout('left', 'trunk', values.trunk_kg, ref.trunk, 196)}
+        {callout('left', 'leftLeg', values.left_leg_kg, ref.leg, 300)}
+        {callout('right', 'rightArm', values.right_arm_kg, ref.arm, 100)}
+        {callout('right', 'rightLeg', values.right_leg_kg, ref.leg, 300)}
+      </HumanSilhouette>
+      <ToneLegend items={segmentalLegendItems(kind)} />
+    </div>
   );
 }
 

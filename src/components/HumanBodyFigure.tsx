@@ -370,7 +370,7 @@ export function tapeToScales(values: Partial<Record<string, number | null>>): Zo
 /* Componente                                                         */
 /* ------------------------------------------------------------------ */
 
-const TONE_COLOR: Record<RegionTone, string> = {
+export const TONE_COLOR: Record<RegionTone, string> = {
   good: 'hsl(150 55% 48% / 0.9)',
   std: 'hsl(205 60% 60% / 0.85)',
   warn: 'hsl(40 90% 52% / 0.9)',
@@ -385,6 +385,26 @@ const PALETTES: Record<'neutral' | 'fat' | 'muscle', [string, string, string, st
   fat: ['#EFD3A8', '#DDAF77', '#B9834F', 'hsl(28 40% 32% / 0.5)'],
   muscle: ['#E8C65C', '#9CC26A', '#2E9484', 'hsl(165 40% 26% / 0.55)'],
 };
+
+/** Legenda das cores de classificação por região (verde/azul/âmbar/vermelho). */
+export function ToneLegend({
+  items,
+  className,
+}: {
+  items: { tone: RegionTone; label: string }[];
+  className?: string;
+}) {
+  return (
+    <div className={cn('flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground', className)}>
+      {items.map((it) => (
+        <span key={it.label} className="inline-flex items-center gap-1">
+          <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: TONE_COLOR[it.tone] }} />
+          {it.label}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export function HumanSilhouette({
   scales = {},
