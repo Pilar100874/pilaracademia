@@ -221,7 +221,8 @@ export function LibraryBackgroundRunner() {
       for (const ex of optQueue) {
         if (cancelled) break;
         try {
-          const url = ex.video_url!;
+          // Bucket privé : signer l'URL avant de télécharger la vidéo.
+          const url = (await signMediaUrl(ex.video_url!)) ?? ex.video_url!;
           const res = await fetch(url);
           if (!res.ok) throw new Error('download failed');
           const blob = await res.blob();
