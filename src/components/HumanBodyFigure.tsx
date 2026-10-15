@@ -50,15 +50,27 @@ export interface BodyDims {
 
 const CX = 100;
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
-const S = (v?: number) => (v != null && Number.isFinite(v) && v > 0 ? clamp(v, 0.55, 1.7) : 1);
+// Amplitude restrita: o desenho deve continuar um corpo-padrão natural,
+// mesmo com medidas extremas (a diferença é transmitida com sutileza).
+const S = (v?: number) => (v != null && Number.isFinite(v) && v > 0 ? clamp(v, 0.82, 1.22) : 1);
 
 export function computeDims(scales: ZoneScales): BodyDims {
+  const ch = 33 * S(scales.chest);
+  let sh = 42 * S(scales.shoulders);
+  let wa = 24 * S(scales.waist);
+  let hp = 28.5 * S(scales.hip);
+  // Vínculos anatômicos de um corpo-padrão: ombros levemente mais largos
+  // que o peito, quadril entre cintura e ombros, cintura nunca muito maior
+  // que o quadril. Evita a silhueta "deformada" com dados extremos.
+  sh = clamp(sh, ch * 1.08, ch * 1.38);
+  hp = clamp(hp, wa * 0.98, sh * 1.02);
+  wa = clamp(wa, ch * 0.6, hp * 1.1);
   return {
     nk: 7 * S(scales.neck),
-    sh: 42 * S(scales.shoulders),
-    ch: 33 * S(scales.chest),
-    wa: 24 * S(scales.waist),
-    hp: 28.5 * S(scales.hip),
+    sh,
+    ch,
+    wa,
+    hp,
     upL: 9.5 * S(scales.armL),
     upR: 9.5 * S(scales.armR),
     foL: 7 * S(scales.forearmL ?? scales.armL),
@@ -106,57 +118,64 @@ function smooth(pts: { x: number; y: number }[]): string {
 
 type SideDims = { nk: number; sh: number; ch: number; wa: number; hp: number; up: number; fo: number; th: number; cf: number };
 
-/** Contorno de um lado do corpo, do topo da cabeça até a virilha */
+/** Contorno de um lado do corpo, do topo da cabeça até a virilha.
+ *  Proporções de um corpo-padrão de referência (altura ~400, cabeça ~1/8),
+ *  com os pontos ordenados para o braço nunca cruzar o tronco. */
 function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
   const X = (dx: number) => CX + dir * dx;
   return [
-    { x: X(0), y: 10 },
-    { x: X(0), y: 10 }, // canto: topo da cabeça
-    { x: X(10), y: 13 },
-    { x: X(11.8), y: 24 },
-    { x: X(10), y: 36 },
-    { x: X(o.nk * 0.9), y: 46 },
-    { x: X(o.nk), y: 56 },
-    { x: X(o.nk + 6), y: 64 },
-    { x: X(o.sh * 0.75), y: 73 },
-    { x: X(o.sh), y: 84 }, // ponta do ombro
-    { x: X(o.sh + o.up * 0.5), y: 104 },
-    { x: X(o.sh + o.up * 0.45), y: 140 },
-    { x: X(o.sh * 0.9 + o.up), y: 176 }, // cotovelo externo
-    { x: X(o.hp + o.fo + 8), y: 212 },
-    { x: X(o.hp + o.fo + 6), y: 238 },
-    { x: X(o.hp + o.fo + 4), y: 250 },
-    { x: X(o.hp + o.fo + 1), y: 258 },
-    { x: X(o.hp + o.fo + 1), y: 258 }, // canto: ponta dos dedos
-    { x: X(o.hp + 2), y: 250 },
-    { x: X(o.hp + 1), y: 230 },
-    { x: X(o.wa + o.fo + 4), y: 198 }, // antebraço interno
-    { x: X(o.wa + o.up), y: 166 },
-    { x: X(o.ch + o.up * 0.4), y: 134 },
-    { x: X(o.ch * 0.9), y: 118 }, // axila
-    { x: X(o.ch), y: 126 },
-    { x: X(o.ch * 0.96), y: 150 },
+    { x: X(0), y: 8 },
+    { x: X(0), y: 8 }, // canto: topo da cabeça
+    { x: X(9), y: 10 },
+    { x: X(12.5), y: 18 },
+    { x: X(13), y: 29 },
+    { x: X(11.5), y: 39 },
+    { x: X(9.5), y: 45 }, // mandíbula
+    { x: X(o.nk), y: 50 },
+    { x: X(o.nk), y: 58 },
+    { x: X(o.nk + 5), y: 62 },
+    { x: X(o.sh * 0.72), y: 66 },
+    { x: X(o.sh), y: 74 }, // ponta do ombro
+    { x: X(o.sh + o.up * 0.55), y: 100 },
+    { x: X(o.sh + o.up * 0.6), y: 140 },
+    { x: X(o.sh + o.up * 0.4), y: 172 }, // cotovelo externo
+    { x: X(o.sh * 0.85 + o.fo), y: 200 },
+    { x: X(o.sh * 0.78 + o.fo), y: 228 },
+    { x: X(o.sh * 0.74 + o.fo), y: 246 }, // pulso externo
+    { x: X(o.sh * 0.72 + o.fo), y: 256 },
+    { x: X(o.sh * 0.71 + o.fo), y: 264 },
+    { x: X(o.sh * 0.71 + o.fo), y: 264 }, // canto: ponta dos dedos
+    { x: X(o.sh * 0.66 + o.fo), y: 260 },
+    { x: X(o.sh * 0.68 + o.fo * 0.4), y: 240 }, // pulso interno
+    { x: X(o.hp + o.fo + 2), y: 216 }, // antebraço interno
+    { x: X(o.wa + o.up * 0.7 + 5), y: 186 },
+    { x: X(o.ch + o.up * 0.3), y: 164 }, // cotovelo interno
+    { x: X(o.ch + o.up * 0.35), y: 138 }, // braço interno
+    { x: X(o.ch * 0.95), y: 124 }, // axila
+    { x: X(o.ch), y: 134 },
+    { x: X(o.ch * 0.98), y: 154 },
     { x: X(o.wa), y: 172 }, // cintura
-    { x: X((o.wa + o.hp) / 2 + 1), y: 192 },
-    { x: X(o.hp), y: 210 }, // quadril
-    { x: X(o.hp * 0.96), y: 236 },
-    { x: X(o.th + 3), y: 274 }, // coxa externa
-    { x: X((o.th + o.cf) / 2 + 1), y: 306 }, // joelho externo
+    { x: X((o.wa + o.hp) / 2 + 1), y: 194 },
+    { x: X(o.hp), y: 214 }, // quadril
+    { x: X(o.hp * 0.98), y: 238 },
+    { x: X(o.th + 4), y: 262 }, // coxa externa
+    { x: X(o.th + 2), y: 288 },
+    { x: X(o.cf * 0.8 + 4), y: 306 }, // joelho externo
     { x: X(o.cf + 3), y: 328 },
-    { x: X(o.cf + 2), y: 352 }, // panturrilha externa
-    { x: X(6.5), y: 380 }, // tornozelo externo
-    { x: X(7), y: 394 },
-    { x: X(9), y: 401 },
-    { x: X(10), y: 404 },
-    { x: X(10), y: 404 }, // canto: ponta do pé
-    { x: X(1.5), y: 404 },
-    { x: X(2.5), y: 392 }, // tornozelo interno
+    { x: X(o.cf + 1.5), y: 354 }, // panturrilha externa
+    { x: X(5.5), y: 380 }, // tornozelo externo
+    { x: X(6.5), y: 394 },
+    { x: X(8.5), y: 400 },
+    { x: X(10.5), y: 404 },
+    { x: X(10.5), y: 404 }, // canto: ponta do pé
+    { x: X(2), y: 404 },
+    { x: X(2), y: 394 }, // tornozelo interno
     { x: X(o.cf * 0.55 + 1), y: 350 },
-    { x: X(o.cf * 0.5 + 1), y: 312 }, // joelho interno
-    { x: X(o.th * 0.45 + 1), y: 272 }, // coxa interna
-    { x: X(6), y: 250 },
-    { x: X(0), y: 242 },
-    { x: X(0), y: 242 }, // canto: virilha
+    { x: X(o.cf * 0.5 + 1), y: 310 }, // joelho interno
+    { x: X(o.th * 0.45 + 1), y: 266 }, // coxa interna
+    { x: X(5), y: 250 },
+    { x: X(0), y: 244 },
+    { x: X(0), y: 244 }, // canto: virilha
   ];
 }
 
@@ -227,6 +246,13 @@ const TONE_COLOR: Record<RegionTone, string> = {
 
 const fmtShort = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1).replace('.', ','));
 
+/** Paletas estilo relatório: bege para gordura, verde-azulado para músculo */
+const PALETTES: Record<'neutral' | 'fat' | 'muscle', [string, string, string, string]> = {
+  neutral: ['#D9B36A', '#A9BE6E', '#3E9C8C', 'hsl(165 35% 28% / 0.55)'],
+  fat: ['#EFD3A8', '#DDAF77', '#B9834F', 'hsl(28 40% 32% / 0.5)'],
+  muscle: ['#E8C65C', '#9CC26A', '#2E9484', 'hsl(165 40% 26% / 0.55)'],
+};
+
 export function HumanSilhouette({
   scales = {},
   tones,
@@ -235,11 +261,14 @@ export function HumanSilhouette({
   showChips = false,
   offsetX = 0,
   frameWidth = 200,
+  palette = 'neutral',
   className,
   children,
 }: {
   scales?: ZoneScales;
   tones?: RegionTones;
+  /** Cor base da figura: neutra, gordura (bege) ou músculo (verde-azulado) */
+  palette?: 'neutral' | 'fat' | 'muscle';
   /** Selos E/D nos ombros (perspectiva de quem vê a tela) */
   badges?: boolean;
   chipValues?: Partial<Record<string, number | null>>;
@@ -253,6 +282,7 @@ export function HumanSilhouette({
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const dims = computeDims(scales);
   const d = bodyPath(dims);
+  const [g0, g1, g2, outlineColor] = PALETTES[palette];
 
   const pairVal = (a: string, b: string): number | null => {
     const nums = [chipValues?.[a], chipValues?.[b]].filter(
@@ -289,9 +319,9 @@ export function HumanSilhouette({
     >
       <defs>
         <radialGradient id={`hg${uid}`} cx="50%" cy="26%" r="85%">
-          <stop offset="0%" stopColor="#E8B23E" />
-          <stop offset="45%" stopColor="#A8C25C" />
-          <stop offset="100%" stopColor="#2E9484" />
+          <stop offset="0%" stopColor={g0} />
+          <stop offset="45%" stopColor={g1} />
+          <stop offset="100%" stopColor={g2} />
         </radialGradient>
         <filter id={`hb${uid}`} x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="1" />
@@ -308,7 +338,7 @@ export function HumanSilhouette({
         {/* corpo com gradiente suave */}
         <path d={d} fill={`url(#hg${uid})`} filter={`url(#hb${uid})`} />
         {/* contorno subtil por cima do blur para definição */}
-        <path d={d} fill="none" stroke="hsl(165 35% 28% / 0.5)" strokeWidth={1.1} />
+        <path d={d} fill="none" stroke={outlineColor} strokeWidth={1.1} />
 
         {/* tons por região (gordura/músculo) */}
         {tones && (
