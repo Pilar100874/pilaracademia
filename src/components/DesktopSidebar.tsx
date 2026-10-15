@@ -22,7 +22,6 @@ const primaryNav = [
   { to: '/workouts', icon: Dumbbell, label: 'Treinos' },
   { to: '/exercises', icon: Library, label: 'Exercícios' },
   { to: '/health', icon: Heart, label: 'Saúde' },
-  { to: '/bioimpedance', icon: Activity, label: 'Corpo' },
 ];
 
 const secondaryNav = [

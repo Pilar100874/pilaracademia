@@ -8,7 +8,6 @@ const navItems = [
   { to: '/menu', icon: Utensils, label: 'Cardápio' },
   { to: '/workouts', icon: Dumbbell, label: 'Treinos' },
   { to: '/health', icon: Heart, label: 'Saúde' },
-  { to: '/bioimpedance', icon: Activity, label: 'Corpo' },
   { to: '/profile', icon: User, label: 'Perfil' },
 ];
 
