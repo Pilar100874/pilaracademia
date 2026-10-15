@@ -242,6 +242,10 @@ export function SegmentalFigure({
     return 'bad';
   };
 
+  // Amortece a proporção para o desenho continuar humano mesmo com valores extremos
+  const damp = (s: number | undefined, f = 0.45) =>
+    s == null ? undefined : clamp(1 + (s - 1) * f, 0.72, 1.35);
+
   const sc = (kg: number | undefined, refKg: number) => (kg != null ? kg / refKg : undefined);
   const trunkS = sc(values.trunk_kg, ref.trunk);
   const legAvg =
@@ -250,14 +254,14 @@ export function SegmentalFigure({
       : undefined;
 
   const scales: ZoneScales = {
-    shoulders: trunkS,
-    chest: trunkS,
-    waist: kind === 'fat' ? trunkS : undefined,
-    hip: kind === 'fat' ? trunkS : legAvg,
-    armL: sc(values.left_arm_kg, ref.arm),
-    armR: sc(values.right_arm_kg, ref.arm),
-    thighL: sc(values.left_leg_kg, ref.leg),
-    thighR: sc(values.right_leg_kg, ref.leg),
+    shoulders: damp(trunkS, 0.3),
+    chest: damp(trunkS, 0.5),
+    waist: kind === 'fat' ? damp(trunkS, 0.6) : undefined,
+    hip: kind === 'fat' ? damp(trunkS, 0.55) : damp(legAvg, 0.5),
+    armL: damp(sc(values.left_arm_kg, ref.arm), 0.55),
+    armR: damp(sc(values.right_arm_kg, ref.arm), 0.55),
+    thighL: damp(sc(values.left_leg_kg, ref.leg), 0.55),
+    thighR: damp(sc(values.right_leg_kg, ref.leg), 0.55),
   };
 
   const tones: RegionTones = {
