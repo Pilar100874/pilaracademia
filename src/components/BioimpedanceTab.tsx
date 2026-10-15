@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,8 +17,10 @@ import {
   TrendingUp,
   Minus,
   Upload,
+  GitCompareArrows,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BioimpedanceCompare } from '@/components/BioimpedanceCompare';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
 import { useBackgroundAnalysis } from '@/contexts/BackgroundAnalysisContext';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
@@ -177,6 +179,7 @@ export function BioimpedanceTab() {
   const { startBioimpedance, jobs } = useBackgroundAnalysis();
   const analyzing = jobs.some((j) => j.kind === 'bioimpedance');
   const fileRef = useRef<HTMLInputElement>(null);
+  const [comparing, setComparing] = useState(false);
   const rows = list.data ?? [];
 
   const latest = rows[0] as BodyAnalysisRow | undefined;
