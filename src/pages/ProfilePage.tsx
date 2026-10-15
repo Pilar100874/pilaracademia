@@ -321,6 +321,26 @@ export function ProfilePage() {
         <div className="card-compact divide-y divide-border">
           <button
             type="button"
+            onClick={() => setAndroidOpen(true)}
+            className="w-full flex items-center gap-3 py-3 text-left"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+              <Smartphone className="h-5 w-5 text-emerald-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm flex items-center gap-2">
+                Baixar app Android
+                <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600">
+                  Nativo
+                </span>
+              </p>
+              <p className="text-xs text-muted-foreground">Instale no celular, leia a balança e sincronize o relógio</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+          </button>
+
+          <button
+            type="button"
             onClick={() => navigate('/insights')}
             className="w-full flex items-center gap-3 py-3 text-left"
           >
