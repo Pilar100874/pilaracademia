@@ -51,8 +51,9 @@ const rowLabel = (r: BodyAnalysisRow) =>
 function segCallouts(a: ExtractedBioimpedance, b: ExtractedBioimpedance): MorphCallout[] {
   const num = (v: unknown): number | null =>
     typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
+  type Seg = ExtractedBioimpedance['segmental_fat'];
   const pair = (
-    seg: { left?: number | null; right?: number | null } | undefined,
+    seg: Seg,
     l: 'left_arm_kg' | 'left_leg_kg',
     r: 'right_arm_kg' | 'right_leg_kg',
   ): number | null => {
