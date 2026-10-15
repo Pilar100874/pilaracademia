@@ -451,6 +451,7 @@ function MorphFigure({
   sex,
   showValues,
   callouts: customCallouts,
+  legendItems,
   t,
 }: {
   values: Values;
@@ -459,6 +460,7 @@ function MorphFigure({
   sex?: BodySex;
   showValues: boolean;
   callouts?: MorphCallout[];
+  legendItems?: { tone: RegionTone; label: string }[];
   t: number;
 }) {
   const pairAvg = (a: string, b: string): number | null => {
@@ -537,7 +539,7 @@ function MorphFigure({
           );
         })}
     </HumanSilhouette>
-    {tones && <ToneLegend items={MORPH_LEGEND} />}
+    {tones && <ToneLegend items={legendItems ?? MORPH_LEGEND} />}
     </div>
   );
 }
