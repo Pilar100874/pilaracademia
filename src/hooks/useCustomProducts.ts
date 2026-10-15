@@ -253,7 +253,7 @@ export function useCustomProducts() {
         fiber: Number(((product.fiber || 0) * factor).toFixed(1)),
         sodium: Number(((product.sodium || 0) * factor).toFixed(1)),
         name: product.name,
-        image_url: product.image_url,
+        image_url: toCanonicalStorageUrl(product.image_url),
       };
 
       const { error: updateError } = await supabase
