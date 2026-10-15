@@ -477,7 +477,7 @@ function MorphFigure({
   const OFF = 34;
 
   type Region = 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg';
-  type CalloutSpec = { side: 'left' | 'right'; region: Region; at: MorphAnchorPoint; label: string; v: number | null; unit: string; tone?: RegionTone };
+  type CalloutSpec = { side: 'left' | 'right'; region: Region; at: MorphAnchorPoint; label: string; v: number | null; unit: string; tone?: RegionTone; y?: number };
   const regionToAt = (r: Region): MorphAnchorPoint =>
     r === 'trunk' ? 'waist' : r === 'leftArm' || r === 'rightArm' ? 'arm' : 'thigh';
   const callouts: CalloutSpec[] = customCallouts
@@ -486,7 +486,7 @@ function MorphFigure({
         const vb = c.b != null && Number.isFinite(c.b) ? c.b : null;
         const v = va == null && vb == null ? null : (va ?? vb!) + ((vb ?? va!) - (va ?? vb!)) * t;
         const tone = t < 0.5 ? (c.toneA ?? c.toneB) : (c.toneB ?? c.toneA);
-        return { side: c.side, region: c.region, at: c.at ?? regionToAt(c.region), label: c.label, v, unit: c.unit, tone };
+        return { side: c.side, region: c.region, at: c.at ?? regionToAt(c.region), label: c.label, v, unit: c.unit, tone, y: c.y };
       })
     : [
         { side: 'left', region: 'leftArm', at: 'arm', label: 'Braço', v: pairAvg('arm_left_cm', 'arm_right_cm'), unit: 'cm' },
@@ -518,9 +518,11 @@ function MorphFigure({
           const sx = c.side === 'left' ? 52 : 216;
           const tx = c.side === 'left' ? 2 : 266;
           const anchor = c.side === 'left' ? 'start' : 'end';
-          // Braço e peito ficam com o texto acima do ponto para não colidir com a cintura
+          // Rótulos com `y` explícito (ex.: comparativo de medidas) usam a
+          // posição informada; senão, braço e peito ficam acima do ponto para
+          // não colidir com a cintura.
           const above = c.at === 'arm' || c.at === 'chest';
-          const ty = above ? dy - 18 : dy + 6;
+          const ty = c.y != null ? c.y : above ? dy - 18 : dy + 6;
           const connector =
             c.side === 'left'
               ? `M ${sx} ${ty + 2} C ${sx + 18} ${ty - 8}, ${dx - 16} ${dy}, ${dx} ${dy}`

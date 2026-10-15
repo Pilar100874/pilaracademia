@@ -49,7 +49,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { BodyFigure, BodyMorph, MARKER_ORDER } from '@/components/BodyFigure';
+import { BodyFigure, BodyMorph, MARKER_ORDER, type MorphCallout } from '@/components/BodyFigure';
 import type { BodySex } from '@/components/HumanBodyFigure';
 import { useProfile } from '@/hooks/useProfile';
 
@@ -505,6 +505,35 @@ function MeasurementDialog({
 /* Compare view                                                        */
 /* ------------------------------------------------------------------ */
 
+/** Callouts do morph: uma seta com nome para cada grupo de medida, sempre
+ *  visível (mostra "—" quando a medida não foi preenchida em nenhuma das duas). */
+function measurementCallouts(rowA: MeasurementRow, rowB: MeasurementRow): MorphCallout[] {
+  const get = (row: MeasurementRow, key: string): number | null => {
+    const v = row[key] as number | null;
+    return v != null && Number.isFinite(v) && v > 0 ? v : null;
+  };
+  const pair = (row: MeasurementRow, a: string, b: string): number | null => {
+    const nums = [get(row, a), get(row, b)].filter((v): v is number => v != null);
+    return nums.length ? nums.reduce((s, v) => s + v, 0) / nums.length : null;
+  };
+  const A = (k: string) => get(rowA, k);
+  const B = (k: string) => get(rowB, k);
+  const pA = (a: string, b: string) => pair(rowA, a, b);
+  const pB = (a: string, b: string) => pair(rowB, a, b);
+  return [
+    { side: 'left', region: 'trunk', at: 'neck', label: 'Pescoço', a: A('neck_cm'), b: B('neck_cm'), unit: 'cm', y: 52 },
+    { side: 'left', region: 'leftArm', at: 'arm', label: 'Braço', a: pA('arm_left_cm', 'arm_right_cm'), b: pB('arm_left_cm', 'arm_right_cm'), unit: 'cm', y: 116 },
+    { side: 'left', region: 'trunk', at: 'waist', label: 'Cintura', a: A('waist_cm'), b: B('waist_cm'), unit: 'cm', y: 180 },
+    { side: 'left', region: 'trunk', at: 'abdomen', label: 'Abdômen', a: A('abdomen_cm'), b: B('abdomen_cm'), unit: 'cm', y: 244 },
+    { side: 'left', region: 'leftLeg', at: 'thigh', label: 'Coxa', a: pA('thigh_left_cm', 'thigh_right_cm'), b: pB('thigh_left_cm', 'thigh_right_cm'), unit: 'cm', y: 308 },
+    { side: 'right', region: 'trunk', at: 'shoulder', label: 'Ombros', a: A('shoulders_cm'), b: B('shoulders_cm'), unit: 'cm', y: 52 },
+    { side: 'right', region: 'trunk', at: 'chest', label: 'Peito', a: A('chest_cm'), b: B('chest_cm'), unit: 'cm', y: 116 },
+    { side: 'right', region: 'rightArm', at: 'forearm', label: 'Antebraço', a: pA('forearm_left_cm', 'forearm_right_cm'), b: pB('forearm_left_cm', 'forearm_right_cm'), unit: 'cm', y: 180 },
+    { side: 'right', region: 'trunk', at: 'hip', label: 'Quadril', a: A('hip_cm'), b: B('hip_cm'), unit: 'cm', y: 244 },
+    { side: 'right', region: 'rightLeg', at: 'calf', label: 'Panturrilha', a: pA('calf_left_cm', 'calf_right_cm'), b: pB('calf_left_cm', 'calf_right_cm'), unit: 'cm', y: 308 },
+  ];
+}
+
 function MeasurementsCompare({
   rows,
   onClose,
@@ -623,6 +652,7 @@ function MeasurementsCompare({
         valuesB={rowB as unknown as Record<string, number | null>}
         labelA={rowLabel(rowA)}
         labelB={rowLabel(rowB)}
+        callouts={measurementCallouts(rowA, rowB)}
       />
 
       <div className="space-y-3">
