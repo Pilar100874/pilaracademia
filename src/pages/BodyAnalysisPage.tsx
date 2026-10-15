@@ -327,41 +327,10 @@ function PlanView({
         </p>
       </div>
 
-      {/* Treino + exercícios sugeridos */}
+      {/* Exercícios sugeridos */}
       <div className="rounded-md border border-border bg-card p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <Dumbbell className="h-4 w-4 text-primary" />
-          <span className="font-semibold">Intenção de treino</span>
-        </div>
-        <p className="text-sm">
-          <b>Foco:</b> {plan.training_intent?.focus}
-        </p>
-        <p className="text-sm">
-          <b>Divisão:</b> {plan.training_intent?.split}
-        </p>
-        <p className="text-sm">
-          <b>Frequência:</b> {plan.training_intent?.frequency_per_week}x/sem
-          {plan.training_intent?.session_minutes ? ` · ${plan.training_intent.session_minutes} min` : ''}
-          {plan.training_intent?.intensity ? ` · intensidade ${plan.training_intent.intensity}` : ''}
-        </p>
-        {plan.training_intent?.priority_muscle_groups && plan.training_intent.priority_muscle_groups.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {plan.training_intent.priority_muscle_groups.map((g) => (
-              <span
-                key={g}
-                className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20"
-              >
-                {g}
-              </span>
-            ))}
-          </div>
-        )}
-        {plan.training_intent?.volume_note && (
-          <p className="text-xs text-muted-foreground">{plan.training_intent.volume_note}</p>
-        )}
-
         {plan.recommended_exercises && plan.recommended_exercises.length > 0 && (
-          <div className="pt-3 border-t border-border space-y-2">
+          <div className="space-y-2">
             <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
               Exercícios sugeridos da sua biblioteca
             </p>
