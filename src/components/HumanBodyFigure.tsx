@@ -136,21 +136,21 @@ function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
     { x: X(o.nk + 5), y: 62 },
     { x: X(o.sh * 0.72), y: 66 },
     { x: X(o.sh), y: 74 }, // ponta do ombro
-    { x: X(o.sh + o.up * 0.4), y: 100 },
-    { x: X(o.sh + o.up * 0.45), y: 140 },
-    { x: X(o.sh + o.up * 0.25), y: 172 }, // cotovelo externo
-    { x: X(o.hp + o.fo + 3), y: 200 },
-    { x: X(o.hp + o.fo + 2), y: 226 },
-    { x: X(o.hp + o.fo * 0.6 + 2), y: 244 }, // pulso externo
-    { x: X(o.hp + o.fo * 0.5 + 2), y: 252 },
-    { x: X(o.hp + o.fo * 0.5 + 2), y: 258 },
-    { x: X(o.hp + o.fo * 0.5 + 2), y: 258 }, // canto: ponta dos dedos
-    { x: X(o.hp + o.fo * 0.3 + 1), y: 254 },
-    { x: X(o.hp + 1.5), y: 240 }, // pulso interno
-    { x: X(o.hp + 1), y: 218 }, // antebraço interno
-    { x: X(o.wa + o.up * 0.4 + 3), y: 188 },
-    { x: X(o.ch + o.up * 0.3), y: 166 }, // cotovelo interno
-    { x: X(o.ch + o.up * 0.3), y: 140 }, // braço interno
+    { x: X(o.sh + o.up * 0.35), y: 100 },
+    { x: X(o.sh + o.up * 0.4), y: 140 },
+    { x: X(o.sh * 0.8 + o.fo + 2), y: 172 }, // cotovelo externo
+    { x: X(o.hp + o.fo + 1.5), y: 196 },
+    { x: X(o.hp + o.fo + 1), y: 222 },
+    { x: X(o.hp + o.fo * 0.7 + 1), y: 240 }, // pulso externo
+    { x: X(o.hp + o.fo * 0.6 + 1), y: 248 },
+    { x: X(o.hp + o.fo * 0.55 + 1), y: 254 },
+    { x: X(o.hp + o.fo * 0.55 + 1), y: 254 }, // canto: ponta dos dedos
+    { x: X(o.hp + o.fo * 0.3 + 1), y: 250 },
+    { x: X(o.hp + 1.5), y: 236 }, // pulso interno
+    { x: X(o.hp + 1), y: 212 }, // antebraço interno
+    { x: X(o.wa + o.up * 0.35 + 2), y: 186 },
+    { x: X(o.ch + o.up * 0.3), y: 164 }, // cotovelo interno
+    { x: X(o.ch + o.up * 0.25), y: 138 }, // braço interno
     { x: X(o.ch * 0.95), y: 124 }, // axila
     { x: X(o.ch), y: 134 },
     { x: X(o.ch * 0.98), y: 154 },
