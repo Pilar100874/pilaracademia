@@ -160,7 +160,7 @@ export function ScaleBleCard({ onSaved }: { onSaved?: () => void }) {
         image_url: null,
         measured_at: measuredAt,
         extracted,
-        plan: null,
+        plan: {} as never,
         summary: 'Medição lida diretamente da balança via Bluetooth.',
       });
       if (error) throw error;
