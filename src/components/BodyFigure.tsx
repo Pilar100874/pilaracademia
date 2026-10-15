@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { HumanSilhouette, tapeToScales, computeDims, regionAnchor, type BodySex, type ZoneScales } from '@/components/HumanBodyFigure';
+import { HumanSilhouette, ToneLegend, tapeToScales, computeDims, regionAnchor, type BodySex, type RegionTone, type RegionTones, type ZoneScales } from '@/components/HumanBodyFigure';
 import { cn } from '@/lib/utils';
 
 /* ------------------------------------------------------------------ */
@@ -273,7 +273,20 @@ export interface MorphCallout {
   b: number | null;
   unit: string;
   y: number;
+  /** Classificação por cor nas medições A e B (opcional — ex.: gordura/músculo segmentar) */
+  toneA?: RegionTone;
+  toneB?: RegionTone;
 }
+
+/** Legenda genérica das cores quando o morph mistura gordura e músculo. */
+const MORPH_LEGEND: { tone: RegionTone; label: string }[] = [
+  { tone: 'good', label: 'Dentro do padrão' },
+  { tone: 'std', label: 'Padrão / sem comparação' },
+  { tone: 'warn', label: 'Atenção' },
+  { tone: 'bad', label: 'Fora do padrão' },
+];
+
+const TONE_RANK: Record<RegionTone, number> = { good: 0, std: 1, warn: 2, bad: 3 };
 
 export function BodyMorph({
   valuesA,
@@ -457,13 +470,14 @@ function MorphFigure({
   const dims = computeDims(scales, sex, { freeform: true });
   const OFF = 34;
 
-  type CalloutSpec = { side: 'left' | 'right'; region: 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg'; label: string; v: number | null; unit: string; y: number };
+  type CalloutSpec = { side: 'left' | 'right'; region: 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg'; label: string; v: number | null; unit: string; y: number; tone?: RegionTone };
   const callouts: CalloutSpec[] = customCallouts
     ? customCallouts.map((c) => {
         const va = c.a != null && Number.isFinite(c.a) ? c.a : null;
         const vb = c.b != null && Number.isFinite(c.b) ? c.b : null;
         const v = va == null && vb == null ? null : (va ?? vb!) + ((vb ?? va!) - (va ?? vb!)) * t;
-        return { side: c.side, region: c.region, label: c.label, v, unit: c.unit, y: c.y };
+        const tone = t < 0.5 ? (c.toneA ?? c.toneB) : (c.toneB ?? c.toneA);
+        return { side: c.side, region: c.region, label: c.label, v, unit: c.unit, y: c.y, tone };
       })
     : [
         { side: 'left', region: 'leftArm', label: 'Braço', v: pairAvg('arm_left_cm', 'arm_right_cm'), unit: 'cm', y: 104 },
@@ -474,8 +488,19 @@ function MorphFigure({
         { side: 'right', region: 'rightLeg', label: 'Panturrilha', v: pairAvg('calf_left_cm', 'calf_right_cm'), unit: 'cm', y: 336 },
       ];
 
+  // Cor por região: quando os callouts trazem classificação, usa o pior tom da região
+  const tones: RegionTones | undefined = customCallouts?.some((c) => c.toneA || c.toneB)
+    ? callouts.reduce<RegionTones>((acc, c) => {
+        if (!c.tone) return acc;
+        const prev = acc[c.region];
+        if (!prev || TONE_RANK[c.tone] > TONE_RANK[prev]) acc[c.region] = c.tone;
+        return acc;
+      }, {})
+    : undefined;
+
   return (
-    <HumanSilhouette sex={sex} scales={scales} freeform offsetX={OFF} frameWidth={268} className="max-w-[240px]">
+    <div className="space-y-2">
+    <HumanSilhouette sex={sex} scales={scales} tones={tones} freeform offsetX={OFF} frameWidth={268} className="max-w-[240px]">
       {showValues &&
         callouts
           .filter((c) => c.v != null)
@@ -504,5 +529,7 @@ function MorphFigure({
             );
           })}
     </HumanSilhouette>
+    {tones && <ToneLegend items={MORPH_LEGEND} />}
+    </div>
   );
 }
