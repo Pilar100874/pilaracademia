@@ -413,15 +413,8 @@ export function BodyMorph({
 /** Amplifica a diferença A->B em torno do ponto médio das duas medições,
  *  para a animação mostrar a mudança mesmo quando ela é pequena em cm. */
 function amplifyScales(now: ZoneScales, a: ZoneScales, b: ZoneScales): ZoneScales {
-  // Fator adaptativo: a maior diferença A<->B vira uma mudança clara no desenho,
-  // mesmo quando a diferença real é de poucos centímetros.
-  let maxDev = 0;
-  for (const k of Object.keys(a) as (keyof ZoneScales)[]) {
-    const va = a[k];
-    const vb = b[k];
-    if (va != null && vb != null) maxDev = Math.max(maxDev, Math.abs(va - vb) / 2);
-  }
-  const k = maxDev > 0.001 ? Math.min(30, 0.4 / maxDev) : 2;
+  // Amplificação moderada por zona: cada região se move na direção real da sua
+  // mudança (sem fator global que saturava umas zonas e distorcia outras).
   const out: ZoneScales = {};
   const keys = new Set([...Object.keys(now), ...Object.keys(a), ...Object.keys(b)]);
   for (const key of keys) {
@@ -432,9 +425,11 @@ function amplifyScales(now: ZoneScales, a: ZoneScales, b: ZoneScales): ZoneScale
     if (vn == null) continue;
     if (va != null && vb != null) {
       const mid = (va + vb) / 2;
-      out[kk] = mid + (vn - mid) * k;
+      const dev = vn - mid;
+      const k = Math.min(6, 0.35 / Math.max(Math.abs(dev), 0.004));
+      out[kk] = mid + dev * k;
     } else {
-      out[kk] = 1 + (vn - 1) * 2;
+      out[kk] = 1 + (vn - 1) * 1.5;
     }
   }
   return out;
