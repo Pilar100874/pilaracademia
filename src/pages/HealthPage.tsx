@@ -6,6 +6,7 @@ import { differenceInYears, parseISO } from 'date-fns';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BioimpedanceTab } from '@/components/BioimpedanceTab';
+import { MeasurementsTab } from '@/components/MeasurementsTab';
 import { BloodExamsTab } from '@/components/BloodExamsTab';
 import { WatchSyncCard } from '@/components/WatchSyncCard';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
