@@ -123,7 +123,7 @@ export async function readWatchSummary(): Promise<WatchSummary> {
     sleepMinutesLastNight: sleepMinutes,
     latestWeight: weight ? { kg: Math.round(weight.value * 10) / 10, date: weight.endDate } : null,
     latestBodyFat: bodyFat ? { pct: Math.round(bodyFat.value * 10) / 10, date: bodyFat.endDate } : null,
-    latestHeightCm: height ? Math.round(height.value * 100) : null,
+    latestHeightCm: height ? Math.round(height.value) : null,
     syncedAt: new Date().toISOString(),
   };
 }
