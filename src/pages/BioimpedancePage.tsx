@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -16,12 +16,14 @@ import {
   TrendingDown,
   TrendingUp,
   Minus,
+  Upload,
 } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
+import { useBackgroundAnalysis } from '@/contexts/BackgroundAnalysisContext';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 import { cn } from '@/lib/utils';
 import { BloodExamsTab } from '@/components/BloodExamsTab';
@@ -176,6 +178,9 @@ const toneClasses: Record<string, string> = {
 
 export default function BioimpedancePage() {
   const { list } = useBodyAnalyses();
+  const { startBioimpedance, jobs } = useBackgroundAnalysis();
+  const analyzing = jobs.some((j) => j.kind === 'bioimpedance');
+  const fileRef = useRef<HTMLInputElement>(null);
   const rows = list.data ?? [];
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab') === 'blood' ? 'blood' : 'bioimpedance';
@@ -223,8 +228,33 @@ export default function BioimpedancePage() {
           </TabsList>
 
           <TabsContent value="bioimpedance" className="space-y-5 mt-0">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Envie a foto do relatório de bioimpedância. A IA extrai os números e monta seu plano.
+              </p>
+              <Button
+                size="sm"
+                className="shrink-0"
+                disabled={analyzing}
+                onClick={() => fileRef.current?.click()}
+              >
+                <Upload className="h-3.5 w-3.5 mr-1" />
+                {analyzing ? 'Analisando…' : 'Enviar'}
+              </Button>
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(ev) => {
+                const f = ev.target.files?.[0];
+                if (f) startBioimpedance(f);
+                ev.target.value = '';
+              }}
+            />
             {!latest ? (
-              <EmptyState />
+              <EmptyState onUpload={() => fileRef.current?.click()} />
             ) : (
               <>
                 {/* Date + summary */}
@@ -359,7 +389,7 @@ export default function BioimpedancePage() {
 /* Empty                                                              */
 /* ------------------------------------------------------------------ */
 
-function EmptyState() {
+function EmptyState({ onUpload }: { onUpload: () => void }) {
   return (
     <div className="rounded-md border border-dashed border-border bg-card p-8 text-center space-y-3">
       <Activity className="h-8 w-8 text-muted-foreground mx-auto" />
@@ -368,11 +398,9 @@ function EmptyState() {
         Envie uma foto do seu laudo de bioimpedância para vermos seu corpo em números —
         peso, gordura, músculos, água e mais — explicados de forma simples.
       </p>
-      <Button asChild className="mt-2">
-        <Link to="/body-analysis">
-          Enviar exame
-          <ArrowRight className="h-4 w-4 ml-1.5" />
-        </Link>
+      <Button className="mt-2" onClick={onUpload}>
+        Enviar exame
+        <ArrowRight className="h-4 w-4 ml-1.5" />
       </Button>
     </div>
   );
