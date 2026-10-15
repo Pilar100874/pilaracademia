@@ -216,7 +216,9 @@ function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
     { x: X(o.nk), y: 69 },
     { x: X(o.nk + 9), y: 76 }, // trapézio
     { x: X(o.sh * 0.82), y: 80 },
-    { x: X(o.sh), y: 87 }, // ponta do ombro
+    { x: X(o.sh * 0.95), y: 85 },
+    { x: X(o.sh), y: 90 }, // ponta do ombro
+    { x: X(o.sh * 0.98), y: 97 },
     { x: X(o.sh * 0.96), y: 104 }, // ombro -> peito (fica sob o braço)
     { x: X(o.ch), y: 128 },
     { x: X(o.ch * 0.98), y: 146 },
@@ -266,7 +268,9 @@ function armPoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
     { x: X(foIn), y: 196 }, // antebraço interno
     { x: X(elIn), y: 164 }, // cotovelo interno
     { x: X(ax), y: 122 }, // braço interno
-    { x: X(ax - 3), y: 100 }, // axila
+    { x: X(ax + 0.5), y: 110 },
+    { x: X(ax - 1.5), y: 102 }, // dobra da axila
+    { x: X(ax - 4), y: 96 }, // axila
   ];
 }
 
