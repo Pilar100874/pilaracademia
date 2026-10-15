@@ -457,15 +457,22 @@ function MorphFigure({
   const dims = computeDims(scales, sex);
   const OFF = 34;
 
-  type CalloutSpec = { side: 'left' | 'right'; region: 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg'; label: string; v: number | null; y: number };
-  const callouts: CalloutSpec[] = [
-    { side: 'left', region: 'leftArm', label: 'Braço', v: pairAvg('arm_left_cm', 'arm_right_cm'), y: 104 },
-    { side: 'left', region: 'trunk', label: 'Cintura', v: single('waist_cm') ?? single('abdomen_cm'), y: 200 },
-    { side: 'left', region: 'leftLeg', label: 'Coxa', v: pairAvg('thigh_left_cm', 'thigh_right_cm'), y: 304 },
-    { side: 'right', region: 'rightArm', label: 'Peito', v: single('chest_cm'), y: 104 },
-    { side: 'right', region: 'rightLeg', label: 'Quadril', v: single('hip_cm'), y: 236 },
-    { side: 'right', region: 'rightLeg', label: 'Panturrilha', v: pairAvg('calf_left_cm', 'calf_right_cm'), y: 336 },
-  ];
+  type CalloutSpec = { side: 'left' | 'right'; region: 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg'; label: string; v: number | null; unit: string; y: number };
+  const callouts: CalloutSpec[] = customCallouts
+    ? customCallouts.map((c) => {
+        const va = c.a != null && Number.isFinite(c.a) ? c.a : null;
+        const vb = c.b != null && Number.isFinite(c.b) ? c.b : null;
+        const v = va == null && vb == null ? null : (va ?? vb!) + ((vb ?? va!) - (va ?? vb!)) * t;
+        return { side: c.side, region: c.region, label: c.label, v, unit: c.unit, y: c.y };
+      })
+    : [
+        { side: 'left', region: 'leftArm', label: 'Braço', v: pairAvg('arm_left_cm', 'arm_right_cm'), unit: 'cm', y: 104 },
+        { side: 'left', region: 'trunk', label: 'Cintura', v: single('waist_cm') ?? single('abdomen_cm'), unit: 'cm', y: 200 },
+        { side: 'left', region: 'leftLeg', label: 'Coxa', v: pairAvg('thigh_left_cm', 'thigh_right_cm'), unit: 'cm', y: 304 },
+        { side: 'right', region: 'rightArm', label: 'Peito', v: single('chest_cm'), unit: 'cm', y: 104 },
+        { side: 'right', region: 'rightLeg', label: 'Quadril', v: single('hip_cm'), unit: 'cm', y: 236 },
+        { side: 'right', region: 'rightLeg', label: 'Panturrilha', v: pairAvg('calf_left_cm', 'calf_right_cm'), unit: 'cm', y: 336 },
+      ];
 
   return (
     <HumanSilhouette sex={sex} scales={scales} freeform offsetX={OFF} frameWidth={268} className="max-w-[240px]">
