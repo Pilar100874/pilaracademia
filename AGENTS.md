@@ -11,3 +11,5 @@
 - Gestor accounts (role `gestor`) own members via `managed_users`; members read the gestor's library through RLS, and member restrictions (no workout/library creation) are UI-only and lifted while the gestor is impersonating. Why: the gestor works inside the member account using the member's own session.
 
 - Manager evolution summaries use the authenticated `manager-users` summary action, authorize ownership or master role before reading, paginate records and aggregate daily entries in America/Sao_Paulo; missing daily records stay null, not zero. Why: clinical data must stay scoped to authorized managers and charts must not imply unrecorded consumption or activity.
+
+- Watch (Galaxy Watch/Wear OS) sync runs only in the native Capacitor app via `@capgo/capacitor-health` (Health Connect on Android, HealthKit on iOS); all entry points must guard with `Capacitor.isNativePlatform()` so the web app never touches native health APIs. Why: browsers cannot read Health Connect, and the web build must keep working without native plugins.

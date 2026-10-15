@@ -7,6 +7,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BioimpedanceTab } from '@/components/BioimpedanceTab';
 import { BloodExamsTab } from '@/components/BloodExamsTab';
+import { WatchSyncCard } from '@/components/WatchSyncCard';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 
@@ -152,6 +153,7 @@ export function HealthPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-5 mt-0">
+          <WatchSyncCard />
           {!hasCompleteProfile ? (
             <div className="rounded-md border border-dashed border-border bg-card p-8 text-center space-y-3">
               <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto">
