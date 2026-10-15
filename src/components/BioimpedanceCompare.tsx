@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { METRICS, fmtN, type MetricSpec } from '@/components/BioimpedanceTab';
 import { BodyMorph, type MorphCallout } from '@/components/BodyFigure';
-import { bioToTapeValues, segmentalTones } from '@/components/BioReport';
+import { bioToTapeValues, segmentalLegendItems, segmentalTones } from '@/components/BioReport';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 import { cn } from '@/lib/utils';
 
@@ -47,35 +47,27 @@ const rowDate = (r: BodyAnalysisRow) => r.measured_at || r.created_at;
 const rowLabel = (r: BodyAnalysisRow) =>
   format(parseISO(rowDate(r)), "d 'de' MMM, yyyy", { locale: ptBR });
 
-/** Rótulos com seta do morph: gordura e músculo por região (dados reais do exame). */
-function segCallouts(a: ExtractedBioimpedance, b: ExtractedBioimpedance): MorphCallout[] {
+/** Rótulos com seta do morph, por tipo: gordura por região OU equilíbrio muscular
+ *  (dados reais do exame, lado esquerdo e direito separados, como no relatório). */
+function segCallouts(
+  kind: 'fat' | 'muscle',
+  a: ExtractedBioimpedance,
+  b: ExtractedBioimpedance,
+): MorphCallout[] {
   const num = (v: unknown): number | null =>
     typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
-  type Seg = ExtractedBioimpedance['segmental_fat'];
-  const pair = (
-    seg: Seg,
-    l: 'left_arm_kg' | 'left_leg_kg',
-    r: 'right_arm_kg' | 'right_leg_kg',
-  ): number | null => {
-    const vals = [num(seg?.[l]), num(seg?.[r])].filter((v): v is number => v != null);
-    return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
-  };
-  const fatA = a.segmental_fat;
-  const fatB = b.segmental_fat;
-  const musA = a.segmental_muscle;
-  const musB = b.segmental_muscle;
-  // Classificação por cor de cada exame (gordura à esquerda, músculo à direita)
-  const fatToneA = segmentalTones('fat', fatA ?? {});
-  const fatToneB = segmentalTones('fat', fatB ?? {});
-  const musToneA = segmentalTones('muscle', musA ?? {});
-  const musToneB = segmentalTones('muscle', musB ?? {});
+  const segA = kind === 'fat' ? a.segmental_fat : a.segmental_muscle;
+  const segB = kind === 'fat' ? b.segmental_fat : b.segmental_muscle;
+  // Classificação por cor de cada exame
+  const toneA = segmentalTones(kind, segA ?? {});
+  const toneB = segmentalTones(kind, segB ?? {});
+  const word = kind === 'fat' ? 'Gordura' : 'Músculo';
   return [
-    { side: 'left', region: 'leftArm', label: 'Gordura braço', a: pair(fatA, 'left_arm_kg', 'right_arm_kg'), b: pair(fatB, 'left_arm_kg', 'right_arm_kg'), unit: 'kg', y: 104, toneA: fatToneA.leftArm, toneB: fatToneB.leftArm },
-    { side: 'left', region: 'trunk', label: 'Gordura tronco', a: num(fatA?.trunk_kg), b: num(fatB?.trunk_kg), unit: 'kg', y: 200, toneA: fatToneA.trunk, toneB: fatToneB.trunk },
-    { side: 'left', region: 'leftLeg', label: 'Gordura perna', a: pair(fatA, 'left_leg_kg', 'right_leg_kg'), b: pair(fatB, 'left_leg_kg', 'right_leg_kg'), unit: 'kg', y: 304, toneA: fatToneA.leftLeg, toneB: fatToneB.leftLeg },
-    { side: 'right', region: 'rightArm', label: 'Músculo braço', a: pair(musA, 'left_arm_kg', 'right_arm_kg'), b: pair(musB, 'left_arm_kg', 'right_arm_kg'), unit: 'kg', y: 104, toneA: musToneA.rightArm, toneB: musToneB.rightArm },
-    { side: 'right', region: 'trunk', label: 'Músculo tronco', a: num(musA?.trunk_kg), b: num(musB?.trunk_kg), unit: 'kg', y: 200, toneA: musToneA.trunk, toneB: musToneB.trunk },
-    { side: 'right', region: 'rightLeg', label: 'Músculo perna', a: pair(musA, 'left_leg_kg', 'right_leg_kg'), b: pair(musB, 'left_leg_kg', 'right_leg_kg'), unit: 'kg', y: 304, toneA: musToneA.rightLeg, toneB: musToneB.rightLeg },
+    { side: 'left', region: 'leftArm', label: `${word} braço E`, a: num(segA?.left_arm_kg), b: num(segB?.left_arm_kg), unit: 'kg', y: 104, toneA: toneA.leftArm, toneB: toneB.leftArm },
+    { side: 'left', region: 'trunk', label: `${word} tronco`, a: num(segA?.trunk_kg), b: num(segB?.trunk_kg), unit: 'kg', y: 200, toneA: toneA.trunk, toneB: toneB.trunk },
+    { side: 'left', region: 'leftLeg', label: `${word} perna E`, a: num(segA?.left_leg_kg), b: num(segB?.left_leg_kg), unit: 'kg', y: 304, toneA: toneA.leftLeg, toneB: toneB.leftLeg },
+    { side: 'right', region: 'rightArm', label: `${word} braço D`, a: num(segA?.right_arm_kg), b: num(segB?.right_arm_kg), unit: 'kg', y: 104, toneA: toneA.rightArm, toneB: toneB.rightArm },
+    { side: 'right', region: 'rightLeg', label: `${word} perna D`, a: num(segA?.right_leg_kg), b: num(segB?.right_leg_kg), unit: 'kg', y: 304, toneA: toneA.rightLeg, toneB: toneB.rightLeg },
   ];
 }
 
