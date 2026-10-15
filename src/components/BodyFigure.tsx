@@ -430,7 +430,7 @@ function MorphFigure({ values, valuesA, valuesB, sex, showValues }: { values: Va
   ];
 
   return (
-    <HumanSilhouette sex={sex} scales={scales} offsetX={OFF} frameWidth={268} className="max-w-[240px]">
+    <HumanSilhouette sex={sex} scales={scales} freeform offsetX={OFF} frameWidth={268} className="max-w-[240px]">
       {showValues &&
         callouts
           .filter((c) => c.v != null)

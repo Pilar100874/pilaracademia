@@ -412,11 +412,13 @@ export function HumanSilhouette({
   /** Deslocamento horizontal do corpo dentro do viewBox (para rótulos laterais) */
   offsetX?: number;
   frameWidth?: number;
+  /** Modo evolução: aplica as escalas sem amortecimento, para a morph mostrar a mudança */
+  freeform?: boolean;
   className?: string;
   children?: ReactNode;
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const dims = computeDims(scales, sex);
+  const dims = computeDims(scales, sex, { freeform });
   const paths = bodyPaths(dims);
   const [g0, g1, g2, outlineColor] = PALETTES[palette];
 
