@@ -47,6 +47,32 @@ const rowDate = (r: BodyAnalysisRow) => r.measured_at || r.created_at;
 const rowLabel = (r: BodyAnalysisRow) =>
   format(parseISO(rowDate(r)), "d 'de' MMM, yyyy", { locale: ptBR });
 
+/** Rótulos com seta do morph: gordura e músculo por região (dados reais do exame). */
+function segCallouts(a: ExtractedBioimpedance, b: ExtractedBioimpedance): MorphCallout[] {
+  const num = (v: unknown): number | null =>
+    typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
+  const pair = (
+    seg: { left?: number | null; right?: number | null } | undefined,
+    l: 'left_arm_kg' | 'left_leg_kg',
+    r: 'right_arm_kg' | 'right_leg_kg',
+  ): number | null => {
+    const vals = [num(seg?.[l]), num(seg?.[r])].filter((v): v is number => v != null);
+    return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
+  };
+  const fatA = a.segmental_fat;
+  const fatB = b.segmental_fat;
+  const musA = a.segmental_muscle;
+  const musB = b.segmental_muscle;
+  return [
+    { side: 'left', region: 'leftArm', label: 'Gordura braço', a: pair(fatA, 'left_arm_kg', 'right_arm_kg'), b: pair(fatB, 'left_arm_kg', 'right_arm_kg'), unit: 'kg', y: 104 },
+    { side: 'left', region: 'trunk', label: 'Gordura tronco', a: num(fatA?.trunk_kg), b: num(fatB?.trunk_kg), unit: 'kg', y: 200 },
+    { side: 'left', region: 'leftLeg', label: 'Gordura perna', a: pair(fatA, 'left_leg_kg', 'right_leg_kg'), b: pair(fatB, 'left_leg_kg', 'right_leg_kg'), unit: 'kg', y: 304 },
+    { side: 'right', region: 'rightArm', label: 'Músculo braço', a: pair(musA, 'left_arm_kg', 'right_arm_kg'), b: pair(musB, 'left_arm_kg', 'right_arm_kg'), unit: 'kg', y: 104 },
+    { side: 'right', region: 'trunk', label: 'Músculo tronco', a: num(musA?.trunk_kg), b: num(musB?.trunk_kg), unit: 'kg', y: 200 },
+    { side: 'right', region: 'rightLeg', label: 'Músculo perna', a: pair(musA, 'left_leg_kg', 'right_leg_kg'), b: pair(musB, 'left_leg_kg', 'right_leg_kg'), unit: 'kg', y: 304 },
+  ];
+}
+
 /* ------------------------------------------------------------------ */
 /* Component                                                          */
 /* ------------------------------------------------------------------ */
