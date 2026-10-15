@@ -55,18 +55,18 @@ const S = (v?: number) => (v != null && Number.isFinite(v) && v > 0 ? clamp(v, 0
 export function computeDims(scales: ZoneScales): BodyDims {
   return {
     nk: 7 * S(scales.neck),
-    sh: 38 * S(scales.shoulders),
-    ch: 31 * S(scales.chest),
+    sh: 40 * S(scales.shoulders),
+    ch: 32 * S(scales.chest),
     wa: 23 * S(scales.waist),
-    hp: 30 * S(scales.hip),
-    upL: 8 * S(scales.armL),
-    upR: 8 * S(scales.armR),
-    foL: 6 * S(scales.forearmL ?? scales.armL),
-    foR: 6 * S(scales.forearmR ?? scales.armR),
-    thL: 14 * S(scales.thighL),
-    thR: 14 * S(scales.thighR),
-    cfL: 7.5 * S(scales.calfL ?? scales.thighL),
-    cfR: 7.5 * S(scales.calfR ?? scales.thighR),
+    hp: 31 * S(scales.hip),
+    upL: 9.5 * S(scales.armL),
+    upR: 9.5 * S(scales.armR),
+    foL: 7 * S(scales.forearmL ?? scales.armL),
+    foR: 7 * S(scales.forearmR ?? scales.armR),
+    thL: 16 * S(scales.thighL),
+    thR: 16 * S(scales.thighR),
+    cfL: 9 * S(scales.calfL ?? scales.thighL),
+    cfR: 9 * S(scales.calfR ?? scales.thighR),
   };
 }
 
@@ -112,9 +112,9 @@ function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
   return [
     { x: X(0), y: 10 },
     { x: X(0), y: 10 }, // canto: topo da cabeça
-    { x: X(12), y: 13 },
-    { x: X(14), y: 26 },
-    { x: X(11.5), y: 38 },
+    { x: X(11), y: 13 },
+    { x: X(13), y: 25 },
+    { x: X(10.8), y: 37 },
     { x: X(o.nk * 0.9), y: 46 },
     { x: X(o.nk), y: 56 },
     { x: X(o.nk + 6), y: 64 },
@@ -219,10 +219,10 @@ export function tapeToScales(values: Partial<Record<string, number | null>>): Zo
 /* ------------------------------------------------------------------ */
 
 const TONE_COLOR: Record<RegionTone, string> = {
-  good: 'hsl(150 55% 50% / 0.75)',
-  std: 'hsl(205 60% 62% / 0.70)',
-  warn: 'hsl(40 90% 55% / 0.75)',
-  bad: 'hsl(0 70% 60% / 0.75)',
+  good: 'hsl(150 55% 48% / 0.9)',
+  std: 'hsl(205 60% 60% / 0.85)',
+  warn: 'hsl(40 90% 52% / 0.9)',
+  bad: 'hsl(0 70% 58% / 0.9)',
 };
 
 const fmtShort = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1).replace('.', ','));
