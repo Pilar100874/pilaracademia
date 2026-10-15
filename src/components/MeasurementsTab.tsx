@@ -297,6 +297,23 @@ function MeasurementDialog({
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const numericValues = useMemo(() => {
+    const out: Record<string, number | null> = {};
+    for (const f of FIELDS) out[f.key as string] = parseMeasure(values[f.key as string] ?? '');
+    return out;
+  }, [values]);
+
+  const focusField = (key: string) => {
+    setActiveKey(key);
+    const el = inputRefs.current[key];
+    if (el) {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.focus({ preventScroll: true });
+    }
+  };
 
   const initFrom = (row: MeasurementRow | null) => {
     setDate(row ? parseISO(row.measured_at) : new Date());
@@ -358,7 +375,7 @@ function MeasurementDialog({
       }}
     >
       <DialogContent
-        className="flex flex-col overflow-hidden p-0 max-w-lg max-h-[90vh]"
+        className="flex flex-col overflow-hidden p-0 max-w-lg sm:max-w-2xl max-h-[90vh]"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader className="px-5 pt-5 pb-3 border-b border-border shrink-0">
