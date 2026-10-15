@@ -228,8 +228,33 @@ export default function BioimpedancePage() {
           </TabsList>
 
           <TabsContent value="bioimpedance" className="space-y-5 mt-0">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Envie a foto do relatório de bioimpedância. A IA extrai os números e monta seu plano.
+              </p>
+              <Button
+                size="sm"
+                className="shrink-0"
+                disabled={analyzing}
+                onClick={() => fileRef.current?.click()}
+              >
+                <Upload className="h-3.5 w-3.5 mr-1" />
+                {analyzing ? 'Analisando…' : 'Enviar'}
+              </Button>
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(ev) => {
+                const f = ev.target.files?.[0];
+                if (f) startBioimpedance(f);
+                ev.target.value = '';
+              }}
+            />
             {!latest ? (
-              <EmptyState />
+              <EmptyState onUpload={() => fileRef.current?.click()} />
             ) : (
               <>
                 {/* Date + summary */}
