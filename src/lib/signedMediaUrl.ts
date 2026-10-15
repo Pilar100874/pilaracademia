@@ -128,15 +128,15 @@ export async function signRowsMedia<T extends object>(rows: T[], fields: (keyof 
 
   // 3) Réécrire les champs.
   return rows.map((row) => {
-    const copy = { ...row };
+    const copy = { ...row } as Record<string, unknown>;
     for (const field of fields) {
-      const value = row[field];
+      const value = copy[field];
       if (Array.isArray(value)) {
-        copy[field] = value.map((u) => (typeof u === 'string' ? signedByUrl.get(u) ?? u : u)) as T[keyof T & string];
+        copy[field] = value.map((u) => (typeof u === 'string' ? signedByUrl.get(u) ?? u : u));
       } else if (typeof value === 'string') {
-        copy[field] = (signedByUrl.get(value) ?? value) as T[keyof T & string];
+        copy[field] = signedByUrl.get(value) ?? value;
       }
     }
-    return copy;
+    return copy as T;
   });
 }
