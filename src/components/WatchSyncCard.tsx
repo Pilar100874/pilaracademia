@@ -22,6 +22,7 @@ export function WatchSyncCard() {
   const [summary, setSummary] = useState<WatchSummary | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSavingWeight, setIsSavingWeight] = useState(false);
+  const [isSavingExam, setIsSavingExam] = useState(false);
 
   useEffect(() => {
     if (!isWatchSyncSupported()) return;
@@ -107,6 +108,59 @@ export function WatchSyncCard() {
       toast({ title: 'Erro ao salvar peso', description: 'Tente novamente.', variant: 'destructive' });
     } finally {
       setIsSavingWeight(false);
+    }
+  };
+
+  const saveBodyExam = async () => {
+    if (!user || !summary) return;
+    const { latestWeight, latestBodyFat, latestHeightCm } = summary;
+    if (!latestWeight && !latestBodyFat) return;
+    setIsSavingExam(true);
+    try {
+      const measuredAt = latestBodyFat?.date || latestWeight?.date || new Date().toISOString();
+      const heightM = latestHeightCm ? latestHeightCm / 100 : null;
+      const weightKg = latestWeight?.kg ?? null;
+      const fatPct = latestBodyFat?.pct ?? null;
+
+      const { data: existing } = await supabase
+        .from('body_analyses')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('measured_at', measuredAt)
+        .limit(1);
+      if (existing && existing.length > 0) {
+        toast({ title: 'Exame já salvo', description: 'Essa medição já está no seu histórico.' });
+        return;
+      }
+
+      const extracted = {
+        measured_at: measuredAt,
+        weight_kg: weightKg,
+        body_fat_pct: fatPct,
+        fat_mass_kg: weightKg != null && fatPct != null ? Math.round(weightKg * (fatPct / 100) * 10) / 10 : null,
+        lean_mass_kg: weightKg != null && fatPct != null ? Math.round(weightKg * (1 - fatPct / 100) * 10) / 10 : null,
+        height_cm: latestHeightCm ?? null,
+        bmi: weightKg != null && heightM ? Math.round((weightKg / (heightM * heightM)) * 10) / 10 : null,
+      };
+
+      const { error } = await supabase.from('body_analyses').insert({
+        user_id: user.id,
+        image_url: null,
+        measured_at: measuredAt,
+        extracted,
+        plan: null,
+        summary: 'Medição importada da balança via Health Connect.',
+      });
+      if (error) throw error;
+      toast({ title: 'Exame salvo!', description: 'A medição da balança entrou no seu histórico de bioimpedância.' });
+    } catch {
+      toast({
+        title: 'Erro ao salvar exame',
+        description: 'Não foi possível salvar a medição. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingExam(false);
     }
   };
 
