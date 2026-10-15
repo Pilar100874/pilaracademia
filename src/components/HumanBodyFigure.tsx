@@ -146,10 +146,10 @@ function sidePoints(o: SideDims, dir: 1 | -1): { x: number; y: number }[] {
     { x: X(o.sh * 0.71 + o.fo), y: 264 },
     { x: X(o.sh * 0.71 + o.fo), y: 264 }, // canto: ponta dos dedos
     { x: X(o.sh * 0.66 + o.fo), y: 260 },
-    { x: X(o.sh * 0.68 + o.fo * 0.4), y: 240 }, // pulso interno
-    { x: X(o.hp + o.fo + 2), y: 216 }, // antebraço interno
-    { x: X(o.wa + o.up * 0.7 + 5), y: 186 },
-    { x: X(o.ch + o.up * 0.3), y: 164 }, // cotovelo interno
+    { x: X(o.hp + o.fo * 0.6), y: 238 }, // pulso interno
+    { x: X(o.hp + o.fo * 0.7), y: 216 }, // antebraço interno
+    { x: X(o.wa + o.up * 0.6 + 2), y: 186 },
+    { x: X(o.ch + o.up * 0.55), y: 164 }, // cotovelo interno
     { x: X(o.ch + o.up * 0.35), y: 138 }, // braço interno
     { x: X(o.ch * 0.95), y: 124 }, // axila
     { x: X(o.ch), y: 134 },
