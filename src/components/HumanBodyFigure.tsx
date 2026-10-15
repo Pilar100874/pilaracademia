@@ -63,10 +63,10 @@ export function computeDims(scales: ZoneScales): BodyDims {
     upR: 9.5 * S(scales.armR),
     foL: 7 * S(scales.forearmL ?? scales.armL),
     foR: 7 * S(scales.forearmR ?? scales.armR),
-    thL: 16 * S(scales.thighL),
-    thR: 16 * S(scales.thighR),
-    cfL: 9 * S(scales.calfL ?? scales.thighL),
-    cfR: 9 * S(scales.calfR ?? scales.thighR),
+    thL: 17.5 * S(scales.thighL),
+    thR: 17.5 * S(scales.thighR),
+    cfL: 10 * S(scales.calfL ?? scales.thighL),
+    cfR: 10 * S(scales.calfR ?? scales.thighR),
   };
 }
 
@@ -289,9 +289,9 @@ export function HumanSilhouette({
     >
       <defs>
         <radialGradient id={`hg${uid}`} cx="50%" cy="26%" r="85%">
-          <stop offset="0%" stopColor="#EEBF4E" />
-          <stop offset="45%" stopColor="#B5CC66" />
-          <stop offset="100%" stopColor="#46A898" />
+          <stop offset="0%" stopColor="#E8B23E" />
+          <stop offset="45%" stopColor="#A8C25C" />
+          <stop offset="100%" stopColor="#2E9484" />
         </radialGradient>
         <filter id={`hb${uid}`} x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="1" />
