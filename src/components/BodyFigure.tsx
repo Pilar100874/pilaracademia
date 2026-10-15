@@ -264,6 +264,17 @@ export function BodyFigure({
 /* Morph comparativo com barra de arrastar                             */
 /* ------------------------------------------------------------------ */
 
+/** Rótulo com seta do morph: valor interpolado entre A e B, já formatado. */
+export interface MorphCallout {
+  side: 'left' | 'right';
+  region: 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg';
+  label: string;
+  a: number | null;
+  b: number | null;
+  unit: string;
+  y: number;
+}
+
 export function BodyMorph({
   valuesA,
   valuesB,
@@ -272,6 +283,7 @@ export function BodyMorph({
   showValues = true,
   showMarkers = true,
   sex,
+  callouts,
 }: {
   valuesA: Values;
   valuesB: Values;
@@ -280,6 +292,8 @@ export function BodyMorph({
   showValues?: boolean;
   showMarkers?: boolean;
   sex?: BodySex;
+  /** Quando informado, substitui os rótulos em cm (ex.: kg de gordura/músculo por região) */
+  callouts?: MorphCallout[];
 }) {
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
