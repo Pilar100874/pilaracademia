@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -42,3 +45,13 @@ jobs:
         with:
           name: pilaracademia-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Preparar APK para download direto
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk pilaracademia.apk
+
+      # Publica/atualiza a release "latest" para o link direto de download
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Pilar Academia — app Android
+          files: pilaracademia.apk
