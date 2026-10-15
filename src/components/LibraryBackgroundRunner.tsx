@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { signMediaUrl } from '@/lib/signedMediaUrl';
 import { useAuth } from '@/hooks/useAuth';
 import { useExerciseLibrary, type LibraryExercise } from '@/hooks/useExerciseLibrary';
 import { useQueryClient } from '@tanstack/react-query';
