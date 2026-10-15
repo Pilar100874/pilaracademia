@@ -811,13 +811,13 @@ function ScaleExamView({ row }: { row: BodyAnalysisRow }) {
           {hasSegFat && (
             <div className="rounded-md border border-border bg-card p-4 space-y-2">
               <p className="text-sm font-medium">Gordura por região</p>
-              <SegmentalFigure kind="fat" values={e.segmental_fat!} />
+              <SegmentalFigure kind="fat" values={e.segmental_fat!} sex={e.sex} />
             </div>
           )}
           {hasSegMuscle && (
             <div className="rounded-md border border-border bg-card p-4 space-y-2">
               <p className="text-sm font-medium">Equilíbrio muscular</p>
-              <SegmentalFigure kind="muscle" values={e.segmental_muscle!} />
+              <SegmentalFigure kind="muscle" values={e.segmental_muscle!} sex={e.sex} />
             </div>
           )}
         </div>
