@@ -136,12 +136,14 @@
     max-width: 100vw;
     overflow-x: clip;
     /* Disable browser/PWA pull-to-refresh on overscroll */
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: none;
   }
 
   html {
     max-width: 100vw;
     overflow-x: clip;
+    /* Disable pull-to-refresh at the root scroller (Chrome/Android) */
+    overscroll-behavior-y: none;
   }
 
   h1, h2, h3, h4, h5, h6 {

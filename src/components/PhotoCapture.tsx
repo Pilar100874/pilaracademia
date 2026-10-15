@@ -171,7 +171,9 @@ export function PhotoCapture({ onFoodAnalyzed, onClose, selectedDate }: PhotoCap
     setError(null);
     
     try {
-      const base64 = await fileToBase64(file);
+      // Downscale before anything else: full-res camera photos (multi-MB base64)
+      // blow up mobile memory and the browser kills/reloads the tab on repeat captures.
+      const base64 = await compressImageFile(file).catch(() => fileToBase64(file));
       console.log('PhotoCapture: base64 generated, length:', base64.length);
       
       // Clear input AFTER reading the file
