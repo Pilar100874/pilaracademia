@@ -458,8 +458,8 @@ export function HumanSilhouette({
         {/* braços por cima do tronco: encostados no corpo, passando sobre o quadril */}
         <path d={paths.armL} fill={`url(#hg${uid})`} filter={`url(#hb${uid})`} />
         <path d={paths.armR} fill={`url(#hg${uid})`} filter={`url(#hb${uid})`} />
-        <path d={paths.armL} fill="none" stroke={outlineColor} strokeWidth={1.1} />
-        <path d={paths.armR} fill="none" stroke={outlineColor} strokeWidth={1.1} />
+        <path d={paths.armLLine} fill="none" stroke={outlineColor} strokeWidth={1.1} />
+        <path d={paths.armRLine} fill="none" stroke={outlineColor} strokeWidth={1.1} />
 
         {/* tons por região (gordura/músculo) */}
         {tones && (
