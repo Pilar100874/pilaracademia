@@ -764,6 +764,36 @@ function CompareDialog({
   );
 }
 
+/** Simple read-only view for exams saved from the smart scale (no AI plan). */
+function ScaleExamView({ row }: { row: BodyAnalysisRow }) {
+  const e = row.extracted || {};
+  const items: Array<{ label: string; value: string }> = [
+    e.weight_kg != null && { label: 'Peso', value: `${e.weight_kg} kg` },
+    e.body_fat_pct != null && { label: '% de gordura', value: `${e.body_fat_pct}%` },
+    e.fat_mass_kg != null && { label: 'Massa de gordura', value: `${e.fat_mass_kg} kg` },
+    e.lean_mass_kg != null && { label: 'Massa magra', value: `${e.lean_mass_kg} kg` },
+    e.bmi != null && { label: 'IMC', value: String(e.bmi) },
+    e.height_cm != null && { label: 'Altura', value: `${e.height_cm} cm` },
+  ].filter(Boolean) as Array<{ label: string; value: string }>;
+
+  return (
+    <div className="rounded-md border border-border bg-card p-4 space-y-3">
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Medição importada da balança via Health Connect — sem plano de IA. Para a análise
+        completa com plano, envie a foto do relatório de bioimpedância.
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        {items.map((it) => (
+          <div key={it.label} className="rounded-md border border-border p-3 text-center">
+            <p className="text-[11px] text-muted-foreground">{it.label}</p>
+            <p className="text-lg font-semibold">{it.value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function BodyAnalysisPage() {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
