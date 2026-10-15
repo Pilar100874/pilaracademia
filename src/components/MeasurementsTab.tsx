@@ -514,8 +514,19 @@ function MeasurementsCompare({
   onClose: () => void;
   sex?: BodySex;
 }) {
-  const [idA, setIdA] = useState<string>(rows[1]?.id ?? rows[0].id);
-  const [idB, setIdB] = useState<string>(rows[0].id);
+  // Padrão cronológico: A = medição mais antiga, B = mais recente.
+  // Sem isso, medições na mesma data caem em ordem arbitrária do banco e a
+  // animação antes→depois pode tocar ao contrário.
+  const chrono = useMemo(
+    () =>
+      [...rows].sort((a, b) => {
+        const d = a.measured_at.localeCompare(b.measured_at);
+        return d !== 0 ? d : (a.created_at ?? '').localeCompare(b.created_at ?? '');
+      }),
+    [rows],
+  );
+  const [idA, setIdA] = useState<string>(chrono[0].id);
+  const [idB, setIdB] = useState<string>(chrono[chrono.length - 1].id);
 
   const rowA = rows.find((r) => r.id === idA) ?? rows[0];
   const rowB = rows.find((r) => r.id === idB) ?? rows[0];

@@ -90,8 +90,18 @@ export function BioimpedanceCompare({
   rows: BodyAnalysisRow[];
   onClose: () => void;
 }) {
-  const [idA, setIdA] = useState<string>(rows[1]?.id ?? rows[0].id);
-  const [idB, setIdB] = useState<string>(rows[0].id);
+  // Padrão cronológico: A = exame mais antigo, B = mais recente (evita
+  // animação "invertida" quando dois exames têm a mesma data).
+  const chrono = useMemo(
+    () =>
+      [...rows].sort((a, b) => {
+        const d = rowDate(a).localeCompare(rowDate(b));
+        return d !== 0 ? d : (a.created_at ?? '').localeCompare(b.created_at ?? '');
+      }),
+    [rows],
+  );
+  const [idA, setIdA] = useState<string>(chrono[0].id);
+  const [idB, setIdB] = useState<string>(chrono[chrono.length - 1].id);
 
   const rowA = rows.find((r) => r.id === idA) ?? rows[0];
   const rowB = rows.find((r) => r.id === idB) ?? rows[0];
