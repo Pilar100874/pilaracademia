@@ -325,10 +325,12 @@ function MeasurementDialog({
   };
 
   const initFrom = (row: MeasurementRow | null) => {
+    // Ao criar uma nova medição, sugere os valores da medição anterior.
+    const source = row ?? previous;
     setDate(row ? parseISO(row.measured_at) : new Date());
     const v: Record<string, string> = {};
     for (const f of FIELDS) {
-      const val = row?.[f.key] as number | null | undefined;
+      const val = source?.[f.key] as number | null | undefined;
       if (val != null) v[f.key as string] = String(val).replace('.', ',');
     }
     setValues(v);
@@ -378,7 +380,7 @@ function MeasurementDialog({
   useEffect(() => {
     if (open) initFrom(editing);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, editing]);
+  }, [open, editing, previous]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
