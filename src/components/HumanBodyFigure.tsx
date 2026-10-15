@@ -50,21 +50,26 @@ export interface BodyDims {
 
 const CX = 100;
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
-// Amplitude restrita: o desenho deve continuar um corpo-padrão natural,
-// mesmo com medidas extremas (a diferença é transmitida com sutileza).
-const S = (v?: number) => (v != null && Number.isFinite(v) && v > 0 ? clamp(v, 0.82, 1.22) : 1);
+// Amplitude restrita e suavizada: o desenho deve continuar um corpo-padrão
+// natural, mesmo com medidas extremas (a diferença é transmitida com sutileza).
+const S = (v?: number) => {
+  const s = v != null && Number.isFinite(v) && v > 0 ? clamp(v, 0.82, 1.22) : 1;
+  return 1 + (s - 1) * 0.6;
+};
 
 export function computeDims(scales: ZoneScales): BodyDims {
   const ch = 33 * S(scales.chest);
   let sh = 42 * S(scales.shoulders);
   let wa = 24 * S(scales.waist);
   let hp = 28.5 * S(scales.hip);
-  // Vínculos anatômicos de um corpo-padrão: ombros levemente mais largos
-  // que o peito, quadril entre cintura e ombros, cintura nunca muito maior
-  // que o quadril. Evita a silhueta "deformada" com dados extremos.
-  sh = clamp(sh, ch * 1.08, ch * 1.38);
-  hp = clamp(hp, wa * 0.98, sh * 1.02);
-  wa = clamp(wa, ch * 0.6, hp * 1.1);
+  // Vínculos anatômicos de um corpo-padrão atlético: ombros visivelmente
+  // mais largos que o peito, cintura sempre mais fina que peito e quadril,
+  // quadril entre cintura e ombros. Evita a silhueta "deformada" ou em
+  // barril mesmo com dados extremos.
+  sh = clamp(sh, ch * 1.15, ch * 1.32);
+  wa = clamp(wa, ch * 0.62, ch * 0.9);
+  hp = clamp(hp, wa * 1.03, ch * 1.06);
+  wa = Math.min(wa, hp * 0.97);
   return {
     nk: 7 * S(scales.neck),
     sh,
