@@ -341,13 +341,7 @@ export function BodyMorph({
         </Button>
       </div>
 
-      <HumanSilhouette
-        sex={sex}
-        scales={tapeToScales(values)}
-        chipValues={values}
-        showChips={showValues && showMarkers}
-        className="max-w-[190px]"
-      />
+      <MorphFigure values={values} sex={sex} showValues={showValues} />
 
       <div className="space-y-1.5">
         <input
