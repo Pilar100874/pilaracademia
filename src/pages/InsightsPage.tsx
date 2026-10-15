@@ -436,7 +436,7 @@ export default function InsightsPage() {
               variant="outline"
               size="sm"
               className="w-full mt-3"
-              onClick={() => navigate('/bioimpedance')}
+              onClick={() => navigate('/health?tab=bioimpedance')}
             >
               Ver detalhes em Corpo
             </Button>
