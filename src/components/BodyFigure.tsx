@@ -268,6 +268,8 @@ export function BodyFigure({
 export interface MorphCallout {
   side: 'left' | 'right';
   region: 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg';
+  /** Ponto do corpo para onde a seta aponta (padrão: derivado de `region`) */
+  at?: MorphAnchorPoint;
   label: string;
   a: number | null;
   b: number | null;
@@ -465,22 +467,25 @@ function MorphFigure({
   const dims = computeDims(scales, sex, { freeform: true });
   const OFF = 34;
 
-  type CalloutSpec = { side: 'left' | 'right'; region: 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg'; label: string; v: number | null; unit: string; y: number; tone?: RegionTone };
+  type Region = 'leftArm' | 'rightArm' | 'trunk' | 'leftLeg' | 'rightLeg';
+  type CalloutSpec = { side: 'left' | 'right'; region: Region; at: MorphAnchorPoint; label: string; v: number | null; unit: string; tone?: RegionTone };
+  const regionToAt = (r: Region): MorphAnchorPoint =>
+    r === 'trunk' ? 'waist' : r === 'leftArm' || r === 'rightArm' ? 'arm' : 'thigh';
   const callouts: CalloutSpec[] = customCallouts
     ? customCallouts.map((c) => {
         const va = c.a != null && Number.isFinite(c.a) ? c.a : null;
         const vb = c.b != null && Number.isFinite(c.b) ? c.b : null;
         const v = va == null && vb == null ? null : (va ?? vb!) + ((vb ?? va!) - (va ?? vb!)) * t;
         const tone = t < 0.5 ? (c.toneA ?? c.toneB) : (c.toneB ?? c.toneA);
-        return { side: c.side, region: c.region, label: c.label, v, unit: c.unit, y: c.y, tone };
+        return { side: c.side, region: c.region, at: c.at ?? regionToAt(c.region), label: c.label, v, unit: c.unit, tone };
       })
     : [
-        { side: 'left', region: 'leftArm', label: 'Braço', v: pairAvg('arm_left_cm', 'arm_right_cm'), unit: 'cm', y: 104 },
-        { side: 'left', region: 'trunk', label: 'Cintura', v: single('waist_cm') ?? single('abdomen_cm'), unit: 'cm', y: 200 },
-        { side: 'left', region: 'leftLeg', label: 'Coxa', v: pairAvg('thigh_left_cm', 'thigh_right_cm'), unit: 'cm', y: 304 },
-        { side: 'right', region: 'rightArm', label: 'Peito', v: single('chest_cm'), unit: 'cm', y: 104 },
-        { side: 'right', region: 'rightLeg', label: 'Quadril', v: single('hip_cm'), unit: 'cm', y: 236 },
-        { side: 'right', region: 'rightLeg', label: 'Panturrilha', v: pairAvg('calf_left_cm', 'calf_right_cm'), unit: 'cm', y: 336 },
+        { side: 'left', region: 'leftArm', at: 'arm', label: 'Braço', v: pairAvg('arm_left_cm', 'arm_right_cm'), unit: 'cm' },
+        { side: 'left', region: 'trunk', at: 'waist', label: 'Cintura', v: single('waist_cm') ?? single('abdomen_cm'), unit: 'cm' },
+        { side: 'left', region: 'leftLeg', at: 'thigh', label: 'Coxa', v: pairAvg('thigh_left_cm', 'thigh_right_cm'), unit: 'cm' },
+        { side: 'right', region: 'trunk', at: 'chest', label: 'Peito', v: single('chest_cm'), unit: 'cm' },
+        { side: 'right', region: 'trunk', at: 'hip', label: 'Quadril', v: single('hip_cm'), unit: 'cm' },
+        { side: 'right', region: 'rightLeg', at: 'calf', label: 'Panturrilha', v: pairAvg('calf_left_cm', 'calf_right_cm'), unit: 'cm' },
       ];
 
   // Cor por região: quando os callouts trazem classificação, usa o pior tom da região
