@@ -18,8 +18,17 @@ import {
   Minus,
   Upload,
   GitCompareArrows,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { BioReport } from '@/components/BioReport';
 import { BioimpedanceCompare } from '@/components/BioimpedanceCompare';
 import { ScaleBleCard } from '@/components/ScaleBleCard';
@@ -177,25 +186,32 @@ const toneClasses: Record<string, string> = {
 /* ------------------------------------------------------------------ */
 
 export function BioimpedanceTab() {
-  const { list } = useBodyAnalyses();
+  const { list, remove } = useBodyAnalyses();
   const { startBioimpedance, jobs } = useBackgroundAnalysis();
   const analyzing = jobs.some((j) => j.kind === 'bioimpedance');
   const fileRef = useRef<HTMLInputElement>(null);
   const [comparing, setComparing] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const rows = list.data ?? [];
 
   const latest = rows[0] as BodyAnalysisRow | undefined;
-  const previous = rows[1] as BodyAnalysisRow | undefined;
+  const selected = (rows.find((r) => r.id === selectedId) ?? latest) as BodyAnalysisRow | undefined;
+  const selectedIdx = rows.findIndex((r) => r.id === selected?.id);
+  const previous = (selectedIdx >= 0 ? rows[selectedIdx + 1] : rows[1]) as BodyAnalysisRow | undefined;
 
-  const e = (latest?.extracted || {}) as ExtractedBioimpedance;
+  const e = (selected?.extracted || {}) as ExtractedBioimpedance;
   const ePrev = (previous?.extracted || {}) as ExtractedBioimpedance;
 
-  const measuredAt = latest?.measured_at || latest?.created_at;
+  const measuredAt = selected?.measured_at || selected?.created_at;
+
+  const rowLabel = (r: BodyAnalysisRow) =>
+    format(parseISO(r.measured_at || r.created_at), "d 'de' MMM, yyyy", { locale: ptBR });
 
   const summary = useMemo(() => {
-    if (!latest) return null;
+    if (!selected) return null;
     return buildPlainSummary(e, ePrev);
-  }, [latest, e, ePrev]);
+  }, [selected, e, ePrev]);
 
   return (
     <div className="space-y-5">
@@ -233,10 +249,39 @@ export function BioimpedanceTab() {
       )}
       {comparing && rows.length >= 2 ? (
         <BioimpedanceCompare rows={rows} onClose={() => setComparing(false)} />
-      ) : !latest ? (
+      ) : !selected ? (
         <EmptyState onUpload={() => fileRef.current?.click()} />
       ) : (
         <>
+          {/* Abrir qualquer data + excluir */}
+          <div className="flex items-center gap-2">
+            {rows.length > 1 ? (
+              <Select value={selected.id} onValueChange={setSelectedId}>
+                <SelectTrigger className="flex-1 min-w-0" aria-label="Escolher a data do exame">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {rows.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {rowLabel(r)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <span className="flex-1" />
+            )}
+            <Button
+              variant="outline"
+              size="icon"
+              className="shrink-0 text-destructive"
+              onClick={() => setConfirmId(selected.id)}
+              aria-label="Excluir este exame"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+
           {/* Date + summary */}
           <div className="rounded-md border border-border bg-card p-4">
             <p className="text-xs text-muted-foreground">
@@ -258,7 +303,7 @@ export function BioimpedanceTab() {
           </div>
 
           {/* Relatório estilo Fitdays */}
-          <BioReport e={e} row={latest} />
+          <BioReport e={e} row={selected} />
 
           {/* Detalhes de cada métrica (explicações) */}
           <details className="rounded-md border border-border bg-card">
@@ -360,6 +405,20 @@ export function BioimpedanceTab() {
           </Button>
         </>
       )}
+
+      <ConfirmDeleteDialog
+        open={!!confirmId}
+        onOpenChange={(v) => !v && setConfirmId(null)}
+        onConfirm={() => {
+          if (confirmId) {
+            remove.mutate(confirmId);
+            if (confirmId === selectedId) setSelectedId(null);
+            setConfirmId(null);
+          }
+        }}
+        title="Excluir exame de bioimpedância"
+        description="Tem certeza? Este exame e seus dados serão removidos e não entram mais nas comparações."
+      />
     </div>
   );
 }

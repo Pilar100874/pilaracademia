@@ -1,6 +1,13 @@
 import { Activity, Bone, Droplet, Dumbbell, Flame, Scale, Zap } from 'lucide-react';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 import { fmtN } from '@/components/BioimpedanceTab';
+import {
+  HumanSilhouette,
+  computeDims,
+  regionAnchor,
+  type RegionTones,
+  type ZoneScales,
+} from '@/components/HumanBodyFigure';
 import { cn } from '@/lib/utils';
 
 /* ------------------------------------------------------------------ */
@@ -160,25 +167,6 @@ type SegValues = Partial<Record<SegKey, number>>;
 
 type Tone = 'good' | 'std' | 'warn' | 'bad';
 
-const toneFill: Record<Tone, string> = {
-  good: 'hsl(150 60% 45% / 0.30)',
-  std: 'hsl(var(--primary) / 0.18)',
-  warn: 'hsl(40 90% 50% / 0.32)',
-  bad: 'hsl(0 70% 55% / 0.32)',
-};
-const toneStroke: Record<Tone, string> = {
-  good: 'hsl(150 60% 40%)',
-  std: 'hsl(var(--primary))',
-  warn: 'hsl(40 90% 42%)',
-  bad: 'hsl(0 70% 50%)',
-};
-const toneText: Record<Tone, string> = {
-  good: 'text-emerald-700',
-  std: 'text-primary',
-  warn: 'text-amber-700',
-  bad: 'text-red-700',
-};
-
 const FAT_SHARE: Record<SegKey, number> = {
   trunk_kg: 0.5,
   left_arm_kg: 0.065,
@@ -189,11 +177,38 @@ const FAT_SHARE: Record<SegKey, number> = {
 
 const REF: Record<'fat' | 'muscle', Record<'trunk' | 'arm' | 'leg', number>> = {
   fat: { trunk: 11, arm: 1.0, leg: 4.0 },
-  muscle: { trunk: 16, arm: 3.0, leg: 9.0 },
+  muscle: { trunk: 24, arm: 3.2, leg: 9.5 },
 };
 
-export function SegmentalFigure({ kind, values }: { kind: 'fat' | 'muscle'; values: SegValues }) {
-  const CX = 110;
+/** Referência por segmento proporcional ao peso, quando disponível */
+function segRef(kind: 'fat' | 'muscle', seg: 'trunk' | 'arm' | 'leg', weightKg?: number): number {
+  if (weightKg == null || weightKg <= 0) return REF[kind][seg];
+  const share = kind === 'fat'
+    ? { trunk: 0.1, arm: 0.013, leg: 0.028 }
+    : { trunk: 0.3, arm: 0.045, leg: 0.115 };
+  return weightKg * share[seg];
+}
+
+const CLS_COLOR: Record<'good' | 'warn' | 'bad', string> = {
+  good: 'hsl(150 55% 36%)',
+  warn: 'hsl(35 85% 36%)',
+  bad: 'hsl(0 65% 44%)',
+};
+
+export function SegmentalFigure({
+  kind,
+  values,
+  weightKg,
+}: {
+  kind: 'fat' | 'muscle';
+  values: SegValues;
+  weightKg?: number;
+}) {
+  const ref = {
+    trunk: segRef(kind, 'trunk', weightKg),
+    arm: segRef(kind, 'arm', weightKg),
+    leg: segRef(kind, 'leg', weightKg),
+  };
   const total = (Object.values(values).filter((v): v is number => v != null) as number[]).reduce(
     (s, v) => s + v,
     0,
@@ -227,79 +242,91 @@ export function SegmentalFigure({ kind, values }: { kind: 'fat' | 'muscle'; valu
     return 'bad';
   };
 
-  const ref = REF[kind];
-  const widthOf = (seg: 'trunk' | 'arm' | 'leg', kg: number | undefined, base: number) =>
-    base * clamp((kg ?? ref[seg]) / ref[seg], 0.6, 1.5);
+  // Amortece a proporção para o desenho continuar humano mesmo com valores extremos
+  const damp = (s: number | undefined, f = 0.45) =>
+    s == null ? undefined : clamp(1 + (s - 1) * f, 0.72, 1.35);
 
-  const tw = widthOf('trunk', values.trunk_kg, kind === 'fat' ? 26 : 24);
-  const awL = widthOf('arm', values.left_arm_kg, 6.5);
-  const awR = widthOf('arm', values.right_arm_kg, 6.5);
-  const lwL = widthOf('leg', values.left_leg_kg, 11);
-  const lwR = widthOf('leg', values.right_leg_kg, 11);
+  const sc = (kg: number | undefined, refKg: number) => (kg != null ? kg / refKg : undefined);
+  const trunkS = sc(values.trunk_kg, ref.trunk);
+  const legAvg =
+    values.left_leg_kg != null || values.right_leg_kg != null
+      ? (((values.left_leg_kg ?? values.right_leg_kg)! + (values.right_leg_kg ?? values.left_leg_kg)!) / 2) / ref.leg
+      : undefined;
 
-  const chip = (
-    x: number,
-    y: number,
-    anchor: 'start' | 'end',
-    label: string,
+  const scales: ZoneScales = {
+    shoulders: damp(trunkS, 0.3),
+    chest: damp(trunkS, 0.5),
+    waist: kind === 'fat' ? damp(trunkS, 0.6) : undefined,
+    hip: kind === 'fat' ? damp(trunkS, 0.55) : damp(legAvg, 0.5),
+    armL: damp(sc(values.left_arm_kg, ref.arm), 0.55),
+    armR: damp(sc(values.right_arm_kg, ref.arm), 0.55),
+    thighL: damp(sc(values.left_leg_kg, ref.leg), 0.55),
+    thighR: damp(sc(values.right_leg_kg, ref.leg), 0.55),
+  };
+
+  const tones: RegionTones = {
+    leftArm: toneFor('left_arm_kg'),
+    rightArm: toneFor('right_arm_kg'),
+    trunk: toneFor('trunk_kg'),
+    leftLeg: toneFor('left_leg_kg'),
+    rightLeg: toneFor('right_leg_kg'),
+  };
+
+  const dims = computeDims(scales);
+  const OFF = 30;
+
+  const classify = (
     kg: number | undefined,
-    tone: Tone,
-  ) => (
-    <g>
-      <text x={x} y={y} textAnchor={anchor} fontSize={8} style={{ fill: 'hsl(var(--muted-foreground))' }}>
-        {label}
-      </text>
-      <text
-        x={x}
-        y={y + 11}
-        textAnchor={anchor}
-        fontSize={10.5}
-        fontWeight={700}
-        style={{ fill: toneStroke[tone] }}
-      >
-        {kg != null ? `${fmtN(kg, 1)} kg` : '—'}
-      </text>
-    </g>
-  );
+    refKg: number,
+  ): { pct: number; label: string; tone: 'good' | 'warn' | 'bad' } | null => {
+    if (kg == null) return null;
+    const pct = (kg / refKg) * 100;
+    if (pct < 90) return { pct, label: 'Baixo', tone: kind === 'muscle' ? 'warn' : 'good' };
+    if (pct <= 110) return { pct, label: 'Padrão', tone: 'good' };
+    return { pct, label: 'Acima', tone: kind === 'muscle' ? 'good' : 'bad' };
+  };
 
-  const line = (x1: number, y1: number, x2: number, y2: number) => (
-    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="hsl(var(--border))" strokeWidth={1} strokeDasharray="2 2" />
-  );
+  const callout = (side: 'left' | 'right', region: keyof RegionTones, kg: number | undefined, refKg: number, y: number) => {
+    const dot = regionAnchor(region, dims);
+    const dx = OFF + dot.x;
+    const dy = dot.y;
+    const sx = side === 'left' ? 50 : 210;
+    const tx = side === 'left' ? 2 : 258;
+    const anchor = side === 'left' ? 'start' : 'end';
+    const c = classify(kg, refKg);
+    const connector =
+      side === 'left'
+        ? `M ${sx} ${y - 4} C ${sx + 18} ${y - 14}, ${dx - 16} ${dy}, ${dx} ${dy}`
+        : `M ${sx} ${y - 4} C ${sx - 18} ${y - 14}, ${dx + 16} ${dy}, ${dx} ${dy}`;
+    return (
+      <g key={`${side}-${region}`}>
+        <path d={connector} fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth={0.9} opacity={0.7} />
+        <circle cx={dx} cy={dy} r={2.6} fill="hsl(var(--foreground))" />
+        <text x={tx} y={y} textAnchor={anchor} fontSize={13} fontWeight={700} style={{ fill: 'hsl(var(--foreground))' }}>
+          {kg != null ? `${fmtN(kg, 1)}kg` : '—'}
+        </text>
+        {c && (
+          <>
+            <text x={tx} y={y + 14} textAnchor={anchor} fontSize={11.5} fontWeight={600} style={{ fill: 'hsl(var(--foreground))' }}>
+              {fmtN(c.pct, 1)}%
+            </text>
+            <text x={tx} y={y + 26} textAnchor={anchor} fontSize={9} style={{ fill: CLS_COLOR[c.tone] }}>
+              {c.label}
+            </text>
+          </>
+        )}
+      </g>
+    );
+  };
 
   return (
-    <svg viewBox="0 0 220 400" className="w-full max-w-[220px] mx-auto select-none" role="img">
-      {/* cabeça */}
-      <circle cx={CX} cy={24} r={14} fill="hsl(var(--muted))" stroke="hsl(var(--muted-foreground))" strokeWidth={1} />
-      <rect x={CX - 6} y={36} width={12} height={12} rx={3} fill="hsl(var(--muted))" stroke="hsl(var(--muted-foreground))" strokeWidth={1} />
-
-      {/* braços */}
-      <rect x={CX - tw - awL * 2 - 4} y={58} width={awL * 2} height={118} rx={awL} fill={toneFill[toneFor('left_arm_kg')]} stroke={toneStroke[toneFor('left_arm_kg')]} strokeWidth={1.4} />
-      <rect x={CX + tw + 4} y={58} width={awR * 2} height={118} rx={awR} fill={toneFill[toneFor('right_arm_kg')]} stroke={toneStroke[toneFor('right_arm_kg')]} strokeWidth={1.4} />
-
-      {/* pernas */}
-      <rect x={CX - lwL * 2 - 5} y={196} width={lwL * 2} height={160} rx={lwL * 0.8} fill={toneFill[toneFor('left_leg_kg')]} stroke={toneStroke[toneFor('left_leg_kg')]} strokeWidth={1.4} />
-      <rect x={CX + 5} y={196} width={lwR * 2} height={160} rx={lwR * 0.8} fill={toneFill[toneFor('right_leg_kg')]} stroke={toneStroke[toneFor('right_leg_kg')]} strokeWidth={1.4} />
-
-      {/* tronco */}
-      <path
-        d={`M ${CX - tw} 52 Q ${CX} 44 ${CX + tw} 52 L ${CX + tw * 0.92} 186 Q ${CX} 196 ${CX - tw * 0.92} 186 Z`}
-        fill={toneFill[toneFor('trunk_kg')]}
-        stroke={toneStroke[toneFor('trunk_kg')]}
-        strokeWidth={1.5}
-      />
-
-      {/* conectores + rótulos */}
-      {line(CX - tw - awL * 2 - 2, 76, 46, 66)}
-      {chip(44, 60, 'end', 'Braço esq.', values.left_arm_kg, toneFor('left_arm_kg'))}
-      {line(CX + tw + awR * 2 + 2, 76, 174, 66)}
-      {chip(176, 60, 'start', 'Braço dir.', values.right_arm_kg, toneFor('right_arm_kg'))}
-      {line(CX + tw * 0.95, 130, 174, 122)}
-      {chip(176, 116, 'start', 'Tronco', values.trunk_kg, toneFor('trunk_kg'))}
-      {line(CX - lwL - 3, 270, 46, 262)}
-      {chip(44, 256, 'end', 'Perna esq.', values.left_leg_kg, toneFor('left_leg_kg'))}
-      {line(CX + lwR + 3, 270, 174, 262)}
-      {chip(176, 256, 'start', 'Perna dir.', values.right_leg_kg, toneFor('right_leg_kg'))}
-    </svg>
+    <HumanSilhouette scales={scales} tones={tones} badges offsetX={OFF} frameWidth={260} className="max-w-[280px]">
+      {callout('left', 'leftArm', values.left_arm_kg, ref.arm, 100)}
+      {callout('left', 'trunk', values.trunk_kg, ref.trunk, 196)}
+      {callout('left', 'leftLeg', values.left_leg_kg, ref.leg, 300)}
+      {callout('right', 'rightArm', values.right_arm_kg, ref.arm, 100)}
+      {callout('right', 'rightLeg', values.right_leg_kg, ref.leg, 300)}
+    </HumanSilhouette>
   );
 }
 
@@ -594,7 +621,7 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
           {hasSegmentalFat && (
             <div className="rounded-md border border-border bg-card p-4 space-y-2">
               <p className="text-sm font-medium">Gordura por região</p>
-              <SegmentalFigure kind="fat" values={e.segmental_fat!} />
+              <SegmentalFigure kind="fat" values={e.segmental_fat!} weightKg={weight ?? undefined} />
               <p className="text-[10px] text-muted-foreground leading-relaxed">
                 Verde: abaixo do esperado · azul: dentro do padrão · amarelo/vermelho: acima,
                 comparando a distribuição entre as regiões.
@@ -604,7 +631,7 @@ export function BioReport({ e, row }: { e: ExtractedBioimpedance; row: BodyAnaly
           {hasSegmentalMuscle && (
             <div className="rounded-md border border-border bg-card p-4 space-y-2">
               <p className="text-sm font-medium">Equilíbrio muscular</p>
-              <SegmentalFigure kind="muscle" values={e.segmental_muscle!} />
+              <SegmentalFigure kind="muscle" values={e.segmental_muscle!} weightKg={weight ?? undefined} />
               <p className="text-[10px] text-muted-foreground leading-relaxed">
                 Verde: lados equilibrados · amarelo/vermelho: assimetria entre esquerdo e direito.
               </p>
