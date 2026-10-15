@@ -92,6 +92,13 @@
       "when": 1792000583594,
       "tag": "0012_member_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792074508454,
+      "tag": "0013_create_body_measurements",
+      "breakpoints": true
     }
   ]
 }

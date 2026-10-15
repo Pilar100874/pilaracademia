@@ -6,6 +6,7 @@ import { differenceInYears, parseISO } from 'date-fns';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BioimpedanceTab } from '@/components/BioimpedanceTab';
+import { MeasurementsTab } from '@/components/MeasurementsTab';
 import { BloodExamsTab } from '@/components/BloodExamsTab';
 import { WatchSyncCard } from '@/components/WatchSyncCard';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
@@ -34,7 +35,7 @@ export function HealthPage() {
   const { list } = useBodyAnalyses();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const tab = tabParam === 'blood' ? 'blood' : tabParam === 'bioimpedance' ? 'bioimpedance' : 'overview';
+  const tab = tabParam === 'blood' ? 'blood' : tabParam === 'bioimpedance' ? 'bioimpedance' : tabParam === 'measurements' ? 'measurements' : 'overview';
 
   const latestBio = list.data?.[0] as BodyAnalysisRow | undefined;
   const latestExtracted = (latestBio?.extracted || {}) as ExtractedBioimpedance;
@@ -146,9 +147,10 @@ export function HealthPage() {
       </header>
 
       <Tabs value={tab} onValueChange={setTab} className="px-5 py-5">
-        <TabsList className="w-full grid grid-cols-3 mb-5">
+        <TabsList className="w-full grid grid-cols-4 mb-5">
           <TabsTrigger value="overview">Visão geral</TabsTrigger>
           <TabsTrigger value="bioimpedance">Bioimpedância</TabsTrigger>
+          <TabsTrigger value="measurements">Medidas</TabsTrigger>
           <TabsTrigger value="blood">Exames</TabsTrigger>
         </TabsList>
 
@@ -359,6 +361,10 @@ export function HealthPage() {
 
         <TabsContent value="bioimpedance" className="mt-0">
           <BioimpedanceTab />
+        </TabsContent>
+
+        <TabsContent value="measurements" className="mt-0">
+          <MeasurementsTab />
         </TabsContent>
 
         <TabsContent value="blood" className="mt-0">
