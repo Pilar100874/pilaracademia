@@ -1,7 +1,6 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home,
-  Calendar,
   Dumbbell,
   Heart,
   User,
