@@ -152,24 +152,25 @@ export function WatchSyncCard() {
     return `Calorias lançadas como exercício de hoje (${s.caloriesToday} kcal).`;
   };
 
-  const importWeight = async (userId: string, s: WatchSummary): Promise<string> => {
-    if (!s.latestWeight) return 'Peso: sem dados no Samsung Health.';
-    const { start, end } = dayBounds(s.latestWeight.date);
+  const importWeight = async (userId: string, points: BodyCompositionPoint[], days: number): Promise<string> => {
+    const withKg = points.filter((p) => p.kg != null);
+    if (!withKg.length) return 'Peso: sem dados no Samsung Health.';
+    const since = new Date(Date.now() - days * 86400000);
+    since.setHours(0, 0, 0, 0);
     const { data: existing } = await supabase
       .from('weight_history')
-      .select('id')
+      .select('recorded_at')
       .eq('user_id', userId)
-      .gte('recorded_at', start)
-      .lte('recorded_at', end)
-      .limit(1);
-    if (existing && existing.length > 0) return 'Peso: já existe registro neste dia.';
-    const { error } = await supabase.from('weight_history').insert({
-      user_id: userId,
-      weight_kg: s.latestWeight.kg,
-      recorded_at: s.latestWeight.date,
-    });
+      .gte('recorded_at', since.toISOString());
+    const seen = new Set((existing ?? []).map((r) => dayKeyOf(r.recorded_at)));
+    const rows = withKg
+      .filter((p) => !seen.has(dayKeyOf(p.date)))
+      .map((p) => ({ user_id: userId, weight_kg: p.kg as number, recorded_at: p.date }));
+    if (!rows.length) return `Peso: histórico dos ${periodLabel(days)} já estava completo.`;
+    const { error } = await supabase.from('weight_history').insert(rows);
     if (error) throw error;
-    return `Peso salvo (${s.latestWeight.kg} kg).`;
+    notifyWeightHistoryChanged();
+    return `${rows.length} ${rows.length === 1 ? 'pesagem salva' : 'pesagens salvas'} no histórico.`;
   };
 
   const importBodyExam = async (userId: string, s: WatchSummary): Promise<string> => {
@@ -215,8 +216,9 @@ export function WatchSyncCard() {
     setIsImporting(true);
     const results: string[] = [];
     try {
+      const points = options.weight || options.bodyExam ? await readBodyCompositionHistory(options.period) : [];
       if (options.calories) results.push(await importCalories(user.id, summary));
-      if (options.weight) results.push(await importWeight(user.id, summary));
+      if (options.weight) results.push(await importWeight(user.id, points, options.period));
       if (options.bodyExam) results.push(await importBodyExam(user.id, summary));
       if (options.profileWeight && summary.latestWeight) {
         const { error } = await supabase.from('profiles').update({ weight_kg: summary.latestWeight.kg }).eq('user_id', user.id);
@@ -225,12 +227,12 @@ export function WatchSyncCard() {
         void queryClient.invalidateQueries({ queryKey: ['profile'] });
       }
       if (options.history) {
-        const rows = (await readHealthHistory(30)).map((r) => ({ ...r, user_id: user.id, source: 'samsung_health' }));
+        const rows = (await readHealthHistory(options.period)).map((r) => ({ ...r, user_id: user.id, source: 'samsung_health' }));
         for (let i = 0; i < rows.length; i += 500) {
           const { error } = await supabase.from('health_metrics').upsert(rows.slice(i, i + 500), { onConflict: 'user_id,metric_type,recorded_at' });
           if (error) throw error;
         }
-        results.push(`${rows.length} registros de sinais vitais salvos.`);
+        results.push(`${rows.length} registros de sinais vitais salvos (${periodLabel(options.period)}).`);
         void queryClient.invalidateQueries({ queryKey: ['health-metrics'] });
       }
       toast({
