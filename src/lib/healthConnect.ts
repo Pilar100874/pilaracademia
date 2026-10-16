@@ -79,7 +79,7 @@ function startOfToday(): string {
   return d.toISOString();
 }
 
-type ActivityType = 'steps' | 'calories' | 'totalCalories' | 'distance';
+export type ActivityType = 'steps' | 'calories' | 'totalCalories' | 'distance';
 
 async function aggregateToday(dataType: ActivityType, end: string): Promise<number | null> {
   try {
