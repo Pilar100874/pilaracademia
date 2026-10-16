@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Watch, RefreshCw, Footprints, Flame, HeartPulse, Moon, Scale, Settings, Activity, Download, Route, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -61,6 +62,7 @@ export function WatchSyncCard() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [edits, setEdits] = useState<Record<string, string>>({});
   const [options, setOptions] = useState<ImportOptions>({ calories: true, activity: true, weight: true, bodyExam: true, history: true, profileWeight: false, period: 30 });
 
   useEffect(() => {
@@ -223,12 +225,64 @@ export function WatchSyncCard() {
     return 'Exame de bioimpedância salvo.';
   };
 
+  const editFields = [
+    { key: 'stepsToday', label: 'Passos', unit: 'passos', decimal: false },
+    { key: 'distanceKm', label: 'Distância', unit: 'km', decimal: true },
+    { key: 'activityMinutesToday', label: 'Tempo de atividade', unit: 'min', decimal: false },
+    { key: 'caloriesToday', label: 'Calorias ativas', unit: 'kcal', decimal: false },
+    { key: 'totalCaloriesToday', label: 'Gasto total', unit: 'kcal', decimal: false },
+    { key: 'weightKg', label: 'Peso', unit: 'kg', decimal: true },
+    { key: 'bodyFatPct', label: 'Gordura corporal', unit: '%', decimal: true },
+  ] as const;
+
+  const openEdits = (s: WatchSummary) => {
+    const fmt = (v: number | null | undefined) => (v == null ? '' : String(v).replace('.', ','));
+    setEdits({
+      stepsToday: fmt(s.stepsToday),
+      distanceKm: fmt(s.distanceTodayMeters != null ? Math.round(s.distanceTodayMeters / 10) / 100 : null),
+      activityMinutesToday: fmt(s.activityMinutesToday),
+      caloriesToday: fmt(s.caloriesToday),
+      totalCaloriesToday: fmt(s.totalCaloriesToday),
+      weightKg: fmt(s.latestWeight?.kg),
+      bodyFatPct: fmt(s.latestBodyFat?.pct),
+    });
+  };
+
+  const applyEdits = (s: WatchSummary): WatchSummary => {
+    const num = (k: string) => {
+      const raw = (edits[k] ?? '').trim();
+      if (!raw) return null;
+      const n = Number(raw.replace(',', '.'));
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    };
+    const km = num('distanceKm');
+    const kg = num('weightKg');
+    const pct = num('bodyFatPct');
+    return {
+      ...s,
+      stepsToday: num('stepsToday') != null ? Math.round(num('stepsToday')!) : null,
+      distanceTodayMeters: km != null ? Math.round(km * 1000) : null,
+      activityMinutesToday: num('activityMinutesToday') != null ? Math.round(num('activityMinutesToday')!) : null,
+      caloriesToday: num('caloriesToday') != null ? Math.round(num('caloriesToday')!) : null,
+      totalCaloriesToday: num('totalCaloriesToday') != null ? Math.round(num('totalCaloriesToday')!) : null,
+      latestWeight: kg != null ? { kg, date: s.latestWeight?.date ?? s.syncedAt } : null,
+      latestBodyFat: pct != null ? { pct, date: s.latestBodyFat?.date ?? s.syncedAt } : null,
+    };
+  };
+
+  const summaryRaw = summary;
   const confirmImport = async () => {
-    if (!user || !summary) return;
+    if (!user || !summaryRaw) return;
+    const summary = applyEdits(summaryRaw);
     setIsImporting(true);
     const results: string[] = [];
     try {
-      const points = options.weight || options.bodyExam ? await readBodyCompositionHistory(options.period) : [];
+      const rawPoints = options.weight || options.bodyExam ? await readBodyCompositionHistory(options.period) : [];
+      const points = rawPoints.map((p) => {
+        if (p.kg != null && summaryRaw.latestWeight && p.date === summaryRaw.latestWeight.date) return { ...p, kg: summary.latestWeight?.kg };
+        if (p.pct != null && summaryRaw.latestBodyFat && p.date === summaryRaw.latestBodyFat.date) return { ...p, pct: summary.latestBodyFat?.pct };
+        return p;
+      }).filter((p) => p.kg != null || p.pct != null);
       if (options.calories || options.activity) results.push(await importCalories(user.id, summary));
       if (options.weight) results.push(await importWeight(user.id, points, options.period));
       if (options.bodyExam) results.push(await importBodyExam(user.id, summary));
@@ -385,7 +439,9 @@ export function WatchSyncCard() {
               <Button size="sm" disabled={isSyncing} onClick={async () => {
                 setIsSyncing(true);
                 try {
-                  setSummary(await readWatchSummary());
+                  const fresh = await readWatchSummary();
+                  setSummary(fresh);
+                  openEdits(fresh);
                   setImportOpen(true);
                 } catch {
                   toast({ title: 'Não foi possível atualizar os dados', description: 'Abra o Samsung Health e tente novamente.', variant: 'destructive' });
@@ -426,6 +482,27 @@ export function WatchSyncCard() {
               <span className="block text-[11px] text-muted-foreground mt-2">
                 Vale para o histórico de peso e para os sinais vitais. As calorias são sempre as de hoje.
               </span>
+            </div>
+
+            <div className="rounded-md border border-border p-3">
+              <span className="block font-medium text-sm">Conferir e editar valores de hoje</span>
+              <span className="block text-[11px] text-muted-foreground mb-2">Corrija o que não bater com o relógio. Deixe vazio para não importar o valor.</span>
+              <div className="grid grid-cols-2 gap-2">
+                {editFields.map((f) => (
+                  <label key={f.key} className="min-w-0 text-xs">
+                    <span className="block text-muted-foreground truncate">{f.label} ({f.unit})</span>
+                    <Input
+                      inputMode={f.decimal ? 'decimal' : 'numeric'}
+                      value={edits[f.key] ?? ''}
+                      onChange={(e) => {
+                        const v = f.decimal ? e.target.value.replace(/[^0-9.,]/g, '') : e.target.value.replace(/\D/g, '');
+                        setEdits((o) => ({ ...o, [f.key]: v }));
+                      }}
+                      className="h-8 mt-0.5"
+                    />
+                  </label>
+                ))}
+              </div>
             </div>
 
             <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer">
