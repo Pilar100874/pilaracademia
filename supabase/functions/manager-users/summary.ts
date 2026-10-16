@@ -17,7 +17,7 @@ export async function memberSummary(admin: SupabaseClient, userId: string, days:
     }
     return rows;
   };
-  const [profileResult, latestWeight, weights, food, liquids, activities, glucose, body, exams, checkins, workoutsResult] = await Promise.all([
+  const [profileResult, latestWeight, weights, food, liquids, activities, glucose, body, exams, workoutsResult] = await Promise.all([
     admin.from('profiles').select('name,email,birth_date,gender,height_cm,weight_kg,goal,activity_level,created_at,daily_calories,daily_calories_override,daily_protein,daily_protein_override,daily_carbs,daily_carbs_override,daily_fat,daily_fat_override,daily_liquid_ml,daily_liquid_ml_override').eq('user_id', userId).single(),
     admin.from('weight_history').select('weight_kg,recorded_at').eq('user_id', userId).lte('recorded_at', `${endDate}T23:59:59.999-03:00`).order('recorded_at', { ascending: false }).limit(1),
     read('weight_history', 'id,weight_kg,recorded_at', 'recorded_at'),
@@ -27,7 +27,6 @@ export async function memberSummary(admin: SupabaseClient, userId: string, days:
     read('glycemia_entries', 'id,glucose_mg_dl,measurement_type,measured_at,notes', 'measured_at'),
     read('body_analyses', 'id,extracted,score,summary,measured_at,created_at', 'created_at'),
     read('blood_exams', 'id,markers,summary,alerts,status,collected_at,created_at,lab_name', 'created_at'),
-    read('weekly_checkins', 'id,period_start,period_end,adherence_score,summary,highlights,recommendations,created_at', 'period_end'),
     admin.from('workout_plans').select('id,name,objective,days_of_week,sets,reps').eq('user_id', userId).order('name'),
   ]);
   if (profileResult.error) throw profileResult.error;
@@ -54,5 +53,5 @@ export async function memberSummary(admin: SupabaseClient, userId: string, days:
     add(row, 'sessions', 1);
   }
   return { profile: profileResult.data, currentWeight: latestWeight.data?.[0] ?? null, startDate, endDate,
-    daily: [...daily.values()].sort((a, b) => a.date.localeCompare(b.date)), weights, activities, glucose, body, exams, checkins, workouts: workoutsResult.data ?? [] };
+    daily: [...daily.values()].sort((a, b) => a.date.localeCompare(b.date)), weights, activities, glucose, body, exams, workouts: workoutsResult.data ?? [] };
 }
