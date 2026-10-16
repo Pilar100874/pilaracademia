@@ -52,7 +52,7 @@ export interface DayTotal { value: number; latestEnd: string; sourceId?: string 
  * Summing every source double-counts; Health Connect's priority aggregate may pick a
  * lagging phone source instead of the watch.
  */
-export function sourceTotalsByDay(samples: SourcedSample[], preferred = SAMSUNG_HEALTH_PACKAGE): Map<string, DayTotal> {
+export function sourceTotalsByDay(samples: SourcedSample[], preferred = SAMSUNG_HEALTH_PACKAGE, pick: 'preferred' | 'max' = 'preferred'): Map<string, DayTotal> {
   const days = new Map<string, Map<string, DayTotal>>();
   for (const sample of samples) {
     if (!Number.isFinite(sample.value) || sample.value < 0) continue;
@@ -67,7 +67,10 @@ export function sourceTotalsByDay(samples: SourcedSample[], preferred = SAMSUNG_
   }
   const result = new Map<string, DayTotal>();
   for (const [day, bySource] of days) {
-    const chosen = bySource.get(preferred) ?? [...bySource.values()].sort((a, b) => b.value - a.value)[0];
+    const largest = [...bySource.values()].sort((a, b) => b.value - a.value)[0];
+    // 'max': Samsung may share only part of a total (e.g. distance of some walks) while
+    // another source holds the full day; taking the largest single source never double-counts.
+    const chosen = pick === 'max' ? largest : bySource.get(preferred) ?? largest;
     if (chosen) result.set(day, chosen);
   }
   return result;

@@ -30,6 +30,8 @@ import {
 } from '@/lib/healthConnect';
 import { localHealthDay } from '@/lib/healthActivity';
 import { notifyWeightHistoryChanged } from '@/hooks/useWeightHistory';
+import { useProfile } from '@/hooks/useProfile';
+import { calculateAge, calculateBMR } from '@/types/profile';
 
 type Status = 'checking' | 'unavailable' | 'needs-permission' | 'ready';
 
@@ -57,6 +59,11 @@ export function WatchSyncCard() {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { profile } = useProfile();
+  // Basal do perfil: usado só se o Samsung Health não compartilhar o metabolismo basal.
+  const profileBasal = profile?.gender && profile.height_cm && profile.birth_date && profile.weight_kg
+    ? calculateBMR(profile.gender, Number(profile.weight_kg), profile.height_cm, calculateAge(profile.birth_date))
+    : null;
   const [status, setStatus] = useState<Status>('checking');
   const [summary, setSummary] = useState<WatchSummary | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -81,7 +88,7 @@ export function WatchSyncCard() {
     setIsSyncing(true);
     try {
       await ensureWatchPermissions();
-      const data = await readWatchSummary();
+      const data = await readWatchSummary({ fallbackBasalKcal: profileBasal });
       setSummary(data);
       setStatus('ready');
     } catch {
@@ -93,7 +100,7 @@ export function WatchSyncCard() {
     } finally {
       setIsSyncing(false);
     }
-  }, [toast]);
+  }, [toast, profileBasal]);
 
   const connect = async () => {
     try {
@@ -440,7 +447,7 @@ export function WatchSyncCard() {
               <Button size="sm" disabled={isSyncing} onClick={async () => {
                 setIsSyncing(true);
                 try {
-                  const fresh = await readWatchSummary();
+                  const fresh = await readWatchSummary({ fallbackBasalKcal: profileBasal });
                   setSummary(fresh);
                   openEdits(fresh);
                   setImportOpen(true);
