@@ -20,11 +20,24 @@ import {
   openWatchSettings,
   readWatchSummary,
   readHealthHistory,
+  readBodyCompositionHistory,
   requestWatchPermission,
+  type BodyCompositionPoint,
   type WatchSummary,
 } from '@/lib/healthConnect';
+import { notifyWeightHistoryChanged } from '@/hooks/useWeightHistory';
 
 type Status = 'checking' | 'unavailable' | 'needs-permission' | 'ready';
+
+/** Dias de histórico que o usuário pode escolher importar. */
+const PERIODS = [30, 90, 365] as const;
+const periodLabel = (days: number) => (days === 365 ? 'último ano' : `últimos ${days} dias`);
+
+/** Chave estável do dia local (para comparar registros já salvos). */
+const dayKeyOf = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
 
 interface ImportOptions {
   calories: boolean;
@@ -32,6 +45,7 @@ interface ImportOptions {
   bodyExam: boolean;
   history: boolean;
   profileWeight: boolean;
+  period: (typeof PERIODS)[number];
 }
 
 export function WatchSyncCard() {
@@ -43,7 +57,7 @@ export function WatchSyncCard() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [options, setOptions] = useState<ImportOptions>({ calories: true, weight: true, bodyExam: true, history: true, profileWeight: false });
+  const [options, setOptions] = useState<ImportOptions>({ calories: true, weight: true, bodyExam: true, history: true, profileWeight: false, period: 30 });
 
   useEffect(() => {
     if (!isWatchSyncSupported()) return;
@@ -138,24 +152,25 @@ export function WatchSyncCard() {
     return `Calorias lançadas como exercício de hoje (${s.caloriesToday} kcal).`;
   };
 
-  const importWeight = async (userId: string, s: WatchSummary): Promise<string> => {
-    if (!s.latestWeight) return 'Peso: sem dados no Samsung Health.';
-    const { start, end } = dayBounds(s.latestWeight.date);
+  const importWeight = async (userId: string, points: BodyCompositionPoint[], days: number): Promise<string> => {
+    const withKg = points.filter((p) => p.kg != null);
+    if (!withKg.length) return 'Peso: sem dados no Samsung Health.';
+    const since = new Date(Date.now() - days * 86400000);
+    since.setHours(0, 0, 0, 0);
     const { data: existing } = await supabase
       .from('weight_history')
-      .select('id')
+      .select('recorded_at')
       .eq('user_id', userId)
-      .gte('recorded_at', start)
-      .lte('recorded_at', end)
-      .limit(1);
-    if (existing && existing.length > 0) return 'Peso: já existe registro neste dia.';
-    const { error } = await supabase.from('weight_history').insert({
-      user_id: userId,
-      weight_kg: s.latestWeight.kg,
-      recorded_at: s.latestWeight.date,
-    });
+      .gte('recorded_at', since.toISOString());
+    const seen = new Set((existing ?? []).map((r) => dayKeyOf(r.recorded_at)));
+    const rows = withKg
+      .filter((p) => !seen.has(dayKeyOf(p.date)))
+      .map((p) => ({ user_id: userId, weight_kg: p.kg as number, recorded_at: p.date }));
+    if (!rows.length) return `Peso: histórico dos ${periodLabel(days)} já estava completo.`;
+    const { error } = await supabase.from('weight_history').insert(rows);
     if (error) throw error;
-    return `Peso salvo (${s.latestWeight.kg} kg).`;
+    notifyWeightHistoryChanged();
+    return `${rows.length} ${rows.length === 1 ? 'pesagem salva' : 'pesagens salvas'} no histórico.`;
   };
 
   const importBodyExam = async (userId: string, s: WatchSummary): Promise<string> => {
@@ -201,8 +216,9 @@ export function WatchSyncCard() {
     setIsImporting(true);
     const results: string[] = [];
     try {
+      const points = options.weight || options.bodyExam ? await readBodyCompositionHistory(options.period) : [];
       if (options.calories) results.push(await importCalories(user.id, summary));
-      if (options.weight) results.push(await importWeight(user.id, summary));
+      if (options.weight) results.push(await importWeight(user.id, points, options.period));
       if (options.bodyExam) results.push(await importBodyExam(user.id, summary));
       if (options.profileWeight && summary.latestWeight) {
         const { error } = await supabase.from('profiles').update({ weight_kg: summary.latestWeight.kg }).eq('user_id', user.id);
@@ -211,12 +227,12 @@ export function WatchSyncCard() {
         void queryClient.invalidateQueries({ queryKey: ['profile'] });
       }
       if (options.history) {
-        const rows = (await readHealthHistory(30)).map((r) => ({ ...r, user_id: user.id, source: 'samsung_health' }));
+        const rows = (await readHealthHistory(options.period)).map((r) => ({ ...r, user_id: user.id, source: 'samsung_health' }));
         for (let i = 0; i < rows.length; i += 500) {
           const { error } = await supabase.from('health_metrics').upsert(rows.slice(i, i + 500), { onConflict: 'user_id,metric_type,recorded_at' });
           if (error) throw error;
         }
-        results.push(`${rows.length} registros de sinais vitais salvos.`);
+        results.push(`${rows.length} registros de sinais vitais salvos (${periodLabel(options.period)}).`);
         void queryClient.invalidateQueries({ queryKey: ['health-metrics'] });
       }
       toast({
@@ -336,6 +352,25 @@ export function WatchSyncCard() {
           </DialogHeader>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2 space-y-3">
+            <div className="rounded-md border border-border p-3">
+              <span className="block text-xs font-medium mb-2">Período importado</span>
+              <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/60 p-1">
+                {PERIODS.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setOptions((o) => ({ ...o, period: p }))}
+                    className={`rounded-md px-2 py-1 text-xs font-medium ${options.period === p ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                  >
+                    {p === 365 ? '1 ano' : `${p} dias`}
+                  </button>
+                ))}
+              </div>
+              <span className="block text-[11px] text-muted-foreground mt-2">
+                Vale para o histórico de peso e para os sinais vitais. As calorias são sempre as de hoje.
+              </span>
+            </div>
+
             {summary?.caloriesToday != null && (
               <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer">
                 <Checkbox
@@ -368,7 +403,7 @@ export function WatchSyncCard() {
                     Peso: {summary.latestWeight.kg} kg
                   </span>
                   <span className="block text-xs text-muted-foreground mt-0.5">
-                    Salva no histórico de peso na data da medição.
+                    Salva as pesagens dos {periodLabel(options.period)} no histórico de peso, sem duplicar dias já lançados.
                   </span>
                 </span>
               </label>
@@ -388,7 +423,7 @@ export function WatchSyncCard() {
                     {summary.latestBodyFat ? ` (${summary.latestBodyFat.pct}% gordura)` : ''}
                   </span>
                   <span className="block text-xs text-muted-foreground mt-0.5">
-                    Salva peso e gordura como exame na aba Bioimpedância.
+                    Salva a última medição como exame na aba Bioimpedância. A gordura de cada dia vai para a aba Sinais.
                   </span>
                 </span>
               </label>
@@ -419,10 +454,10 @@ export function WatchSyncCard() {
               <span className="min-w-0">
                 <span className="flex items-center gap-1.5 font-medium text-sm">
                   <HeartPulse className="h-4 w-4 text-primary shrink-0" />
-                  Histórico de sinais vitais (30 dias)
+                  Histórico de sinais vitais ({options.period === 365 ? '1 ano' : `${options.period} dias`})
                 </span>
                 <span className="block text-xs text-muted-foreground mt-0.5">
-                  Frequência cardíaca, pressão arterial, oxigenação, sono, passos, VFC, VO2 máx., temperatura e glicemia — aparecem na aba Sinais.
+                  Frequência cardíaca, pressão arterial, oxigenação, sono, passos, VFC, VO2 máx., temperatura, gordura corporal e glicemia — aparecem na aba Sinais.
                 </span>
               </span>
             </label>
