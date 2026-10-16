@@ -1,281 +1,54 @@
-import { ArrowLeft, Beef, Wheat, Droplets, Flame, BookOpen, Activity, Target, FlaskConical, Droplet, Scale, Shield, Utensils, Dumbbell, Mic, RefreshCw } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { ArrowLeft, ArrowUpRight, Search, BookOpen, RefreshCw } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { BottomNav } from '@/components/BottomNav';
 import { CheckUpdateButton } from '@/components/CheckUpdateButton';
+import { helpTopics } from '@/content/helpTopics';
 
-interface NutrientCardProps {
-  icon: typeof Beef;
-  name: string;
-  kcalPerGram: string;
-  colorClass: string;
-  bgClass: string;
-  purpose: string;
-  sources: string;
-  hint: string;
-}
-
-function NutrientCard({ icon: Icon, name, kcalPerGram, colorClass, bgClass, purpose, sources, hint }: NutrientCardProps) {
-  return (
-    <div className="rounded-md border border-border bg-card p-4 space-y-3">
-      <div className="flex items-center gap-3">
-        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bgClass}`}>
-          <Icon className={`h-5 w-5 ${colorClass}`} />
-        </div>
-        <div className="flex-1">
-          <p className="font-semibold">{name}</p>
-          <p className="text-xs text-muted-foreground">{kcalPerGram}</p>
-        </div>
-      </div>
-      <div className="space-y-2 text-sm">
-        <p><span className="font-medium">Para que serve:</span> {purpose}</p>
-        <p><span className="font-medium">Onde encontrar:</span> {sources}</p>
-        <p className="text-xs text-muted-foreground italic">{hint}</p>
-      </div>
-    </div>
-  );
-}
+const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 export default function HelpPage() {
   const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+  const [expanded, setExpanded] = useState<string[]>([]);
+  const topics = helpTopics.filter(topic => normalize([topic.title, topic.intro, topic.location, ...topic.steps.flatMap(step => [step.label, step.desc]), ...(topic.tips ?? [])].join(' ')).includes(normalize(query.trim())));
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl px-4 py-4 flex items-center gap-4 shadow-soft">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-lg font-bold">Central de ajuda</h1>
+    <div className="min-h-screen bg-background pb-28">
+      <header className="border-b border-border">
+        <div className="mx-auto max-w-5xl px-4 py-5 sm:px-8">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-5 -ml-3"><ArrowLeft />Voltar</Button>
+          <div className="flex items-start gap-3">
+            <BookOpen className="mt-2 h-6 w-6 shrink-0 text-muted-foreground" />
+            <div><p className="text-xs text-muted-foreground">Pilar Saúde</p><h1 className="font-serif text-4xl">Central de ajuda</h1><p className="mt-2 text-sm text-muted-foreground">Encontre respostas para cada área do seu cuidado.</p></div>
+          </div>
+          <div className="relative mt-6"><Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" /><Input aria-label="Buscar na ajuda" placeholder="Buscar: treino, balança, medidas…" className="h-11 pl-10" value={query} onChange={event => setQuery(event.target.value)} /></div>
+        </div>
       </header>
-
-      <div className="px-4 py-4 space-y-6">
-        {/* Atualizar app */}
-        <section className="rounded-md border border-border bg-card p-4 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 text-foreground" />
-              <h3 className="font-semibold text-sm">Atualizar o app</h3>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Busca a versão mais recente sem precisar reinstalar nem limpar o cache.
-            </p>
-          </div>
-          <CheckUpdateButton />
-        </section>
-
-        {/* Intro */}
-        <section className="space-y-2">
-          <h2 className="font-serif text-2xl">O que são nutrientes?</h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Nutrientes (também chamados de "macros" ou macronutrientes) são os 3 tipos
-            principais que o corpo precisa em grandes quantidades todos os dias para
-            ter energia, construir músculo e regular hormônios.
-          </p>
-        </section>
-
-        {/* Os 3 nutrientes */}
-        <section className="space-y-3">
-          <NutrientCard
-            icon={Beef}
-            name="Proteína"
-            kcalPerGram="4 kcal por grama"
-            colorClass="text-orange-500"
-            bgClass="bg-orange-500/10"
-            purpose="Construir e reparar músculos, pele, cabelo, enzimas e hormônios."
-            sources="Carne, frango, peixe, ovo, queijo, iogurte, feijão, lentilha, tofu, whey."
-            hint="Em geral 1,6 a 2,2 g por kg de peso para quem treina ou quer emagrecer mantendo músculo."
-          />
-          <NutrientCard
-            icon={Wheat}
-            name="Carboidratos"
-            kcalPerGram="4 kcal por grama"
-            colorClass="text-sky-500"
-            bgClass="bg-sky-500/10"
-            purpose="Combustível principal do corpo e do cérebro. É o que dá energia para treinar e raciocinar."
-            sources="Arroz, pão, massa, batata, mandioca, aveia, frutas, mel."
-            hint="Quem treina pesado precisa mais; quem quer perder gordura, geralmente menos."
-          />
-          <NutrientCard
-            icon={Droplets}
-            name="Gordura"
-            kcalPerGram="9 kcal por grama"
-            colorClass="text-violet-500"
-            bgClass="bg-violet-500/10"
-            purpose="Produção de hormônios, absorção das vitaminas A, D, E e K, saúde do cérebro."
-            sources="Azeite, abacate, castanhas, ovo, peixe gordo (salmão, sardinha), manteiga."
-            hint="Pelo menos 0,8 g por kg de peso — abaixo disso, hormônios caem."
-          />
-        </section>
-
-        {/* Por que rastrear */}
-        <section className="rounded-md border border-border bg-muted/30 p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <Target className="h-4 w-4 text-foreground" />
-            <h3 className="font-semibold text-sm">Por que o app rastreia nutrientes?</h3>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Contar só calorias não basta. <strong className="text-foreground">2.000 kcal de
-            refrigerante ≠ 2.000 kcal de comida real.</strong> Bater suas metas de
-            nutrientes garante que você não perca músculo enquanto emagrece, tenha
-            energia para os treinos e mantenha hormônios e saciedade em ordem.
-          </p>
-        </section>
-
-        {/* Como ler */}
-        <section className="rounded-md border border-border bg-card p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4" />
-            <h3 className="font-semibold text-sm">Como ler na tela do Pilar</h3>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Quando você vê <code className="bg-muted px-1.5 py-0.5 rounded text-xs">150g P · 250g C · 65g G</code>, significa:
-          </p>
-          <ul className="text-sm space-y-1 ml-2">
-            <li>• <span className="text-orange-500 font-medium">P</span> = 150 g de proteína</li>
-            <li>• <span className="text-sky-500 font-medium">C</span> = 250 g de carboidratos</li>
-            <li>• <span className="text-violet-500 font-medium">G</span> = 65 g de gordura</li>
-          </ul>
-          <p className="text-xs text-muted-foreground italic">
-            A meta diária é calculada automaticamente a partir do seu peso, altura, idade,
-            nível de atividade e objetivo (perder peso, manter, ganhar massa).
-          </p>
-        </section>
-
-        {/* Calorias */}
-        <section className="rounded-md border border-border bg-card p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <Flame className="h-4 w-4 text-rose-500" />
-            <h3 className="font-semibold text-sm">E as calorias?</h3>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Caloria é a <strong className="text-foreground">unidade de energia</strong> dos
-            alimentos. Cada nutriente entrega calorias diferentes (proteína e carbo: 4 kcal/g;
-            gordura: 9 kcal/g). A soma dos 3 forma o total calórico do dia.
-          </p>
-        </section>
-
-        {/* Atividade */}
-        <section className="rounded-md border border-border bg-card p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-emerald-500" />
-            <h3 className="font-semibold text-sm">Quanto seu corpo gasta de calorias?</h3>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            O <strong className="text-foreground">gasto em repouso</strong> é o que seu corpo
-            queima parado, só para se manter vivo. O <strong className="text-foreground">gasto
-            diário total</strong> soma esse repouso com tudo que você faz no dia (caminhar,
-            trabalhar, treinar). Sua meta de calorias é calculada a partir desse total e
-            ajustada pelo seu objetivo.
-          </p>
-        </section>
-
-        {/* Exame de sangue */}
-        <section className="rounded-md border border-border bg-card p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <FlaskConical className="h-4 w-4 text-rose-500" />
-            <h3 className="font-semibold text-sm">Exames de sangue</h3>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Faça upload do PDF ou foto do laudo na aba <strong className="text-foreground">Saúde</strong>.
-            A IA extrai marcadores (colesterol, glicose, vitamina D, ferritina, etc.), mostra a evolução em
-            gráficos e <strong className="text-foreground">ajusta automaticamente o cardápio diário e os treinos
-            sugeridos</strong> com base no que está alterado.
-          </p>
-          <p className="text-xs text-muted-foreground italic">
-            ⚕️ Análises educativas. Não substituem consulta médica.
-          </p>
-        </section>
-
-        {/* Glicemia */}
-        <section className="rounded-md border border-border bg-card p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <Droplet className="h-4 w-4 text-red-500" />
-            <h3 className="font-semibold text-sm">Glicemia e impacto glicêmico</h3>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Registre suas medições de glicose — o tipo (jejum, pré, pós-refeição) é categorizado
-            automaticamente pelo horário. Antes de uma refeição, você pode ver a
-            <strong className="text-foreground"> previsão de impacto glicêmico</strong> baseada nos
-            carboidratos líquidos do prato.
-          </p>
-        </section>
-
-        {/* Bioimpedância */}
-        <section className="rounded-md border border-border bg-card p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <Scale className="h-4 w-4 text-cyan-500" />
-            <h3 className="font-semibold text-sm">Composição corporal</h3>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Tire foto do laudo da sua balança de bioimpedância — a IA extrai % de gordura, massa magra,
-            água corporal e outros valores. Combine com fotos de progresso (frente, lado, costas) para
-            ver evolução visual ao longo das semanas.
-          </p>
-        </section>
-
-        {/* Cardápio Semanal */}
-        <section className="rounded-md border border-border bg-card p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <Utensils className="h-4 w-4 text-amber-600" />
-            <h3 className="font-semibold text-sm">Cardápio semanal com IA</h3>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Na aba <strong className="text-foreground">Cardápio</strong>, a IA monta 7 dias de refeições
-            respeitando suas metas, restrições alimentares e exames de sangue recentes — e gera uma
-            <strong className="text-foreground"> lista de compras</strong> automática agrupada por categoria.
-          </p>
-        </section>
-
-        {/* Treinos */}
-        <section className="rounded-md border border-border bg-card p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <Dumbbell className="h-4 w-4 text-foreground" />
-            <h3 className="font-semibold text-sm">Treinos: modo de hoje, alongamento e voz</h3>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Crie treinos manualmente ou com IA. Ao iniciar, escolha o
-            <strong className="text-foreground"> Modo de hoje</strong> (Normal, Cansado, Muito cansado) e o player
-            ajusta séries e cargas. Cada treino pode ter um <strong className="text-foreground">alongamento final</strong> opcional.
-          </p>
-          <p className="text-sm text-muted-foreground leading-relaxed flex items-start gap-1.5">
-            <Mic className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-            <span>
-              <strong className="text-foreground">Comandos por voz</strong> opt-in: ative o microfone no player para usar
-              "próximo", "voltar" e "finalizar" sem tocar a tela. Desliga sozinho ao sair do treino.
-            </span>
-          </p>
-        </section>
-
-        {/* Privacidade */}
-        <section className="rounded-md border border-border bg-muted/30 p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-foreground" />
-            <h3 className="font-semibold text-sm">Privacidade e seus dados (LGPD)</h3>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Em <strong className="text-foreground">Perfil</strong> você pode exportar todos os seus dados
-            em JSON ou PDF a qualquer momento, e também excluir sua conta permanentemente. Consulte os
-            <button
-              type="button"
-              onClick={() => navigate('/termos')}
-              className="underline underline-offset-2 hover:text-foreground mx-1"
-            >Termos de Uso</button>
-            e a
-            <button
-              type="button"
-              onClick={() => navigate('/privacidade')}
-              className="underline underline-offset-2 hover:text-foreground mx-1"
-            >Política de Privacidade</button>
-            para detalhes.
-          </p>
-        </section>
-
-        <p className="text-xs text-center text-muted-foreground pt-2">
-          Dúvidas sobre alguma tela específica? Toque no ícone <strong>Ajuda</strong> na barra inferior
-          para ver instruções da tela atual.
-        </p>
-      </div>
-
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-8">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><p className="text-sm text-muted-foreground">{topics.length} assuntos{query.trim() ? ' encontrados' : ' para consultar'}</p>{query && <Button variant="ghost" size="sm" onClick={() => setQuery('')}>Limpar busca</Button>}</div>
+        {topics.length === 0 ? <div className="py-12 text-center"><Search className="mx-auto mb-3 h-6 w-6 text-muted-foreground" /><h2 className="font-serif text-2xl">Nenhum assunto encontrado</h2><p className="mt-2 text-sm text-muted-foreground">Tente outro termo, como exames, peso ou Samsung.</p></div> :
+          <Accordion type="multiple" value={expanded} onValueChange={setExpanded}>
+            {topics.map(topic => {
+              const Icon = topic.icon;
+              return <AccordionItem key={topic.id} value={topic.id} className="border-border">
+                <AccordionTrigger className="gap-3 py-5 text-left hover:no-underline [&>svg]:shrink-0"><div className="flex min-w-0 items-center gap-3"><Icon className="h-5 w-5 shrink-0 text-muted-foreground" /><div className="min-w-0"><h2 className="text-base font-medium">{topic.title}</h2><p className="mt-1 text-xs font-normal text-muted-foreground">{topic.location}</p></div></div></AccordionTrigger>
+                <AccordionContent className="pb-6 sm:pl-8">
+                  <p className="mb-5 text-sm leading-relaxed text-muted-foreground">{topic.intro}</p>
+                  <ol className="grid gap-5 md:grid-cols-2">{topic.steps.map((step, index) => <li key={step.label} className="flex min-w-0 gap-3"><span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-foreground">{index + 1}</span><div className="min-w-0"><h3 className="text-sm font-semibold">{step.label}</h3><p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.desc}</p></div></li>)}</ol>
+                  {topic.tips && <aside className="mt-5 border-l-2 border-border pl-4"><h3 className="mb-2 text-xs font-semibold text-foreground">Importante</h3><ul className="space-y-2">{topic.tips.map(tip => <li key={tip} className="text-sm leading-relaxed text-muted-foreground">{tip}</li>)}</ul></aside>}
+                  <Button variant="outline" size="sm" className="mt-5" asChild><Link to={topic.route}>Abrir {topic.id === 'manager' ? 'Meus usuários' : topic.location.split(' → ')[0]}<ArrowUpRight /></Link></Button>
+                </AccordionContent>
+              </AccordionItem>;
+            })}
+          </Accordion>
+        }
+        <section className="mt-8 flex flex-wrap items-center justify-between gap-4 border-y border-border py-5"><div className="flex items-center gap-3"><RefreshCw className="h-5 w-5 text-muted-foreground" /><div><h2 className="text-sm font-semibold">Atualizações do app</h2><p className="text-xs text-muted-foreground">Confira se há uma nova versão disponível.</p></div></div><CheckUpdateButton /></section>
+        <footer className="mt-5 flex flex-wrap gap-4"><Button variant="link" className="h-auto p-0" asChild><Link to="/privacidade">Política de Privacidade</Link></Button><Button variant="link" className="h-auto p-0" asChild><Link to="/termos">Termos de Uso</Link></Button></footer>
+      </main>
       <BottomNav />
     </div>
   );
