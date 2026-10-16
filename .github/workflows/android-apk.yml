@@ -58,18 +58,23 @@ jobs:
       # os mipmaps legados com o ícone do app.
       - name: Forçar ícones do app
         run: |
-          cd android/app/src/main/res
-          for d in mipmap-*dpi; do
-            case $d in
-              mipmap-mdpi) s=48;; mipmap-hdpi) s=72;; mipmap-xhdpi) s=96;;
-              mipmap-xxhdpi) s=144;; mipmap-xxxhdpi) s=192;; *) continue;;
-            esac
-            convert ../../../../../assets/icon-only.png -resize ${s}x${s} $d/ic_launcher.png
-            convert ../../../../../assets/icon-only.png -resize ${s}x${s} $d/ic_launcher_round.png
-            f=$((s*9/4))
-            convert ../../../../../assets/icon-foreground.png -resize ${f}x${f} $d/ic_launcher_foreground.png
-          done
-          sed -i 's/#FFFFFF/#4d5665/I' values/ic_launcher_background.xml 2>/dev/null || true
+          pip install --quiet pillow
+          python3 - <<'EOF'
+          from PIL import Image
+          import os
+          res = 'android/app/src/main/res'
+          sizes = {'mdpi':48,'hdpi':72,'xhdpi':96,'xxhdpi':144,'xxxhdpi':192}
+          icon = Image.open('assets/icon-only.png').convert('RGBA')
+          fg = Image.open('assets/icon-foreground.png').convert('RGBA')
+          for k, s in sizes.items():
+              d = f'{res}/mipmap-{k}'
+              os.makedirs(d, exist_ok=True)
+              icon.resize((s, s), Image.LANCZOS).save(f'{d}/ic_launcher.png')
+              icon.resize((s, s), Image.LANCZOS).save(f'{d}/ic_launcher_round.png')
+              f = s * 9 // 4
+              fg.resize((f, f), Image.LANCZOS).save(f'{d}/ic_launcher_foreground.png')
+          EOF
+          sed -i 's/#FFFFFF/#4d5665/I' android/app/src/main/res/values/ic_launcher_background.xml 2>/dev/null || true
 
       - run: npx cap sync android
 
