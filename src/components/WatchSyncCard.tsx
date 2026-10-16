@@ -22,6 +22,7 @@ import {
   readHealthHistory,
   readBodyCompositionHistory,
   requestWatchPermission,
+  ensureWatchPermissions,
   type BodyCompositionPoint,
   type WatchSummary,
   type HealthMetricRow,
@@ -77,6 +78,7 @@ export function WatchSyncCard() {
   const sync = useCallback(async () => {
     setIsSyncing(true);
     try {
+      await ensureWatchPermissions();
       const data = await readWatchSummary();
       setSummary(data);
       setStatus('ready');
@@ -355,8 +357,24 @@ export function WatchSyncCard() {
             )}
           </p>
           <p className="text-xs text-muted-foreground">
+            {summary.caloriesSource === 'total_minus_basal' && 'Calorias ativas = gasto total − metabolismo basal até agora, como o Samsung Health calcula. '}
             Se os números estiverem abaixo do relógio, o Samsung Health ainda não enviou tudo: abra o Samsung Health, aguarde sincronizar e toque em Atualizar. O “Tempo ativo” do Samsung não é compartilhado; aqui aparecem só as atividades registradas (caminhada, corrida etc.).
           </p>
+
+          {summary.sources.length > 0 && (
+            <details className="rounded-md border border-border p-3 text-xs text-muted-foreground">
+              <summary className="cursor-pointer font-medium text-foreground">Detalhes da leitura (para conferir com o relógio)</summary>
+              <ul className="mt-2 space-y-1 break-words">
+                {summary.sources.map((src, index) => (
+                  <li key={`${src.type}-${src.sourceId}-${index}`}>
+                    {({ steps: 'Passos', calories: 'Calorias ativas (registro)', totalCalories: 'Gasto total', distance: 'Distância (m)', basalCalories: 'Metabolismo basal' } as const)[src.type]}
+                    {': '}{src.value.toLocaleString('pt-BR')} · {src.sourceId}
+                    {src.type !== 'basalCalories' && <> · até {new Date(src.latestEnd).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</>}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
 
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => void sync()} disabled={isSyncing}>

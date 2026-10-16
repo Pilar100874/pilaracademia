@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { Health, type HealthSample } from '@capgo/capacitor-health';
-import { activityMinutesByDay, healthHistoryStart, localHealthDay, sourceTotalsByDay, type DayTotal } from './healthActivity';
+import { activeFromTotal, activityMinutesByDay, healthHistoryStart, localHealthDay, sourceTotalsByDay, totalsBySource, type DayTotal } from './healthActivity';
 
 /**
  * Sincronização com o relógio (Samsung Galaxy Watch / Wear OS) via Health Connect.
@@ -9,7 +9,7 @@ import { activityMinutesByDay, healthHistoryStart, localHealthDay, sourceTotalsB
 
 export const isWatchSyncSupported = () => Capacitor.isNativePlatform();
 
-const READ_TYPES = ['steps', 'calories', 'totalCalories', 'distance', 'workouts', 'heartRate', 'restingHeartRate', 'heartRateVariability', 'bloodPressure', 'oxygenSaturation', 'respiratoryRate', 'vo2Max', 'bloodGlucose', 'bodyTemperature', 'sleep', 'weight', 'bodyFat', 'height'] as const;
+const READ_TYPES = ['steps', 'calories', 'totalCalories', 'basalCalories', 'distance', 'workouts', 'heartRate', 'restingHeartRate', 'heartRateVariability', 'bloodPressure', 'oxygenSaturation', 'respiratoryRate', 'vo2Max', 'bloodGlucose', 'bodyTemperature', 'sleep', 'weight', 'bodyFat', 'height'] as const;
 
 export interface WatchSummary {
   stepsToday: number | null;
@@ -19,6 +19,10 @@ export interface WatchSummary {
   activityMinutesToday: number | null;
   /** Horário do registro de atividade mais recente que o Health Connect já recebeu. */
   activityDataUntil: string | null;
+  /** Origem das calorias ativas: derivadas de total − basal (como o Samsung exibe) ou o registro de calorias ativas. */
+  caloriesSource: 'total_minus_basal' | 'active_record' | null;
+  /** Diagnóstico: quanto cada app gravou hoje em cada tipo de dado. */
+  sources: { type: ActivityType | 'basalCalories'; sourceId: string; value: number; latestEnd: string }[];
   lastHeartRate: number | null;
   restingHeartRate: number | null;
   sleepMinutesLastNight: number | null;
@@ -47,6 +51,21 @@ export async function requestWatchPermission(): Promise<boolean> {
   return status.readAuthorized.length > 0;
 }
 
+let permissionRefreshTried = false;
+
+/** Asks once per app session for read types that were added after the first connection. */
+export async function ensureWatchPermissions(): Promise<void> {
+  if (!isWatchSyncSupported() || permissionRefreshTried) return;
+  permissionRefreshTried = true;
+  try {
+    const status = await Health.checkAuthorization({ read: [...READ_TYPES] });
+    const missing = READ_TYPES.filter((type) => !status.readAuthorized.includes(type));
+    if (missing.length) await Health.requestAuthorization({ read: [...READ_TYPES], requestHistoryAccess: true });
+  } catch {
+    // Permission screen unavailable: keep reading whatever is already authorized.
+  }
+}
+
 export async function openWatchSettings(): Promise<void> {
   if (!isWatchSyncSupported()) return;
   if (Capacitor.getPlatform() === 'android') {
@@ -60,7 +79,7 @@ function startOfToday(): string {
   return d.toISOString();
 }
 
-type ActivityType = 'steps' | 'calories' | 'totalCalories' | 'distance';
+export type ActivityType = 'steps' | 'calories' | 'totalCalories' | 'distance';
 
 async function aggregateToday(dataType: ActivityType, end: string): Promise<number | null> {
   try {
@@ -85,11 +104,26 @@ async function sourceDailyTotals(dataType: ActivityType, start: string, end = ne
   return sourceTotalsByDay(samples);
 }
 
-async function todayTotal(dataType: ActivityType, end: string): Promise<{ value: number | null; latestEnd: string | null }> {
-  const today = [...(await sourceDailyTotals(dataType, startOfToday(), end)).values()][0];
-  if (today) return { value: Math.round(today.value), latestEnd: today.latestEnd };
-  // totalCalories has no aggregate support in the plugin; others fall back to Health Connect's aggregate.
-  return { value: dataType === 'totalCalories' ? null : await aggregateToday(dataType, end), latestEnd: null };
+interface TodayTotal { value: number | null; latestEnd: string | null; sources: DayTotal[] }
+
+async function todayTotal(dataType: ActivityType | 'basalCalories', end: string): Promise<TodayTotal> {
+  const samples = await samplesOf(dataType, startOfToday(), 20000, end);
+  const sources = totalsBySource(samples);
+  const today = [...sourceTotalsByDay(samples).values()][0];
+  if (today) return { value: Math.round(today.value), latestEnd: today.latestEnd, sources };
+  if (dataType === 'totalCalories' || dataType === 'basalCalories') return { value: null, latestEnd: null, sources };
+  // Health Connect's aggregate is only a fallback when raw records are unreadable.
+  return { value: await aggregateToday(dataType, end), latestEnd: null, sources };
+}
+
+/** Latest basal metabolic rate (kcal/day), Samsung Health first. */
+async function latestBasalRate(): Promise<number | null> {
+  const samples = await samplesOf('basalCalories', new Date(Date.now() - 90 * 86400000).toISOString(), 2000);
+  const valid = samples.filter((s) => Number.isFinite(s.value) && s.value > 500 && s.value < 5000);
+  const samsung = valid.filter((s) => s.sourceId === 'com.sec.android.app.shealth');
+  const pool = samsung.length ? samsung : valid;
+  const latest = pool.sort((a, b) => Date.parse(b.endDate) - Date.parse(a.endDate))[0];
+  return latest ? latest.value : null;
 }
 
 async function latestSample(
@@ -130,11 +164,12 @@ async function sleepLastNight(): Promise<number | null> {
 export async function readWatchSummary(): Promise<WatchSummary> {
   if (!isWatchSyncSupported()) throw new Error('Native health is unavailable');
   const syncedAt = new Date().toISOString();
-  const [stepsToday, caloriesToday, totalCaloriesToday, distanceTodayMeters, activity, hr, restingHr, sleepMinutes, weight, bodyFat, height] = await Promise.all([
+  const [stepsToday, caloriesToday, totalCaloriesToday, distanceTodayMeters, basalRate, activity, hr, restingHr, sleepMinutes, weight, bodyFat, height] = await Promise.all([
     todayTotal('steps', syncedAt),
     todayTotal('calories', syncedAt),
     todayTotal('totalCalories', syncedAt),
     todayTotal('distance', syncedAt),
+    latestBasalRate(),
     readActivityHistory(startOfToday(), syncedAt),
     latestSample('heartRate'),
     latestSample('restingHeartRate'),
@@ -144,9 +179,18 @@ export async function readWatchSummary(): Promise<WatchSummary> {
     latestSample('height', 365 * 5),
   ]);
 
+  const derivedActive = totalCaloriesToday.value != null && basalRate != null
+    ? activeFromTotal(totalCaloriesToday.value, basalRate, new Date(syncedAt))
+    : null;
+  const sources: WatchSummary['sources'] = ([['steps', stepsToday], ['calories', caloriesToday], ['totalCalories', totalCaloriesToday], ['distance', distanceTodayMeters]] as const)
+    .flatMap(([type, t]) => t.sources.map((src) => ({ type, sourceId: src.sourceId ?? 'unknown', value: Math.round(src.value), latestEnd: src.latestEnd })));
+  if (basalRate != null) sources.push({ type: 'basalCalories', sourceId: 'kcal/dia', value: Math.round(basalRate), latestEnd: syncedAt });
+
   return {
     stepsToday: stepsToday.value,
-    caloriesToday: caloriesToday.value,
+    caloriesToday: derivedActive ?? caloriesToday.value,
+    caloriesSource: derivedActive != null ? 'total_minus_basal' : caloriesToday.value != null ? 'active_record' : null,
+    sources,
     totalCaloriesToday: totalCaloriesToday.value,
     distanceTodayMeters: distanceTodayMeters.value,
     activityDataUntil: [stepsToday, caloriesToday, distanceTodayMeters].map((t) => t.latestEnd).filter((v): v is string => !!v).sort().at(-1) ?? null,

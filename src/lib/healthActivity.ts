@@ -72,3 +72,28 @@ export function sourceTotalsByDay(samples: SourcedSample[], preferred = SAMSUNG_
   }
   return result;
 }
+
+/** Every source's own total for the given samples (diagnostics: which app wrote how much). */
+export function totalsBySource(samples: SourcedSample[]): DayTotal[] {
+  const bySource = new Map<string, DayTotal>();
+  for (const sample of samples) {
+    if (!Number.isFinite(sample.value) || sample.value < 0) continue;
+    const source = sample.sourceId ?? 'unknown';
+    const current = bySource.get(source) ?? { value: 0, latestEnd: sample.endDate, sourceId: source };
+    current.value += sample.value;
+    if (Date.parse(sample.endDate) > Date.parse(current.latestEnd)) current.latestEnd = sample.endDate;
+    bySource.set(source, current);
+  }
+  return [...bySource.values()].sort((a, b) => b.value - a.value);
+}
+
+/**
+ * Samsung Health shows "activity calories" as total burned minus the resting (basal) share
+ * elapsed so far today. Health Connect defines total = basal + active, so derive it the same way.
+ */
+export function activeFromTotal(totalKcal: number, basalKcalPerDay: number, now: Date): number {
+  const midnight = new Date(now);
+  midnight.setHours(0, 0, 0, 0);
+  const elapsedDay = Math.min(1, Math.max(0, (now.getTime() - midnight.getTime()) / 86400000));
+  return Math.max(0, Math.round(totalKcal - basalKcalPerDay * elapsedDay));
+}

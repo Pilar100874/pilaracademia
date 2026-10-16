@@ -25,7 +25,9 @@ test('summary uses Samsung Health records only, with total energy and meters', a
   const { readWatchSummary } = await import('./healthConnect');
   const summary = await readWatchSummary();
   expect(summary.stepsToday).toBe(2953);
+  // no basal rate recorded → keeps the active-calories record
   expect(summary.caloriesToday).toBe(129);
+  expect(summary.caloriesSource).toBe('active_record');
   expect(summary.totalCaloriesToday).toBe(1259);
   expect(summary.distanceTodayMeters).toBe(2330);
   expect(summary.activityMinutesToday).toBeNull();
