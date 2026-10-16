@@ -6,17 +6,18 @@ interface Props {
   exerciseKcal: number;
   bmrKcal: number | null;
   hasWatchActivity: boolean;
+  watchTotalKcal?: number | null;
 }
 
-export function DailyWeightEstimateCard({ consumedKcal, exerciseKcal, bmrKcal, hasWatchActivity }: Props) {
-  if (!bmrKcal) {
+export function DailyWeightEstimateCard({ consumedKcal, exerciseKcal, bmrKcal, hasWatchActivity, watchTotalKcal }: Props) {
+  if (!bmrKcal && !watchTotalKcal) {
     return (
       <div className="card-compact p-4 text-sm text-muted-foreground">
         Complete peso, altura, data de nascimento e sexo no Perfil para ver a estimativa de perda de peso do dia.
       </div>
     );
   }
-  const { burnedKcal, balanceKcal, lossGrams } = estimateDailyWeightChange({ consumedKcal, exerciseKcal, bmrKcal, hasWatchActivity });
+  const { burnedKcal, balanceKcal, lossGrams, source } = estimateDailyWeightChange({ consumedKcal, exerciseKcal, bmrKcal: bmrKcal ?? 0, hasWatchActivity, watchTotalKcal });
   const losing = lossGrams >= 0;
   const Icon = losing ? TrendingDown : TrendingUp;
   return (
@@ -34,11 +35,13 @@ export function DailyWeightEstimateCard({ consumedKcal, exerciseKcal, bmrKcal, h
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
         <div><p className="font-semibold text-foreground">{Math.round(consumedKcal).toLocaleString('pt-BR')}</p><p className="text-muted-foreground">consumido</p></div>
-        <div><p className="font-semibold text-foreground">{burnedKcal.toLocaleString('pt-BR')}</p><p className="text-muted-foreground">gasto</p></div>
+        <div><p className="font-semibold text-foreground">{burnedKcal.toLocaleString('pt-BR')}</p><p className="text-muted-foreground">{source === 'watch_total' ? 'gasto (relógio)' : 'gasto'}</p></div>
         <div><p className="font-semibold text-foreground">{balanceKcal > 0 ? '−' : '+'}{Math.abs(balanceKcal).toLocaleString('pt-BR')}</p><p className="text-muted-foreground">saldo kcal</p></div>
       </div>
       <p className="mt-3 text-[11px] text-muted-foreground">
-        Gasto = metabolismo basal {hasWatchActivity ? '' : '+ movimento básico '}+ exercícios. 7,7 kcal ≈ 1 g. Estimativa; a balança varia também com água e intestino.
+        {source === 'watch_total'
+          ? 'Gasto = total do Samsung Health (basal + atividade) até a última importação.'
+          : `Gasto = metabolismo basal ${hasWatchActivity ? '' : '+ movimento básico '}+ exercícios.`} 7,7 kcal ≈ 1 g. Estimativa; a balança varia também com água e intestino.
       </p>
     </div>
   );

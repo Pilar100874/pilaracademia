@@ -40,6 +40,8 @@ import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { StreakBadge } from '@/components/StreakBadge';
 import { DailyWeightEstimateCard } from '@/components/DailyWeightEstimateCard';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { calculateAge, calculateBMR } from '@/types/profile';
 
 type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | 'liquid' | 'typed' | 'voice' | 'repeat' | null;
@@ -111,6 +113,20 @@ export function Dashboard() {
   const bmrKcal = profile?.gender && profile.height_cm && profile.birth_date && latestWeightKg
     ? calculateBMR(profile.gender, Number(latestWeightKg), profile.height_cm, calculateAge(profile.birth_date))
     : null;
+  const { data: watchTotalKcal } = useQuery({
+    queryKey: ['health-metrics', 'total_calories', profile?.user_id, selectedDate.toDateString()],
+    enabled: !!profile?.user_id,
+    queryFn: async () => {
+      const start = new Date(selectedDate); start.setHours(0, 0, 0, 0);
+      const end = new Date(selectedDate); end.setHours(23, 59, 59, 999);
+      const { data, error } = await supabase.from('health_metrics').select('value')
+        .eq('user_id', profile!.user_id).eq('metric_type', 'total_calories')
+        .gte('recorded_at', start.toISOString()).lte('recorded_at', end.toISOString())
+        .order('recorded_at', { ascending: false }).limit(1).maybeSingle();
+      if (error) throw error;
+      return data ? Number(data.value) : null;
+    },
+  });
   const hasWatchActivity = exerciseEntries.some((e) => e.name === 'Atividade do relógio');
 
   // Adherence score & smart alerts (Leva 1)
@@ -302,6 +318,7 @@ export function Dashboard() {
               exerciseKcal={caloriesBurned}
               bmrKcal={bmrKcal}
               hasWatchActivity={hasWatchActivity}
+              watchTotalKcal={watchTotalKcal}
             />
 
             {/* Quick Stats Row */}
