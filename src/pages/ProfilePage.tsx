@@ -522,7 +522,10 @@ export function ProfilePage() {
       </div>
 
       {isDirty && (
-        <div className="fixed inset-x-0 bottom-24 z-40 px-4 md:bottom-6">
+        <div
+          className="fixed inset-x-0 z-50 px-4 md:bottom-6"
+          style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
+        >
           <div className="mx-auto flex max-w-lg items-center gap-3 rounded-md border border-border bg-card p-3 shadow-lg">
             <p className="min-w-0 flex-1 text-sm font-medium">Você tem alterações não salvas</p>
             <Button className="shrink-0" onClick={handleSave} disabled={isSaving}>
