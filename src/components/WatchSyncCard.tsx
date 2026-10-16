@@ -13,11 +13,13 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   checkWatchAvailability,
   isWatchSyncSupported,
   openWatchSettings,
   readWatchSummary,
+  readHealthHistory,
   requestWatchPermission,
   type WatchSummary,
 } from '@/lib/healthConnect';
@@ -28,17 +30,20 @@ interface ImportOptions {
   calories: boolean;
   weight: boolean;
   bodyExam: boolean;
+  history: boolean;
+  profileWeight: boolean;
 }
 
 export function WatchSyncCard() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<Status>('checking');
   const [summary, setSummary] = useState<WatchSummary | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [options, setOptions] = useState<ImportOptions>({ calories: true, weight: true, bodyExam: true });
+  const [options, setOptions] = useState<ImportOptions>({ calories: true, weight: true, bodyExam: true, history: true, profileWeight: false });
 
   useEffect(() => {
     if (!isWatchSyncSupported()) return;
@@ -199,6 +204,21 @@ export function WatchSyncCard() {
       if (options.calories) results.push(await importCalories(user.id, summary));
       if (options.weight) results.push(await importWeight(user.id, summary));
       if (options.bodyExam) results.push(await importBodyExam(user.id, summary));
+      if (options.profileWeight && summary.latestWeight) {
+        const { error } = await supabase.from('profiles').update({ weight_kg: summary.latestWeight.kg }).eq('user_id', user.id);
+        if (error) throw error;
+        results.push('Peso do app atualizado.');
+        void queryClient.invalidateQueries({ queryKey: ['profile'] });
+      }
+      if (options.history) {
+        const rows = (await readHealthHistory(30)).map((r) => ({ ...r, user_id: user.id, source: 'samsung_health' }));
+        for (let i = 0; i < rows.length; i += 500) {
+          const { error } = await supabase.from('health_metrics').upsert(rows.slice(i, i + 500), { onConflict: 'user_id,metric_type,recorded_at' });
+          if (error) throw error;
+        }
+        results.push(`${rows.length} registros de sinais vitais salvos.`);
+        void queryClient.invalidateQueries({ queryKey: ['health-metrics'] });
+      }
       toast({
         title: 'Importação concluída',
         description: results.join(' '),
@@ -374,16 +394,45 @@ export function WatchSyncCard() {
               </label>
             )}
 
-            <p className="text-xs text-muted-foreground">
-              Passos, batimentos e sono são apenas visualizados aqui — ainda não são salvos no histórico.
-            </p>
+            {summary?.latestWeight && (
+              <label className="flex items-start gap-3 rounded-md border border-primary/40 bg-primary/5 p-3 cursor-pointer">
+                <Checkbox
+                  checked={options.profileWeight}
+                  onCheckedChange={(v) => setOptions((o) => ({ ...o, profileWeight: v === true }))}
+                  className="mt-0.5"
+                />
+                <span className="min-w-0">
+                  <span className="font-medium text-sm">Ajustar meu peso no app para {summary.latestWeight.kg} kg?</span>
+                  <span className="block text-xs text-muted-foreground mt-0.5">
+                    Atualiza o peso do seu perfil (usado nas metas de calorias e água).
+                  </span>
+                </span>
+              </label>
+            )}
+
+            <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer">
+              <Checkbox
+                checked={options.history}
+                onCheckedChange={(v) => setOptions((o) => ({ ...o, history: v === true }))}
+                className="mt-0.5"
+              />
+              <span className="min-w-0">
+                <span className="flex items-center gap-1.5 font-medium text-sm">
+                  <HeartPulse className="h-4 w-4 text-primary shrink-0" />
+                  Histórico de sinais vitais (30 dias)
+                </span>
+                <span className="block text-xs text-muted-foreground mt-0.5">
+                  Frequência cardíaca, pressão arterial, oxigenação, sono, passos, VFC, VO2 máx., temperatura e glicemia — aparecem na aba Sinais.
+                </span>
+              </span>
+            </label>
           </div>
 
           <DialogFooter className="shrink-0 border-t border-border px-4 py-3">
             <Button variant="outline" onClick={() => setImportOpen(false)} disabled={isImporting}>
               Cancelar
             </Button>
-            <Button onClick={() => void confirmImport()} disabled={isImporting || (!options.calories && !options.weight && !options.bodyExam)}>
+            <Button onClick={() => void confirmImport()} disabled={isImporting || (!options.calories && !options.weight && !options.bodyExam && !options.history && !options.profileWeight)}>
               {isImporting ? 'Importando...' : 'Confirmar importação'}
             </Button>
           </DialogFooter>

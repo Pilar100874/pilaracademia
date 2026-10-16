@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, HeartPulse } from 'lucide-react';
+import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, HeartPulse, Activity } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { BottomNav } from '@/components/BottomNav';
 import { differenceInYears, parseISO } from 'date-fns';
@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BioimpedanceTab } from '@/components/BioimpedanceTab';
 import { MeasurementsTab } from '@/components/MeasurementsTab';
 import { BloodExamsTab } from '@/components/BloodExamsTab';
+import { VitalsTab } from '@/components/VitalsTab';
 import { WatchSyncCard } from '@/components/WatchSyncCard';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
@@ -147,11 +148,12 @@ export function HealthPage() {
       </header>
 
       <Tabs value={tab} onValueChange={setTab} className="px-5 py-5">
-        <TabsList className="mb-5 grid h-auto w-full grid-cols-4 gap-1 rounded-xl bg-muted/60 p-1.5">
+        <TabsList className="mb-5 grid h-auto w-full grid-cols-5 gap-1 rounded-xl bg-muted/60 p-1.5">
           {([
             { value: 'overview', label: 'Visão geral', short: 'Geral', icon: Heart },
             { value: 'bioimpedance', label: 'Bioimpedância', short: 'Bioimp.', icon: Scale },
             { value: 'measurements', label: 'Medidas', short: 'Medidas', icon: Ruler },
+            { value: 'vitals', label: 'Sinais vitais', short: 'Sinais', icon: Activity },
             { value: 'blood', label: 'Exames', short: 'Exames', icon: HeartPulse },
           ] as const).map(({ value, label, short, icon: Icon }) => (
             <TabsTrigger
@@ -379,6 +381,10 @@ export function HealthPage() {
 
         <TabsContent value="measurements" className="mt-0">
           <MeasurementsTab />
+        </TabsContent>
+
+        <TabsContent value="vitals" className="mt-0">
+          <VitalsTab />
         </TabsContent>
 
         <TabsContent value="blood" className="mt-0">
