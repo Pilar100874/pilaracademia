@@ -34,6 +34,7 @@ const METRICS: MetricDef[] = [
   { type: 'vo2max', label: 'VO₂ máx.', unit: 'mL/kg/min', icon: TrendingUp, hint: 'Capacidade aeróbica — quanto maior, melhor.', higherIsBetter: true },
   { type: 'body_temperature', label: 'Temperatura corporal', unit: '°C', icon: Thermometer, hint: 'Normal: 36–37,5 °C.' },
   { type: 'glucose', label: 'Glicemia (relógio/sensor)', unit: 'mg/dL', icon: Droplet, hint: 'Jejum normal: 70–99 mg/dL.' },
+  { type: 'body_fat', label: 'Gordura corporal', unit: '%', icon: Scale, hint: 'Faixa saudável comum: 10–20% (homens) e 18–28% (mulheres).', higherIsBetter: false },
 ];
 
 const PERIODS = [7, 30, 90, 365] as const;

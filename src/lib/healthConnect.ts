@@ -265,6 +265,7 @@ export async function readHealthHistory(days = 30): Promise<HealthMetricRow[]> {
   rows.push(...dailyStats(vo2, 'vo2max', 'mL/kg/min', 10));
   rows.push(...dailyStats(glu, 'glucose', 'mg/dL'));
   rows.push(...dailyStats(temp, 'body_temperature', '°C', 10));
+  rows.push(...dailyStats(fat, 'body_fat', '%'));
   for (const s of bp) {
     if (s.systolic && s.diastolic) {
       rows.push({ metric_type: 'blood_pressure', value: Math.round(s.systolic), value2: Math.round(s.diastolic), unit: 'mmHg', recorded_at: s.endDate });
