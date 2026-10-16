@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, HeartPulse, Activity } from 'lucide-react';
+import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, HeartPulse, Activity, Sparkles, ChevronRight } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { BottomNav } from '@/components/BottomNav';
 import { differenceInYears, parseISO } from 'date-fns';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BioimpedanceTab } from '@/components/BioimpedanceTab';
 import { MeasurementsTab } from '@/components/MeasurementsTab';
@@ -11,6 +11,7 @@ import { BloodExamsTab } from '@/components/BloodExamsTab';
 import { VitalsTab } from '@/components/VitalsTab';
 import { WatchSyncCard } from '@/components/WatchSyncCard';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
+import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 
 interface BMICategory {
@@ -34,6 +35,8 @@ const bmiCategories: BMICategory[] = [
 export function HealthPage() {
   const { profile } = useProfile();
   const { list } = useBodyAnalyses();
+  const navigate = useNavigate();
+  const planInfo = useCurrentBodyPlan();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const tab = (['blood', 'bioimpedance', 'measurements', 'vitals'] as const).find((t) => t === tabParam) ?? 'overview';
