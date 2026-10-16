@@ -31,6 +31,7 @@ export const EXERCISE_TYPES = {
   football: { name: 'Futebol', met: 7.0, icon: '⚽' },
   basketball: { name: 'Basquete', met: 6.5, icon: '🏀' },
   other: { name: 'Outro', met: 4.0, icon: '🏃' },
+  watch_sync: { name: 'Atividade do relógio', met: 4.0, icon: '⌚' },
 };
 
 export function calculateCaloriesBurned(
