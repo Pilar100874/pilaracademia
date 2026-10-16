@@ -8,7 +8,7 @@ import { Health, type HealthSample } from '@capgo/capacitor-health';
 
 export const isWatchSyncSupported = () => Capacitor.isNativePlatform();
 
-const READ_TYPES = ['steps', 'calories', 'heartRate', 'restingHeartRate', 'sleep', 'weight', 'bodyFat', 'height'] as const;
+const READ_TYPES = ['steps', 'calories', 'distance', 'heartRate', 'restingHeartRate', 'heartRateVariability', 'bloodPressure', 'oxygenSaturation', 'respiratoryRate', 'vo2Max', 'bloodGlucose', 'bodyTemperature', 'sleep', 'weight', 'bodyFat', 'height'] as const;
 
 export interface WatchSummary {
   stepsToday: number | null;
@@ -126,4 +126,98 @@ export async function readWatchSummary(): Promise<WatchSummary> {
     latestHeightCm: height ? Math.round(height.value) : null,
     syncedAt: new Date().toISOString(),
   };
+}
+
+/** Linha pronta para gravar em health_metrics (um valor por dia ou por medição). */
+export interface HealthMetricRow {
+  metric_type: string;
+  value: number;
+  value2: number | null;
+  unit: string;
+  recorded_at: string;
+}
+
+const dayKey = (iso: string) => {
+  const d = new Date(iso);
+  d.setHours(12, 0, 0, 0);
+  return d.toISOString();
+};
+
+async function samplesOf(dataType: HealthSample['dataType'], start: string, limit = 5000): Promise<HealthSample[]> {
+  try {
+    const { samples } = await Health.readSamples({ dataType, startDate: start, endDate: new Date().toISOString(), limit });
+    return samples;
+  } catch {
+    return [];
+  }
+}
+
+function dailyStats(samples: HealthSample[], type: string, unit: string, round = 1): HealthMetricRow[] {
+  const groups = new Map<string, number[]>();
+  for (const s of samples) {
+    if (!Number.isFinite(s.value)) continue;
+    const k = dayKey(s.endDate);
+    groups.set(k, [...(groups.get(k) ?? []), s.value]);
+  }
+  const r = (v: number) => Math.round(v * round) / round;
+  return [...groups.entries()].map(([k, vals]) => ({
+    metric_type: type,
+    value: r(vals.reduce((a, b) => a + b, 0) / vals.length),
+    value2: vals.length > 1 ? r(Math.max(...vals)) : null,
+    unit,
+    recorded_at: k,
+  }));
+}
+
+async function dailySum(dataType: 'steps' | 'calories' | 'distance', type: string, unit: string, start: string): Promise<HealthMetricRow[]> {
+  try {
+    const { samples } = await Health.queryAggregated({ dataType, startDate: start, endDate: new Date().toISOString(), bucket: 'day', aggregation: 'sum' });
+    return samples
+      .filter((s) => (s.value || 0) > 0)
+      .map((s) => ({ metric_type: type, value: Math.round(s.value), value2: null, unit, recorded_at: dayKey(s.startDate) }));
+  } catch {
+    return [];
+  }
+}
+
+/** Lê o histórico dos últimos `days` dias de todos os sinais disponíveis. */
+export async function readHealthHistory(days = 30): Promise<HealthMetricRow[]> {
+  const start = new Date(Date.now() - days * 86400000).toISOString();
+  const [steps, cal, dist, hr, rhr, hrv, bp, spo2, resp, vo2, glu, temp, sleep] = await Promise.all([
+    dailySum('steps', 'steps', 'passos', start),
+    dailySum('calories', 'calories', 'kcal', start),
+    dailySum('distance', 'distance', 'm', start),
+    samplesOf('heartRate', start),
+    samplesOf('restingHeartRate', start),
+    samplesOf('heartRateVariability', start),
+    samplesOf('bloodPressure', start),
+    samplesOf('oxygenSaturation', start),
+    samplesOf('respiratoryRate', start),
+    samplesOf('vo2Max', start),
+    samplesOf('bloodGlucose', start),
+    samplesOf('bodyTemperature', start),
+    samplesOf('sleep', start),
+  ]);
+  const rows: HealthMetricRow[] = [...steps, ...cal, ...dist];
+  rows.push(...dailyStats(hr, 'heart_rate', 'bpm'));
+  rows.push(...dailyStats(rhr, 'resting_heart_rate', 'bpm'));
+  rows.push(...dailyStats(hrv, 'hrv', 'ms'));
+  rows.push(...dailyStats(spo2, 'spo2', '%'));
+  rows.push(...dailyStats(resp, 'respiratory_rate', 'rpm', 10));
+  rows.push(...dailyStats(vo2, 'vo2max', 'mL/kg/min', 10));
+  rows.push(...dailyStats(glu, 'glucose', 'mg/dL'));
+  rows.push(...dailyStats(temp, 'body_temperature', '°C', 10));
+  for (const s of bp) {
+    if (s.systolic && s.diastolic) {
+      rows.push({ metric_type: 'blood_pressure', value: Math.round(s.systolic), value2: Math.round(s.diastolic), unit: 'mmHg', recorded_at: s.endDate });
+    }
+  }
+  const sleepByDay = new Map<string, number>();
+  for (const s of sleep) {
+    if (s.sleepState === 'awake' || s.sleepState === 'inBed') continue;
+    const k = dayKey(s.endDate);
+    sleepByDay.set(k, (sleepByDay.get(k) ?? 0) + (s.value || 0));
+  }
+  for (const [k, v] of sleepByDay) if (v > 0) rows.push({ metric_type: 'sleep', value: Math.round(v), value2: null, unit: 'min', recorded_at: k });
+  return rows;
 }
