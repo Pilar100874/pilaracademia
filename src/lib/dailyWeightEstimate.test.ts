@@ -14,3 +14,10 @@ test('with watch activity: BMR + active calories, eating more shows a gain', () 
   expect(r.burnedKcal).toBe(1787);
   expect(r.lossGrams).toBe(-93);
 });
+
+test('watch total burned replaces the estimate (no extra exercise added)', () => {
+  const r = estimateDailyWeightChange({ consumedKcal: 1000, exerciseKcal: 131, bmrKcal: 1656, hasWatchActivity: true, watchTotalKcal: 1342 });
+  expect(r.source).toBe('watch_total');
+  expect(r.burnedKcal).toBe(1342);
+  expect(r.lossGrams).toBe(44);
+});
