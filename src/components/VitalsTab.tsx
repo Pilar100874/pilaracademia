@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { HeartPulse, Activity, Droplet, Moon, Footprints, Flame, Wind, Thermometer, Gauge, TrendingUp, TrendingDown, Minus, Route } from 'lucide-react';
+import { HeartPulse, Activity, Droplet, Moon, Footprints, Flame, Wind, Thermometer, Gauge, TrendingUp, TrendingDown, Minus, Route, Scale } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
