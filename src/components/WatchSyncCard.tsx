@@ -350,9 +350,12 @@ export function WatchSyncCard() {
 
           <p className="text-xs text-muted-foreground">
             Sincronizado às {new Date(summary.syncedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            {summary.activityDataUntil && (
+              <> · Samsung Health enviou dados até {new Date(summary.activityDataUntil).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</>
+            )}
           </p>
           <p className="text-xs text-muted-foreground">
-            Dados disponíveis no Health Connect; pode haver atraso em relação ao relógio. Abra o Samsung Health para sincronizá-lo e depois atualize aqui. Calorias ativas não incluem repouso; o tempo considera atividades registradas, não o total diário do Samsung.
+            Se os números estiverem abaixo do relógio, o Samsung Health ainda não enviou tudo: abra o Samsung Health, aguarde sincronizar e toque em Atualizar. O “Tempo ativo” do Samsung não é compartilhado; aqui aparecem só as atividades registradas (caminhada, corrida etc.).
           </p>
 
           <div className="flex flex-wrap gap-2">

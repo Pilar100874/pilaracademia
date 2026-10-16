@@ -40,3 +40,35 @@ export function activityMinutesByDay(sessions: ActivityInterval[], start: string
   }
   return days;
 }
+
+export const SAMSUNG_HEALTH_PACKAGE = 'com.sec.android.app.shealth';
+
+export interface SourcedSample { value: number; startDate: string; endDate: string; sourceId?: string }
+export interface DayTotal { value: number; latestEnd: string; sourceId?: string }
+
+/**
+ * Daily totals from raw records, using ONE source per day: Samsung Health when present
+ * (it already merges watch + phone), otherwise the source with the largest total.
+ * Summing every source double-counts; Health Connect's priority aggregate may pick a
+ * lagging phone source instead of the watch.
+ */
+export function sourceTotalsByDay(samples: SourcedSample[], preferred = SAMSUNG_HEALTH_PACKAGE): Map<string, DayTotal> {
+  const days = new Map<string, Map<string, DayTotal>>();
+  for (const sample of samples) {
+    if (!Number.isFinite(sample.value) || sample.value < 0) continue;
+    const day = localHealthDay(sample.startDate);
+    const source = sample.sourceId ?? 'unknown';
+    const bySource = days.get(day) ?? new Map<string, DayTotal>();
+    const current = bySource.get(source) ?? { value: 0, latestEnd: sample.endDate, sourceId: source };
+    current.value += sample.value;
+    if (Date.parse(sample.endDate) > Date.parse(current.latestEnd)) current.latestEnd = sample.endDate;
+    bySource.set(source, current);
+    days.set(day, bySource);
+  }
+  const result = new Map<string, DayTotal>();
+  for (const [day, bySource] of days) {
+    const chosen = bySource.get(preferred) ?? [...bySource.values()].sort((a, b) => b.value - a.value)[0];
+    if (chosen) result.set(day, chosen);
+  }
+  return result;
+}
