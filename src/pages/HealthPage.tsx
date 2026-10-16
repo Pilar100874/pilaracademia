@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, HeartPulse, Activity, Sparkles, ChevronRight } from 'lucide-react';
+import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, HeartPulse, Activity } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { BottomNav } from '@/components/BottomNav';
 import { differenceInYears, parseISO } from 'date-fns';
