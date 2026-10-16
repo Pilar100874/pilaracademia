@@ -53,3 +53,13 @@ describe('Samsung activity calories', () => {
     expect(activeFromTotal(100, 2000, new Date(2026, 9, 16, 23, 0))).toBe(0);
   });
 });
+
+describe('distance uses the largest single source', () => {
+  it('picks the fuller source even when Samsung Health shares only part of the distance', () => {
+    const totals = sourceTotalsByDay([
+      { value: 1940, startDate: '2026-10-16T12:00:00', endDate: '2026-10-16T13:00:00', sourceId: SAMSUNG_HEALTH_PACKAGE },
+      { value: 2360, startDate: '2026-10-16T12:00:00', endDate: '2026-10-16T13:00:00', sourceId: 'com.google.android.apps.fitness' },
+    ], SAMSUNG_HEALTH_PACKAGE, 'max');
+    expect([...totals.values()][0].value).toBe(2360);
+  });
+});
