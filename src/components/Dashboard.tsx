@@ -39,6 +39,8 @@ import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { StreakBadge } from '@/components/StreakBadge';
+import { DailyWeightEstimateCard } from '@/components/DailyWeightEstimateCard';
+import { calculateAge, calculateBMR } from '@/types/profile';
 
 type ModalType = 'photo' | 'barcode' | 'manual' | 'search' | 'liquid' | 'typed' | 'voice' | 'repeat' | null;
 
@@ -57,7 +59,7 @@ export function Dashboard() {
   const { entries, isLoading, addEntry, updateEntry, deleteEntry, getTodaySummary, refetch: refetchFood } = useFoodEntries(selectedDate);
   const { entries: liquidEntriesData, addLiquidEntry, updateLiquidEntry, deleteLiquidEntry, getTodayTotal, refetch: refetchLiquids, liquidTypes } = useLiquidEntries(selectedDate);
   const { profile, getGoals, isProfileComplete } = useProfile();
-  const { getTodayTotalBurned } = useExerciseEntries(selectedDate);
+  const { entries: exerciseEntries, getTodayTotalBurned } = useExerciseEntries(selectedDate);
   const { entries: weightEntries } = useWeightHistory();
   const { getLatestReading } = useGlycemiaEntries(selectedDate);
   
@@ -105,6 +107,11 @@ export function Dashboard() {
   
   const dailyLiquidGoal = goals.liquid_ml || profile?.daily_liquid_ml || 2000;
   const netCalories = consumed.calories - caloriesBurned;
+  const latestWeightKg = weightEntries[weightEntries.length - 1]?.weight_kg ?? profile?.weight_kg ?? null;
+  const bmrKcal = profile?.gender && profile.height_cm && profile.birth_date && latestWeightKg
+    ? calculateBMR(profile.gender, Number(latestWeightKg), profile.height_cm, calculateAge(profile.birth_date))
+    : null;
+  const hasWatchActivity = exerciseEntries.some((e) => e.name === 'Atividade do relógio');
 
   // Adherence score & smart alerts (Leva 1)
   const adherence = useAdherenceScore({
@@ -289,6 +296,13 @@ export function Dashboard() {
                 }}
               />
             </div>
+
+            <DailyWeightEstimateCard
+              consumedKcal={consumed.calories}
+              exerciseKcal={caloriesBurned}
+              bmrKcal={bmrKcal}
+              hasWatchActivity={hasWatchActivity}
+            />
 
             {/* Quick Stats Row */}
             <div className="grid grid-cols-4 gap-2 lg:gap-3">
