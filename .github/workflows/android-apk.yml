@@ -46,10 +46,30 @@ jobs:
       - name: Ajustar minSdkVersion para 26
         run: sed -i 's/minSdkVersion = .*/minSdkVersion = 26/' android/variables.gradle
 
-      # Gera os ícones do Android a partir de assets/icon-only.png
-      # (mesmo ícone da versão web instalável).
+      # Gera os ícones do Android (adaptativo: frente + fundo da mesma cor,
+      # evitando "ícone dentro do ícone").
       - name: Gerar ícones do app
-        run: npx --yes @capacitor/assets generate --android
+        run: |
+          npx --yes @capacitor/assets generate --android \
+            --iconBackgroundColor '#4d5665' --iconBackgroundColorDark '#4d5665' \
+            --splashBackgroundColor '#4d5665' --splashBackgroundColorDark '#4d5665'
+
+      # Garante que nenhum ícone padrão do Capacitor sobre: sobrescreve todos
+      # os mipmaps legados com o ícone do app.
+      - name: Forçar ícones do app
+        run: |
+          cd android/app/src/main/res
+          for d in mipmap-*dpi; do
+            case $d in
+              mipmap-mdpi) s=48;; mipmap-hdpi) s=72;; mipmap-xhdpi) s=96;;
+              mipmap-xxhdpi) s=144;; mipmap-xxxhdpi) s=192;; *) continue;;
+            esac
+            convert ../../../../../assets/icon-only.png -resize ${s}x${s} $d/ic_launcher.png
+            convert ../../../../../assets/icon-only.png -resize ${s}x${s} $d/ic_launcher_round.png
+            f=$((s*9/4))
+            convert ../../../../../assets/icon-foreground.png -resize ${f}x${f} $d/ic_launcher_foreground.png
+          done
+          sed -i 's/#FFFFFF/#4d5665/I' values/ic_launcher_background.xml 2>/dev/null || true
 
       - run: npx cap sync android
 
