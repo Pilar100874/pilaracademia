@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { Health, type HealthSample } from '@capgo/capacitor-health';
-import { activityMinutesByDay, healthHistoryStart, localHealthDay } from './healthActivity';
+import { activityMinutesByDay, healthHistoryStart, localHealthDay, sourceTotalsByDay, type DayTotal } from './healthActivity';
 
 /**
  * Sincronização com o relógio (Samsung Galaxy Watch / Wear OS) via Health Connect.
@@ -17,6 +17,8 @@ export interface WatchSummary {
   totalCaloriesToday: number | null;
   distanceTodayMeters: number | null;
   activityMinutesToday: number | null;
+  /** Horário do registro de atividade mais recente que o Health Connect já recebeu. */
+  activityDataUntil: string | null;
   lastHeartRate: number | null;
   restingHeartRate: number | null;
   sleepMinutesLastNight: number | null;
@@ -58,7 +60,9 @@ function startOfToday(): string {
   return d.toISOString();
 }
 
-async function aggregateToday(dataType: 'steps' | 'calories' | 'totalCalories' | 'distance', end: string): Promise<number | null> {
+type ActivityType = 'steps' | 'calories' | 'totalCalories' | 'distance';
+
+async function aggregateToday(dataType: ActivityType, end: string): Promise<number | null> {
   try {
     const { samples } = await Health.queryAggregated({
       dataType,
@@ -73,6 +77,19 @@ async function aggregateToday(dataType: 'steps' | 'calories' | 'totalCalories' |
   } catch {
     return null;
   }
+}
+
+/** Raw records summed from a single source per day (Samsung Health first). */
+async function sourceDailyTotals(dataType: ActivityType, start: string, end = new Date().toISOString()): Promise<Map<string, DayTotal>> {
+  const samples = await samplesOf(dataType, start, 20000, end);
+  return sourceTotalsByDay(samples);
+}
+
+async function todayTotal(dataType: ActivityType, end: string): Promise<{ value: number | null; latestEnd: string | null }> {
+  const today = [...(await sourceDailyTotals(dataType, startOfToday(), end)).values()][0];
+  if (today) return { value: Math.round(today.value), latestEnd: today.latestEnd };
+  // totalCalories has no aggregate support in the plugin; others fall back to Health Connect's aggregate.
+  return { value: dataType === 'totalCalories' ? null : await aggregateToday(dataType, end), latestEnd: null };
 }
 
 async function latestSample(
@@ -114,10 +131,10 @@ export async function readWatchSummary(): Promise<WatchSummary> {
   if (!isWatchSyncSupported()) throw new Error('Native health is unavailable');
   const syncedAt = new Date().toISOString();
   const [stepsToday, caloriesToday, totalCaloriesToday, distanceTodayMeters, activity, hr, restingHr, sleepMinutes, weight, bodyFat, height] = await Promise.all([
-    aggregateToday('steps', syncedAt),
-    aggregateToday('calories', syncedAt),
-    aggregateToday('totalCalories', syncedAt),
-    aggregateToday('distance', syncedAt),
+    todayTotal('steps', syncedAt),
+    todayTotal('calories', syncedAt),
+    todayTotal('totalCalories', syncedAt),
+    todayTotal('distance', syncedAt),
     readActivityHistory(startOfToday(), syncedAt),
     latestSample('heartRate'),
     latestSample('restingHeartRate'),
@@ -128,10 +145,11 @@ export async function readWatchSummary(): Promise<WatchSummary> {
   ]);
 
   return {
-    stepsToday,
-    caloriesToday,
-    totalCaloriesToday,
-    distanceTodayMeters,
+    stepsToday: stepsToday.value,
+    caloriesToday: caloriesToday.value,
+    totalCaloriesToday: totalCaloriesToday.value,
+    distanceTodayMeters: distanceTodayMeters.value,
+    activityDataUntil: [stepsToday, caloriesToday, distanceTodayMeters].map((t) => t.latestEnd).filter((v): v is string => !!v).sort().at(-1) ?? null,
     activityMinutesToday: activity[0]?.value ?? null,
     lastHeartRate: hr ? Math.round(hr.value) : null,
     restingHeartRate: restingHr ? Math.round(restingHr.value) : null,
@@ -179,10 +197,10 @@ async function readActivityHistory(start: string, end = new Date().toISOString()
   }
 }
 
-async function samplesOf(dataType: HealthSample['dataType'], start: string, limit = 5000): Promise<HealthSample[]> {
+async function samplesOf(dataType: HealthSample['dataType'], start: string, limit = 5000, end?: string): Promise<HealthSample[]> {
   // Lê em janelas de 30 dias: períodos longos (1 ano) estouram o limite de amostras por consulta.
   const from = new Date(start).getTime();
-  const to = Date.now();
+  const to = end ? new Date(end).getTime() : Date.now();
   const WINDOW = 30 * 86400000;
   const out: HealthSample[] = [];
   let first = true;
@@ -220,7 +238,12 @@ function dailyStats(samples: HealthSample[], type: string, unit: string, round =
   }));
 }
 
-async function dailySum(dataType: 'steps' | 'calories' | 'totalCalories' | 'distance', type: string, unit: string, start: string): Promise<HealthMetricRow[]> {
+async function dailySum(dataType: ActivityType, type: string, unit: string, start: string): Promise<HealthMetricRow[]> {
+  const totals = await sourceDailyTotals(dataType, start);
+  if (totals.size) {
+    return [...totals].map(([recorded_at, t]) => ({ metric_type: type, value: Math.round(t.value), value2: null, unit, recorded_at }));
+  }
+  if (dataType === 'totalCalories') return [];
   try {
     const { samples } = await Health.queryAggregated({ dataType, startDate: start, endDate: new Date().toISOString(), bucket: 'day', aggregation: 'sum' });
     return samples
