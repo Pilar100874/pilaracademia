@@ -23,7 +23,7 @@ const primaryNav = [
 ];
 
 const secondaryNav = [
-  { to: '/history', icon: Calendar, label: 'Histórico' },
+  { to: '/products', icon: ScanLine, label: 'Produtos' },
   { to: '/products', icon: ScanLine, label: 'Produtos' },
   { to: '/profile', icon: User, label: 'Perfil' },
 ];

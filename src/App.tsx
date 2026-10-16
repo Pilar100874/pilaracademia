@@ -132,14 +132,6 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/history"
-        element={
-          <ProtectedRoute>
-            <HistoryPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/projections"
         element={
           <ProtectedRoute>
