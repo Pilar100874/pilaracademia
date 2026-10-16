@@ -144,12 +144,27 @@ const dayKey = (iso: string) => {
 };
 
 async function samplesOf(dataType: HealthSample['dataType'], start: string, limit = 5000): Promise<HealthSample[]> {
-  try {
-    const { samples } = await Health.readSamples({ dataType, startDate: start, endDate: new Date().toISOString(), limit });
-    return samples;
-  } catch {
-    return [];
+  // Lê em janelas de 30 dias: períodos longos (1 ano) estouram o limite de amostras por consulta.
+  const from = new Date(start).getTime();
+  const to = Date.now();
+  const WINDOW = 30 * 86400000;
+  const out: HealthSample[] = [];
+  let first = true;
+  for (let w = from; w < to; w += WINDOW) {
+    try {
+      const { samples } = await Health.readSamples({
+        dataType,
+        startDate: new Date(w).toISOString(),
+        endDate: new Date(Math.min(w + WINDOW, to)).toISOString(),
+        limit,
+      });
+      out.push(...samples);
+    } catch {
+      if (first) return [];
+    }
+    first = false;
   }
+  return out;
 }
 
 function dailyStats(samples: HealthSample[], type: string, unit: string, round = 1): HealthMetricRow[] {
@@ -180,10 +195,52 @@ async function dailySum(dataType: 'steps' | 'calories' | 'distance', type: strin
   }
 }
 
+/** Último valor registrado de cada dia (para peso/gordura, onde só a última medição vale). */
+function latestPerDay(samples: HealthSample[]): Map<string, HealthSample> {
+  const m = new Map<string, HealthSample>();
+  for (const s of samples) {
+    if (!Number.isFinite(s.value)) continue;
+    const k = dayKey(s.endDate);
+    const cur = m.get(k);
+    if (!cur || new Date(s.endDate).getTime() > new Date(cur.endDate).getTime()) m.set(k, s);
+  }
+  return m;
+}
+
+export interface BodyCompositionPoint {
+  /** Data (ISO) da última medição daquele dia. */
+  date: string;
+  kg?: number;
+  pct?: number;
+}
+
+/**
+ * Peso e gordura corporal dia a dia, dos últimos `days` dias.
+ * Retorna um ponto por dia (a última medição daquele dia), do mais antigo ao mais recente.
+ */
+export async function readBodyCompositionHistory(days: number): Promise<BodyCompositionPoint[]> {
+  const start = new Date(Date.now() - days * 86400000).toISOString();
+  const [weights, fats] = await Promise.all([samplesOf('weight', start), samplesOf('bodyFat', start)]);
+  const wm = latestPerDay(weights);
+  const fm = latestPerDay(fats);
+  const keys = [...new Set([...wm.keys(), ...fm.keys()])];
+  return keys
+    .map((k) => {
+      const w = wm.get(k);
+      const f = fm.get(k);
+      return {
+        date: (w ?? f)!.endDate,
+        kg: w ? Math.round(w.value * 10) / 10 : undefined,
+        pct: f ? Math.round(f.value * 10) / 10 : undefined,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+}
+
 /** Lê o histórico dos últimos `days` dias de todos os sinais disponíveis. */
 export async function readHealthHistory(days = 30): Promise<HealthMetricRow[]> {
   const start = new Date(Date.now() - days * 86400000).toISOString();
-  const [steps, cal, dist, hr, rhr, hrv, bp, spo2, resp, vo2, glu, temp, sleep] = await Promise.all([
+  const [steps, cal, dist, hr, rhr, hrv, bp, spo2, resp, vo2, glu, temp, sleep, fat] = await Promise.all([
     dailySum('steps', 'steps', 'passos', start),
     dailySum('calories', 'calories', 'kcal', start),
     dailySum('distance', 'distance', 'm', start),
@@ -197,6 +254,7 @@ export async function readHealthHistory(days = 30): Promise<HealthMetricRow[]> {
     samplesOf('bloodGlucose', start),
     samplesOf('bodyTemperature', start),
     samplesOf('sleep', start),
+    samplesOf('bodyFat', start),
   ]);
   const rows: HealthMetricRow[] = [...steps, ...cal, ...dist];
   rows.push(...dailyStats(hr, 'heart_rate', 'bpm'));
