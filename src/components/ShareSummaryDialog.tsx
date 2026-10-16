@@ -39,6 +39,7 @@ const PERIOD_OPTIONS = [
   { v: 7, l: '7 dias' },
   { v: 30, l: '30 dias' },
   { v: 90, l: '90 dias' },
+  { v: 365, l: '1 ano' },
 ];
 
 const VALIDITY_OPTIONS = [
@@ -145,18 +146,18 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-[calc(100vw-1rem)] max-w-md sm:max-w-lg max-h-[92vh] overflow-y-auto p-4 sm:p-6"
+        className="flex w-[calc(100vw-1rem)] min-w-0 max-w-md flex-col overflow-hidden p-0 sm:max-w-lg max-h-[92vh]"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <DialogHeader className="text-left">
+        <DialogHeader className="shrink-0 px-5 pt-5 pr-10 text-left">
           <DialogTitle className="text-lg sm:text-xl">Compartilhar com profissional</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed">
-            Gere um PDF completo para enviar ao seu nutricionista ou médico, ou um link público
-            temporário que ele abre direto no navegador.
+            Compartilhe seus registros pessoais por PDF ou link temporário. Quem tiver o link poderá
+            consultar os dados de saúde até expirar ou você revogar o acesso.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 py-4">
           {/* PDF download */}
           <section className="rounded-md border border-border bg-card p-4 space-y-3">
             <div className="flex items-center gap-2">
@@ -164,9 +165,10 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
               <h3 className="text-sm font-semibold">Relatório completo em PDF</h3>
             </div>
             <p className="text-[13px] text-muted-foreground leading-relaxed">
-              Inclui perfil, metas, médias dos últimos 30 dias, evolução do peso, glicemia,
-              atividades, análises corporais e exames de sangue (com tendências e marcadores fora
-              da faixa).
+              Inclui todo o histórico: perfil e metas, alimentação, líquidos, atividades, peso,
+              glicemia, medidas, sinais vitais e relógio, bioimpedância, todos os marcadores dos
+              exames, treinos com exercícios, preferências, cardápios, produtos e kits.
+              Fotos, vídeos e arquivos originais permanecem no aplicativo; seus registros e resultados são incluídos.
             </p>
             <Button
               variant="default"
@@ -196,8 +198,8 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
               <h3 className="text-sm font-semibold">Link público temporário</h3>
             </div>
             <p className="text-[13px] text-muted-foreground leading-relaxed">
-              Profissional abre direto no navegador, sem precisar de conta. Você pode revogar a
-              qualquer momento.
+              Inclui as mesmas áreas do relatório, com os registros do período escolhido e os
+              cadastros atuais. Abre sem conta e pode ser revogado a qualquer momento.
             </p>
 
             <div className="space-y-3">
@@ -205,11 +207,12 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
                 <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
                   Período de dados
                 </Label>
-                <div className="grid grid-cols-3 gap-2 mt-1.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1.5">
                   {PERIOD_OPTIONS.map((p) => (
-                    <button
+                    <Button
                       key={p.v}
-                      type="button"
+                      variant="outline"
+                      aria-pressed={periodDays === p.v}
                       onClick={() => setPeriodDays(p.v)}
                       className={cn(
                         'h-10 text-sm rounded-md border transition-colors active:scale-[0.98]',
@@ -219,7 +222,7 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
                       )}
                     >
                       {p.l}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -229,9 +232,10 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
                 </Label>
                 <div className="grid grid-cols-3 gap-2 mt-1.5">
                   {VALIDITY_OPTIONS.map((p) => (
-                    <button
+                    <Button
                       key={p.v}
-                      type="button"
+                      variant="outline"
+                      aria-pressed={validityDays === p.v}
                       onClick={() => setValidityDays(p.v)}
                       className={cn(
                         'h-10 text-sm rounded-md border transition-colors active:scale-[0.98]',
@@ -241,7 +245,7 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
                       )}
                     >
                       {p.l}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -341,7 +345,7 @@ export function ShareSummaryDialog({ open, onOpenChange }: Props) {
           </section>
         </div>
 
-        <DialogFooter className="pt-2">
+        <DialogFooter className="shrink-0 border-t border-border p-4">
           <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full h-10">
             Fechar
           </Button>

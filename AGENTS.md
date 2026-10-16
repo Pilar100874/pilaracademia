@@ -1,5 +1,7 @@
 # Project Rules
 
+- Professional sharing uses a common section catalog for PDF and public reports; paginate owner-scoped reads, scope child rows through owned parents, strip account identifiers and storage URLs from public payloads, and preserve token expiry/revocation. Why: complete health sharing must not silently truncate history or widen access to other users and private media.
+
 - Help content lives in a shared topic catalog consumed by the full help page and contextual help drawer. Why: both entry points must describe the same current features without duplicating stale instructions.
 
 - Exercise visual naming runs through a database-deduplicated server queue with leases, bounded batches, terminal AI pauses, and wake-on-enqueue/drain-only scheduling; successful names propagate transactionally to linked workouts. Why: naming must continue with the app closed without duplicate AI calls or repeated completed work.
