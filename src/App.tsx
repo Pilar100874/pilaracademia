@@ -16,7 +16,6 @@ import { WorkoutWizardPage } from "@/pages/WorkoutWizardPage";
 import ExerciseLibraryPage from "@/pages/ExerciseLibraryPage";
 import BioimpedancePage from "@/pages/BioimpedancePage";
 import OnboardingPage from "@/pages/OnboardingPage";
-import InsightsPage from "@/pages/InsightsPage";
 import FoodPreferencesPage from "@/pages/FoodPreferencesPage";
 import SharedSummaryPage from "@/pages/SharedSummaryPage";
 import HelpPage from "@/pages/HelpPage";
@@ -197,14 +196,6 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/body-analysis"
-        element={
-          <ProtectedRoute>
-            <BodyAnalysisPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/bioimpedance"
         element={
           <ProtectedRoute>
@@ -225,14 +216,6 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <OnboardingPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/insights"
-        element={
-          <ProtectedRoute>
-            <InsightsPage />
           </ProtectedRoute>
         }
       />
