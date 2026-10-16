@@ -2,6 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
+/** Evento global: avisa as telas que leem o histórico de peso para buscar de novo. */
+export const WEIGHT_HISTORY_EVENT = 'weight-history-changed';
+export const notifyWeightHistoryChanged = () => {
+  window.dispatchEvent(new Event(WEIGHT_HISTORY_EVENT));
+};
+
 export interface WeightEntry {
   id: string;
   user_id: string;
