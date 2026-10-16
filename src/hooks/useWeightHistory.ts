@@ -43,6 +43,9 @@ export function useWeightHistory() {
 
   useEffect(() => {
     fetchEntries();
+    const onChanged = () => void fetchEntries();
+    window.addEventListener(WEIGHT_HISTORY_EVENT, onChanged);
+    return () => window.removeEventListener(WEIGHT_HISTORY_EVENT, onChanged);
   }, [fetchEntries]);
 
   const addWeightEntry = async (weightKg: number) => {

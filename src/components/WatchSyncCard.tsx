@@ -20,11 +20,24 @@ import {
   openWatchSettings,
   readWatchSummary,
   readHealthHistory,
+  readBodyCompositionHistory,
   requestWatchPermission,
+  type BodyCompositionPoint,
   type WatchSummary,
 } from '@/lib/healthConnect';
+import { notifyWeightHistoryChanged } from '@/hooks/useWeightHistory';
 
 type Status = 'checking' | 'unavailable' | 'needs-permission' | 'ready';
+
+/** Dias de histórico que o usuário pode escolher importar. */
+const PERIODS = [30, 90, 365] as const;
+const periodLabel = (days: number) => (days === 365 ? 'último ano' : `últimos ${days} dias`);
+
+/** Chave estável do dia local (para comparar registros já salvos). */
+const dayKeyOf = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
 
 interface ImportOptions {
   calories: boolean;
@@ -32,6 +45,7 @@ interface ImportOptions {
   bodyExam: boolean;
   history: boolean;
   profileWeight: boolean;
+  period: (typeof PERIODS)[number];
 }
 
 export function WatchSyncCard() {
