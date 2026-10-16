@@ -102,23 +102,6 @@ const HELP_BY_ROUTE: Record<string, HelpSection> = {
       { label: 'Reutilizar em treinos', desc: 'Os exercícios da biblioteca aparecem ao montar qualquer treino.' },
     ],
   },
-  '/body-analysis': {
-    title: 'Análise Corporal',
-    intro: 'Análises de fotos e medidas geradas por IA com leitura visual da evolução.',
-    steps: [
-      { label: 'Filtrar', desc: 'Use os filtros para ver apenas um tipo de análise ou intervalo de datas.' },
-      { label: 'Comparar', desc: 'Selecione duas análises para ver lado a lado as mudanças de composição corporal.' },
-    ],
-  },
-  '/insights': {
-    title: 'Insights',
-    intro: 'Resumos semanais e alertas inteligentes sobre seus padrões.',
-    steps: [
-      { label: 'Check-in semanal', desc: 'Resumo automático de aderência, peso e treinos da semana.' },
-      { label: 'Alertas', desc: 'Avisos quando algo foge do padrão (proteína baixa, hidratação fraca, etc.).' },
-      { label: 'Sequência (streak)', desc: 'Conta dias consecutivos com registro — manter o streak ajuda na consistência.' },
-    ],
-  },
   '/food-preferences': {
     title: 'Preferências Alimentares',
     intro: 'Defina restrições e gostos para personalizar o cardápio gerado por IA.',
