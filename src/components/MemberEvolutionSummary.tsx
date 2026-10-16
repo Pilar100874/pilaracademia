@@ -23,7 +23,6 @@ type Summary = {
   glucose: { id: string; glucose_mg_dl: number; measurement_type: string; measured_at: string; notes: string | null }[];
   body: { id: string; extracted: ExtractedBioimpedance; score: number | null; summary: string | null; measured_at: string | null; created_at: string }[];
   exams: BloodExamRow[];
-  checkins: { id: string; period_start: string; period_end: string; adherence_score: number | null; summary: string | null }[];
   workouts: { id: string; name: string; objective: string | null; days_of_week: number[]; sets: number; reps: number }[];
 };
 const number = (value: number | null | undefined, digits = 1) => value == null || !Number.isFinite(value) ? '—' : value.toLocaleString('pt-BR', { maximumFractionDigits: digits });
@@ -110,10 +109,6 @@ function SummaryContent({ data, tab, setTab }: { data: Summary; tab: string; set
           {chart('Evolução do peso', 'kg', weightRows, 'value')}
           {chart('Atividade diária', 'min', data.daily, 'minutes')}
         </div>
-        <Section title="Acompanhamento semanal">
-          {chart('Pontuação do check-in', 'pontos', data.checkins.map(c => ({ date: c.period_end, value: c.adherence_score })), 'value')}
-          {data.checkins.length ? <div className="divide-y divide-border">{[...data.checkins].reverse().slice(0, 8).map(c => <article className="py-3 space-y-1" key={c.id}><p className="text-sm font-medium">{dateLabel(c.period_start)} a {dateLabel(c.period_end)} · {number(c.adherence_score)} pontos</p><p className="text-sm text-muted-foreground whitespace-pre-wrap">{c.summary || 'Sem resumo disponível'}</p></article>)}</div> : <p className="text-sm text-muted-foreground">Nenhum check-in no período.</p>}
-        </Section>
       </TabsContent>
       <TabsContent value="nutrition" className="space-y-5">
         <p className="text-xs text-muted-foreground">Médias apenas dos dias registrados. A linha de meta representa a configuração atual, não metas históricas.</p>
