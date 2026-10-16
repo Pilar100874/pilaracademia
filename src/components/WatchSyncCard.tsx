@@ -271,6 +271,7 @@ export function WatchSyncCard() {
   };
 
   const summaryRaw = summary;
+  const preview = summary ? applyEdits(summary) : null;
   const confirmImport = async () => {
     if (!user || !summaryRaw) return;
     const summary = applyEdits(summaryRaw);
@@ -510,13 +511,13 @@ export function WatchSyncCard() {
               <span className="min-w-0 text-sm">
                 <span className="font-medium">Atividade de hoje</span>
                 <span className="block text-xs text-muted-foreground">
-                  {summary?.stepsToday ?? '—'} passos · {summary?.distanceTodayMeters != null ? (summary.distanceTodayMeters / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '—'} km · {summary?.activityMinutesToday ?? '—'} min de atividades registradas.
+                  {preview?.stepsToday ?? '—'} passos · {preview?.distanceTodayMeters != null ? (preview.distanceTodayMeters / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '—'} km · {preview?.activityMinutesToday ?? '—'} min de atividades registradas.
                 </span>
                 <span className="block text-xs text-muted-foreground">Passos e distância ficam em Sinais; o tempo também vai para Atividade do relógio.</span>
               </span>
             </label>
 
-            {summary?.caloriesToday != null && (
+            {preview?.caloriesToday != null && (
               <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer">
                 <Checkbox
                   checked={options.calories}
@@ -526,7 +527,7 @@ export function WatchSyncCard() {
                 <span className="min-w-0">
                   <span className="flex items-center gap-1.5 font-medium text-sm">
                     <Flame className="h-4 w-4 text-primary shrink-0" />
-                    Calorias ativas de hoje: {summary.caloriesToday.toLocaleString('pt-BR')} kcal
+                    Calorias ativas de hoje: {preview.caloriesToday.toLocaleString('pt-BR')} kcal
                   </span>
                   <span className="block text-xs text-muted-foreground mt-0.5">
                     Lança como exercício "Atividade do relógio" na data de hoje (tela inicial).
@@ -535,7 +536,7 @@ export function WatchSyncCard() {
               </label>
             )}
 
-            {summary?.latestWeight && (
+            {preview?.latestWeight && (
               <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer">
                 <Checkbox
                   checked={options.weight}
@@ -545,7 +546,7 @@ export function WatchSyncCard() {
                 <span className="min-w-0">
                   <span className="flex items-center gap-1.5 font-medium text-sm">
                     <Scale className="h-4 w-4 text-primary shrink-0" />
-                    Peso: {summary.latestWeight.kg} kg
+                    Peso: {preview.latestWeight.kg} kg
                   </span>
                   <span className="block text-xs text-muted-foreground mt-0.5">
                     Salva as pesagens dos {periodLabel(options.period)} no histórico de peso, sem duplicar dias já lançados.
@@ -554,7 +555,7 @@ export function WatchSyncCard() {
               </label>
             )}
 
-            {(summary?.latestWeight || summary?.latestBodyFat) && (
+            {(preview?.latestWeight || preview?.latestBodyFat) && (
               <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer">
                 <Checkbox
                   checked={options.bodyExam}
@@ -565,7 +566,7 @@ export function WatchSyncCard() {
                   <span className="flex items-center gap-1.5 font-medium text-sm">
                     <Activity className="h-4 w-4 text-primary shrink-0" />
                     Exame de bioimpedância
-                    {summary.latestBodyFat ? ` (${summary.latestBodyFat.pct}% gordura)` : ''}
+                    {preview.latestBodyFat ? ` (${preview.latestBodyFat.pct}% gordura)` : ''}
                   </span>
                   <span className="block text-xs text-muted-foreground mt-0.5">
                     Salva a última medição como exame na aba Bioimpedância. A gordura de cada dia vai para a aba Sinais.
@@ -574,7 +575,7 @@ export function WatchSyncCard() {
               </label>
             )}
 
-            {summary?.latestWeight && (
+            {preview?.latestWeight && (
               <label className="flex items-start gap-3 rounded-md border border-primary/40 bg-primary/5 p-3 cursor-pointer">
                 <Checkbox
                   checked={options.profileWeight}
@@ -582,7 +583,7 @@ export function WatchSyncCard() {
                   className="mt-0.5"
                 />
                 <span className="min-w-0">
-                  <span className="font-medium text-sm">Ajustar meu peso no app para {summary.latestWeight.kg} kg?</span>
+                  <span className="font-medium text-sm">Ajustar meu peso no app para {preview.latestWeight.kg} kg?</span>
                   <span className="block text-xs text-muted-foreground mt-0.5">
                     Atualiza o peso do seu perfil (usado nas metas de calorias e água).
                   </span>
