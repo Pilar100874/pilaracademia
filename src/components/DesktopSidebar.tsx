@@ -24,7 +24,6 @@ const primaryNav = [
 
 const secondaryNav = [
   { to: '/products', icon: ScanLine, label: 'Produtos' },
-  { to: '/products', icon: ScanLine, label: 'Produtos' },
   { to: '/profile', icon: User, label: 'Perfil' },
 ];
 
