@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, HeartPulse, Activity } from 'lucide-react';
+import { Heart, Scale, Ruler, AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, HeartPulse, Activity, Sparkles, ChevronRight } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { BottomNav } from '@/components/BottomNav';
 import { differenceInYears, parseISO } from 'date-fns';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BioimpedanceTab } from '@/components/BioimpedanceTab';
 import { MeasurementsTab } from '@/components/MeasurementsTab';
@@ -11,6 +11,7 @@ import { BloodExamsTab } from '@/components/BloodExamsTab';
 import { VitalsTab } from '@/components/VitalsTab';
 import { WatchSyncCard } from '@/components/WatchSyncCard';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
+import { useCurrentBodyPlan } from '@/hooks/useCurrentBodyPlan';
 import type { BodyAnalysisRow, ExtractedBioimpedance } from '@/types/bodyAnalysis';
 
 interface BMICategory {
@@ -34,6 +35,8 @@ const bmiCategories: BMICategory[] = [
 export function HealthPage() {
   const { profile } = useProfile();
   const { list } = useBodyAnalyses();
+  const navigate = useNavigate();
+  const planInfo = useCurrentBodyPlan();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const tab = (['blood', 'bioimpedance', 'measurements', 'vitals'] as const).find((t) => t === tabParam) ?? 'overview';
@@ -193,6 +196,29 @@ export function HealthPage() {
               ))}
             </div>
           </div>
+
+          {/* Entrada para a análise completa e o plano de 12 semanas */}
+          <button
+            type="button"
+            onClick={() => navigate('/body-analysis')}
+            className="flex w-full min-w-0 items-center gap-3 rounded-md border border-border bg-card p-4 text-left transition-colors hover:bg-muted/50"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold leading-tight">
+                {planInfo ? 'Seu plano de 12 semanas' : 'Análise completa e plano'}
+              </p>
+              <p className="mt-0.5 truncate text-xs leading-tight text-muted-foreground">
+                {planInfo
+                  ? `Semana ${planInfo.currentWeek} de ${planInfo.totalWeeks}${planInfo.currentPhase ? ` · ${planInfo.currentPhase.phase}` : ''}`
+                  : 'Resultado, evolução, nutrição e periodização em um só lugar'}
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </button>
+
           {!hasCompleteProfile ? (
             <div className="rounded-md border border-dashed border-border bg-card p-8 text-center space-y-3">
               <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto">
