@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { HeartPulse, Activity, Droplet, Moon, Footprints, Flame, Wind, Thermometer, Gauge, TrendingUp, TrendingDown, Minus, Route, Scale } from 'lucide-react';
+import { HeartPulse, Activity, Droplet, Moon, Footprints, Flame, Wind, Thermometer, Gauge, TrendingUp, TrendingDown, Minus, Route, Scale, Timer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -30,6 +30,8 @@ const METRICS: MetricDef[] = [
   { type: 'sleep', label: 'Sono', unit: 'h', icon: Moon, hint: 'Recomendado para adultos: 7–9 h.', format: (v) => `${Math.floor(v / 60)}h${String(Math.round(v % 60)).padStart(2, '0')}`, higherIsBetter: true },
   { type: 'steps', label: 'Passos', unit: 'passos', icon: Footprints, hint: 'Meta comum: 7.000–10.000 por dia.', higherIsBetter: true },
   { type: 'calories', label: 'Calorias ativas', unit: 'kcal', icon: Flame, hint: 'Gasto registrado pelo relógio.', higherIsBetter: true },
+  { type: 'total_calories', label: 'Gasto total', unit: 'kcal', icon: Flame, hint: 'Inclui repouso; não deve ser somado às calorias ativas.' },
+  { type: 'activity_duration', label: 'Tempo de atividade', unit: 'min', icon: Timer, hint: 'Duração das atividades registradas no Samsung Health; não representa todo o tempo ativo do dia.' },
   { type: 'distance', label: 'Distância', unit: 'km', icon: Route, hint: 'Distância caminhada/corrida.', format: (v) => (v / 1000).toFixed(1), higherIsBetter: true },
   { type: 'vo2max', label: 'VO₂ máx.', unit: 'mL/kg/min', icon: TrendingUp, hint: 'Capacidade aeróbica — quanto maior, melhor.', higherIsBetter: true },
   { type: 'body_temperature', label: 'Temperatura corporal', unit: '°C', icon: Thermometer, hint: 'Normal: 36–37,5 °C.' },
@@ -56,6 +58,7 @@ export function VitalsTab() {
     queryKey: ['health-metrics', user?.id, days],
     enabled: !!user,
     queryFn: async () => {
+      if (!user) return [];
       // Busca o período atual + o anterior para comparar.
       const since = new Date(Date.now() - days * 2 * 86400000).toISOString();
       const all: Row[] = [];
@@ -63,7 +66,7 @@ export function VitalsTab() {
         const { data, error } = await supabase
           .from('health_metrics')
           .select('metric_type,value,value2,recorded_at')
-          .eq('user_id', user!.id)
+          .eq('user_id', user.id)
           .gte('recorded_at', since)
           .order('recorded_at', { ascending: true })
           .range(from, from + 999);
@@ -114,7 +117,7 @@ export function VitalsTab() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {available.map((def) => {
-            const list = byType.get(def.type)!;
+            const list = byType.get(def.type) ?? [];
             const cur = list.filter((r) => new Date(r.recorded_at).getTime() >= cutoff);
             const prev = list.filter((r) => new Date(r.recorded_at).getTime() < cutoff);
             const fmt = def.format ?? ((v: number) => (Math.round(v * 10) / 10).toLocaleString('pt-BR'));
@@ -125,7 +128,7 @@ export function VitalsTab() {
             const diff = curAvg != null && prevAvg != null ? curAvg - prevAvg : null;
             const good = diff == null || def.higherIsBetter == null || Math.abs(diff) < 1e-6 ? null : (diff > 0) === def.higherIsBetter;
             const Icon = def.icon;
-            const chart = cur.map((r) => ({ d: format(parseISO(r.recorded_at), 'dd/MM', { locale: ptBR }), v: r.value, v2: r.value2 }));
+            const chart = cur.map((r) => ({ d: format(parseISO(r.recorded_at), 'dd/MM', { locale: ptBR }), v: def.type === 'distance' ? r.value / 1000 : r.value, v2: r.value2 }));
             return (
               <div key={def.type} className="min-w-0 rounded-md border border-border bg-card p-4">
                 <div className="flex items-start justify-between gap-2">

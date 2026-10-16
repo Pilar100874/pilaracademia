@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { Health, type HealthSample } from '@capgo/capacitor-health';
+import { activityMinutesByDay, healthHistoryStart, localHealthDay } from './healthActivity';
 
 /**
  * Sincronização com o relógio (Samsung Galaxy Watch / Wear OS) via Health Connect.
@@ -8,11 +9,14 @@ import { Health, type HealthSample } from '@capgo/capacitor-health';
 
 export const isWatchSyncSupported = () => Capacitor.isNativePlatform();
 
-const READ_TYPES = ['steps', 'calories', 'distance', 'heartRate', 'restingHeartRate', 'heartRateVariability', 'bloodPressure', 'oxygenSaturation', 'respiratoryRate', 'vo2Max', 'bloodGlucose', 'bodyTemperature', 'sleep', 'weight', 'bodyFat', 'height'] as const;
+const READ_TYPES = ['steps', 'calories', 'totalCalories', 'distance', 'workouts', 'heartRate', 'restingHeartRate', 'heartRateVariability', 'bloodPressure', 'oxygenSaturation', 'respiratoryRate', 'vo2Max', 'bloodGlucose', 'bodyTemperature', 'sleep', 'weight', 'bodyFat', 'height'] as const;
 
 export interface WatchSummary {
   stepsToday: number | null;
   caloriesToday: number | null;
+  totalCaloriesToday: number | null;
+  distanceTodayMeters: number | null;
+  activityMinutesToday: number | null;
   lastHeartRate: number | null;
   restingHeartRate: number | null;
   sleepMinutesLastNight: number | null;
@@ -33,6 +37,7 @@ export async function checkWatchAvailability(): Promise<{ available: boolean; re
 }
 
 export async function requestWatchPermission(): Promise<boolean> {
+  if (!isWatchSyncSupported()) return false;
   const status = await Health.requestAuthorization({
     read: [...READ_TYPES],
     requestHistoryAccess: true,
@@ -41,6 +46,7 @@ export async function requestWatchPermission(): Promise<boolean> {
 }
 
 export async function openWatchSettings(): Promise<void> {
+  if (!isWatchSyncSupported()) return;
   if (Capacitor.getPlatform() === 'android') {
     await Health.openHealthConnectSettings();
   }
@@ -52,17 +58,18 @@ function startOfToday(): string {
   return d.toISOString();
 }
 
-async function aggregateToday(dataType: 'steps' | 'calories'): Promise<number | null> {
+async function aggregateToday(dataType: 'steps' | 'calories' | 'totalCalories' | 'distance', end: string): Promise<number | null> {
   try {
     const { samples } = await Health.queryAggregated({
       dataType,
       startDate: startOfToday(),
-      endDate: new Date().toISOString(),
+      endDate: end,
       bucket: 'day',
       aggregation: 'sum',
     });
     if (!samples.length) return null;
-    return Math.round(samples.reduce((acc, s) => acc + (s.value || 0), 0));
+    const valid = samples.filter((s) => Number.isFinite(s.value));
+    return valid.length ? Math.round(valid.reduce((acc, s) => acc + s.value, 0)) : null;
   } catch {
     return null;
   }
@@ -104,9 +111,14 @@ async function sleepLastNight(): Promise<number | null> {
 }
 
 export async function readWatchSummary(): Promise<WatchSummary> {
-  const [stepsToday, caloriesToday, hr, restingHr, sleepMinutes, weight, bodyFat, height] = await Promise.all([
-    aggregateToday('steps'),
-    aggregateToday('calories'),
+  if (!isWatchSyncSupported()) throw new Error('Native health is unavailable');
+  const syncedAt = new Date().toISOString();
+  const [stepsToday, caloriesToday, totalCaloriesToday, distanceTodayMeters, activity, hr, restingHr, sleepMinutes, weight, bodyFat, height] = await Promise.all([
+    aggregateToday('steps', syncedAt),
+    aggregateToday('calories', syncedAt),
+    aggregateToday('totalCalories', syncedAt),
+    aggregateToday('distance', syncedAt),
+    readActivityHistory(startOfToday(), syncedAt),
     latestSample('heartRate'),
     latestSample('restingHeartRate'),
     sleepLastNight(),
@@ -118,13 +130,16 @@ export async function readWatchSummary(): Promise<WatchSummary> {
   return {
     stepsToday,
     caloriesToday,
+    totalCaloriesToday,
+    distanceTodayMeters,
+    activityMinutesToday: activity[0]?.value ?? null,
     lastHeartRate: hr ? Math.round(hr.value) : null,
     restingHeartRate: restingHr ? Math.round(restingHr.value) : null,
     sleepMinutesLastNight: sleepMinutes,
     latestWeight: weight ? { kg: Math.round(weight.value * 10) / 10, date: weight.endDate } : null,
     latestBodyFat: bodyFat ? { pct: Math.round(bodyFat.value * 10) / 10, date: bodyFat.endDate } : null,
     latestHeightCm: height ? Math.round(height.value) : null,
-    syncedAt: new Date().toISOString(),
+    syncedAt,
   };
 }
 
@@ -137,11 +152,32 @@ export interface HealthMetricRow {
   recorded_at: string;
 }
 
-const dayKey = (iso: string) => {
-  const d = new Date(iso);
-  d.setHours(12, 0, 0, 0);
-  return d.toISOString();
-};
+const dayKey = localHealthDay;
+
+/** Health Connect does not expose Samsung's proprietary daily activity-time total.
+ * Use recorded workout sessions only, never estimate time from steps. */
+async function readActivityHistory(start: string, end = new Date().toISOString()): Promise<HealthMetricRow[]> {
+  const sessions: { startDate: string; endDate: string }[] = [];
+  let anchor: string | undefined;
+  const seen = new Set<string>();
+  try {
+    do {
+      const result = await Health.queryWorkouts({ startDate: start, endDate: end, limit: 500, ascending: true, anchor });
+      for (const workout of result.workouts) {
+        if (Capacitor.getPlatform() === 'android' && workout.sourceId !== 'com.sec.android.app.shealth') continue;
+        sessions.push(workout);
+      }
+      anchor = result.anchor;
+      if (anchor && seen.has(anchor)) throw new Error('Repeated workout cursor');
+      if (anchor) seen.add(anchor);
+    } while (anchor);
+    return [...activityMinutesByDay(sessions, start, end)].map(([recorded_at, minutes]) => ({
+      metric_type: 'activity_duration', value: Math.round(minutes * 10) / 10, value2: null, unit: 'min', recorded_at,
+    }));
+  } catch {
+    return [];
+  }
+}
 
 async function samplesOf(dataType: HealthSample['dataType'], start: string, limit = 5000): Promise<HealthSample[]> {
   // Lê em janelas de 30 dias: períodos longos (1 ano) estouram o limite de amostras por consulta.
@@ -184,11 +220,11 @@ function dailyStats(samples: HealthSample[], type: string, unit: string, round =
   }));
 }
 
-async function dailySum(dataType: 'steps' | 'calories' | 'distance', type: string, unit: string, start: string): Promise<HealthMetricRow[]> {
+async function dailySum(dataType: 'steps' | 'calories' | 'totalCalories' | 'distance', type: string, unit: string, start: string): Promise<HealthMetricRow[]> {
   try {
     const { samples } = await Health.queryAggregated({ dataType, startDate: start, endDate: new Date().toISOString(), bucket: 'day', aggregation: 'sum' });
     return samples
-      .filter((s) => (s.value || 0) > 0)
+      .filter((s) => Number.isFinite(s.value) && s.value >= 0)
       .map((s) => ({ metric_type: type, value: Math.round(s.value), value2: null, unit, recorded_at: dayKey(s.startDate) }));
   } catch {
     return [];
@@ -219,31 +255,37 @@ export interface BodyCompositionPoint {
  * Retorna um ponto por dia (a última medição daquele dia), do mais antigo ao mais recente.
  */
 export async function readBodyCompositionHistory(days: number): Promise<BodyCompositionPoint[]> {
-  const start = new Date(Date.now() - days * 86400000).toISOString();
+  if (!isWatchSyncSupported()) return [];
+  const start = healthHistoryStart(days);
   const [weights, fats] = await Promise.all([samplesOf('weight', start), samplesOf('bodyFat', start)]);
   const wm = latestPerDay(weights);
   const fm = latestPerDay(fats);
   const keys = [...new Set([...wm.keys(), ...fm.keys()])];
   return keys
-    .map((k) => {
+    .flatMap((k) => {
       const w = wm.get(k);
       const f = fm.get(k);
-      return {
-        date: (w ?? f)!.endDate,
+      const latest = w ?? f;
+      if (!latest) return [];
+      return [{
+        date: latest.endDate,
         kg: w ? Math.round(w.value * 10) / 10 : undefined,
         pct: f ? Math.round(f.value * 10) / 10 : undefined,
-      };
+      }];
     })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
 /** Lê o histórico dos últimos `days` dias de todos os sinais disponíveis. */
 export async function readHealthHistory(days = 30): Promise<HealthMetricRow[]> {
-  const start = new Date(Date.now() - days * 86400000).toISOString();
-  const [steps, cal, dist, hr, rhr, hrv, bp, spo2, resp, vo2, glu, temp, sleep, fat] = await Promise.all([
+  if (!isWatchSyncSupported()) return [];
+  const start = healthHistoryStart(days);
+  const [steps, cal, dist, totalCal, activity, hr, rhr, hrv, bp, spo2, resp, vo2, glu, temp, sleep, fat] = await Promise.all([
     dailySum('steps', 'steps', 'passos', start),
     dailySum('calories', 'calories', 'kcal', start),
     dailySum('distance', 'distance', 'm', start),
+    dailySum('totalCalories', 'total_calories', 'kcal', start),
+    readActivityHistory(start),
     samplesOf('heartRate', start),
     samplesOf('restingHeartRate', start),
     samplesOf('heartRateVariability', start),
@@ -256,7 +298,7 @@ export async function readHealthHistory(days = 30): Promise<HealthMetricRow[]> {
     samplesOf('sleep', start),
     samplesOf('bodyFat', start),
   ]);
-  const rows: HealthMetricRow[] = [...steps, ...cal, ...dist];
+  const rows: HealthMetricRow[] = [...steps, ...cal, ...dist, ...totalCal, ...activity];
   rows.push(...dailyStats(hr, 'heart_rate', 'bpm'));
   rows.push(...dailyStats(rhr, 'resting_heart_rate', 'bpm'));
   rows.push(...dailyStats(hrv, 'hrv', 'ms'));

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Watch, RefreshCw, Footprints, Flame, HeartPulse, Moon, Scale, Settings, Activity, Download } from 'lucide-react';
+import { Watch, RefreshCw, Footprints, Flame, HeartPulse, Moon, Scale, Settings, Activity, Download, Route, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -24,7 +24,9 @@ import {
   requestWatchPermission,
   type BodyCompositionPoint,
   type WatchSummary,
+  type HealthMetricRow,
 } from '@/lib/healthConnect';
+import { localHealthDay } from '@/lib/healthActivity';
 import { notifyWeightHistoryChanged } from '@/hooks/useWeightHistory';
 
 type Status = 'checking' | 'unavailable' | 'needs-permission' | 'ready';
@@ -41,6 +43,7 @@ const dayKeyOf = (iso: string) => {
 
 interface ImportOptions {
   calories: boolean;
+  activity: boolean;
   weight: boolean;
   bodyExam: boolean;
   history: boolean;
@@ -57,7 +60,7 @@ export function WatchSyncCard() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [options, setOptions] = useState<ImportOptions>({ calories: true, weight: true, bodyExam: true, history: true, profileWeight: false, period: 30 });
+  const [options, setOptions] = useState<ImportOptions>({ calories: true, activity: true, weight: true, bodyExam: true, history: true, profileWeight: false, period: 30 });
 
   useEffect(() => {
     if (!isWatchSyncSupported()) return;
@@ -119,10 +122,15 @@ export function WatchSyncCard() {
   };
 
   const importCalories = async (userId: string, s: WatchSummary): Promise<string> => {
-    if (s.caloriesToday == null) return 'Calorias: sem dados hoje.';
-    const now = new Date();
+    if (s.caloriesToday == null && (!options.activity || s.activityMinutesToday == null)) return 'Atividade: sem dados hoje.';
+    const now = new Date(s.syncedAt);
+    const values = {
+      ...(options.calories && s.caloriesToday != null ? { calories_burned: s.caloriesToday } : {}),
+      ...(options.activity && s.activityMinutesToday != null ? { duration_minutes: Math.round(s.activityMinutesToday) } : {}),
+    };
+    if (!Object.keys(values).length) return 'Atividade: nenhum valor selecionado disponível.';
     const { start, end } = dayBounds(now.toISOString());
-    const { data: existing } = await supabase
+    const { data: existing, error: readError } = await supabase
       .from('exercise_entries')
       .select('id')
       .eq('user_id', userId)
@@ -130,26 +138,28 @@ export function WatchSyncCard() {
       .gte('performed_at', start)
       .lte('performed_at', end)
       .limit(1);
+    if (readError) throw readError;
 
     if (existing && existing.length > 0) {
       const { error } = await supabase
         .from('exercise_entries')
-        .update({ calories_burned: s.caloriesToday })
+        .update(values)
         .eq('id', existing[0].id);
       if (error) throw error;
-      return `Calorias atualizadas no exercício de hoje (${s.caloriesToday} kcal).`;
+      return 'Atividade do relógio atualizada na data correspondente.';
     }
 
     const { error } = await supabase.from('exercise_entries').insert({
       user_id: userId,
       name: 'Atividade do relógio',
       duration_minutes: 0,
-      calories_burned: s.caloriesToday,
+      calories_burned: 0,
+      ...values,
       exercise_type: 'watch_sync',
       performed_at: now.toISOString(),
     });
     if (error) throw error;
-    return `Calorias lançadas como exercício de hoje (${s.caloriesToday} kcal).`;
+    return 'Atividade do relógio salva na data correspondente.';
   };
 
   const importWeight = async (userId: string, points: BodyCompositionPoint[], days: number): Promise<string> => {
@@ -217,7 +227,7 @@ export function WatchSyncCard() {
     const results: string[] = [];
     try {
       const points = options.weight || options.bodyExam ? await readBodyCompositionHistory(options.period) : [];
-      if (options.calories) results.push(await importCalories(user.id, summary));
+      if (options.calories || options.activity) results.push(await importCalories(user.id, summary));
       if (options.weight) results.push(await importWeight(user.id, points, options.period));
       if (options.bodyExam) results.push(await importBodyExam(user.id, summary));
       if (options.profileWeight && summary.latestWeight) {
@@ -226,8 +236,19 @@ export function WatchSyncCard() {
         results.push('Peso do app atualizado.');
         void queryClient.invalidateQueries({ queryKey: ['profile'] });
       }
-      if (options.history) {
-        const rows = (await readHealthHistory(options.period)).map((r) => ({ ...r, user_id: user.id, source: 'samsung_health' }));
+      if (options.history || options.activity) {
+        const history = options.history ? await readHealthHistory(options.period) : [];
+        const recorded_at = localHealthDay(summary.syncedAt);
+        const today: HealthMetricRow[] = options.activity ? [
+          ['steps', summary.stepsToday, 'passos'],
+          ['calories', summary.caloriesToday, 'kcal'],
+          ['total_calories', summary.totalCaloriesToday, 'kcal'],
+          ['distance', summary.distanceTodayMeters, 'm'],
+          ['activity_duration', summary.activityMinutesToday, 'min'],
+        ].flatMap(([metric_type, value, unit]) => typeof value === 'number' && typeof metric_type === 'string' && typeof unit === 'string'
+          ? [{ metric_type, value, value2: null, unit, recorded_at }] : []) : [];
+        const unique = new Map([...history, ...today].map((r) => [`${r.metric_type}:${r.recorded_at}`, r]));
+        const rows = [...unique.values()].map((r) => ({ ...r, user_id: user.id, source: 'samsung_health' }));
         for (let i = 0; i < rows.length; i += 500) {
           const { error } = await supabase.from('health_metrics').upsert(rows.slice(i, i + 500), { onConflict: 'user_id,metric_type,recorded_at' });
           if (error) throw error;
@@ -235,6 +256,7 @@ export function WatchSyncCard() {
         results.push(`${rows.length} registros de sinais vitais salvos (${periodLabel(options.period)}).`);
         void queryClient.invalidateQueries({ queryKey: ['health-metrics'] });
       }
+      void queryClient.invalidateQueries({ queryKey: ['exercise-entries'] });
       toast({
         title: 'Importação concluída',
         description: results.join(' '),
@@ -263,6 +285,9 @@ export function WatchSyncCard() {
     ? [
         { icon: Footprints, label: 'Passos hoje', value: summary.stepsToday != null ? summary.stepsToday.toLocaleString('pt-BR') : '—' },
         { icon: Flame, label: 'Calorias ativas', value: summary.caloriesToday != null ? `${summary.caloriesToday.toLocaleString('pt-BR')} kcal` : '—' },
+        { icon: Flame, label: 'Gasto total (com repouso)', value: summary.totalCaloriesToday != null ? `${summary.totalCaloriesToday.toLocaleString('pt-BR')} kcal` : '—' },
+        { icon: Route, label: 'Distância hoje', value: summary.distanceTodayMeters != null ? `${(summary.distanceTodayMeters / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} km` : '—' },
+        { icon: Timer, label: 'Atividades registradas', value: summary.activityMinutesToday != null ? `${summary.activityMinutesToday} min` : '—' },
         { icon: HeartPulse, label: 'Batimentos', value: summary.lastHeartRate != null ? `${summary.lastHeartRate} bpm` : '—' },
         { icon: HeartPulse, label: 'Repouso', value: summary.restingHeartRate != null ? `${summary.restingHeartRate} bpm` : '—' },
         { icon: Moon, label: 'Sono (última noite)', value: summary.sleepMinutesLastNight != null ? formatSleep(summary.sleepMinutesLastNight) : '—' },
@@ -272,7 +297,7 @@ export function WatchSyncCard() {
     : [];
 
   const hasAnythingToImport =
-    !!summary && (summary.caloriesToday != null || !!summary.latestWeight || !!summary.latestBodyFat);
+    !!summary;
 
   return (
     <div className="rounded-md border border-border bg-card p-4 space-y-4">
@@ -326,6 +351,9 @@ export function WatchSyncCard() {
           <p className="text-xs text-muted-foreground">
             Sincronizado às {new Date(summary.syncedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           </p>
+          <p className="text-xs text-muted-foreground">
+            Dados disponíveis no Health Connect; pode haver atraso em relação ao relógio. Abra o Samsung Health para sincronizá-lo e depois atualize aqui. Calorias ativas não incluem repouso; o tempo considera atividades registradas, não o total diário do Samsung.
+          </p>
 
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => void sync()} disabled={isSyncing}>
@@ -333,7 +361,15 @@ export function WatchSyncCard() {
               {isSyncing ? 'Sincronizando...' : 'Sincronizar agora'}
             </Button>
             {hasAnythingToImport && (
-              <Button size="sm" onClick={() => setImportOpen(true)}>
+              <Button size="sm" disabled={isSyncing} onClick={async () => {
+                setIsSyncing(true);
+                try {
+                  setSummary(await readWatchSummary());
+                  setImportOpen(true);
+                } catch {
+                  toast({ title: 'Não foi possível atualizar os dados', description: 'Abra o Samsung Health e tente novamente.', variant: 'destructive' });
+                } finally { setIsSyncing(false); }
+              }}>
                 <Download className="h-4 w-4 mr-2" />
                 Importar do Samsung Health
               </Button>
@@ -343,7 +379,7 @@ export function WatchSyncCard() {
       )}
 
       <Dialog open={importOpen} onOpenChange={setImportOpen}>
-        <DialogContent className="flex flex-col overflow-hidden p-0 max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <DialogContent className="flex min-w-0 flex-col overflow-hidden p-0 max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader className="px-4 pt-4 pb-2 shrink-0">
             <DialogTitle>Importar do Samsung Health</DialogTitle>
             <DialogDescription>
@@ -356,20 +392,31 @@ export function WatchSyncCard() {
               <span className="block text-xs font-medium mb-2">Período importado</span>
               <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/60 p-1">
                 {PERIODS.map((p) => (
-                  <button
+                  <Button
                     key={p}
                     type="button"
                     onClick={() => setOptions((o) => ({ ...o, period: p }))}
                     className={`rounded-md px-2 py-1 text-xs font-medium ${options.period === p ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
                   >
                     {p === 365 ? '1 ano' : `${p} dias`}
-                  </button>
+                  </Button>
                 ))}
               </div>
               <span className="block text-[11px] text-muted-foreground mt-2">
                 Vale para o histórico de peso e para os sinais vitais. As calorias são sempre as de hoje.
               </span>
             </div>
+
+            <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer">
+              <Checkbox checked={options.activity} onCheckedChange={(v) => setOptions((o) => ({ ...o, activity: v === true }))} />
+              <span className="min-w-0 text-sm">
+                <span className="font-medium">Atividade de hoje</span>
+                <span className="block text-xs text-muted-foreground">
+                  {summary?.stepsToday ?? '—'} passos · {summary?.distanceTodayMeters != null ? (summary.distanceTodayMeters / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '—'} km · {summary?.activityMinutesToday ?? '—'} min de atividades registradas.
+                </span>
+                <span className="block text-xs text-muted-foreground">Passos e distância ficam em Sinais; o tempo também vai para Atividade do relógio.</span>
+              </span>
+            </label>
 
             {summary?.caloriesToday != null && (
               <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer">
@@ -381,7 +428,7 @@ export function WatchSyncCard() {
                 <span className="min-w-0">
                   <span className="flex items-center gap-1.5 font-medium text-sm">
                     <Flame className="h-4 w-4 text-primary shrink-0" />
-                    Calorias de hoje: {summary.caloriesToday.toLocaleString('pt-BR')} kcal
+                    Calorias ativas de hoje: {summary.caloriesToday.toLocaleString('pt-BR')} kcal
                   </span>
                   <span className="block text-xs text-muted-foreground mt-0.5">
                     Lança como exercício "Atividade do relógio" na data de hoje (tela inicial).
@@ -454,10 +501,10 @@ export function WatchSyncCard() {
               <span className="min-w-0">
                 <span className="flex items-center gap-1.5 font-medium text-sm">
                   <HeartPulse className="h-4 w-4 text-primary shrink-0" />
-                  Histórico de sinais vitais ({options.period === 365 ? '1 ano' : `${options.period} dias`})
+                  Histórico de saúde e atividade ({options.period === 365 ? '1 ano' : `${options.period} dias`})
                 </span>
                 <span className="block text-xs text-muted-foreground mt-0.5">
-                  Frequência cardíaca, pressão arterial, oxigenação, sono, passos, VFC, VO2 máx., temperatura, gordura corporal e glicemia — aparecem na aba Sinais.
+                  Frequência cardíaca, pressão arterial, oxigenação, sono, passos, distância, tempo de atividades registradas, calorias ativas e totais, VFC, VO2 máx., temperatura, gordura corporal e glicemia — aparecem na aba Sinais.
                 </span>
               </span>
             </label>
@@ -467,7 +514,7 @@ export function WatchSyncCard() {
             <Button variant="outline" onClick={() => setImportOpen(false)} disabled={isImporting}>
               Cancelar
             </Button>
-            <Button onClick={() => void confirmImport()} disabled={isImporting || (!options.calories && !options.weight && !options.bodyExam && !options.history && !options.profileWeight)}>
+            <Button onClick={() => void confirmImport()} disabled={isImporting || (!options.calories && !options.activity && !options.weight && !options.bodyExam && !options.history && !options.profileWeight)}>
               {isImporting ? 'Importando...' : 'Confirmar importação'}
             </Button>
           </DialogFooter>

@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Revisar totais importados do Samsung Health e incluir distância e duração de atividade, com confirmação e histórico (validação no aparelho requer novo APK).
+
 - [x] Ampliar PDF e link de compartilhamento profissional com todos os registros pessoais relevantes e validar o acesso temporário.
 
 - [x] Refazer a Central de ajuda e a ajuda de cada tela com os recursos atuais, busca por assunto e orientações de uso.
