@@ -1,6 +1,6 @@
 /// <reference types="bun" />
 import { describe, expect, test } from 'bun:test';
-import { activeFromTotal, activityMinutesByDay, healthHistoryStart, sourceTotalsByDay, SAMSUNG_HEALTH_PACKAGE } from './healthActivity';
+import { estimateFromSteps, activeFromTotal, activityMinutesByDay, healthHistoryStart, sourceTotalsByDay, SAMSUNG_HEALTH_PACKAGE } from './healthActivity';
 
 describe('health calendar and activity duration', () => {
   test('history starts at midnight, not at the import hour', () => {
@@ -61,5 +61,14 @@ describe('distance uses the largest single source', () => {
       { value: 2360, startDate: '2026-10-16T12:00:00', endDate: '2026-10-16T13:00:00', sourceId: 'com.google.android.apps.fitness' },
     ], SAMSUNG_HEALTH_PACKAGE, 'max');
     expect([...totals.values()][0].value).toBe(2360);
+  });
+});
+
+describe('Samsung steps rebuild distance and calories', () => {
+  test('2.992 passos, 176 cm, 80 kg às 17:55 ficam perto do relógio', () => {
+    const r = estimateFromSteps({ steps: 2992, heightCm: 176, weightKg: 80, basalKcalPerDay: 1645, now: new Date(2026, 9, 16, 17, 55) });
+    expect(r.distanceMeters).toBe(2370); // relógio: 2,36 km
+    expect(r.activeKcal).toBe(133); // relógio: 131 kcal
+    expect(r.totalKcal).toBe(1361); // relógio: 1.342 kcal
   });
 });

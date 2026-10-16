@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { Health, type HealthSample } from '@capgo/capacitor-health';
-import { activeFromTotal, activityMinutesByDay, healthHistoryStart, localHealthDay, sourceTotalsByDay, totalsBySource, type DayTotal } from './healthActivity';
+import { estimateFromSteps, SAMSUNG_HEALTH_PACKAGE, activeFromTotal, activityMinutesByDay, healthHistoryStart, localHealthDay, sourceTotalsByDay, totalsBySource, type DayTotal } from './healthActivity';
 
 /**
  * Sincronização com o relógio (Samsung Galaxy Watch / Wear OS) via Health Connect.
@@ -20,7 +20,9 @@ export interface WatchSummary {
   /** Horário do registro de atividade mais recente que o Health Connect já recebeu. */
   activityDataUntil: string | null;
   /** Origem das calorias ativas: derivadas de total − basal (como o Samsung exibe) ou o registro de calorias ativas. */
-  caloriesSource: 'total_minus_basal' | 'active_record' | null;
+  caloriesSource: 'total_minus_basal' | 'active_record' | 'steps_estimate' | null;
+  /** Distância calculada pelos passos do Samsung Health (ele não compartilha a distância). */
+  distanceFromSteps: boolean;
   /** Diagnóstico: quanto cada app gravou hoje em cada tipo de dado. */
   sources: { type: ActivityType | 'basalCalories'; sourceId: string; value: number; latestEnd: string }[];
   lastHeartRate: number | null;
@@ -167,6 +169,8 @@ async function sleepLastNight(): Promise<number | null> {
 export interface ReadWatchOptions {
   /** Metabolismo basal do perfil (kcal/dia), usado quando o Samsung Health não compartilha o basal. */
   fallbackBasalKcal?: number | null;
+  heightCm?: number | null;
+  weightKg?: number | null;
 }
 
 export async function readWatchSummary(options: ReadWatchOptions = {}): Promise<WatchSummary> {
@@ -190,17 +194,26 @@ export async function readWatchSummary(options: ReadWatchOptions = {}): Promise<
   const derivedActive = totalCaloriesToday.value != null && basalRate != null
     ? activeFromTotal(totalCaloriesToday.value, basalRate.kcal, new Date(syncedAt))
     : null;
+  // Samsung Health só compartilha passos: refaz distância e calorias a partir deles.
+  const samsungSteps = stepsToday.sources.find((src) => src.sourceId === SAMSUNG_HEALTH_PACKAGE);
+  const hasSamsung = (t: TodayTotal) => t.sources.some((src) => src.sourceId === SAMSUNG_HEALTH_PACKAGE);
+  const fromSteps = samsungSteps && options.heightCm
+    ? estimateFromSteps({ steps: samsungSteps.value, heightCm: options.heightCm, weightKg: options.weightKg, basalKcalPerDay: basalRate?.kcal, now: new Date(syncedAt) })
+    : null;
+  const distanceFromSteps = !!fromSteps && !hasSamsung(distanceTodayMeters);
+  const caloriesFromSteps = !!fromSteps && fromSteps.activeKcal != null && !hasSamsung(totalCaloriesToday) && !hasSamsung(caloriesToday);
   const sources: WatchSummary['sources'] = ([['steps', stepsToday], ['calories', caloriesToday], ['totalCalories', totalCaloriesToday], ['distance', distanceTodayMeters]] as const)
     .flatMap(([type, t]) => t.sources.map((src) => ({ type, sourceId: src.sourceId ?? 'unknown', value: Math.round(src.value), latestEnd: src.latestEnd })));
   if (basalRate != null) sources.push({ type: 'basalCalories', sourceId: basalRate.from === 'profile' ? 'kcal/dia · calculado pelo seu perfil' : 'kcal/dia · Samsung Health', value: Math.round(basalRate.kcal), latestEnd: syncedAt });
 
   return {
     stepsToday: stepsToday.value,
-    caloriesToday: derivedActive ?? caloriesToday.value,
-    caloriesSource: derivedActive != null ? 'total_minus_basal' : caloriesToday.value != null ? 'active_record' : null,
+    caloriesToday: caloriesFromSteps ? fromSteps!.activeKcal : derivedActive ?? caloriesToday.value,
+    caloriesSource: caloriesFromSteps ? 'steps_estimate' : derivedActive != null ? 'total_minus_basal' : caloriesToday.value != null ? 'active_record' : null,
     sources,
-    totalCaloriesToday: totalCaloriesToday.value,
-    distanceTodayMeters: distanceTodayMeters.value,
+    totalCaloriesToday: caloriesFromSteps && fromSteps!.totalKcal != null && !hasSamsung(totalCaloriesToday) ? fromSteps!.totalKcal : totalCaloriesToday.value,
+    distanceTodayMeters: distanceFromSteps ? fromSteps!.distanceMeters : distanceTodayMeters.value,
+    distanceFromSteps,
     activityDataUntil: [stepsToday, caloriesToday, distanceTodayMeters].map((t) => t.latestEnd).filter((v): v is string => !!v).sort().at(-1) ?? null,
     activityMinutesToday: activity[0]?.value ?? null,
     lastHeartRate: hr ? Math.round(hr.value) : null,

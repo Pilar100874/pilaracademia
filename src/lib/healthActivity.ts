@@ -100,3 +100,21 @@ export function activeFromTotal(totalKcal: number, basalKcalPerDay: number, now:
   const elapsedDay = Math.min(1, Math.max(0, (now.getTime() - midnight.getTime()) / 86400000));
   return Math.max(0, Math.round(totalKcal - basalKcalPerDay * elapsedDay));
 }
+
+/**
+ * Samsung Health shares only steps with Health Connect; its distance and calories stay private.
+ * Rebuild them from Samsung steps the way Samsung does: stride ≈ 45% of height,
+ * net walking energy ≈ 0.7 kcal per kg per km, total = basal elapsed today + activity.
+ */
+export const STRIDE_HEIGHT_RATIO = 0.45;
+export const WALK_KCAL_PER_KG_KM = 0.7;
+
+export function estimateFromSteps(input: { steps: number; heightCm: number; weightKg?: number | null; basalKcalPerDay?: number | null; now: Date }) {
+  const distanceMeters = Math.round(input.steps * (input.heightCm / 100) * STRIDE_HEIGHT_RATIO);
+  const activeKcal = input.weightKg ? Math.round(input.weightKg * (distanceMeters / 1000) * WALK_KCAL_PER_KG_KM) : null;
+  const midnight = new Date(input.now);
+  midnight.setHours(0, 0, 0, 0);
+  const elapsed = Math.min(1, Math.max(0, (input.now.getTime() - midnight.getTime()) / 86400000));
+  const totalKcal = activeKcal != null && input.basalKcalPerDay ? Math.round(input.basalKcalPerDay * elapsed + activeKcal) : null;
+  return { distanceMeters, activeKcal, totalKcal };
+}
