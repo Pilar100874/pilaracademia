@@ -107,14 +107,14 @@ export default function SharedSummaryPage() {
   const { profile, weight_series, daily_totals } = data;
 
   // Compute averages from daily_totals
-  const last7 = daily_totals.slice(-7);
+  const last7 = daily_totals.filter((day: any) => new Date(`${day.date}T12:00:00-03:00`).getTime() >= Date.now() - 7 * 86400000);
   const avg = (arr: number[]) =>
     arr.length === 0 ? 0 : arr.reduce((a, b) => a + b, 0) / arr.length;
   const avgCalories = Math.round(avg(last7.filter((d: any) => d.calories != null).map((d: any) => d.calories)));
   const avgProtein = Math.round(avg(last7.filter((d: any) => d.protein != null).map((d: any) => d.protein)));
   const avgLiquid = Math.round(avg(last7.filter((d: any) => d.liquid_ml != null).map((d: any) => d.liquid_ml)));
 
-  const weightChartData = weight_series.map((w) => ({
+  const weightChartData = [...weight_series].sort((a, b) => a.date.localeCompare(b.date)).map((w) => ({
     label: format(parseISO(w.date), 'dd/MM', { locale: ptBR }),
     weight: w.weight_kg,
   }));
