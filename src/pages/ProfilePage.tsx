@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { activityLabels, goalLabels, calculateAge, calculateBMR, calculateTDEE, calculateDailyCalories, calculateAllNutrients } from '@/types/profile';
 import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle, Sparkles, UtensilsCrossed, Share2, ChevronRight, FileText, Shield, Trash2, KeyRound, Smartphone, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { BottomNav } from '@/components/BottomNav';
 import { DataExportSection } from '@/components/DataExportSection';
 import { ShareSummaryDialog } from '@/components/ShareSummaryDialog';
@@ -75,11 +76,14 @@ export function ProfilePage() {
   }, [gender, weightKg, heightCm, birthDate, activityLevel, goal]);
 
   const handleSave = async () => {
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      toast.error('Preencha seu nome para salvar o perfil.');
+      return;
+    }
 
     setIsSaving(true);
     try {
-      await updateProfile({
+      const saved = await updateProfile({
         name: name.trim(),
         birth_date: birthDate || null,
         gender: gender as 'male' | 'female' || null,
@@ -88,9 +92,12 @@ export function ProfilePage() {
         activity_level: activityLevel as any || null,
         goal: goal as any || null,
       });
+      if (!saved) throw new Error('Perfil não carregado');
+      toast.success('Perfil salvo.');
       navigate('/');
     } catch (error) {
-      // silently fail
+      console.error('Profile save failed:', error);
+      toast.error('Não foi possível salvar o perfil. Verifique a internet e tente de novo.');
     } finally {
       setIsSaving(false);
     }
