@@ -36,7 +36,7 @@ export function HealthPage() {
   const { list } = useBodyAnalyses();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const tab = tabParam === 'blood' ? 'blood' : tabParam === 'bioimpedance' ? 'bioimpedance' : tabParam === 'measurements' ? 'measurements' : 'overview';
+  const tab = (['blood', 'bioimpedance', 'measurements', 'vitals'] as const).find((t) => t === tabParam) ?? 'overview';
 
   const latestBio = list.data?.[0] as BodyAnalysisRow | undefined;
   const latestExtracted = (latestBio?.extracted || {}) as ExtractedBioimpedance;
@@ -171,7 +171,28 @@ export function HealthPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-5 mt-0">
-          <WatchSyncCard />
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">O que você quer ver?</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {([
+                { v: 'bioimpedance', icon: Scale, title: 'Bioimpedância', desc: latestBio ? 'Ver último exame' : 'Enviar exame' },
+                { v: 'measurements', icon: Ruler, title: 'Medidas', desc: 'Registrar e comparar' },
+                { v: 'vitals', icon: Activity, title: 'Sinais vitais', desc: 'Relógio e Samsung Health' },
+                { v: 'blood', icon: HeartPulse, title: 'Exames de sangue', desc: 'Enviar e ver evolução' },
+              ] as const).map(({ v, icon: Icon, title, desc }) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setTab(v)}
+                  className="flex min-w-0 flex-col items-start gap-1 rounded-md border border-border bg-card p-3 text-left transition-colors hover:bg-muted/50"
+                >
+                  <Icon className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-semibold leading-tight">{title}</span>
+                  <span className="text-[11px] leading-tight text-muted-foreground">{desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
           {!hasCompleteProfile ? (
             <div className="rounded-md border border-dashed border-border bg-card p-8 text-center space-y-3">
               <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto">
@@ -305,11 +326,12 @@ export function HealthPage() {
 
               {/* Zonas de Frequência Cardíaca */}
               {hrZones && hrMax && (
-                <div className="rounded-md border border-border bg-card p-4">
-                  <div className="flex items-center gap-2 mb-1">
+                <details className="group rounded-md border border-border bg-card p-4">
+                  <summary className="flex cursor-pointer list-none items-center gap-2 mb-1">
                     <HeartPulse className="h-4 w-4 text-rose-500" />
                     <span className="text-sm font-semibold">Zonas de Frequência Cardíaca</span>
-                  </div>
+                    <span className="ml-auto text-xs text-muted-foreground group-open:hidden">Ver</span>
+                  </summary>
                   <p className="text-xs text-muted-foreground mb-3">
                     FC máxima estimada: <span className="font-semibold text-foreground">{hrMax} bpm</span> · método Karvonen (FC repouso ~{restingHr} bpm)
                   </p>
@@ -332,15 +354,16 @@ export function HealthPage() {
                   <p className="text-[11px] text-muted-foreground mt-3">
                     No cardio: fique na Z2 para queimar gordura; use Z4–Z5 em tiros curtos e intensos. Ajuste se souber sua frequência cardíaca de repouso real.
                   </p>
-                </div>
+                </details>
               )}
 
               {/* Tabela de referência */}
-              <div className="rounded-md border border-border bg-card p-4">
-                <div className="flex items-center gap-2 mb-3">
+              <details className="group rounded-md border border-border bg-card p-4">
+                <summary className="flex cursor-pointer list-none items-center gap-2 mb-3">
                   <Info className="h-4 w-4 text-primary" />
                   <span className="text-sm font-semibold">Tabela de IMC</span>
-                </div>
+                  <span className="ml-auto text-xs text-muted-foreground group-open:hidden">Ver</span>
+                </summary>
                 <div className="space-y-2">
                   {bmiCategories.map((cat) => (
                     <div
@@ -359,7 +382,7 @@ export function HealthPage() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </details>
 
               {/* Aviso */}
               <div className="rounded-md border border-border bg-amber-500/10 p-4">
@@ -383,7 +406,8 @@ export function HealthPage() {
           <MeasurementsTab />
         </TabsContent>
 
-        <TabsContent value="vitals" className="mt-0">
+        <TabsContent value="vitals" className="mt-0 space-y-5">
+          <WatchSyncCard />
           <VitalsTab />
         </TabsContent>
 
