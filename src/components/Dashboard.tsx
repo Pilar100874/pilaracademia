@@ -107,7 +107,7 @@ export function Dashboard() {
   
   const dailyLiquidGoal = goals.liquid_ml || profile?.daily_liquid_ml || 2000;
   const netCalories = consumed.calories - caloriesBurned;
-  const latestWeightKg = weightEntries[0]?.weight_kg ?? profile?.weight_kg ?? null;
+  const latestWeightKg = weightEntries[weightEntries.length - 1]?.weight_kg ?? profile?.weight_kg ?? null;
   const bmrKcal = profile?.gender && profile.height_cm && profile.birth_date && latestWeightKg
     ? calculateBMR(profile.gender, Number(latestWeightKg), profile.height_cm, calculateAge(profile.birth_date))
     : null;
