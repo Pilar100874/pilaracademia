@@ -88,7 +88,7 @@ export function WatchSyncCard() {
     setIsSyncing(true);
     try {
       await ensureWatchPermissions();
-      const data = await readWatchSummary({ fallbackBasalKcal: profileBasal });
+      const data = await readWatchSummary({ fallbackBasalKcal: profileBasal, heightCm: profile?.height_cm ?? null, weightKg: profile?.weight_kg ? Number(profile.weight_kg) : null });
       setSummary(data);
       setStatus('ready');
     } catch {
@@ -100,7 +100,7 @@ export function WatchSyncCard() {
     } finally {
       setIsSyncing(false);
     }
-  }, [toast, profileBasal]);
+  }, [toast, profileBasal, profile?.height_cm, profile?.weight_kg]);
 
   const connect = async () => {
     try {
@@ -420,6 +420,7 @@ export function WatchSyncCard() {
           </p>
           <p className="text-xs text-muted-foreground">
             {summary.caloriesSource === 'total_minus_basal' && 'Calorias ativas = gasto total − metabolismo basal até agora, como o Samsung Health calcula. '}
+            {(summary.caloriesSource === 'steps_estimate' || summary.distanceFromSteps) && 'O Samsung Health só compartilha os passos; distância e calorias são calculadas a partir deles com sua altura e peso do Perfil (podem variar um pouco do relógio — corrija na importação se quiser). '}
             Se os números estiverem abaixo do relógio, o Samsung Health ainda não enviou tudo: abra o Samsung Health, aguarde sincronizar e toque em Atualizar. O “Tempo ativo” do Samsung não é compartilhado; aqui aparecem só as atividades registradas (caminhada, corrida etc.).
           </p>
 
@@ -447,7 +448,7 @@ export function WatchSyncCard() {
               <Button size="sm" disabled={isSyncing} onClick={async () => {
                 setIsSyncing(true);
                 try {
-                  const fresh = await readWatchSummary({ fallbackBasalKcal: profileBasal });
+                  const fresh = await readWatchSummary({ fallbackBasalKcal: profileBasal, heightCm: profile?.height_cm ?? null, weightKg: profile?.weight_kg ? Number(profile.weight_kg) : null });
                   setSummary(fresh);
                   openEdits(fresh);
                   setImportOpen(true);
