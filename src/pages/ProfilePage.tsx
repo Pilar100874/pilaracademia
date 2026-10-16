@@ -75,6 +75,16 @@ export function ProfilePage() {
     }
   }, [gender, weightKg, heightCm, birthDate, activityLevel, goal]);
 
+  const isDirty = !!profile && (
+    name !== (profile.name || '') ||
+    birthDate !== (profile.birth_date || '') ||
+    gender !== ((profile.gender as string) || '') ||
+    heightCm !== (profile.height_cm?.toString() || '') ||
+    weightKg !== (profile.weight_kg?.toString() || '') ||
+    activityLevel !== (profile.activity_level || '') ||
+    goal !== (profile.goal || '')
+  );
+
   const handleSave = async () => {
     if (!name.trim()) {
       toast.error('Preencha seu nome para salvar o perfil.');
@@ -93,8 +103,7 @@ export function ProfilePage() {
         goal: goal as any || null,
       });
       if (!saved) throw new Error('Perfil não carregado');
-      toast.success('Perfil salvo.');
-      navigate('/');
+      toast.success('Alterações do perfil salvas.');
     } catch (error) {
       console.error('Profile save failed:', error);
       toast.error('Não foi possível salvar o perfil. Verifique a internet e tente de novo.');
@@ -321,7 +330,7 @@ export function ProfilePage() {
           onClick={handleSave} 
           disabled={isSaving}
         >
-          {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Salvar Perfil'}
+          {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Salvar alterações'}
         </Button>
 
         {/* Quick links */}
@@ -511,6 +520,17 @@ export function ProfilePage() {
         <ChangePasswordDialog open={passwordOpen} onOpenChange={setPasswordOpen} />
         <AndroidAppDialog open={androidOpen} onOpenChange={setAndroidOpen} />
       </div>
+
+      {isDirty && (
+        <div className="fixed inset-x-0 bottom-24 z-40 px-4 md:bottom-6">
+          <div className="mx-auto flex max-w-lg items-center gap-3 rounded-md border border-border bg-card p-3 shadow-lg">
+            <p className="min-w-0 flex-1 text-sm font-medium">Você tem alterações não salvas</p>
+            <Button className="shrink-0" onClick={handleSave} disabled={isSaving}>
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salvar alterações'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>
