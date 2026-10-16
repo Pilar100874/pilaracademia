@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { ProfessionalReportRecords } from '@/components/ProfessionalReportRecords';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
 interface SharedPayload {
   generated_at: string;
@@ -32,7 +34,8 @@ interface SharedPayload {
   weight_series: { date: string; weight_kg: number }[];
   daily_totals: any[];
   latest_body_analysis: any;
-  blood_exams: any[];
+  blood_exams?: any[];
+  sections: { key: string; title: string; records: any[] }[];
 }
 
 const goalLabels: Record<string, string> = {
@@ -101,15 +104,15 @@ export default function SharedSummaryPage() {
     );
   }
 
-  const { profile, weight_series, daily_totals, blood_exams, latest_body_analysis } = data;
+  const { profile, weight_series, daily_totals } = data;
 
   // Compute averages from daily_totals
   const last7 = daily_totals.slice(-7);
   const avg = (arr: number[]) =>
     arr.length === 0 ? 0 : arr.reduce((a, b) => a + b, 0) / arr.length;
-  const avgCalories = Math.round(avg(last7.map((d: any) => d.calories)));
-  const avgProtein = Math.round(avg(last7.map((d: any) => d.protein)));
-  const avgLiquid = Math.round(avg(last7.map((d: any) => d.liquid_ml)));
+  const avgCalories = Math.round(avg(last7.filter((d: any) => d.calories != null).map((d: any) => d.calories)));
+  const avgProtein = Math.round(avg(last7.filter((d: any) => d.protein != null).map((d: any) => d.protein)));
+  const avgLiquid = Math.round(avg(last7.filter((d: any) => d.liquid_ml != null).map((d: any) => d.liquid_ml)));
 
   const weightChartData = weight_series.map((w) => ({
     label: format(parseISO(w.date), 'dd/MM', { locale: ptBR }),
@@ -119,7 +122,7 @@ export default function SharedSummaryPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
-        <div className="max-w-2xl mx-auto px-5 py-5">
+        <div className="max-w-4xl mx-auto px-5 py-5">
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
             Pilar Saúde · Resumo compartilhado
           </p>
@@ -135,7 +138,7 @@ export default function SharedSummaryPage() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-5 py-6 space-y-6">
+      <main className="max-w-4xl mx-auto px-5 py-6 space-y-6">
         {/* Profile */}
         <section className="rounded-md border border-border bg-card p-4 space-y-2">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -162,7 +165,7 @@ export default function SharedSummaryPage() {
           <div className="flex items-center gap-2">
             <Apple className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Médias dos últimos 7 dias
+              Médias dos últimos 7 dias com registros
             </h2>
           </div>
           <div className="grid grid-cols-3 gap-3">
@@ -221,96 +224,16 @@ export default function SharedSummaryPage() {
           </section>
         )}
 
-        {/* Body analysis */}
-        {latest_body_analysis && (
-          <section className="rounded-md border border-border bg-card p-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Última bioimpedância
-              </h2>
-            </div>
-            {latest_body_analysis.summary && (
-              <p className="text-sm leading-relaxed">{latest_body_analysis.summary}</p>
-            )}
-            {latest_body_analysis.extracted && (
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {Object.entries(latest_body_analysis.extracted)
-                  .filter(([_, v]) => typeof v === 'number' && Number.isFinite(v))
-                  .slice(0, 8)
-                  .map(([k, v]) => (
-                    <Field key={k} label={k} value={String(v)} />
-                  ))}
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Blood exams */}
-        {blood_exams.length > 0 && (
-          <section className="rounded-md border border-border bg-card p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <HeartPulse className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Exames de sangue
-              </h2>
-            </div>
-            {blood_exams.slice(0, 2).map((exam, idx) => {
-              const date = exam.collected_at;
-              const abnormal = (exam.markers || []).filter(
-                (m: any) => m.status === 'high' || m.status === 'low' || m.status === 'borderline',
-              );
-              return (
-                <div key={idx} className="space-y-2 pb-3 border-b border-border last:border-0 last:pb-0">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <p className="text-sm font-medium">
-                      {date
-                        ? format(parseISO(date), "d 'de' MMM, yyyy", { locale: ptBR })
-                        : 'Sem data'}
-                    </p>
-                    {exam.lab_name && (
-                      <p className="text-[11px] text-muted-foreground">{exam.lab_name}</p>
-                    )}
-                  </div>
-                  {exam.summary && (
-                    <p className="text-[12px] text-muted-foreground leading-relaxed">
-                      {exam.summary}
-                    </p>
-                  )}
-                  {abnormal.length > 0 && (
-                    <div className="space-y-1">
-                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                        Fora da faixa ({abnormal.length})
-                      </p>
-                      {abnormal.map((m: any, i: number) => (
-                        <div
-                          key={i}
-                          className="flex items-center justify-between gap-2 text-xs py-1 border-b border-border/50 last:border-0"
-                        >
-                          <span>{m.label}</span>
-                          <span
-                            className={cn(
-                              'font-medium',
-                              m.status === 'high' || m.status === 'low'
-                                ? 'text-rose-700'
-                                : 'text-amber-700',
-                            )}
-                          >
-                            {m.value}
-                            {m.unit ? ` ${m.unit}` : ''}{' '}
-                            <span className="text-muted-foreground font-normal">
-                              ({m.status === 'high' ? '↑' : m.status === 'low' ? '↓' : 'lim.'})
-                            </span>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </section>
-        )}
+        <section className="space-y-3">
+          <h2 className="font-serif text-2xl">Todos os registros compartilhados</h2>
+          <p className="text-sm text-muted-foreground">Dados do período selecionado e cadastros atuais. Dias sem registro não representam zero. Fotos, vídeos e arquivos originais permanecem no aplicativo.</p>
+          <Accordion type="multiple">
+            {(data.sections ?? []).map(section => <AccordionItem key={section.key} value={section.key}>
+              <AccordionTrigger className="gap-3 text-left hover:no-underline"><span>{section.title} <span className="text-xs font-normal text-muted-foreground">({section.records.length})</span></span></AccordionTrigger>
+              <AccordionContent><ProfessionalReportRecords records={section.records} /></AccordionContent>
+            </AccordionItem>)}
+          </Accordion>
+        </section>
 
         {/* Disclaimer */}
         <section className="rounded-md border border-border bg-muted/40 p-4 flex gap-3">

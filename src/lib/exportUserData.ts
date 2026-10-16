@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { reportSections, sanitizeReport, reportLabel } from '../../supabase/functions/_shared/professionalReport';
 
 export interface UserDataExport {
   exported_at: string;
@@ -16,6 +17,7 @@ export interface UserDataExport {
   blood_exams: any[];
   workout_plans: any[];
   food_preferences: any | null;
+  records: Record<string, any[]>;
 }
 
 /**
@@ -23,20 +25,19 @@ export interface UserDataExport {
  * Usado para exportação LGPD em JSON ou geração de PDF.
  */
 export async function collectUserData(userId: string, email: string | null): Promise<UserDataExport> {
-  const safe = async <T>(table: string, opts?: { dateCol?: string }): Promise<T[]> => {
-    try {
-      let q = supabase.from(table as any).select('*').eq('user_id', userId);
-      if (opts?.dateCol) q = q.order(opts.dateCol, { ascending: false } as any);
-      const { data, error } = await q;
-      if (error) {
-        console.warn(`[export] tabela ${table} falhou:`, error.message);
-        return [];
-      }
-      return (data as T[]) || [];
-    } catch (e) {
-      console.warn(`[export] tabela ${table} indisponível`);
-      return [];
+  const safe = async <T>(table: string, opts?: { dateCol?: string }, parent?: { column: string; ids: string[] }): Promise<T[]> => {
+    const rows: T[] = [];
+    if (parent && !parent.ids.length) return rows;
+    for (let offset = 0; ; offset += 1000) {
+      let q = supabase.from(table as any).select('*');
+      q = parent ? q.in(parent.column, parent.ids) : q.eq('user_id', userId);
+      if (opts?.dateCol) q = q.order(opts.dateCol, { ascending: false });
+      const { data, error } = await q.order('id').range(offset, offset + 999);
+      if (error) throw new Error(`Não foi possível carregar ${table}. Tente novamente.`);
+      rows.push(...((data ?? []) as T[]));
+      if ((data?.length ?? 0) < 1000) break;
     }
+    return rows;
   };
 
   const [
@@ -63,6 +64,13 @@ export async function collectUserData(userId: string, email: string | null): Pro
     supabase.from('food_preferences' as any).select('*').eq('user_id', userId).maybeSingle().then((r: any) => r.data),
   ]);
 
+  const entries = await Promise.all(reportSections.filter(section => !['food_entries', 'liquid_entries', 'exercise_entries', 'weight_history', 'glycemia_entries', 'body_analyses', 'blood_exams', 'workout_plans', 'food_preferences'].includes(section.key)).map(async section => [section.key, await safe<any>(section.key, section.date ? { dateCol: section.date } : undefined)] as const));
+  const records: Record<string, any[]> = { ...Object.fromEntries(entries), food_entries, liquid_entries, exercise_entries, weight_history: weight_entries, glycemia_entries, body_analyses, blood_exams, workout_plans, food_preferences: food_preferences ? [food_preferences] : [] };
+  const workoutExercises = await safe<any>('workout_exercises', undefined, { column: 'workout_plan_id', ids: workout_plans.map((row: any) => row.id) });
+  records.workout_plans = workout_plans.map((row: any) => ({ ...row, exercises: workoutExercises.filter(ex => ex.workout_plan_id === row.id).sort((a, b) => a.order_index - b.order_index) }));
+  const kitItems = await safe<any>('food_kit_items', undefined, { column: 'kit_id', ids: records.food_kits.map(row => row.id) });
+  records.food_kits = records.food_kits.map(row => ({ ...row, items: kitItems.filter(item => item.kit_id === row.id).map(item => ({ quantity: item.quantity, unit: item.unit, product: records.custom_products.find(product => product.id === item.product_id)?.name ?? 'Produto' })) }));
+
   return {
     exported_at: new Date().toISOString(),
     user: { id: userId, email },
@@ -76,6 +84,7 @@ export async function collectUserData(userId: string, email: string | null): Pro
     blood_exams,
     workout_plans,
     food_preferences,
+    records,
   };
 }
 
@@ -322,10 +331,10 @@ export async function downloadPDF(data: UserDataExport) {
   if (data.food_preferences) {
     sectionHeader('Preferências e restrições alimentares');
     const fp = data.food_preferences;
-    if (Array.isArray(fp.preferred_foods) && fp.preferred_foods.length)
-      kv('Alimentos preferidos', fp.preferred_foods.join(', '));
-    if (Array.isArray(fp.avoided_foods) && fp.avoided_foods.length)
-      kv('Alimentos a evitar', fp.avoided_foods.join(', '));
+    if (Array.isArray(fp.favorite_foods) && fp.favorite_foods.length)
+      kv('Alimentos preferidos', fp.favorite_foods.join(', '));
+    if (Array.isArray(fp.disliked_foods) && fp.disliked_foods.length)
+      kv('Alimentos a evitar', fp.disliked_foods.join(', '));
     if (Array.isArray(fp.restrictions) && fp.restrictions.length)
       kv('Restrições', fp.restrictions.join(', '));
     if (Array.isArray(fp.allergies) && fp.allergies.length)
@@ -411,7 +420,7 @@ export async function downloadPDF(data: UserDataExport) {
   // ===== Glicemia =====
   if (data.glycemia_entries.length > 0) {
     sectionHeader('Glicemia');
-    const vals = data.glycemia_entries.map((g) => num(g.value)).filter((n) => n > 0);
+    const vals = data.glycemia_entries.map((g) => num(g.glucose_mg_dl)).filter((n) => n > 0);
     const mm = minMax(vals);
     kv('Total de medições', String(data.glycemia_entries.length));
     kv('Média', `${round(avg(vals))} mg/dL`);
@@ -420,7 +429,7 @@ export async function downloadPDF(data: UserDataExport) {
     const byCat: Record<string, number[]> = {};
     for (const g of data.glycemia_entries) {
       const c = g.category || g.measurement_type || 'outro';
-      (byCat[c] ||= []).push(num(g.value));
+      (byCat[c] ||= []).push(num(g.glucose_mg_dl));
     }
     if (Object.keys(byCat).length > 1) {
       y += 4;
@@ -436,7 +445,7 @@ export async function downloadPDF(data: UserDataExport) {
       .slice(0, 12);
     for (const g of recent) {
       const cat = g.category || g.measurement_type || '';
-      bullet(`${fmtDate(g.measured_at || g.created_at)} — ${g.value} mg/dL${cat ? ` (${cat})` : ''}`);
+      bullet(`${fmtDate(g.measured_at || g.created_at)} — ${g.glucose_mg_dl} mg/dL${cat ? ` (${cat})` : ''}`);
     }
   }
 
@@ -498,25 +507,7 @@ export async function downloadPDF(data: UserDataExport) {
       for (const [label, v, unit] of fields) {
         if (v != null && v !== '') kv(label, `${v}${unit ? ' ' + unit : ''}`);
       }
-      if (a.score != null) kv('Score do plano', `${a.score}/100`);
-      if (a.summary) {
-        y += 2;
-        writeLine(String(a.summary), { size: 9, color: [70, 70, 70] });
-      }
-      // Plano associado
-      const plan = a.plan || {};
-      if (plan.calories || plan.macros) {
-        y += 2;
-        subHeader('Plano gerado');
-        if (plan.calories?.tdee) kv('Gasto diário estimado', `${plan.calories.tdee} kcal`);
-        if (plan.calories?.target) kv('Meta calórica', `${plan.calories.target} kcal`);
-        if (plan.macros) {
-          kv(
-            'Macros sugeridos',
-            `Prot ${plan.macros.protein_g ?? '—'}g · Carb ${plan.macros.carbs_g ?? '—'}g · Gord ${plan.macros.fat_g ?? '—'}g`,
-          );
-        }
-      }
+      if (a.summary) writeLine(String(a.summary), { size: 9 });
       y += 6;
     }
   }
@@ -585,7 +576,9 @@ export async function downloadPDF(data: UserDataExport) {
           if (m.value == null) continue;
           const k = m.key || m.label;
           if (!k) continue;
-          (series.get(k) || series.set(k, []).get(k))!.push({
+          const markerSeries = series.get(k) ?? [];
+          series.set(k, markerSeries);
+          markerSeries.push({
             date,
             value: num(m.value),
             unit: m.unit,
@@ -622,6 +615,31 @@ export async function downloadPDF(data: UserDataExport) {
         bullet(`${p.exercises.length} exercícios`);
       }
     }
+  }
+
+  // Full record appendix: no sampling or hidden truncation.
+  const details = (value: any, prefix = '') => {
+    if (value == null || value === '') return;
+    if (Array.isArray(value)) { value.forEach((item, index) => details(item, `${prefix} ${index + 1}`)); return; }
+    if (typeof value === 'object') {
+      for (const [key, item] of Object.entries(value)) {
+        if (/url|hash/i.test(key)) continue;
+        details(item, prefix ? `${prefix} / ${reportLabel(key)}` : reportLabel(key));
+      }
+      return;
+    }
+    // Write each wrapped line separately so very large text cannot overflow a page.
+    const text = `${prefix}: ${typeof value === 'boolean' ? (value ? 'Sim' : 'Não') : value}`;
+    doc.setFontSize(9);
+    for (const line of doc.splitTextToSize(text, pageW - margin * 2)) writeLine(line, { size: 9 });
+  };
+  sectionHeader('Registros completos — todo o histórico');
+  writeLine('Todas as medições e registros pessoais disponíveis. Fotos, vídeos e arquivos originais permanecem no aplicativo; são incluídas as informações e os resultados dos registros.', { size: 9 });
+  for (const section of reportSections) {
+    sectionHeader(section.title);
+    const rows = data.records[section.key] ?? [];
+    if (!rows.length) { writeLine('Sem registros.'); continue; }
+    rows.forEach((row, index) => { subHeader(`Registro ${index + 1} de ${rows.length}`); details(sanitizeReport(row)); });
   }
 
   // ===== Disclaimer =====
