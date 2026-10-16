@@ -182,7 +182,7 @@ export async function readWatchSummary(): Promise<WatchSummary> {
   const derivedActive = totalCaloriesToday.value != null && basalRate != null
     ? activeFromTotal(totalCaloriesToday.value, basalRate, new Date(syncedAt))
     : null;
-  const sources = ([['steps', stepsToday], ['calories', caloriesToday], ['totalCalories', totalCaloriesToday], ['distance', distanceTodayMeters]] as const)
+  const sources: WatchSummary['sources'] = ([['steps', stepsToday], ['calories', caloriesToday], ['totalCalories', totalCaloriesToday], ['distance', distanceTodayMeters]] as const)
     .flatMap(([type, t]) => t.sources.map((src) => ({ type, sourceId: src.sourceId ?? 'unknown', value: Math.round(src.value), latestEnd: src.latestEnd })));
   if (basalRate != null) sources.push({ type: 'basalCalories', sourceId: 'kcal/dia', value: Math.round(basalRate), latestEnd: syncedAt });
 
