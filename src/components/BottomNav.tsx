@@ -1,12 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { Home, ScanLine, Dumbbell, Heart, User, Utensils } from 'lucide-react';
+import { Home, Dumbbell, Heart, User, Utensils } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelpMenu } from '@/components/HelpMenu';
 
 const navItems = [
   { to: '/', icon: Home, label: 'Hoje' },
   { to: '/menu', icon: Utensils, label: 'Cardápio' },
-  { to: '/products', icon: ScanLine, label: 'Produtos' },
   { to: '/workouts', icon: Dumbbell, label: 'Treinos' },
   { to: '/health', icon: Heart, label: 'Saúde' },
   { to: '/profile', icon: User, label: 'Perfil' },
