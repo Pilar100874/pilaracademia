@@ -403,7 +403,7 @@ export function WatchSyncCard() {
                     Peso: {summary.latestWeight.kg} kg
                   </span>
                   <span className="block text-xs text-muted-foreground mt-0.5">
-                    Salva no histórico de peso na data da medição.
+                    Salva as pesagens dos {periodLabel(options.period)} no histórico de peso, sem duplicar dias já lançados.
                   </span>
                 </span>
               </label>
@@ -423,7 +423,7 @@ export function WatchSyncCard() {
                     {summary.latestBodyFat ? ` (${summary.latestBodyFat.pct}% gordura)` : ''}
                   </span>
                   <span className="block text-xs text-muted-foreground mt-0.5">
-                    Salva peso e gordura como exame na aba Bioimpedância.
+                    Salva a última medição como exame na aba Bioimpedância. A gordura de cada dia vai para a aba Sinais.
                   </span>
                 </span>
               </label>
@@ -454,10 +454,10 @@ export function WatchSyncCard() {
               <span className="min-w-0">
                 <span className="flex items-center gap-1.5 font-medium text-sm">
                   <HeartPulse className="h-4 w-4 text-primary shrink-0" />
-                  Histórico de sinais vitais (30 dias)
+                  Histórico de sinais vitais ({options.period === 365 ? '1 ano' : `${options.period} dias`})
                 </span>
                 <span className="block text-xs text-muted-foreground mt-0.5">
-                  Frequência cardíaca, pressão arterial, oxigenação, sono, passos, VFC, VO2 máx., temperatura e glicemia — aparecem na aba Sinais.
+                  Frequência cardíaca, pressão arterial, oxigenação, sono, passos, VFC, VO2 máx., temperatura, gordura corporal e glicemia — aparecem na aba Sinais.
                 </span>
               </span>
             </label>
