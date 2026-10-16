@@ -22,11 +22,8 @@ import { WeightTracker } from '@/components/WeightTracker';
 import { ExerciseTracker } from '@/components/ExerciseTracker';
 import { LiquidTracker } from '@/components/LiquidTracker';
 import { GlycemiaTracker } from '@/components/GlycemiaTracker';
-import { AdherenceCard } from '@/components/AdherenceCard';
-import { AdherenceHistoryChart } from '@/components/AdherenceHistoryChart';
 import { SmartAlertsCard } from '@/components/SmartAlertsCard';
 import { DailyMenuDialog } from '@/components/DailyMenuDialog';
-import { WeeklyCheckinCard } from '@/components/WeeklyCheckinCard';
 import { useAdherenceScore } from '@/hooks/useAdherenceScore';
 import { useSmartAlerts } from '@/hooks/useSmartAlerts';
 import { useFoodEntries } from '@/hooks/useFoodEntries';
@@ -424,9 +421,7 @@ export function Dashboard() {
             {/* Smart alerts */}
             {isViewingToday && <SmartAlertsCard alerts={smartAlerts} />}
 
-            {/* Adherence */}
-            {isViewingToday && <AdherenceCard score={adherence} />}
-            {isViewingToday && <AdherenceHistoryChart days={7} />}
+
 
             {/* Daily menu CTA (mobile only — desktop renders in main column) */}
             {isViewingToday && (
@@ -446,11 +441,9 @@ export function Dashboard() {
                 <span className="text-xs text-primary font-medium">Gerar</span>
               </button>
             )}
-
-            {/* Weekly check-in */}
-            {isViewingToday && <WeeklyCheckinCard />}
           </div>
         </div>
+
 
 
 
