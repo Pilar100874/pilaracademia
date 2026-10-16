@@ -1,6 +1,6 @@
 /// <reference types="bun" />
 import { describe, expect, test } from 'bun:test';
-import { activityMinutesByDay, healthHistoryStart, sourceTotalsByDay, SAMSUNG_HEALTH_PACKAGE } from './healthActivity';
+import { activeFromTotal, activityMinutesByDay, healthHistoryStart, sourceTotalsByDay, SAMSUNG_HEALTH_PACKAGE } from './healthActivity';
 
 describe('health calendar and activity duration', () => {
   test('history starts at midnight, not at the import hour', () => {
@@ -41,5 +41,15 @@ describe('daily activity totals by source', () => {
       { value: 1500, startDate: day(9), endDate: day(10), sourceId: 'b' },
     ]);
     expect([...totals.values()][0].value).toBe(1500);
+  });
+});
+
+describe('Samsung activity calories', () => {
+  test('total minus the basal share elapsed today', () => {
+    // 1656 kcal/day basal, 17:30 → 1207.5 kcal resting so far; 1342 total → ~135 active
+    expect(activeFromTotal(1342, 1656, new Date(2026, 9, 16, 17, 30))).toBe(135);
+  });
+  test('never negative', () => {
+    expect(activeFromTotal(100, 2000, new Date(2026, 9, 16, 23, 0))).toBe(0);
   });
 });
