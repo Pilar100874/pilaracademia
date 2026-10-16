@@ -57,7 +57,7 @@ export function WatchSyncCard() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [options, setOptions] = useState<ImportOptions>({ calories: true, weight: true, bodyExam: true, history: true, profileWeight: false });
+  const [options, setOptions] = useState<ImportOptions>({ calories: true, weight: true, bodyExam: true, history: true, profileWeight: false, period: 30 });
 
   useEffect(() => {
     if (!isWatchSyncSupported()) return;
@@ -352,6 +352,25 @@ export function WatchSyncCard() {
           </DialogHeader>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2 space-y-3">
+            <div className="rounded-md border border-border p-3">
+              <span className="block text-xs font-medium mb-2">Período importado</span>
+              <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/60 p-1">
+                {PERIODS.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setOptions((o) => ({ ...o, period: p }))}
+                    className={`rounded-md px-2 py-1 text-xs font-medium ${options.period === p ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                  >
+                    {p === 365 ? '1 ano' : `${p} dias`}
+                  </button>
+                ))}
+              </div>
+              <span className="block text-[11px] text-muted-foreground mt-2">
+                Vale para o histórico de peso e para os sinais vitais. As calorias são sempre as de hoje.
+              </span>
+            </div>
+
             {summary?.caloriesToday != null && (
               <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer">
                 <Checkbox
