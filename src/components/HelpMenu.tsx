@@ -29,16 +29,6 @@ const HELP_BY_ROUTE: Record<string, HelpSection> = {
       'Cardápio diário com IA leva em conta seu exame de sangue e preferências.',
     ],
   },
-  '/history': {
-    title: 'Histórico',
-    intro: 'Veja tudo que foi registrado em dias anteriores, separado por categorias.',
-    steps: [
-      { label: 'Refeições e Líquidos', desc: 'As abas separam alimentos sólidos das bebidas para leitura mais fácil.' },
-      { label: 'Aderência', desc: 'Gráfico mostra os dias em que você bateu suas metas calóricas e de macros.' },
-      { label: 'Editar ou excluir', desc: 'Toque em qualquer item para ajustar valores, porção ou removê-lo.' },
-      { label: 'Filtrar por período', desc: 'Use os filtros de data para ver apenas o intervalo que interessa.' },
-    ],
-  },
   '/projections': {
     title: 'Projeções',
     intro: 'Estimativas da evolução do seu peso baseadas em duas fontes de dados.',

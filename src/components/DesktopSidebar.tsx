@@ -1,7 +1,6 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home,
-  Calendar,
   Dumbbell,
   Heart,
   User,
@@ -23,7 +22,6 @@ const primaryNav = [
 ];
 
 const secondaryNav = [
-  { to: '/history', icon: Calendar, label: 'Histórico' },
   { to: '/products', icon: ScanLine, label: 'Produtos' },
   { to: '/profile', icon: User, label: 'Perfil' },
 ];
