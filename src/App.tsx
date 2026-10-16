@@ -7,7 +7,6 @@ import { useProfile } from "@/hooks/useProfile";
 import { AuthPage } from "@/pages/AuthPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import { ProfilePage } from "@/pages/ProfilePage";
-import { HistoryPage } from "@/pages/HistoryPage";
 import { ProjectionsPage } from "@/pages/ProjectionsPage";
 import { ProductsPage } from "@/pages/ProductsPage";
 import { HealthPage } from "@/pages/HealthPage";
