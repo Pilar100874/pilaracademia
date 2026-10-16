@@ -134,7 +134,7 @@ export function WatchSyncCard() {
   };
 
   const importWeight = async (userId: string, s: WatchSummary): Promise<string> => {
-    if (!s.latestWeight) return 'Peso: sem dados no relógio.';
+    if (!s.latestWeight) return 'Peso: sem dados no Samsung Health.';
     const { start, end } = dayBounds(s.latestWeight.date);
     const { data: existing } = await supabase
       .from('weight_history')
@@ -155,7 +155,7 @@ export function WatchSyncCard() {
 
   const importBodyExam = async (userId: string, s: WatchSummary): Promise<string> => {
     const { latestWeight, latestBodyFat, latestHeightCm } = s;
-    if (!latestWeight && !latestBodyFat) return 'Bioimpedância: sem dados no relógio.';
+    if (!latestWeight && !latestBodyFat) return 'Bioimpedância: sem dados no Samsung Health.';
     const measuredAt = latestBodyFat?.date || latestWeight?.date || new Date().toISOString();
     const heightM = latestHeightCm ? latestHeightCm / 100 : null;
     const weightKg = latestWeight?.kg ?? null;
@@ -230,7 +230,7 @@ export function WatchSyncCard() {
         { icon: HeartPulse, label: 'Batimentos', value: summary.lastHeartRate != null ? `${summary.lastHeartRate} bpm` : '—' },
         { icon: HeartPulse, label: 'Repouso', value: summary.restingHeartRate != null ? `${summary.restingHeartRate} bpm` : '—' },
         { icon: Moon, label: 'Sono (última noite)', value: summary.sleepMinutesLastNight != null ? formatSleep(summary.sleepMinutesLastNight) : '—' },
-        { icon: Scale, label: 'Peso no relógio', value: summary.latestWeight ? `${summary.latestWeight.kg} kg` : '—' },
+        { icon: Scale, label: 'Peso', value: summary.latestWeight ? `${summary.latestWeight.kg} kg` : '—' },
         { icon: Activity, label: 'Gordura corporal', value: summary.latestBodyFat ? `${summary.latestBodyFat.pct}%` : '—' },
       ]
     : [];
