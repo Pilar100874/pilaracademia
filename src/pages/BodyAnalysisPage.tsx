@@ -10,52 +10,42 @@ import {
   AlertCircle,
   Info,
   Flame,
-  Dumbbell,
   Heart,
   Apple,
   Target,
   ChevronRight,
+  ChevronLeft,
   CheckCircle2,
   TrendingDown,
   TrendingUp,
   ArrowRight,
-  ListChecks,
   Utensils,
   GitCompareArrows,
   RefreshCw,
   X,
+  CalendarRange,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useBodyAnalyses } from '@/hooks/useBodyAnalyses';
 import { useProfile } from '@/hooks/useProfile';
 import { useWeightHistory } from '@/hooks/useWeightHistory';
-import { useExerciseLibrary } from '@/hooks/useExerciseLibrary';
-import { fileToBase64 } from '@/lib/analyzeFood';
 import type { BodyAnalysisRow, BodyPlan } from '@/types/bodyAnalysis';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { SegmentalFigure } from '@/components/BioReport';
-import { AIWorkoutDialog } from '@/components/AIWorkoutDialog';
 import { MacroAdjustmentPanel } from '@/components/MacroAdjustmentPanel';
 import { NarrativeBlock } from '@/components/NarrativeBlock';
 import { ProgressPhotosDialog } from '@/components/ProgressPhotosDialog';
 import { exportPlanToPdf } from '@/lib/exportPlanPdf';
 import { FileDown, Camera as CameraIcon } from 'lucide-react';
-import { getFreshMediaUrl } from '@/lib/mediaUrl';
-import { useWorkoutPlans } from '@/hooks/useWorkoutPlans';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useBackgroundAnalysis } from '@/contexts/BackgroundAnalysisContext';
-import { LazyVideoPreview } from '@/components/LazyVideoPreview';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
-import { VideoPreviewDialog } from '@/components/VideoPreviewDialog';
-import { ImageZoomDialog } from '@/components/ImageZoomDialog';
 
 import { GOAL_LABELS as goalLabels, sanitizeFitnessText } from '@/lib/goalLabels';
-
 
 const profileLabels: Record<string, string> = {
   obeso: 'Obeso',
@@ -95,7 +85,6 @@ function Stat({ label, value, unit }: { label: string; value: React.ReactNode; u
 
 function DeltaPill({ label, value, unit, invert }: { label: string; value: number | undefined; unit?: string; invert?: boolean }) {
   if (value == null || isNaN(value)) return null;
-  // invert=true -> lower is better (e.g. fat, weight in cutting)
   const isPositive = invert ? value < 0 : value > 0;
   const isZero = Math.abs(value) < 0.05;
   const Icon = isZero ? ArrowRight : value > 0 ? TrendingUp : TrendingDown;
@@ -118,55 +107,13 @@ function DeltaPill({ label, value, unit, invert }: { label: string; value: numbe
   );
 }
 
-function PlanView({
-  row,
-  onApplyMacros,
-  onGenerateWorkout,
-  onApplyWorkout,
-  macrosApplied,
-  isActive,
-  applyingWorkout,
-}: {
-  row: BodyAnalysisRow;
-  onApplyMacros: (plan: BodyPlan) => void;
-  onGenerateWorkout: (plan: BodyPlan) => void;
-  onApplyWorkout: (plan: BodyPlan) => void;
-  macrosApplied: boolean;
-  isActive: boolean;
-  applyingWorkout: boolean;
-}) {
-  const plan = row.plan as BodyPlan;
+/* ------------------------------------------------------------------ */
+/* Etapa 1 — Resultado                                                 */
+/* ------------------------------------------------------------------ */
+function StepResult({ plan }: { plan: BodyPlan }) {
   const e = plan.extracted || {};
-  const { allExercises } = useExerciseLibrary();
-  const exercisesById = new Map(allExercises.map((ex) => [ex.id, ex] as const));
-  const [previewVideo, setPreviewVideo] = useState<{
-    name: string;
-    videoType: string | null;
-    videoUrl: string | null;
-    startSeconds: number | null;
-    endSeconds: number | null;
-  } | null>(null);
-  const [previewImages, setPreviewImages] = useState<string[] | null>(null);
-
-  // Compute current week of the 12-week periodization (only for the active/most-recent plan)
-  const startIso = row.measured_at || row.created_at;
-  const daysSinceStart = startIso
-    ? Math.max(0, differenceInDays(new Date(), parseISO(startIso)))
-    : 0;
-  const currentWeek = isActive
-    ? Math.min(12, Math.max(1, Math.floor(daysSinceStart / 7) + 1))
-    : 0;
-  const currentPhaseIdx = isActive && plan.periodization?.length
-    ? plan.periodization.findIndex((p) => {
-        const m = (p.weeks || '').match(/(\d+)\s*[-–]\s*(\d+)/);
-        if (!m) return false;
-        return currentWeek >= parseInt(m[1], 10) && currentWeek <= parseInt(m[2], 10);
-      })
-    : -1;
-
   return (
     <div className="space-y-4">
-      {/* Score + perfil */}
       <div className="rounded-md border border-border bg-card p-4">
         <div className="flex items-center justify-between">
           <div>
@@ -188,16 +135,67 @@ function PlanView({
         </div>
       </div>
 
-      {/* Evolução vs análise anterior */}
-      {plan.delta && (
+      {plan.narrative ? (
+        <NarrativeBlock narrative={plan.narrative} />
+      ) : (
+        plan.summary && (
+          <div className="rounded-md border border-border bg-muted/30 p-4">
+            <p className="text-sm leading-relaxed whitespace-pre-line">{sanitizeFitnessText(plan.summary)}</p>
+          </div>
+        )
+      )}
+
+      {plan.alerts && plan.alerts.length > 0 && (
+        <div className="space-y-2">
+          {plan.alerts.map((a, i) => (
+            <div
+              key={i}
+              className={cn(
+                'rounded-md border p-3 flex gap-3 items-start',
+                a.level === 'critical' && 'border-red-500/40 bg-red-500/10',
+                a.level === 'warning' && 'border-amber-500/40 bg-amber-500/10',
+                a.level === 'info' && 'border-sky-500/40 bg-sky-500/10',
+              )}
+            >
+              {alertIcon(a.level)}
+              <p className="text-sm">{a.message}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div>
+        <h3 className="text-sm font-semibold mb-2">Composição corporal</h3>
+        <div className="grid grid-cols-2 gap-2">
+          {e.weight_kg != null && <Stat label="Peso" value={e.weight_kg} unit="kg" />}
+          {e.bmi != null && <Stat label="IMC" value={e.bmi.toFixed(1)} />}
+          {e.body_fat_pct != null && <Stat label="% Gordura" value={e.body_fat_pct.toFixed(1)} unit="%" />}
+          {e.fat_mass_kg != null && <Stat label="Massa gorda" value={e.fat_mass_kg} unit="kg" />}
+          {e.muscle_mass_kg != null && <Stat label="Massa muscular" value={e.muscle_mass_kg} unit="kg" />}
+          {e.skeletal_muscle_kg != null && <Stat label="Músculo esquelético" value={e.skeletal_muscle_kg} unit="kg" />}
+          {e.body_water_kg != null && <Stat label="Água corporal" value={e.body_water_kg} unit="kg" />}
+          {e.bone_mass_kg != null && <Stat label="Massa óssea" value={e.bone_mass_kg} unit="kg" />}
+          {e.visceral_fat != null && <Stat label="Gordura visceral" value={e.visceral_fat} />}
+          {e.bmr_kcal != null && <Stat label="Gasto em repouso" value={Math.round(e.bmr_kcal)} unit="kcal" />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Etapa 2 — Evolução                                                  */
+/* ------------------------------------------------------------------ */
+function StepEvolution({ plan, hasHistory, onCompare }: { plan: BodyPlan; hasHistory: boolean; onCompare: () => void }) {
+  return (
+    <div className="space-y-4">
+      {plan.delta ? (
         <div className="rounded-md border border-primary/30 bg-primary/5 p-4 space-y-3">
           <div className="flex items-center gap-2">
             <TrendingDown className="h-4 w-4 text-primary" />
             <span className="font-semibold">Evolução desde a última análise</span>
             {plan.delta.days_between != null && (
-              <span className="text-xs text-muted-foreground">
-                · {plan.delta.days_between} dias
-              </span>
+              <span className="text-xs text-muted-foreground">· {plan.delta.days_between} dias</span>
             )}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -218,57 +216,72 @@ function PlanView({
             </div>
           )}
         </div>
-      )}
-
-      {/* Narrativa estruturada (Situação → Plano → Próximos passos) com toggle "explicar simples" */}
-      {plan.narrative ? (
-        <NarrativeBlock narrative={plan.narrative} />
       ) : (
-        plan.summary && (
-          <div className="rounded-md border border-border bg-muted/30 p-4">
-            <p className="text-sm leading-relaxed whitespace-pre-line">{sanitizeFitnessText(plan.summary)}</p>
+        <div className="rounded-md border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+          Esta é sua primeira análise. A partir da próxima, mostramos aqui quanto você evoluiu
+          em peso, gordura, músculo e score.
+        </div>
+      )}
+
+      {plan.projection && (
+        <div>
+          <h3 className="text-sm font-semibold mb-2">Projeção 30 / 60 / 90 dias</h3>
+          <p className="text-xs text-muted-foreground mb-2">
+            Estimativa da IA caso o plano seja seguido. O app compara seu peso real com esta
+            projeção para sugerir ajustes (etapa Periodização).
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {(['day_30', 'day_60', 'day_90'] as const).map((k, idx) => {
+              const d = plan.projection![k];
+              const lbl = ['30d', '60d', '90d'][idx];
+              if (!d)
+                return (
+                  <div
+                    key={k}
+                    className="rounded-md border border-border bg-muted/30 p-3 text-center text-xs text-muted-foreground"
+                  >
+                    {lbl}
+                  </div>
+                );
+              return (
+                <div key={k} className="rounded-md border border-border bg-card p-3 text-center">
+                  <p className="text-[10px] text-muted-foreground">{lbl}</p>
+                  {d.weight_kg != null && <p className="text-base font-semibold">{d.weight_kg} kg</p>}
+                  {d.body_fat_pct != null && <p className="text-xs text-muted-foreground">{d.body_fat_pct}% gord.</p>}
+                  {d.muscle_mass_kg != null && (
+                    <p className="text-xs text-muted-foreground">{d.muscle_mass_kg} kg músc.</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        )
-      )}
-
-      {/* Alertas */}
-      {plan.alerts && plan.alerts.length > 0 && (
-        <div className="space-y-2">
-          {plan.alerts.map((a, i) => (
-            <div
-              key={i}
-              className={cn(
-                'rounded-md border p-3 flex gap-3 items-start',
-                a.level === 'critical' && 'border-red-500/40 bg-red-500/10',
-                a.level === 'warning' && 'border-amber-500/40 bg-amber-500/10',
-                a.level === 'info' && 'border-sky-500/40 bg-sky-500/10',
-              )}
-            >
-              {alertIcon(a.level)}
-              <p className="text-sm">{a.message}</p>
-            </div>
-          ))}
         </div>
       )}
 
-      {/* Composição extraída */}
-      <div>
-        <h3 className="text-sm font-semibold mb-2">Composição corporal</h3>
-        <div className="grid grid-cols-2 gap-2">
-          {e.weight_kg != null && <Stat label="Peso" value={e.weight_kg} unit="kg" />}
-          {e.bmi != null && <Stat label="IMC" value={e.bmi.toFixed(1)} />}
-          {e.body_fat_pct != null && <Stat label="% Gordura" value={e.body_fat_pct.toFixed(1)} unit="%" />}
-          {e.fat_mass_kg != null && <Stat label="Massa gorda" value={e.fat_mass_kg} unit="kg" />}
-          {e.muscle_mass_kg != null && <Stat label="Massa muscular" value={e.muscle_mass_kg} unit="kg" />}
-          {e.skeletal_muscle_kg != null && <Stat label="Músculo esquelético" value={e.skeletal_muscle_kg} unit="kg" />}
-          {e.body_water_kg != null && <Stat label="Água corporal" value={e.body_water_kg} unit="kg" />}
-          {e.bone_mass_kg != null && <Stat label="Massa óssea" value={e.bone_mass_kg} unit="kg" />}
-          {e.visceral_fat != null && <Stat label="Gordura visceral" value={e.visceral_fat} />}
-          {e.bmr_kcal != null && <Stat label="Gasto em repouso" value={Math.round(e.bmr_kcal)} unit="kcal" />}
-        </div>
-      </div>
+      {hasHistory && (
+        <Button variant="outline" className="w-full" onClick={onCompare}>
+          <GitCompareArrows className="h-4 w-4 mr-1.5" />
+          Comparar análises lado a lado
+        </Button>
+      )}
+    </div>
+  );
+}
 
-      {/* Objetivo + calorias + macros */}
+/* ------------------------------------------------------------------ */
+/* Etapa 3 — Nutrição                                                  */
+/* ------------------------------------------------------------------ */
+function StepNutrition({
+  plan,
+  onApplyMacros,
+  macrosApplied,
+}: {
+  plan: BodyPlan;
+  onApplyMacros: (plan: BodyPlan) => void;
+  macrosApplied: boolean;
+}) {
+  return (
+    <div className="space-y-4">
       <div className="rounded-md border border-border bg-card p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Target className="h-4 w-4 text-primary" />
@@ -328,110 +341,20 @@ function PlanView({
         </p>
       </div>
 
-      {/* Exercícios sugeridos */}
-      <div className="rounded-md border border-border bg-card p-4 space-y-3">
-        {plan.recommended_exercises && plan.recommended_exercises.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-              Exercícios sugeridos da sua biblioteca
-            </p>
-            <ul className="grid grid-cols-2 gap-3">
-              {plan.recommended_exercises.map((r) => {
-                const ex = exercisesById.get(r.exercise_id);
-                const firstImage = ex?.image_urls?.[0] ? getFreshMediaUrl(ex.image_urls[0]) : null;
-                const hasVideo = !!ex?.video_url && !!ex?.video_type;
-                const clickable = !!ex && (hasVideo || (ex.image_urls?.length ?? 0) > 0);
-                return (
-                  <li key={r.exercise_id}>
-                    <button
-                      type="button"
-                      disabled={!clickable}
-                      onClick={() => {
-                        if (!ex) return;
-                        if (hasVideo) {
-                          setPreviewVideo({
-                            name: ex.name,
-                            videoType: ex.video_type ?? null,
-                            videoUrl: ex.video_url ?? null,
-                            startSeconds: ex.video_start_seconds ?? null,
-                            endSeconds: ex.video_end_seconds ?? null,
-                          });
-                        } else if (ex.image_urls?.length) {
-                          setPreviewImages(ex.image_urls);
-                        }
-                      }}
-                      className="w-full text-left rounded-xl border border-border overflow-hidden bg-card hover:border-primary/50 transition-colors disabled:opacity-100 disabled:cursor-default"
-                    >
-                      <div className="relative w-full aspect-video bg-muted/40 flex items-center justify-center">
-                        {firstImage ? (
-                          <img
-                            src={firstImage}
-                            alt={r.name}
-                            loading="lazy"
-                            className="w-full h-full object-contain"
-                          />
-                        ) : hasVideo ? (
-                          <LazyVideoPreview
-                            videoType={ex!.video_type}
-                            videoUrl={ex!.video_url}
-                            startSeconds={ex!.video_start_seconds}
-                            endSeconds={ex!.video_end_seconds}
-                            className="w-full h-full"
-                            iconSize="sm"
-                            objectFit="contain"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Dumbbell className="h-6 w-6 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-2 space-y-0.5">
-                        <p className="text-sm font-medium leading-tight line-clamp-2">
-                          {r.name}
-                          {(r.sets || r.reps) && (
-                            <span className="text-xs text-muted-foreground ml-1.5">
-                              {r.sets ? `${r.sets}×` : ''}
-                              {r.reps || ''}
-                            </span>
-                          )}
-                        </p>
-                        {r.reason && (
-                          <p className="text-[11px] text-muted-foreground line-clamp-2">{sanitizeFitnessText(r.reason)}</p>
-                        )}
-                      </div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+      {plan.diet_rules && plan.diet_rules.length > 0 && (
+        <div className="rounded-md border border-border bg-card p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <Apple className="h-4 w-4 text-emerald-600" />
+            <span className="font-semibold">Regras alimentares</span>
           </div>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <Button size="sm" onClick={() => onGenerateWorkout(plan)}>
-            <Sparkles className="h-4 w-4 mr-1.5" />
-            Gerar treino com IA
-          </Button>
-          {plan.recommended_exercises && plan.recommended_exercises.length > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onApplyWorkout(plan)}
-              disabled={applyingWorkout}
-            >
-              {applyingWorkout ? (
-                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-              ) : (
-                <Dumbbell className="h-4 w-4 mr-1.5" />
-              )}
-              Salvar como treino
-            </Button>
-          )}
+          <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
+            {plan.diet_rules.map((r, i) => (
+              <li key={i}>{r}</li>
+            ))}
+          </ul>
         </div>
-      </div>
+      )}
 
-      {/* Cardio */}
       {plan.cardio && (
         <div className="rounded-md border border-border bg-card p-4 space-y-2">
           <div className="flex items-center gap-2">
@@ -450,31 +373,60 @@ function PlanView({
           )}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Regras de dieta */}
-      {plan.diet_rules && plan.diet_rules.length > 0 && (
-        <div className="rounded-md border border-border bg-card p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <Apple className="h-4 w-4 text-emerald-600" />
-            <span className="font-semibold">Regras alimentares</span>
-          </div>
-          <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
-            {plan.diet_rules.map((r, i) => (
-              <li key={i}>{r}</li>
-            ))}
-          </ul>
+/* ------------------------------------------------------------------ */
+/* Etapa 4 — Periodização                                              */
+/* ------------------------------------------------------------------ */
+function StepPeriodization({
+  row,
+  plan,
+  isActive,
+}: {
+  row: BodyAnalysisRow;
+  plan: BodyPlan;
+  isActive: boolean;
+}) {
+  const startIso = row.measured_at || row.created_at;
+  const daysSinceStart = startIso
+    ? Math.max(0, differenceInDays(new Date(), parseISO(startIso)))
+    : 0;
+  const currentWeek = isActive
+    ? Math.min(12, Math.max(1, Math.floor(daysSinceStart / 7) + 1))
+    : 0;
+  const currentPhaseIdx = isActive && plan.periodization?.length
+    ? plan.periodization.findIndex((p) => {
+        const m = (p.weeks || '').match(/(\d+)\s*[-–]\s*(\d+)/);
+        if (!m) return false;
+        return currentWeek >= parseInt(m[1], 10) && currentWeek <= parseInt(m[2], 10);
+      })
+    : -1;
+
+  return (
+    <div className="space-y-4">
+      {/* Como funciona */}
+      <div className="rounded-md border border-border bg-muted/30 p-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <CalendarRange className="h-4 w-4 text-primary" />
+          <span className="font-semibold text-sm">Como o app controla a periodização</span>
         </div>
-      )}
+        <ul className="text-xs text-muted-foreground space-y-1.5 leading-relaxed list-disc list-inside">
+          <li>O plano dura <b className="text-foreground">12 semanas</b>, divididas nas fases abaixo.</li>
+          <li>O app conta as semanas <b className="text-foreground">automaticamente a partir da data deste exame</b> e destaca a fase em que você está.</li>
+          <li>Conforme você registra peso no app, o painel de ajuste compara com a projeção e <b className="text-foreground">sugere correções de calorias</b> quando o ritmo sai do esperado.</li>
+          <li>Ao enviar uma <b className="text-foreground">nova bioimpedância</b>, o ciclo recomeça com um plano recalculado para o seu novo corpo.</li>
+          <li>O treino em si você monta no gerador de treinos por IA, onde informa os equipamentos que tem disponíveis.</li>
+        </ul>
+      </div>
 
-      {/* Periodização */}
       {plan.periodization && plan.periodization.length > 0 && (
         <div>
           <div className="flex items-baseline justify-between mb-2">
-            <h3 className="text-sm font-semibold">Periodização 12 semanas</h3>
+            <h3 className="text-sm font-semibold">Fases do plano</h3>
             {isActive && (
-              <span className="text-[11px] text-muted-foreground">
-                Semana {currentWeek}/12
-              </span>
+              <span className="text-[11px] text-muted-foreground">Semana {currentWeek}/12</span>
             )}
           </div>
           {isActive && (
@@ -493,9 +445,7 @@ function PlanView({
                   key={i}
                   className={cn(
                     'rounded-md border p-3 transition-colors',
-                    isCurrent
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border bg-card',
+                    isCurrent ? 'border-primary bg-primary/5' : 'border-border bg-card',
                   )}
                 >
                   <div className="flex items-baseline justify-between">
@@ -522,38 +472,6 @@ function PlanView({
         </div>
       )}
 
-      {/* Projeção */}
-      {plan.projection && (
-        <div>
-          <h3 className="text-sm font-semibold mb-2">Projeção 30 / 60 / 90 dias</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {(['day_30', 'day_60', 'day_90'] as const).map((k, idx) => {
-              const d = plan.projection![k];
-              const lbl = ['30d', '60d', '90d'][idx];
-              if (!d)
-                return (
-                  <div
-                    key={k}
-                    className="rounded-md border border-border bg-muted/30 p-3 text-center text-xs text-muted-foreground"
-                  >
-                    {lbl}
-                  </div>
-                );
-              return (
-                <div key={k} className="rounded-md border border-border bg-card p-3 text-center">
-                  <p className="text-[10px] text-muted-foreground">{lbl}</p>
-                  {d.weight_kg != null && <p className="text-base font-semibold">{d.weight_kg} kg</p>}
-                  {d.body_fat_pct != null && <p className="text-xs text-muted-foreground">{d.body_fat_pct}% gord.</p>}
-                  {d.muscle_mass_kg != null && (
-                    <p className="text-xs text-muted-foreground">{d.muscle_mass_kg} kg músc.</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Auto-ajuste de macros — aparece quando peso real diverge da projeção (≥14 dias) */}
       {isActive && (
         <MacroAdjustmentPanel
@@ -563,31 +481,13 @@ function PlanView({
           analysisId={row.id}
         />
       )}
-
-      <p className="text-[11px] text-muted-foreground italic px-1">
-        Este plano é gerado automaticamente a partir do seu relatório e tem caráter informativo.
-        Não substitui orientação médica.
-      </p>
-
-      <VideoPreviewDialog
-        open={!!previewVideo}
-        onOpenChange={(o) => !o && setPreviewVideo(null)}
-        name={previewVideo?.name}
-        videoType={previewVideo?.videoType}
-        videoUrl={previewVideo?.videoUrl}
-        startSeconds={previewVideo?.startSeconds}
-        endSeconds={previewVideo?.endSeconds}
-      />
-      <ImageZoomDialog
-        open={!!previewImages}
-        onOpenChange={(o) => !o && setPreviewImages(null)}
-        images={previewImages || []}
-      />
     </div>
   );
 }
 
-/** Side-by-side comparison of the two most recent analyses. */
+/* ------------------------------------------------------------------ */
+/* Comparação lado a lado                                              */
+/* ------------------------------------------------------------------ */
 function CompareDialog({
   rows,
   onClose,
@@ -765,7 +665,9 @@ function CompareDialog({
   );
 }
 
-/** Simple read-only view for exams saved from the smart scale (no AI plan). */
+/* ------------------------------------------------------------------ */
+/* Exame da balança (sem plano de IA)                                  */
+/* ------------------------------------------------------------------ */
 function ScaleExamView({ row }: { row: BodyAnalysisRow }) {
   const e = row.extracted || {};
   const waterPct =
@@ -826,25 +728,28 @@ function ScaleExamView({ row }: { row: BodyAnalysisRow }) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Página                                                              */
+/* ------------------------------------------------------------------ */
+const STEPS = [
+  { id: 'resultado', label: 'Resultado' },
+  { id: 'evolucao', label: 'Evolução' },
+  { id: 'nutricao', label: 'Nutrição' },
+  { id: 'periodizacao', label: 'Periodização' },
+] as const;
+
 export default function BodyAnalysisPage() {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const { list, create, remove } = useBodyAnalyses();
+  const [step, setStep] = useState(0);
+  const { list, remove } = useBodyAnalyses();
   const { profile, updateProfile, applyNutritionOverride, clearNutritionOverride } = useProfile();
   const { addWeightEntry, refetch: refetchWeights } = useWeightHistory();
-  const { allExercises } = useExerciseLibrary();
-  const { createPlan, addExercise } = useWorkoutPlans();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { startBioimpedance, jobs } = useBackgroundAnalysis();
   const analyzing = jobs.some((j) => j.kind === 'bioimpedance');
-  const [applyingWorkout, setApplyingWorkout] = useState(false);
 
-  const [aiDialogOpen, setAiDialogOpen] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState<string>('');
-  const [aiName, setAiName] = useState<string>('');
-  const [aiCount, setAiCount] = useState<number>(8);
   const [compareOpen, setCompareOpen] = useState(false);
   const [photosOpen, setPhotosOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -854,7 +759,6 @@ export default function BodyAnalysisPage() {
     const id = searchParams.get('id');
     if (id && (list.data || []).some((r) => r.id === id)) {
       setSelectedId(id);
-      // clean up URL after applying
       const next = new URLSearchParams(searchParams);
       next.delete('id');
       setSearchParams(next, { replace: true });
@@ -864,6 +768,7 @@ export default function BodyAnalysisPage() {
   const selected = (list.data || []).find((r) => r.id === selectedId) || (list.data || [])[0];
   // A scale/Bluetooth import stores an empty {} plan (column is NOT NULL) — treat it as "no plan".
   const selectedHasPlan = !!selected?.plan && Object.keys(selected.plan).length > 0;
+  const selectedPlan = selectedHasPlan ? (selected!.plan as BodyPlan) : null;
 
   const macrosAppliedFromSelected =
     !!selected &&
@@ -915,60 +820,6 @@ export default function BodyAnalysisPage() {
     }
   }
 
-  async function handleApplyWorkout(plan: BodyPlan) {
-    const recs = plan.recommended_exercises || [];
-    if (recs.length === 0) {
-      toast.error('Nenhum exercício sugerido neste plano');
-      return;
-    }
-    setApplyingWorkout(true);
-    try {
-      const ti = plan.training_intent;
-      const planName = `${plan.profile_label || 'Plano'} – ${ti?.focus || 'IA'}`.slice(0, 60);
-      // Default schedule: distribute frequency across the week starting Monday
-      const freq = Math.max(1, Math.min(7, ti?.frequency_per_week || 3));
-      const days = [1, 2, 3, 4, 5, 6, 0].slice(0, freq);
-      const created = await createPlan.mutateAsync({ name: planName, days_of_week: days });
-      // Persist exercises sequentially keeping order
-      for (let i = 0; i < recs.length; i++) {
-        const r = recs[i];
-        await addExercise.mutateAsync({
-          workout_plan_id: created.id,
-          name: r.name,
-          sets: r.sets ?? 3,
-          reps: r.reps ?? 10,
-          order_index: i,
-          exercise_library_id: r.exercise_id || null,
-        });
-      }
-      toast.success('Treino criado a partir do plano!');
-      navigate('/workouts');
-    } catch (err) {
-      console.error(err);
-      toast.error('Falha ao criar treino');
-    } finally {
-      setApplyingWorkout(false);
-    }
-  }
-
-  function handleGenerateWorkout(plan: BodyPlan) {
-    const ti = plan.training_intent;
-    const muscles = ti?.priority_muscle_groups?.length
-      ? ` Foco nos grupos: ${ti.priority_muscle_groups.join(', ')}.`
-      : '';
-    const intensity = ti?.intensity ? ` Intensidade ${ti.intensity}.` : '';
-    const split = ti?.split ? ` Divisão ${ti.split}.` : '';
-    const recommended = plan.recommended_exercises?.length
-      ? ` Considere priorizar: ${plan.recommended_exercises.map((r) => r.name).slice(0, 8).join(', ')}.`
-      : '';
-    setAiPrompt(
-      `Treino para ${goalLabels[plan.goal?.primary] || plan.goal?.primary} (${plan.profile_label}). Foco: ${ti?.focus || 'geral'}.${split}${intensity}${muscles}${recommended}`,
-    );
-    setAiName(`Plano ${plan.profile_label || 'corporal'} – ${ti?.focus || 'IA'}`.slice(0, 60));
-    setAiCount(plan.recommended_exercises?.length || 8);
-    setAiDialogOpen(true);
-  }
-
   return (
     <div className="min-h-screen bg-background pb-24">
       <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl border-b border-border/50 px-4 py-4">
@@ -976,7 +827,7 @@ export default function BodyAnalysisPage() {
           <Activity className="h-5 w-5 text-primary" />
           Análise corporal
         </h1>
-        <p className="text-xs text-muted-foreground">Bioimpedância · IA · Plano integrado</p>
+        <p className="text-xs text-muted-foreground">Bioimpedância · IA · Plano em etapas</p>
       </header>
 
       <div className="px-4 py-4 space-y-4">
@@ -996,8 +847,8 @@ export default function BodyAnalysisPage() {
           <Sparkles className="h-6 w-6 text-primary mx-auto mb-2" />
           <p className="text-sm font-medium">Envie a foto do seu relatório</p>
           <p className="text-xs text-muted-foreground mt-1 mb-3">
-            Fitdays, InBody, Tanita ou similar — a IA extrai os dados, monta seu plano e
-            sugere exercícios da sua biblioteca.
+            Fitdays, InBody, Tanita ou similar — a IA extrai os dados e monta seu plano de
+            nutrição e periodização.
           </p>
           <Button onClick={() => fileInputRef.current?.click()} disabled={analyzing} className="w-full">
             {analyzing ? (
@@ -1070,7 +921,10 @@ export default function BodyAnalysisPage() {
                 return (
                   <button
                     key={r.id}
-                    onClick={() => setSelectedId(r.id)}
+                    onClick={() => {
+                      setSelectedId(r.id);
+                      setStep(0);
+                    }}
                     className={cn(
                       'shrink-0 rounded-md border px-3 py-2 text-left min-w-[140px]',
                       isSel ? 'border-primary bg-primary/5' : 'border-border bg-card',
@@ -1090,7 +944,7 @@ export default function BodyAnalysisPage() {
           </div>
         )}
 
-        {/* Plano selecionado */}
+        {/* Análise selecionada */}
         {selected ? (
           <>
             <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -1098,17 +952,6 @@ export default function BodyAnalysisPage() {
                 Análise de {format(parseISO(selected.created_at), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </p>
               <div className="flex items-center gap-1 flex-wrap">
-                {(list.data?.length ?? 0) >= 2 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCompareOpen(true)}
-                    className="h-7 text-xs"
-                  >
-                    <GitCompareArrows className="h-3.5 w-3.5 mr-1" />
-                    Comparar
-                  </Button>
-                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1151,16 +994,100 @@ export default function BodyAnalysisPage() {
                 </Button>
               </div>
             </div>
-            {selectedHasPlan ? (
-              <PlanView
-                row={selected}
-                onApplyMacros={handleApplyMacros}
-                onGenerateWorkout={handleGenerateWorkout}
-                onApplyWorkout={handleApplyWorkout}
-                macrosApplied={macrosAppliedFromSelected}
-                isActive={selected.id === (list.data || [])[0]?.id}
-                applyingWorkout={applyingWorkout}
-              />
+
+            {selectedPlan ? (
+              <>
+                {/* Navegação por etapas — círculos numerados */}
+                <div className="flex items-center gap-1">
+                  {STEPS.map((s, i) => {
+                    const active = i === step;
+                    const done = i < step;
+                    return (
+                      <div key={s.id} className="flex items-center flex-1 min-w-0 last:flex-none">
+                        <button
+                          type="button"
+                          onClick={() => setStep(i)}
+                          className="flex flex-col items-center gap-1 min-w-0"
+                        >
+                          <span
+                            className={cn(
+                              'h-8 w-8 rounded-full border flex items-center justify-center text-xs font-semibold transition-colors',
+                              active
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : done
+                                  ? 'border-primary/50 text-primary bg-primary/10'
+                                  : 'border-border text-muted-foreground bg-card',
+                            )}
+                          >
+                            {done ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
+                          </span>
+                          <span
+                            className={cn(
+                              'text-[10px] leading-tight text-center truncate max-w-[72px]',
+                              active ? 'text-foreground font-medium' : 'text-muted-foreground',
+                            )}
+                          >
+                            {s.label}
+                          </span>
+                        </button>
+                        {i < STEPS.length - 1 && (
+                          <div className={cn('flex-1 h-px mx-1 mb-4', done || active ? 'bg-primary/40' : 'bg-border')} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Conteúdo da etapa */}
+                {step === 0 && <StepResult plan={selectedPlan} />}
+                {step === 1 && (
+                  <StepEvolution
+                    plan={selectedPlan}
+                    hasHistory={(list.data?.length ?? 0) >= 2}
+                    onCompare={() => setCompareOpen(true)}
+                  />
+                )}
+                {step === 2 && (
+                  <StepNutrition
+                    plan={selectedPlan}
+                    onApplyMacros={handleApplyMacros}
+                    macrosApplied={macrosAppliedFromSelected}
+                  />
+                )}
+                {step === 3 && (
+                  <StepPeriodization
+                    row={selected}
+                    plan={selectedPlan}
+                    isActive={selected.id === (list.data || [])[0]?.id}
+                  />
+                )}
+
+                {/* Navegação anterior/próxima */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    disabled={step === 0}
+                    onClick={() => setStep((s) => Math.max(0, s - 1))}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Anterior
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    disabled={step === STEPS.length - 1}
+                    onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
+                  >
+                    Próxima
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+
+                <p className="text-[11px] text-muted-foreground italic px-1">
+                  Este plano é gerado automaticamente a partir do seu relatório e tem caráter
+                  informativo. Não substitui orientação médica.
+                </p>
+              </>
             ) : (
               <ScaleExamView row={selected} />
             )}
@@ -1181,14 +1108,6 @@ export default function BodyAnalysisPage() {
           onClose={() => setCompareOpen(false)}
         />
       )}
-
-      <AIWorkoutDialog
-        open={aiDialogOpen}
-        onOpenChange={setAiDialogOpen}
-        initialPrompt={aiPrompt}
-        initialName={aiName}
-        initialCount={aiCount}
-      />
 
       <ProgressPhotosDialog open={photosOpen} onOpenChange={setPhotosOpen} />
 
