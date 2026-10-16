@@ -22,7 +22,6 @@ import { WeightTracker } from '@/components/WeightTracker';
 import { ExerciseTracker } from '@/components/ExerciseTracker';
 import { LiquidTracker } from '@/components/LiquidTracker';
 import { GlycemiaTracker } from '@/components/GlycemiaTracker';
-import { BodyPlanShortcut } from '@/components/BodyPlanShortcut';
 import { AdherenceCard } from '@/components/AdherenceCard';
 import { AdherenceHistoryChart } from '@/components/AdherenceHistoryChart';
 import { SmartAlertsCard } from '@/components/SmartAlertsCard';
@@ -421,8 +420,6 @@ export function Dashboard() {
             <ExerciseTracker selectedDate={selectedDate} onDataChange={() => {}} />
             <GlycemiaTracker selectedDate={selectedDate} />
 
-            {/* Body analysis plan shortcut */}
-            {isViewingToday && <BodyPlanShortcut />}
 
             {/* Smart alerts */}
             {isViewingToday && <SmartAlertsCard alerts={smartAlerts} />}

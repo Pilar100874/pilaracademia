@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { activityLabels, goalLabels, calculateAge, calculateBMR, calculateTDEE, calculateDailyCalories, calculateAllNutrients } from '@/types/profile';
-import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle, Sparkles, UtensilsCrossed, Share2, ChevronRight, TrendingUp, FileText, Shield, Trash2, KeyRound, Smartphone } from 'lucide-react';
+import { ArrowLeft, User, Scale, Ruler, Calendar, Activity, Target, Loader2, CheckCircle, Sparkles, UtensilsCrossed, Share2, ChevronRight, FileText, Shield, Trash2, KeyRound, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
 import { DataExportSection } from '@/components/DataExportSection';
@@ -339,20 +339,6 @@ export function ProfilePage() {
             <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
           </button>
 
-          <button
-            type="button"
-            onClick={() => navigate('/insights')}
-            className="w-full flex items-center gap-3 py-3 text-left"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
-              <TrendingUp className="h-5 w-5 text-emerald-500" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-sm">Insights</p>
-              <p className="text-xs text-muted-foreground">Correlações entre peso, exames e adesão</p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </button>
 
           <button
             type="button"
