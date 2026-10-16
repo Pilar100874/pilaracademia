@@ -6,7 +6,6 @@ import {
   User,
   Utensils,
   Library,
-  ScanLine,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelpMenu } from '@/components/HelpMenu';
@@ -22,7 +21,6 @@ const primaryNav = [
 ];
 
 const secondaryNav = [
-  { to: '/products', icon: ScanLine, label: 'Produtos' },
   { to: '/profile', icon: User, label: 'Perfil' },
 ];
 
