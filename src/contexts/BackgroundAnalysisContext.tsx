@@ -138,11 +138,11 @@ export function BackgroundAnalysisProvider({ children }: { children: React.React
 
           toast.success('Bioimpedância analisada!', {
             id: toastId,
-            description: 'Plano corporal pronto para visualização.',
+            description: 'Relatório pronto para visualização.',
             duration: 10000,
             action: {
-              label: 'Ver análise',
-              onClick: () => navigate(`/body-analysis?id=${created.id}`),
+              label: 'Ver relatório',
+              onClick: () => navigate('/health?tab=bioimpedance'),
             },
           });
         } catch (e) {

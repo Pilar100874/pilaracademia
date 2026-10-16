@@ -14,7 +14,6 @@ import { HealthPage } from "@/pages/HealthPage";
 import { WorkoutsPage } from "@/pages/WorkoutsPage";
 import { WorkoutWizardPage } from "@/pages/WorkoutWizardPage";
 import ExerciseLibraryPage from "@/pages/ExerciseLibraryPage";
-import BodyAnalysisPage from "@/pages/BodyAnalysisPage";
 import BioimpedancePage from "@/pages/BioimpedancePage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import InsightsPage from "@/pages/InsightsPage";

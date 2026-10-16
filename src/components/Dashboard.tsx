@@ -421,8 +421,6 @@ export function Dashboard() {
             <ExerciseTracker selectedDate={selectedDate} onDataChange={() => {}} />
             <GlycemiaTracker selectedDate={selectedDate} />
 
-            {/* Body analysis plan shortcut */}
-            {isViewingToday && <BodyPlanShortcut />}
 
             {/* Smart alerts */}
             {isViewingToday && <SmartAlertsCard alerts={smartAlerts} />}
