@@ -126,8 +126,9 @@ export function WatchSyncCard() {
     const now = new Date(s.syncedAt);
     const values = {
       ...(options.calories && s.caloriesToday != null ? { calories_burned: s.caloriesToday } : {}),
-      ...(options.activity && s.activityMinutesToday != null ? { duration_minutes: s.activityMinutesToday } : {}),
+      ...(options.activity && s.activityMinutesToday != null ? { duration_minutes: Math.round(s.activityMinutesToday) } : {}),
     };
+    if (!Object.keys(values).length) return 'Atividade: nenhum valor selecionado disponível.';
     const { start, end } = dayBounds(now.toISOString());
     const { data: existing, error: readError } = await supabase
       .from('exercise_entries')

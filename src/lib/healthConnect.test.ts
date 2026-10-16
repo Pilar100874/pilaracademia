@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 import { expect, test, mock } from 'bun:test';
 
 mock.module('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => true, getPlatform: () => 'android' } }));
