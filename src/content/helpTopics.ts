@@ -201,7 +201,8 @@ export const helpTopics: HelpTopic[] = [
 
 export function getContextHelp(pathname: string, search: string): HelpTopic {
   const tab = new URLSearchParams(search).get('tab');
-  const healthId = { bioimpedance: 'bio', measurements: 'measurements', vitals: 'vitals', blood: 'blood' }[tab ?? ''];
+  const healthTopics: Record<string, string> = { bioimpedance: 'bio', measurements: 'measurements', vitals: 'vitals', blood: 'blood' };
+  const healthId = healthTopics[tab ?? ''];
   const id = pathname === '/health' || pathname === '/bioimpedance'
     ? healthId ?? 'health'
     : pathname.startsWith('/workouts') ? 'workouts'

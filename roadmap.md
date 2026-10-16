@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Refazer a Central de ajuda e a ajuda de cada tela com os recursos atuais, busca por assunto e orientações de uso.
+- [x] Refazer a Central de ajuda e a ajuda de cada tela com os recursos atuais, busca por assunto e orientações de uso.
 
 - [x] Manter o assistente de treino aberto durante a geração e validar as respostas obrigatórias antes de avançar ou concluir.
 
