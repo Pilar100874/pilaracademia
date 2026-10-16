@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Watch, RefreshCw, Footprints, Flame, HeartPulse, Moon, Scale, Settings, Activity, Download, Route, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -61,6 +62,7 @@ export function WatchSyncCard() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [edits, setEdits] = useState<Record<string, string>>({});
   const [options, setOptions] = useState<ImportOptions>({ calories: true, activity: true, weight: true, bodyExam: true, history: true, profileWeight: false, period: 30 });
 
   useEffect(() => {
@@ -223,12 +225,65 @@ export function WatchSyncCard() {
     return 'Exame de bioimpedância salvo.';
   };
 
+  const editFields = [
+    { key: 'stepsToday', label: 'Passos', unit: 'passos', decimal: false },
+    { key: 'distanceKm', label: 'Distância', unit: 'km', decimal: true },
+    { key: 'activityMinutesToday', label: 'Tempo de atividade', unit: 'min', decimal: false },
+    { key: 'caloriesToday', label: 'Calorias ativas', unit: 'kcal', decimal: false },
+    { key: 'totalCaloriesToday', label: 'Gasto total', unit: 'kcal', decimal: false },
+    { key: 'weightKg', label: 'Peso', unit: 'kg', decimal: true },
+    { key: 'bodyFatPct', label: 'Gordura corporal', unit: '%', decimal: true },
+  ] as const;
+
+  const openEdits = (s: WatchSummary) => {
+    const fmt = (v: number | null | undefined) => (v == null ? '' : String(v).replace('.', ','));
+    setEdits({
+      stepsToday: fmt(s.stepsToday),
+      distanceKm: fmt(s.distanceTodayMeters != null ? Math.round(s.distanceTodayMeters / 10) / 100 : null),
+      activityMinutesToday: fmt(s.activityMinutesToday),
+      caloriesToday: fmt(s.caloriesToday),
+      totalCaloriesToday: fmt(s.totalCaloriesToday),
+      weightKg: fmt(s.latestWeight?.kg),
+      bodyFatPct: fmt(s.latestBodyFat?.pct),
+    });
+  };
+
+  const applyEdits = (s: WatchSummary): WatchSummary => {
+    const num = (k: string) => {
+      const raw = (edits[k] ?? '').trim();
+      if (!raw) return null;
+      const n = Number(raw.replace(',', '.'));
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    };
+    const km = num('distanceKm');
+    const kg = num('weightKg');
+    const pct = num('bodyFatPct');
+    return {
+      ...s,
+      stepsToday: num('stepsToday') != null ? Math.round(num('stepsToday')!) : null,
+      distanceTodayMeters: km != null ? Math.round(km * 1000) : null,
+      activityMinutesToday: num('activityMinutesToday') != null ? Math.round(num('activityMinutesToday')!) : null,
+      caloriesToday: num('caloriesToday') != null ? Math.round(num('caloriesToday')!) : null,
+      totalCaloriesToday: num('totalCaloriesToday') != null ? Math.round(num('totalCaloriesToday')!) : null,
+      latestWeight: kg != null ? { kg, date: s.latestWeight?.date ?? s.syncedAt } : null,
+      latestBodyFat: pct != null ? { pct, date: s.latestBodyFat?.date ?? s.syncedAt } : null,
+    };
+  };
+
+  const summaryRaw = summary;
+  const preview = summary ? applyEdits(summary) : null;
   const confirmImport = async () => {
-    if (!user || !summary) return;
+    if (!user || !summaryRaw) return;
+    const summary = applyEdits(summaryRaw);
     setIsImporting(true);
     const results: string[] = [];
     try {
-      const points = options.weight || options.bodyExam ? await readBodyCompositionHistory(options.period) : [];
+      const rawPoints = options.weight || options.bodyExam ? await readBodyCompositionHistory(options.period) : [];
+      const points = rawPoints.map((p) => {
+        if (p.kg != null && summaryRaw.latestWeight && p.date === summaryRaw.latestWeight.date) return { ...p, kg: summary.latestWeight?.kg };
+        if (p.pct != null && summaryRaw.latestBodyFat && p.date === summaryRaw.latestBodyFat.date) return { ...p, pct: summary.latestBodyFat?.pct };
+        return p;
+      }).filter((p) => p.kg != null || p.pct != null);
       if (options.calories || options.activity) results.push(await importCalories(user.id, summary));
       if (options.weight) results.push(await importWeight(user.id, points, options.period));
       if (options.bodyExam) results.push(await importBodyExam(user.id, summary));
@@ -385,7 +440,9 @@ export function WatchSyncCard() {
               <Button size="sm" disabled={isSyncing} onClick={async () => {
                 setIsSyncing(true);
                 try {
-                  setSummary(await readWatchSummary());
+                  const fresh = await readWatchSummary();
+                  setSummary(fresh);
+                  openEdits(fresh);
                   setImportOpen(true);
                 } catch {
                   toast({ title: 'Não foi possível atualizar os dados', description: 'Abra o Samsung Health e tente novamente.', variant: 'destructive' });
@@ -428,18 +485,39 @@ export function WatchSyncCard() {
               </span>
             </div>
 
+            <div className="rounded-md border border-border p-3">
+              <span className="block font-medium text-sm">Conferir e editar valores de hoje</span>
+              <span className="block text-[11px] text-muted-foreground mb-2">Corrija o que não bater com o relógio. Deixe vazio para não importar o valor.</span>
+              <div className="grid grid-cols-2 gap-2">
+                {editFields.map((f) => (
+                  <label key={f.key} className="min-w-0 text-xs">
+                    <span className="block text-muted-foreground truncate">{f.label} ({f.unit})</span>
+                    <Input
+                      inputMode={f.decimal ? 'decimal' : 'numeric'}
+                      value={edits[f.key] ?? ''}
+                      onChange={(e) => {
+                        const v = f.decimal ? e.target.value.replace(/[^0-9.,]/g, '') : e.target.value.replace(/\D/g, '');
+                        setEdits((o) => ({ ...o, [f.key]: v }));
+                      }}
+                      className="h-8 mt-0.5"
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer">
               <Checkbox checked={options.activity} onCheckedChange={(v) => setOptions((o) => ({ ...o, activity: v === true }))} />
               <span className="min-w-0 text-sm">
                 <span className="font-medium">Atividade de hoje</span>
                 <span className="block text-xs text-muted-foreground">
-                  {summary?.stepsToday ?? '—'} passos · {summary?.distanceTodayMeters != null ? (summary.distanceTodayMeters / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '—'} km · {summary?.activityMinutesToday ?? '—'} min de atividades registradas.
+                  {preview?.stepsToday ?? '—'} passos · {preview?.distanceTodayMeters != null ? (preview.distanceTodayMeters / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '—'} km · {preview?.activityMinutesToday ?? '—'} min de atividades registradas.
                 </span>
                 <span className="block text-xs text-muted-foreground">Passos e distância ficam em Sinais; o tempo também vai para Atividade do relógio.</span>
               </span>
             </label>
 
-            {summary?.caloriesToday != null && (
+            {preview?.caloriesToday != null && (
               <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer">
                 <Checkbox
                   checked={options.calories}
@@ -449,7 +527,7 @@ export function WatchSyncCard() {
                 <span className="min-w-0">
                   <span className="flex items-center gap-1.5 font-medium text-sm">
                     <Flame className="h-4 w-4 text-primary shrink-0" />
-                    Calorias ativas de hoje: {summary.caloriesToday.toLocaleString('pt-BR')} kcal
+                    Calorias ativas de hoje: {preview.caloriesToday.toLocaleString('pt-BR')} kcal
                   </span>
                   <span className="block text-xs text-muted-foreground mt-0.5">
                     Lança como exercício "Atividade do relógio" na data de hoje (tela inicial).
@@ -458,7 +536,7 @@ export function WatchSyncCard() {
               </label>
             )}
 
-            {summary?.latestWeight && (
+            {preview?.latestWeight && (
               <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer">
                 <Checkbox
                   checked={options.weight}
@@ -468,7 +546,7 @@ export function WatchSyncCard() {
                 <span className="min-w-0">
                   <span className="flex items-center gap-1.5 font-medium text-sm">
                     <Scale className="h-4 w-4 text-primary shrink-0" />
-                    Peso: {summary.latestWeight.kg} kg
+                    Peso: {preview.latestWeight.kg} kg
                   </span>
                   <span className="block text-xs text-muted-foreground mt-0.5">
                     Salva as pesagens dos {periodLabel(options.period)} no histórico de peso, sem duplicar dias já lançados.
@@ -477,7 +555,7 @@ export function WatchSyncCard() {
               </label>
             )}
 
-            {(summary?.latestWeight || summary?.latestBodyFat) && (
+            {(preview?.latestWeight || preview?.latestBodyFat) && (
               <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer">
                 <Checkbox
                   checked={options.bodyExam}
@@ -488,7 +566,7 @@ export function WatchSyncCard() {
                   <span className="flex items-center gap-1.5 font-medium text-sm">
                     <Activity className="h-4 w-4 text-primary shrink-0" />
                     Exame de bioimpedância
-                    {summary.latestBodyFat ? ` (${summary.latestBodyFat.pct}% gordura)` : ''}
+                    {preview.latestBodyFat ? ` (${preview.latestBodyFat.pct}% gordura)` : ''}
                   </span>
                   <span className="block text-xs text-muted-foreground mt-0.5">
                     Salva a última medição como exame na aba Bioimpedância. A gordura de cada dia vai para a aba Sinais.
@@ -497,7 +575,7 @@ export function WatchSyncCard() {
               </label>
             )}
 
-            {summary?.latestWeight && (
+            {preview?.latestWeight && (
               <label className="flex items-start gap-3 rounded-md border border-primary/40 bg-primary/5 p-3 cursor-pointer">
                 <Checkbox
                   checked={options.profileWeight}
@@ -505,7 +583,7 @@ export function WatchSyncCard() {
                   className="mt-0.5"
                 />
                 <span className="min-w-0">
-                  <span className="font-medium text-sm">Ajustar meu peso no app para {summary.latestWeight.kg} kg?</span>
+                  <span className="font-medium text-sm">Ajustar meu peso no app para {preview.latestWeight.kg} kg?</span>
                   <span className="block text-xs text-muted-foreground mt-0.5">
                     Atualiza o peso do seu perfil (usado nas metas de calorias e água).
                   </span>
