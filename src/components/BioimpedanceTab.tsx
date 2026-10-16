@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -397,12 +396,6 @@ export function BioimpedanceTab() {
             </p>
           </div>
 
-          <Button asChild variant="outline" className="w-full">
-            <Link to="/body-analysis">
-              Ver análise completa e plano
-              <ArrowRight className="h-4 w-4 ml-1.5" />
-            </Link>
-          </Button>
         </>
       )}
 
