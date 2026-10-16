@@ -6,6 +6,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
 import { z } from "https://esm.sh/zod@3.23.8";
+import { reportSections, sanitizeReport, aggregateReportDays } from "../_shared/professionalReport.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -129,102 +130,44 @@ Deno.serve(async (req) => {
       user_agent: userAgent,
     });
 
-    // 3. Fetch user data (read-only)
     const userId = share.user_id;
     const periodDays = share.period_days || 30;
-    const since = new Date();
-    since.setDate(since.getDate() - periodDays);
-    const sinceISO = since.toISOString();
-
-    const [
-      profileRes,
-      foodsRes,
-      liquidsRes,
-      exercisesRes,
-      weightRes,
-      bodyAnalysesRes,
-      bloodExamsRes,
-    ] = await Promise.all([
-      admin.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-      admin
-        .from("food_entries")
-        .select("consumed_at, calories, protein, carbs, fat")
-        .eq("user_id", userId)
-        .gte("consumed_at", sinceISO),
-      admin
-        .from("liquid_entries")
-        .select("consumed_at, amount_ml")
-        .eq("user_id", userId)
-        .gte("consumed_at", sinceISO),
-      admin
-        .from("exercise_entries")
-        .select("performed_at, calories_burned, name")
-        .eq("user_id", userId)
-        .gte("performed_at", sinceISO),
-      admin
-        .from("weight_history")
-        .select("recorded_at, weight_kg")
-        .eq("user_id", userId)
-        .gte("recorded_at", sinceISO)
-        .order("recorded_at", { ascending: true }),
-      admin
-        .from("body_analyses")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(2),
-      admin
-        .from("blood_exams")
-        .select("*")
-        .eq("user_id", userId)
-        .order("collected_at", { ascending: false, nullsFirst: false })
-        .limit(3),
-    ]);
-
-    // 4. Aggregate daily totals
-    const days = new Map<string, AggregatedDay>();
-    for (let i = 0; i < periodDays; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      days.set(key, {
-        date: key,
-        calories: 0,
-        protein: 0,
-        carbs: 0,
-        fat: 0,
-        liquid_ml: 0,
-        burned: 0,
-        hasWorkout: false,
-      });
-    }
-
-    for (const f of foodsRes.data ?? []) {
-      const k = String(f.consumed_at).slice(0, 10);
-      const b = days.get(k);
-      if (!b) continue;
-      b.calories += Number(f.calories) || 0;
-      b.protein += Number(f.protein) || 0;
-      b.carbs += Number(f.carbs) || 0;
-      b.fat += Number(f.fat) || 0;
-    }
-    for (const l of liquidsRes.data ?? []) {
-      const k = String(l.consumed_at).slice(0, 10);
-      const b = days.get(k);
-      if (!b) continue;
-      b.liquid_ml += Number(l.amount_ml) || 0;
-    }
-    for (const e of exercisesRes.data ?? []) {
-      const k = String(e.performed_at).slice(0, 10);
-      const b = days.get(k);
-      if (!b) continue;
-      b.burned += Number(e.calories_burned) || 0;
-      b.hasWorkout = true;
-    }
-
-    const dailyArray = Array.from(days.values()).sort((a, b) =>
-      a.date.localeCompare(b.date),
-    );
+    const start = new Date();
+    start.setUTCDate(start.getUTCDate() - periodDays + 1);
+    const startDate = start.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    const endDate = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    const read = async (table: string, dateColumn: string | null, parent?: { column: string; ids: string[] }) => {
+      const rows: any[] = [];
+      if (parent && !parent.ids.length) return rows;
+      for (let offset = 0; ; offset += 1000) {
+        let query = admin.from(table).select('*');
+        query = parent ? query.in(parent.column, parent.ids) : query.eq('user_id', userId);
+        if (dateColumn) query = query.gte(dateColumn, dateColumn === 'week_start' ? startDate : `${startDate}T00:00:00-03:00`).lt(dateColumn, dateColumn === 'week_start' ? `${endDate}T23:59:59` : `${endDate}T23:59:59.999-03:00`);
+        const { data, error } = await query.order('id').range(offset, offset + 999);
+        if (error) throw error;
+        rows.push(...(data ?? []));
+        if ((data?.length ?? 0) < 1000) break;
+      }
+      return rows;
+    };
+    const { data: profile, error: profileError } = await admin.from('profiles')
+      .select('name,gender,birth_date,height_cm,weight_kg,goal,activity_level,daily_calories,daily_calories_override,daily_protein,daily_protein_override,daily_carbs,daily_carbs_override,daily_fat,daily_fat_override,daily_liquid_ml,daily_liquid_ml_override')
+      .eq('user_id', userId).maybeSingle();
+    if (profileError) throw profileError;
+    const entries = await Promise.all(reportSections.map(async section => [section.key, await read(section.key, section.date)] as const));
+    const records: Record<string, any[]> = Object.fromEntries(entries);
+    const workoutExercises = await read('workout_exercises', null, { column: 'workout_plan_id', ids: records.workout_plans.map(row => row.id) });
+    records.workout_plans = records.workout_plans.map(row => ({ ...row, exercises: workoutExercises.filter(ex => ex.workout_plan_id === row.id).sort((a, b) => a.order_index - b.order_index) }));
+    const kitItems = await read('food_kit_items', null, { column: 'kit_id', ids: records.food_kits.map(row => row.id) });
+    records.food_kits = records.food_kits.map(row => ({ ...row, items: kitItems.filter(item => item.kit_id === row.id).map(item => ({ quantity: item.quantity, unit: item.unit, product: records.custom_products.find(product => product.id === item.product_id)?.name ?? 'Produto' })) }));
+    // No storage capability is exposed by a public report. Media stays in the owner's authenticated app.
+    const stripMedia = (value: any): any => {
+      if (Array.isArray(value)) return value.map(stripMedia);
+      if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).filter(([key]) => !/url|hash/i.test(key)).map(([key, item]) => [key, stripMedia(item)]));
+      return value;
+    };
+    const sections = reportSections.map(section => ({ key: section.key, title: section.title, records: stripMedia(sanitizeReport(records[section.key])) }));
+    const dailyArray = aggregateReportDays(records.food_entries, records.liquid_entries, records.exercise_entries);
 
     // 5. Update view count (cumulativo no share)
     await admin
@@ -235,55 +178,11 @@ Deno.serve(async (req) => {
       })
       .eq("id", share.id);
 
-    // 6. Build sanitized payload (do not leak emails, ids, raw text)
-    const profile = profileRes.data || {};
-    const lastBody = bodyAnalysesRes.data?.[0];
-
     const payload = {
-      generated_at: new Date().toISOString(),
-      period_days: periodDays,
-      expires_at: share.expires_at,
-      profile: {
-        name: profile.name ?? null,
-        gender: profile.gender ?? null,
-        birth_date: profile.birth_date ?? null,
-        height_cm: profile.height_cm ?? null,
-        weight_kg: profile.weight_kg ?? null,
-        goal: profile.goal ?? null,
-        activity_level: profile.activity_level ?? null,
-        daily_calories: profile.daily_calories_override ?? profile.daily_calories ?? null,
-        daily_protein: profile.daily_protein_override ?? profile.daily_protein ?? null,
-        daily_carbs: profile.daily_carbs_override ?? profile.daily_carbs ?? null,
-        daily_fat: profile.daily_fat_override ?? profile.daily_fat ?? null,
-        daily_liquid_ml: profile.daily_liquid_ml_override ?? profile.daily_liquid_ml ?? null,
-      },
-      weight_series: (weightRes.data ?? []).map((w: any) => ({
-        date: String(w.recorded_at).slice(0, 10),
-        weight_kg: Number(w.weight_kg),
-      })),
-      daily_totals: dailyArray,
-      latest_body_analysis: lastBody
-        ? {
-            created_at: lastBody.created_at,
-            extracted: lastBody.extracted_data ?? null,
-            summary: lastBody.summary ?? null,
-          }
-        : null,
-      blood_exams: (bloodExamsRes.data ?? []).map((e: any) => ({
-        collected_at: e.collected_at,
-        lab_name: e.lab_name,
-        summary: e.summary,
-        markers: (e.markers || []).map((m: any) => ({
-          key: m.key,
-          label: m.label,
-          value: m.value,
-          unit: m.unit,
-          ref_min: m.ref_min ?? null,
-          ref_max: m.ref_max ?? null,
-          status: m.status,
-          category: m.category,
-        })),
-      })),
+      generated_at: new Date().toISOString(), period_days: periodDays, expires_at: share.expires_at,
+      start_date: startDate, end_date: endDate, profile: sanitizeReport(profile ?? {}),
+      weight_series: records.weight_history.map(w => ({ date: w.recorded_at, weight_kg: w.weight_kg })),
+      daily_totals: dailyArray, sections,
     };
 
     return jsonResponse({ data: payload });
@@ -296,6 +195,6 @@ Deno.serve(async (req) => {
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 }
