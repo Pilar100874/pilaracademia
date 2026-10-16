@@ -2034,6 +2034,42 @@ export type Database = {
         }
         Relationships: []
       }
+      health_metrics: {
+        Row: {
+          created_at: string
+          id: string
+          metric_type: string
+          recorded_at: string
+          source: string
+          unit: string | null
+          user_id: string
+          value: number
+          value2: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metric_type: string
+          recorded_at: string
+          source?: string
+          unit?: string | null
+          user_id: string
+          value: number
+          value2?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metric_type?: string
+          recorded_at?: string
+          source?: string
+          unit?: string | null
+          user_id?: string
+          value?: number
+          value2?: number | null
+        }
+        Relationships: []
+      }
       impersonation_log: {
         Row: {
           actor_user_id: string
