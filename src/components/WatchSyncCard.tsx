@@ -134,7 +134,7 @@ export function WatchSyncCard() {
   };
 
   const importWeight = async (userId: string, s: WatchSummary): Promise<string> => {
-    if (!s.latestWeight) return 'Peso: sem dados no relógio.';
+    if (!s.latestWeight) return 'Peso: sem dados no Samsung Health.';
     const { start, end } = dayBounds(s.latestWeight.date);
     const { data: existing } = await supabase
       .from('weight_history')
@@ -155,7 +155,7 @@ export function WatchSyncCard() {
 
   const importBodyExam = async (userId: string, s: WatchSummary): Promise<string> => {
     const { latestWeight, latestBodyFat, latestHeightCm } = s;
-    if (!latestWeight && !latestBodyFat) return 'Bioimpedância: sem dados no relógio.';
+    if (!latestWeight && !latestBodyFat) return 'Bioimpedância: sem dados no Samsung Health.';
     const measuredAt = latestBodyFat?.date || latestWeight?.date || new Date().toISOString();
     const heightM = latestHeightCm ? latestHeightCm / 100 : null;
     const weightKg = latestWeight?.kg ?? null;
@@ -230,7 +230,7 @@ export function WatchSyncCard() {
         { icon: HeartPulse, label: 'Batimentos', value: summary.lastHeartRate != null ? `${summary.lastHeartRate} bpm` : '—' },
         { icon: HeartPulse, label: 'Repouso', value: summary.restingHeartRate != null ? `${summary.restingHeartRate} bpm` : '—' },
         { icon: Moon, label: 'Sono (última noite)', value: summary.sleepMinutesLastNight != null ? formatSleep(summary.sleepMinutesLastNight) : '—' },
-        { icon: Scale, label: 'Peso no relógio', value: summary.latestWeight ? `${summary.latestWeight.kg} kg` : '—' },
+        { icon: Scale, label: 'Peso', value: summary.latestWeight ? `${summary.latestWeight.kg} kg` : '—' },
         { icon: Activity, label: 'Gordura corporal', value: summary.latestBodyFat ? `${summary.latestBodyFat.pct}%` : '—' },
       ]
     : [];
@@ -242,7 +242,7 @@ export function WatchSyncCard() {
     <div className="rounded-md border border-border bg-card p-4 space-y-4">
       <div className="flex items-center gap-2">
         <Watch className="h-5 w-5 text-primary" />
-        <span className="font-semibold">Dados do relógio</span>
+        <span className="font-semibold">Samsung Health</span>
       </div>
 
       {status === 'checking' && (
@@ -265,12 +265,12 @@ export function WatchSyncCard() {
       {status === 'needs-permission' && (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Conecte seu Galaxy Watch para trazer passos, calorias, batimentos, sono e peso automaticamente.
-            Antes, ative em <strong>Samsung Health → Configurações → Health Connect</strong> o compartilhamento dos dados.
+            Seu relógio envia os dados ao <strong>Samsung Health</strong>, e o app lê de lá: passos, calorias,
+            batimentos, sono e peso. Antes, ative em <strong>Samsung Health → Configurações → Health Connect</strong> o compartilhamento dos dados.
           </p>
           <Button size="sm" onClick={() => void connect()}>
             <Watch className="h-4 w-4 mr-2" />
-            Conectar relógio
+            Conectar Samsung Health
           </Button>
         </div>
       )}
@@ -299,7 +299,7 @@ export function WatchSyncCard() {
             {hasAnythingToImport && (
               <Button size="sm" onClick={() => setImportOpen(true)}>
                 <Download className="h-4 w-4 mr-2" />
-                Importar dados
+                Importar do Samsung Health
               </Button>
             )}
           </div>
@@ -309,9 +309,9 @@ export function WatchSyncCard() {
       <Dialog open={importOpen} onOpenChange={setImportOpen}>
         <DialogContent className="flex flex-col overflow-hidden p-0 max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader className="px-4 pt-4 pb-2 shrink-0">
-            <DialogTitle>Importar dados do relógio</DialogTitle>
+            <DialogTitle>Importar do Samsung Health</DialogTitle>
             <DialogDescription>
-              Confira o resumo abaixo e marque o que deseja salvar no app.
+              Dados lidos do Samsung Health (enviados pelo seu relógio). Marque o que deseja salvar no app.
             </DialogDescription>
           </DialogHeader>
 
