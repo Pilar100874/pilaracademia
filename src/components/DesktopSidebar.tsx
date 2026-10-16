@@ -8,7 +8,6 @@ import {
   Utensils,
   Library,
   ScanLine,
-  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HelpMenu } from '@/components/HelpMenu';
