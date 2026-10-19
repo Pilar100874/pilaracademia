@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_credit_balances: {
+        Row: {
+          balance_cents: number
+          environment: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance_cents?: number
+          environment?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance_cents?: number
+          environment?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_credit_ledger: {
+        Row: {
+          amount_cents: number
+          cost_cents: number
+          created_at: string
+          environment: string
+          feature: string | null
+          id: string
+          kind: string
+          margin_cents: number
+          stripe_session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          cost_cents?: number
+          created_at?: string
+          environment?: string
+          feature?: string | null
+          id?: string
+          kind: string
+          margin_cents?: number
+          stripe_session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          cost_cents?: number
+          created_at?: string
+          environment?: string
+          feature?: string | null
+          id?: string
+          kind?: string
+          margin_cents?: number
+          stripe_session_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_studio_workflows: {
         Row: {
           clinic_id: string
@@ -2788,6 +2848,7 @@ export type Database = {
       }
       master_settings: {
         Row: {
+          ai_markup_percent: number
           id: number
           library_analysis_model: string
           payments_mode: string
@@ -2796,6 +2857,7 @@ export type Database = {
           user_video_analysis_model: string
         }
         Insert: {
+          ai_markup_percent?: number
           id?: number
           library_analysis_model?: string
           payments_mode?: string
@@ -2804,6 +2866,7 @@ export type Database = {
           user_video_analysis_model?: string
         }
         Update: {
+          ai_markup_percent?: number
           id?: number
           library_analysis_model?: string
           payments_mode?: string
@@ -3864,11 +3927,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_ai_credits: {
+        Args: { _amount: number; _env: string; _session: string; _user: string }
+        Returns: boolean
+      }
       claim_exercise_naming: { Args: { _lease: string }; Returns: boolean }
       clinic_has_access: { Args: { _clinic_id: string }; Returns: boolean }
       complete_exercise_name: {
         Args: { _id: string; _name: string; _url: string }
         Returns: boolean
+      }
+      consume_ai_credits: {
+        Args: { _cost: number; _env: string; _feature: string; _user: string }
+        Returns: Json
       }
       copy_global_sequence_to_clinic: {
         Args: { _clinic_id: string; _sequence_id: string }
