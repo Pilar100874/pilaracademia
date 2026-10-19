@@ -1,3 +1,4 @@
+import { chargeAiCredits } from "../_shared/aiCredits.ts";
 // Analyze a single workout frame: form quality + open-hand gesture detection
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +10,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+  { const denied = await chargeAiCredits(req, "analyze-workout-form", corsHeaders); if (denied) return denied; }
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

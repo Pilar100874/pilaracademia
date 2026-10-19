@@ -1,3 +1,4 @@
+import { chargeAiCredits } from "../_shared/aiCredits.ts";
 // Edge function: monta um treino a partir de um prompt em linguagem natural
 // usando Gemini (Lovable AI Gateway) com tool-calling para retornar IDs da
 // biblioteca de exercícios fornecida pelo cliente.
@@ -35,6 +36,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+  { const denied = await chargeAiCredits(req, "compose-workout-from-text", corsHeaders); if (denied) return denied; }
   // Lê o corpo inteiro ANTES de iniciar a resposta em stream.
   let raw = '';
   try {
