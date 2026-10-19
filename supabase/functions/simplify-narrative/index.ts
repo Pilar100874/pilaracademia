@@ -1,3 +1,4 @@
+import { chargeAiCredits } from "../_shared/aiCredits.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -6,6 +7,7 @@ const corsHeaders = {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  { const denied = await chargeAiCredits(req, "simplify-narrative", corsHeaders); if (denied) return denied; }
   try {
     const { situation, plan, next_steps } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');

@@ -1,3 +1,4 @@
+import { chargeAiCredits } from "../_shared/aiCredits.ts";
 // Edge Function: analyze-exercise-video
 // Recebe a URL de um vídeo de exercício e retorna três classificações em %:
 //  - body_analysis: áreas trabalhadas (tronco/core, membros inferiores, membros superiores)
@@ -69,6 +70,7 @@ const mobilityProperties = buildProps(MOBILITY_KEYS, (k) => `Demanda/benefício 
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  { const denied = await chargeAiCredits(req, "analyze-exercise-video", corsHeaders); if (denied) return denied; }
 
   try {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');

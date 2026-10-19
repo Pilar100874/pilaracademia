@@ -28,3 +28,9 @@ verify_jwt = false
 
 [functions.manager-users]
 verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.payments-webhook]
+verify_jwt = false

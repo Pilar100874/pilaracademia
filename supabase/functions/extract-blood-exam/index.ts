@@ -1,3 +1,4 @@
+import { chargeAiCredits } from "../_shared/aiCredits.ts";
 // Edge function: extrai marcadores de exame de sangue a partir do texto extraído do PDF
 import { z } from 'https://esm.sh/zod@3.23.8';
 
@@ -32,6 +33,7 @@ CAMPOS GERAIS:
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  { const denied = await chargeAiCredits(req, "extract-blood-exam", corsHeaders); if (denied) return denied; }
 
   try {
     const body = await req.json().catch(() => ({}));

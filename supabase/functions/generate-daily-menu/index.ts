@@ -1,3 +1,4 @@
+import { chargeAiCredits } from "../_shared/aiCredits.ts";
 // Generates a daily meal plan that matches the user's macro targets.
 // Uses Lovable AI Gateway. No DB access, no auth required.
 
@@ -36,6 +37,7 @@ IMPORTANTE: TODOS os textos devem estar em português do Brasil com acentuação
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  { const denied = await chargeAiCredits(req, "generate-daily-menu", corsHeaders); if (denied) return denied; }
 
   try {
     const body = (await req.json()) as Body;

@@ -1,3 +1,4 @@
+import { chargeAiCredits } from "../_shared/aiCredits.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -23,6 +24,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+  { const denied = await chargeAiCredits(req, "generate-weekly-menu", corsHeaders); if (denied) return denied; }
 
   try {
     const { profile, notes, food_preferences_context, blood_exam_context } = (await req.json()) as {

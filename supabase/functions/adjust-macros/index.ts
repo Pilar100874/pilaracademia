@@ -1,3 +1,4 @@
+import { chargeAiCredits } from "../_shared/aiCredits.ts";
 // Recalculates macro targets based on real weight progress vs the projection.
 // Returns suggested new calories/protein/carbs/fat. Client decides whether to apply.
 
@@ -30,6 +31,7 @@ Regras:
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  { const denied = await chargeAiCredits(req, "adjust-macros", corsHeaders); if (denied) return denied; }
 
   try {
     const body = (await req.json()) as Body;
