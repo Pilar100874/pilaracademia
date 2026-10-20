@@ -96,6 +96,21 @@ export default function AiCreditsPage() {
     },
   });
 
+  // Margem do admin sobre o custo estimado (mesma usada na cobrança).
+  const { data: markupPercent = 80 } = useQuery({
+    queryKey: ['ai-credits', 'markup'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('master_settings')
+        .select('ai_markup_percent')
+        .eq('id', 1)
+        .maybeSingle();
+      const v = Number(data?.ai_markup_percent);
+      return Number.isFinite(v) && v >= 0 ? v : 80;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   useEffect(() => {
     if (returned) qc.invalidateQueries({ queryKey: ['ai-credits'] });
   }, [returned, balance, qc]);
