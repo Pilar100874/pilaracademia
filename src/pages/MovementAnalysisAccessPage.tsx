@@ -27,6 +27,7 @@ interface ProfileRow {
 interface MasterSettings {
   library_analysis_model: string;
   user_video_analysis_model: string;
+  ai_markup_percent?: number;
 }
 
 const MODEL_OPTIONS = [
@@ -56,12 +57,22 @@ export default function MovementAnalysisAccessPage() {
     },
   });
 
+  const [markupDraft, setMarkupDraft] = useState<string | null>(null);
+  const { data: earnings = 0 } = useQuery({
+    queryKey: ['admin', 'ai-credit-earnings'],
+    enabled: isMaster,
+    queryFn: async () => {
+      const { data } = await supabase.from('ai_credit_ledger').select('margin_cents').eq('kind', 'usage').limit(10000);
+      return (data ?? []).reduce((s, r) => s + Number(r.margin_cents || 0), 0);
+    },
+  });
+
   const { data: settings } = useQuery({
     queryKey: ['admin', 'master-settings'],
     queryFn: async (): Promise<MasterSettings> => {
       const { data, error } = await supabase
         .from('master_settings')
-        .select('library_analysis_model,user_video_analysis_model')
+        .select('library_analysis_model,user_video_analysis_model,ai_markup_percent')
         .eq('id', 1)
         .maybeSingle();
       if (error) throw error;
@@ -249,6 +260,24 @@ export default function MovementAnalysisAccessPage() {
       </header>
 
       <div className="px-4 py-4 space-y-5">
+        <section className="rounded-md border border-border bg-card p-4 space-y-3">
+          <h2 className="text-sm font-semibold">Créditos de IA dos usuários</h2>
+          <p className="text-xs text-muted-foreground">
+            Cada uso cobra o custo estimado da IA + sua margem. Margem acumulada: <strong>{(earnings / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>
+          </p>
+          <div className="flex items-center gap-2">
+            <Input
+              inputMode="numeric"
+              className="w-24"
+              value={markupDraft ?? String(settings?.ai_markup_percent ?? 80)}
+              onChange={(e) => setMarkupDraft(e.target.value.replace(/[^0-9]/g, ''))}
+            />
+            <span className="text-sm">% sobre o gasto</span>
+            <Button size="sm" disabled={!settings || markupDraft === null || markupDraft === ''} onClick={() => { updateSettings.mutate({ ai_markup_percent: Number(markupDraft) }); setMarkupDraft(null); }}>
+              Salvar
+            </Button>
+          </div>
+        </section>
         {namingProgress && (
           <section className="space-y-2 border-b border-border pb-4">
             <h2 className="text-sm font-semibold">Nomes pelo vídeo</h2>
