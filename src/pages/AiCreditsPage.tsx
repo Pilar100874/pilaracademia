@@ -165,6 +165,28 @@ export default function AiCreditsPage() {
         )}
 
         <section className="space-y-2">
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            <Table2 className="h-4 w-4 text-muted-foreground" />
+            Quanto custa cada recurso de IA
+          </h2>
+          <div className="rounded-md border border-border bg-card divide-y divide-border">
+            {Object.entries(FEATURE_PRICES)
+              .sort((a, b) => a[1] - b[1])
+              .map(([feature, cents]) => (
+                <div key={feature} className="flex items-center justify-between px-3 py-2 text-sm">
+                  <span>{FEATURE_LABELS[feature] ?? feature}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    ~{brl(Math.ceil(cents * (1 + markupPercent / 100)))} / uso
+                  </span>
+                </div>
+              ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Valores aproximados por uso, com margem de {markupPercent}% sobre o custo estimado. O desconto real pode variar um pouco conforme o tamanho de cada análise.
+          </p>
+        </section>
+
+        <section className="space-y-2">
           <h2 className="text-sm font-semibold">Histórico</h2>
           {ledger.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma movimentação ainda.</p>
