@@ -388,6 +388,21 @@ export function ProfilePage() {
 
           <button
             type="button"
+            onClick={() => navigate('/creditos')}
+            className="w-full flex items-center gap-3 py-3 text-left"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <Package className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-sm">Créditos de IA</p>
+              <p className="text-xs text-muted-foreground">Saldo, compra de créditos e histórico de uso</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </button>
+
+          <button
+            type="button"
             onClick={() => setShareOpen(true)}
             className="w-full flex items-center gap-3 py-3 text-left"
           >

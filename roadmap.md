@@ -17,4 +17,4 @@
 - [x] Importação continua em segundo plano ao navegar pelo app (barra de progresso global)
 - [x] Ajuste/classificação de vídeos pessoais retomada automaticamente ao reabrir o app
 
-- [ ] Créditos de IA: checkout (pacotes 20/50/100), webhook credita saldo, cobrança por uso com margem admin (80%), tela de créditos e config admin
+- [x] Créditos de IA: checkout (pacotes 20/50/100), webhook credita saldo, cobrança por uso com margem admin (80%), tela de créditos e config admin

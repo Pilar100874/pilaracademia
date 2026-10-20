@@ -72,7 +72,6 @@ Deno.serve(async (req) => {
       ui_mode: "embedded_page",
       return_url: returnUrl,
       customer: customerId,
-      automatic_tax: { enabled: true },
       payment_intent_data: { description: product.name },
       metadata: { userId: user.id, priceId, credits: String(PACKS[priceId]), managed_payments: "false" },
     });
