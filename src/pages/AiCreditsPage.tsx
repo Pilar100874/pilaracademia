@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
-import { ArrowLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft, Sparkles, Table2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMaster } from '@/hooks/useIsMaster';
@@ -31,6 +31,22 @@ const FEATURE_LABELS: Record<string, string> = {
 };
 
 const brl = (cents: number) => (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+// Preço médio por uso (centavos estimados × margem configurada), espelhando AI_FEATURE_COSTS.
+const FEATURE_PRICES: Record<string, number> = {
+  'simplify-narrative': 1,
+  'analyze-food-text': 2,
+  'read-barcode': 2,
+  'adjust-macros': 2,
+  'analyze-food': 3,
+  'generate-daily-menu': 5,
+  'analyze-workout-form': 5,
+  'analyze-bioimpedance': 8,
+  'extract-blood-exam': 8,
+  'compose-workout-from-text': 10,
+  'generate-weekly-menu': 10,
+  'analyze-exercise-video': 15,
+};
 
 function TestBanner() {
   const token = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN;
@@ -78,6 +94,21 @@ export default function AiCreditsPage() {
         .limit(50);
       return data ?? [];
     },
+  });
+
+  // Margem do admin sobre o custo estimado (mesma usada na cobrança).
+  const { data: markupPercent = 80 } = useQuery({
+    queryKey: ['ai-credits', 'markup'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('master_settings')
+        .select('ai_markup_percent')
+        .eq('id', 1)
+        .maybeSingle();
+      const v = Number(data?.ai_markup_percent);
+      return Number.isFinite(v) && v >= 0 ? v : 80;
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -132,6 +163,28 @@ export default function AiCreditsPage() {
             </div>
           </section>
         )}
+
+        <section className="space-y-2">
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            <Table2 className="h-4 w-4 text-muted-foreground" />
+            Quanto custa cada recurso de IA
+          </h2>
+          <div className="rounded-md border border-border bg-card divide-y divide-border">
+            {Object.entries(FEATURE_PRICES)
+              .sort((a, b) => a[1] - b[1])
+              .map(([feature, cents]) => (
+                <div key={feature} className="flex items-center justify-between px-3 py-2 text-sm">
+                  <span>{FEATURE_LABELS[feature] ?? feature}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    ~{brl(Math.round(cents * (1 + markupPercent / 100)))} / uso
+                  </span>
+                </div>
+              ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Valores aproximados por uso, com margem de {markupPercent}% sobre o custo estimado. O desconto real pode variar um pouco conforme o tamanho de cada análise.
+          </p>
+        </section>
 
         <section className="space-y-2">
           <h2 className="text-sm font-semibold">Histórico</h2>
