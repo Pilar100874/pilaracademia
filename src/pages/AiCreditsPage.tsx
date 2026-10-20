@@ -32,6 +32,22 @@ const FEATURE_LABELS: Record<string, string> = {
 
 const brl = (cents: number) => (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+// Preço médio por uso (centavos estimados × margem configurada), espelhando AI_FEATURE_COSTS.
+const FEATURE_PRICES: Record<string, number> = {
+  'simplify-narrative': 1,
+  'analyze-food-text': 2,
+  'read-barcode': 2,
+  'adjust-macros': 2,
+  'analyze-food': 3,
+  'generate-daily-menu': 5,
+  'analyze-workout-form': 5,
+  'analyze-bioimpedance': 8,
+  'extract-blood-exam': 8,
+  'compose-workout-from-text': 10,
+  'generate-weekly-menu': 10,
+  'analyze-exercise-video': 15,
+};
+
 function TestBanner() {
   const token = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN;
   if (token?.startsWith('pk_live_')) return null;
