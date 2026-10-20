@@ -22,6 +22,7 @@ import TourPage from "@/pages/TourPage";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import MovementAnalysisAccessPage from "@/pages/MovementAnalysisAccessPage";
+import AiCreditsPage from "@/pages/AiCreditsPage";
 import AdminUsersPage from "@/pages/AdminUsersPage";
 import AccountStatusGate from "@/components/AccountStatusGate";
 import WeeklyMenuPage from "@/pages/WeeklyMenuPage";
@@ -231,6 +232,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <TourPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/creditos"
+        element={
+          <ProtectedRoute>
+            <AiCreditsPage />
           </ProtectedRoute>
         }
       />
