@@ -176,7 +176,7 @@ export default function AiCreditsPage() {
                 <div key={feature} className="flex items-center justify-between px-3 py-2 text-sm">
                   <span>{FEATURE_LABELS[feature] ?? feature}</span>
                   <span className="tabular-nums text-muted-foreground">
-                    ~{brl(Math.ceil(cents * (1 + markupPercent / 100)))} / uso
+                    ~{brl(Math.round(cents * (1 + markupPercent / 100)))} / uso
                   </span>
                 </div>
               ))}
