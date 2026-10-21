@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
-import { ArrowLeft, Sparkles, Table2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Sparkles, Table2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMaster } from '@/hooks/useIsMaster';
@@ -46,6 +46,22 @@ const FEATURE_PRICES: Record<string, number> = {
   'compose-workout-from-text': 10,
   'generate-weekly-menu': 10,
   'analyze-exercise-video': 15,
+};
+
+// O que cada recurso faz e onde encontrá-lo no app.
+const FEATURE_INFO: Record<string, { what: string; where: string; to: string }> = {
+  'analyze-food': { what: 'Tira uma foto do prato e a IA identifica os alimentos, calorias e macros.', where: 'Hoje → Adicionar alimento → Foto', to: '/' },
+  'analyze-food-text': { what: 'Você digita o que comeu e a IA calcula calorias e macros.', where: 'Hoje → Adicionar alimento → Digitar', to: '/' },
+  'read-barcode': { what: 'Lê o código de barras de um produto e preenche a tabela nutricional.', where: 'Hoje → Adicionar alimento → Código de barras', to: '/' },
+  'simplify-narrative': { what: 'Reescreve a explicação da análise corporal em linguagem simples.', where: 'Saúde → Bioimpedância → "Explicar simples"', to: '/health?tab=bioimpedance' },
+  'adjust-macros': { what: 'Ajusta a quantidade de um alimento para bater suas metas de macros.', where: 'Hoje → alimento lançado → Ajustar macros', to: '/' },
+  'analyze-workout-form': { what: 'Analisa pela câmera a execução do exercício e dá dicas de postura.', where: 'Treinos → iniciar treino → Análise de execução', to: '/workouts' },
+  'analyze-bioimpedance': { what: 'Lê a foto do laudo da balança e extrai todos os índices corporais.', where: 'Saúde → Bioimpedância → Enviar laudo', to: '/health?tab=bioimpedance' },
+  'extract-blood-exam': { what: 'Lê o PDF ou foto do exame de sangue e organiza os marcadores.', where: 'Saúde → Exames → Enviar exame', to: '/health?tab=blood' },
+  'analyze-exercise-video': { what: 'Classifica e dá nome aos vídeos de exercícios da biblioteca (cobrado por vídeo).', where: 'Biblioteca de exercícios', to: '/exercises' },
+  'compose-workout-from-text': { what: 'Monta um treino completo com base nas suas respostas e objetivos.', where: 'Treinos → Criar treino por IA', to: '/workouts' },
+  'generate-daily-menu': { what: 'Sugere um cardápio para o dia dentro das suas metas.', where: 'Cardápio → Cardápio do dia', to: '/menu' },
+  'generate-weekly-menu': { what: 'Gera o cardápio da semana inteira com lista de compras.', where: 'Cardápio → Gerar cardápio semanal', to: '/menu' },
 };
 
 function TestBanner() {
@@ -172,14 +188,31 @@ export default function AiCreditsPage() {
           <div className="rounded-md border border-border bg-card divide-y divide-border">
             {Object.entries(FEATURE_PRICES)
               .sort((a, b) => a[1] - b[1])
-              .map(([feature, cents]) => (
-                <div key={feature} className="flex items-center justify-between px-3 py-2 text-sm">
-                  <span>{FEATURE_LABELS[feature] ?? feature}</span>
-                  <span className="tabular-nums text-muted-foreground">
-                    ~{brl(Math.round(cents * (1 + markupPercent / 100)))} / uso
-                  </span>
-                </div>
-              ))}
+              .map(([feature, cents]) => {
+                const info = FEATURE_INFO[feature];
+                return (
+                  <div key={feature} className="space-y-1 px-3 py-3 text-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="font-medium">{FEATURE_LABELS[feature] ?? feature}</span>
+                      <span className="shrink-0 tabular-nums text-muted-foreground">
+                        ~{brl(Math.round(cents * (1 + markupPercent / 100)))} / uso
+                      </span>
+                    </div>
+                    {info && (
+                      <>
+                        <p className="text-xs text-muted-foreground">{info.what}</p>
+                        <button
+                          type="button"
+                          onClick={() => navigate(info.to)}
+                          className="inline-flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline"
+                        >
+                          Onde fica: {info.where} <ExternalLink className="h-3 w-3" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
           </div>
           <p className="text-[11px] text-muted-foreground">
             Valores aproximados por uso, com margem de {markupPercent}% sobre o custo estimado. O desconto real pode variar um pouco conforme o tamanho de cada análise.
