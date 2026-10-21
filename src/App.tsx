@@ -23,6 +23,7 @@ import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import MovementAnalysisAccessPage from "@/pages/MovementAnalysisAccessPage";
 import AiCreditsPage from "@/pages/AiCreditsPage";
+import { AiCostConfirmHost } from "@/lib/aiCostConfirm";
 import AdminUsersPage from "@/pages/AdminUsersPage";
 import AccountStatusGate from "@/components/AccountStatusGate";
 import WeeklyMenuPage from "@/pages/WeeklyMenuPage";
@@ -319,6 +320,7 @@ const App = () => {
                   <InstallPrompt />
                   <UpdatePrompt />
                   <SonnerToaster richColors position="top-center" />
+                  <AiCostConfirmHost />
                 </BackgroundAnalysisProvider>
               </BackgroundProgressProvider>
             </AuthProvider>
