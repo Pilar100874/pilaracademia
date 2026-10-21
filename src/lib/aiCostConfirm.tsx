@@ -107,6 +107,10 @@ export function AiCostConfirmHost() {
             <span className="mt-2 block text-xs">O valor será descontado dos seus créditos de IA. O desconto real pode variar um pouco.</span>
           </AlertDialogDescription>
         </AlertDialogHeader>
+        <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+          <Checkbox checked={neverAsk} onCheckedChange={(v) => setNeverAsk(!!v)} />
+          Não perguntar antes de cada uso (pode ligar de novo no Perfil)
+        </label>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={() => close(false)}>Cancelar</AlertDialogCancel>
           <AlertDialogAction onClick={() => close(true)}>Confirmar</AlertDialogAction>
