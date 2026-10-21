@@ -125,7 +125,7 @@ export function useBodyAnalysisAutorun(exercises: LibraryExercise[]) {
         setProgress({ done, total: queue.length, current: ex.name });
         try {
           const { data, error } = await supabase.functions.invoke('analyze-exercise-video', {
-            skipCostConfirm: true,
+            ...({ skipCostConfirm: true } as any),
             body: {
               videoUrl: ex.video_url,
               exerciseName: ex.name,
