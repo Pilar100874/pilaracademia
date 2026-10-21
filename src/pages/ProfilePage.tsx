@@ -16,6 +16,9 @@ import { ChangePasswordDialog } from '@/components/ChangePasswordDialog';
 import { AndroidAppDialog } from '@/components/AndroidAppDialog';
 import { useIsMaster } from '@/hooks/useIsMaster';
 import { useAccountKind } from '@/hooks/useAccountKind';
+import { Switch } from '@/components/ui/switch';
+import { isAiCostConfirmEnabled, setAiCostConfirmEnabled } from '@/lib/aiCostConfirm';
+
 
 
 export function ProfilePage() {
@@ -29,6 +32,7 @@ export function ProfilePage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [androidOpen, setAndroidOpen] = useState(false);
+  const [aiAskConfirm, setAiAskConfirm] = useState(() => isAiCostConfirmEnabled());
 
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('');
@@ -400,6 +404,22 @@ export function ProfilePage() {
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </button>
+
+          <div className="flex items-center gap-3 py-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm">Confirmar custo da IA</p>
+              <p className="text-xs text-muted-foreground">Perguntar o valor aproximado antes de cada uso</p>
+            </div>
+            <Switch
+              checked={aiAskConfirm}
+              onCheckedChange={(v) => { setAiCostConfirmEnabled(v); setAiAskConfirm(v); }}
+              className="shrink-0"
+            />
+          </div>
+
 
           <button
             type="button"
